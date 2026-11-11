@@ -1,0 +1,9 @@
+# Generated or per-user files
+case/stl/
+led-ring/__pycache__/
+led-ring/*.kicad_prl
+led-ring/*-backups/
+led-ring/fp-info-cache
+led-ring/*.dsn
+led-ring/*.ses
+led-ring/_autosave-*
