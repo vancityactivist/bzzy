@@ -3,7 +3,24 @@
 
 #include <stdint.h>
 
-#if defined(BZZY_BOARD_WAVESHARE_S3_LCD169)
+#if defined(BZZY_BOARD_WAVESHARE_S3_TOUCH_LCD169)
+// Waveshare ESP32-S3-Touch-LCD-1.69 (SKU 27350). From Waveshare's docs page.
+// Same screen wiring as the non-touch board, plus the CST816T touch chip.
+#define PIN_LCD_SCLK 6
+#define PIN_LCD_MOSI 7
+#define PIN_LCD_CS 5
+#define PIN_LCD_DC 4
+#define PIN_LCD_RST 8
+#define PIN_LCD_BL 15
+#define PIN_I2C_SDA 11  // shared: touch @ 0x15, IMU @ 0x6B, RTC @ 0x51
+#define PIN_I2C_SCL 10
+#define PIN_TOUCH_INT 14
+#define PIN_TOUCH_RST 13
+#define PIN_BUTTON 0     // BOOT button
+#define PIN_LED_DATA 17  // free pins on this board: 2, 3, 17, 18 (3 is a strapping pin)
+#define BZZY_HAS_RTC 1
+#define BZZY_HAS_TOUCH 1
+#elif defined(BZZY_BOARD_WAVESHARE_S3_LCD169)
 // Waveshare ESP32-S3-LCD-1.69 (V2). Read from the V2 schematic; check against the
 // printed pinout if something doesn't respond.
 #define PIN_LCD_SCLK 6
@@ -23,6 +40,10 @@
 #define BZZY_HAS_RTC 0
 #else
 #error "Pick a board env in platformio.ini"
+#endif
+
+#ifndef BZZY_HAS_TOUCH
+#define BZZY_HAS_TOUCH 0
 #endif
 
 #ifndef BZZY_HAS_DISPLAY

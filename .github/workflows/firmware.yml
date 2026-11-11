@@ -27,7 +27,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        env: [waveshare_s3_lcd169, esp32_generic]
+        env: [waveshare_s3_touch_lcd169, waveshare_s3_lcd169, esp32_generic]
     defaults:
       run:
         working-directory: firmware

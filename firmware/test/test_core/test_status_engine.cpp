@@ -108,6 +108,20 @@ void test_button_cycles_and_returns_to_auto() {
   TEST_ASSERT_EQUAL(Source::Calendar, r.source);
 }
 
+void test_long_press_clears_to_auto() {
+  State st = freshState();
+  addBlock(st, T0, T0 + 3600, Status::Busy, "");
+  cycleLocalOverride(st, T0 + 1);  // Free
+  TEST_ASSERT_EQUAL(Status::Free, resolve(st, T0 + 2).status);
+  clearLocalOverride(st, T0 + 3);
+  Resolved r = resolve(st, T0 + 4);
+  TEST_ASSERT_EQUAL(Source::Calendar, r.source);
+  TEST_ASSERT_EQUAL(Status::Busy, r.status);
+  // The next tap starts the cycle again from Free.
+  cycleLocalOverride(st, T0 + 5);
+  TEST_ASSERT_EQUAL(Status::Free, resolve(st, T0 + 6).status);
+}
+
 void test_merge_keeps_newer_local_press() {
   State cached = freshState();
   cycleLocalOverride(cached, T0 + 100);  // Free, set locally
@@ -176,6 +190,7 @@ int main(int, char**) {
   RUN_TEST(test_never_synced_uses_fallback);
   RUN_TEST(test_no_clock_keeps_manual_but_not_calendar);
   RUN_TEST(test_button_cycles_and_returns_to_auto);
+  RUN_TEST(test_long_press_clears_to_auto);
   RUN_TEST(test_merge_keeps_newer_local_press);
   RUN_TEST(test_merge_takes_newer_server_override);
   RUN_TEST(test_merge_keeps_local_clear_over_older_server_override);

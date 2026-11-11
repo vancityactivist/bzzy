@@ -23,14 +23,21 @@ The device never needs anything to connect *to* it, so it works on guest Wi-Fi t
 
 ## Hardware
 
-| Part | Notes |
-|---|---|
-| [Waveshare ESP32-S3-LCD-1.69](https://www.waveshare.com/esp32-s3-lcd-1.69.htm) | ESP32-S3, 8 MB PSRAM, 16 MB flash, 1.69" 240×280 ST7789V2 screen, RTC, USB-C |
-| WS2812B LEDs | 12-LED ring for prototyping; ~16 LEDs of 144/m strip for the final bezel |
-| 330 Ω resistor | in series on the LED data line |
-| 220–470 µF capacitor | across LED 5V/GND, near the LEDs |
+The target board is the **touch** version. The non-touch board and a plain ESP32 still build, for testing.
 
-Wiring: LED data to **GPIO16** on the Waveshare board (GPIO13 on a generic ESP32), LED 5V to the board's 5V/VBUS, GND to GND. LED current is capped at 400 mA in firmware.
+| Part | Part number to search | Notes |
+|---|---|---|
+| Main board (touch) | **Waveshare ESP32-S3-Touch-LCD-1.69**, SKU **27350** | ESP32-S3R8 (8 MB PSRAM), 16 MB flash, 1.69" 240×280 ST7789V2, CST816T touch, PCF85063 RTC, QMI8658 IMU, buzzer, USB-C |
+| Main board (no touch, alternative) | Waveshare ESP32-S3-LCD-1.69, SKU 27932 | Same board without touch |
+| LED ring (prototype) | WS2812B 12-LED ring, 50 mm (or Adafruit NeoPixel Ring 12, #1643) | |
+| LED strip (final bezel) | WS2812B 144 LEDs/m, 5 V, IP30 (no silicone sleeve) | ~16 LEDs cut to fit the case |
+| Resistor | 330 Ω, 1/4 W | In series on the LED data line |
+| Capacitor | 470 µF, 10 V or higher, electrolytic | Across LED 5 V / GND, near the LEDs |
+| RTC backup cell (optional) | Rechargeable ML1220 with an SH1.0 2-pin lead | Keeps the clock through power cuts. Without it, the clock comes back from NTP once Wi-Fi does |
+
+**Wiring (touch board):** LED data to **GPIO17**, LED 5 V to the board's 5 V pin, GND to GND. The free pins on this board are 2, 3, 17 and 18. Avoid 3, which is a strapping pin. LED current is capped at 400 mA in firmware.
+
+On the non-touch board the LED data pin is GPIO16. On a generic ESP32 it's GPIO13.
 
 ## Firmware
 
@@ -38,15 +45,16 @@ Built with [PlatformIO](https://platformio.org/).
 
 ```sh
 cd firmware
-pio run -e waveshare_s3_lcd169 -t upload    # the real board
-pio run -e esp32_generic -t upload          # a plain ESP32: LEDs, Wi-Fi and sync only
-pio test -e native                          # status logic unit tests, no hardware needed
+pio run -e waveshare_s3_touch_lcd169 -t upload   # the real board (touch)
+pio run -e waveshare_s3_lcd169 -t upload         # non-touch version
+pio run -e esp32_generic -t upload               # a plain ESP32: LEDs, Wi-Fi and sync only
+pio test -e native                               # status logic unit tests, no hardware needed
 pio device monitor
 ```
 
 **First boot / changing Wi-Fi:** with nothing saved, or if you hold the BOOT button for 3 seconds while plugging in, the device opens a Wi-Fi network called `bzzy-setup`. Join it from your phone, pick your Wi-Fi, and fill in the companion app URL, device ID and token.
 
-**Button:** each press steps Free → Busy → Do not disturb → back to automatic.
+**Controls:** tap the screen (or press BOOT) to step Free → Busy → Do not disturb → back to automatic. Long-press the screen for one second to go straight back to automatic (calendar or default).
 
 **GIFs:** put files at `/gif/free.gif`, `/gif/busy.gif`, `/gif/dnd.gif`, `/gif/away.gif` on the device's LittleFS (for now, via `firmware/data/` and `pio run -t uploadfs`). Keep them 240 px wide and up to 200 px tall. Without a GIF the screen shows a coloured card with large text.
 

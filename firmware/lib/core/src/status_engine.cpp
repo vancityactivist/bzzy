@@ -101,4 +101,13 @@ void cycleLocalOverride(State& st, uint32_t now) {
   o.local = true;
 }
 
+void clearLocalOverride(State& st, uint32_t now) {
+  Override& o = st.manual;
+  o.active = false;  // kept as a tombstone, see cycleLocalOverride
+  o.text[0] = '\0';
+  o.until = 0;
+  o.updatedAt = now;
+  o.local = true;
+}
+
 }  // namespace bzzy
