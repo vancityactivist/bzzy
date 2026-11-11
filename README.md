@@ -16,8 +16,8 @@ The device never needs anything to connect *to* it, so it works on guest Wi-Fi t
 
 ## Plan
 
-1. **Parts and breadboard prototype** ← this repo is here
-2. Companion app: status buttons, GIF/text uploads, device API
+1. Parts and breadboard prototype
+2. **Companion app** ([app/](app/)): sign-in, teams, status buttons, device API ← in progress. GIF uploads next.
 3. Calendar rules from the ICS feed, with manual override
 4. Enclosure and monitor clip (OpenSCAD, sent out for printing)
 
