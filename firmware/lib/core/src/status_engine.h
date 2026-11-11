@@ -72,7 +72,10 @@ Resolved resolve(const State& st, uint32_t now, const Settings& cfg = Settings()
 // override if it is newer than the server's manual override.
 void mergeFromServer(State& cached, const State& fromServer, uint32_t now);
 
-// Button press: Free -> Busy -> Dnd -> back to automatic (override cleared).
+// Button press or screen tap: Free -> Busy -> Dnd -> back to automatic (override cleared).
 void cycleLocalOverride(State& st, uint32_t now);
+
+// Long press on the screen: straight back to automatic (calendar / default).
+void clearLocalOverride(State& st, uint32_t now);
 
 }  // namespace bzzy

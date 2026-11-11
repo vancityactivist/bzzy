@@ -14,6 +14,7 @@
 #include "net.h"
 #include "protocol.h"
 #include "status_engine.h"
+#include "touch.h"
 
 static bzzy::State g_state;
 static bzzy::Settings g_engineCfg;
@@ -83,6 +84,7 @@ void setup() {
 
   leds::begin();
   display::begin();
+  touch::begin();
   if (!LittleFS.begin(true)) Serial.println("[fs] LittleFS mount failed");
   loadCache();
 
@@ -100,8 +102,16 @@ void loop() {
     saveCacheIfChanged();
   }
 
-  if (buttonPressed()) {
-    bzzy::cycleLocalOverride(g_state, net::now());
+  // Button press or screen tap: next status. Long press on the screen: back to automatic.
+  const touch::Gesture g = touch::poll();
+  const bool next = buttonPressed() || g == touch::Gesture::Tap;
+  const bool toAuto = g == touch::Gesture::LongPress;
+  if (next || toAuto) {
+    if (toAuto) {
+      bzzy::clearLocalOverride(g_state, net::now());
+    } else {
+      bzzy::cycleLocalOverride(g_state, net::now());
+    }
     net::reportOverride(g_state.manual);
     saveCacheIfChanged();
   }
