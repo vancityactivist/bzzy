@@ -2,7 +2,7 @@ import { Suspense } from "react";
 
 import { Landing } from "@/components/landing";
 import { STATUS_META } from "@/components/status-meta";
-import { scheduleForUser } from "@/lib/calendar";
+import { refreshStaleCalendars, scheduleForUser } from "@/lib/calendar";
 import { getPresence } from "@/lib/presence";
 import { nowSeconds, STATUSES, TEXT_MAX } from "@/lib/protocol";
 import { getCurrentUser } from "@/lib/session";
@@ -29,6 +29,7 @@ async function HomeContent() {
   if (!user) return <Landing />;
 
   const now = nowSeconds();
+  await refreshStaleCalendars(user.id);
   const [presence, { schedule }] = await Promise.all([getPresence(user.id), scheduleForUser(user.id, now)]);
   const current = schedule.find((b) => b.start <= now && now < b.end);
   const next = schedule.find((b) => b.start > now);

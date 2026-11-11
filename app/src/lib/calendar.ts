@@ -1,6 +1,7 @@
 import "server-only";
 
 import { and, asc, eq } from "drizzle-orm";
+import { after } from "next/server";
 
 import { db, schema } from "@/db";
 
@@ -95,4 +96,14 @@ export async function setShowTitles(id: string, showTitles: boolean) {
 
 export async function deleteCalendar(id: string) {
   await db().delete(schema.calendars).where(eq(schema.calendars.id, id));
+}
+
+// For pages: re-read any calendar that's due, waiting up to `waitMs` so the page shows
+// fresh events when the feed answers quickly. Slow feeds finish after the response.
+export async function refreshStaleCalendars(userId: string, waitMs = 3000) {
+  const stale = (await calendarsForUser(userId)).filter((c) => isStale(c));
+  if (stale.length === 0) return;
+  const all = Promise.all(stale.map((c) => refreshCalendar(c)));
+  after(() => all);
+  await Promise.race([all, new Promise((r) => setTimeout(r, waitMs))]);
 }

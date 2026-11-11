@@ -3,7 +3,7 @@ import { Suspense } from "react";
 import { AddPasskey } from "@/components/passkey-buttons";
 import { SignIn } from "@/components/sign-in";
 import { STATUS_META } from "@/components/status-meta";
-import { calendarsForUser } from "@/lib/calendar";
+import { calendarsForUser, refreshStaleCalendars } from "@/lib/calendar";
 import { blocksForDevice } from "@/lib/ics";
 import { nowSeconds } from "@/lib/protocol";
 import { getCurrentUser } from "@/lib/session";
@@ -22,6 +22,7 @@ export default function SettingsPage() {
 async function SettingsContent() {
   const user = await getCurrentUser();
   if (!user) return <SignIn />;
+  await refreshStaleCalendars(user.id);
   const [teams, calendars] = await Promise.all([teamsForUser(user.id), calendarsForUser(user.id)]);
   const now = nowSeconds();
 
