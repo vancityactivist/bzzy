@@ -18,6 +18,16 @@ kicad-cli pcb export svg --layers F.Cu,F.Fab,Edge.Cuts --page-size-mode 2 --excl
 kicad-cli pcb export svg --layers B.Cu,B.SilkS,Edge.Cuts --page-size-mode 2 --exclude-drawing-sheet \
   -o img/pcb-back.svg led-ring/bzzy-led-ring.kicad_pcb >/dev/null
 
+# Gerbers + drill files, zipped for JLCPCB (gitignored: rebuild with this script)
+G=$(mktemp -d)
+kicad-cli pcb export gerbers --layers F.Cu,B.Cu,F.Paste,B.Paste,F.SilkS,B.SilkS,F.Mask,B.Mask,Edge.Cuts \
+  --subtract-soldermask --no-x2 -o "$G/" led-ring/bzzy-led-ring.kicad_pcb >/dev/null
+kicad-cli pcb export drill --format excellon --excellon-separate-th --excellon-units mm \
+  -o "$G/" led-ring/bzzy-led-ring.kicad_pcb >/dev/null
+rm -f led-ring/fab/gerbers.zip
+(cd "$G" && zip -q -r - .) > led-ring/fab/gerbers.zip
+rm -rf "$G"
+
 SCAD="openscad"
 command -v xvfb-run >/dev/null && [ -z "${DISPLAY:-}" ] && SCAD="xvfb-run -a openscad"
 for view in "assembly:75,0,-28:front" "assembly:70,0,145:back" "exploded:70,0,-55:exploded"; do
@@ -28,4 +38,4 @@ done
 for part in diffuser baffle shell clip; do
   openscad -q -D "PART=\"$part\"" -o "case/stl/$part.stl" case/bzzy_case.scad
 done
-echo "done: img/, case/stl/"
+echo "done: img/, case/stl/, led-ring/fab/gerbers.zip"

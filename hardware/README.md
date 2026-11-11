@@ -121,7 +121,7 @@ Then print the shell and diffuser once in cheap PLA to check the fit before orde
 
 ## Ordering from JLCPCB
 
-1. In KiCad, export Gerbers and drill files: File, Fabrication Outputs. Use JLCPCB's KiCad settings, and zip the folder.
+1. Run `./render.sh`, which writes `led-ring/fab/gerbers.zip`. Or, in KiCad, export Gerbers and drill files (File, Fabrication Outputs) with JLCPCB's KiCad settings, and zip the folder.
 2. Upload the zip at jlcpcb.com. Defaults are fine: 2 layers, 1.6 mm, HASL lead-free or ENIG, any colour. Black or white looks best behind a translucent frame.
 3. Turn on **PCB Assembly**, top side, and upload `fab/bom-jlcpcb.csv` and `fab/cpl-jlcpcb.csv`.
 4. In the parts-matching step, pick an LCSC part for each line. In the placement preview, **check every LED's orientation**: the pin 1 dot should match the KiCad drawing. Fix any rotation in the preview if needed.
