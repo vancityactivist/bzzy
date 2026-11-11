@@ -3,7 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import Link from "next/link";
 import { Suspense } from "react";
 
-import { UserMenu } from "@/components/user-menu";
+import { AppLinks, UserMenu } from "@/components/user-menu";
 
 import "./globals.css";
 
@@ -24,15 +24,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             <Link href="/" className="text-base font-semibold tracking-tight">
               bzzy
             </Link>
-            <Link href="/" className="text-muted hover:text-foreground">
-              Status
-            </Link>
-            <Link href="/devices" className="text-muted hover:text-foreground">
-              Devices
-            </Link>
-            <Link href="/settings" className="text-muted hover:text-foreground">
-              Settings
-            </Link>
+            <Suspense fallback={null}>
+              <AppLinks />
+            </Suspense>
             <div className="ml-auto">
               <Suspense fallback={null}>
                 <UserMenu />

@@ -5,7 +5,7 @@ import { PasskeySignIn } from "./passkey-buttons";
 export function SignIn() {
   return (
     <div className="rounded-xl border border-line bg-card p-6">
-      <h1 className="text-xl font-semibold">Sign in to bzzy</h1>
+      <h2 className="text-xl font-semibold">Sign in to bzzy</h2>
       <p className="mt-1 text-sm text-muted">
         Set your desk light from your phone or laptop. First time here? Sign in with GitHub, then add a passkey in
         Settings.
