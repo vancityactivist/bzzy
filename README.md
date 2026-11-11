@@ -30,6 +30,8 @@ The device never needs anything to connect *to* it, so it works on guest Wi-Fi t
 
 The target board is the **touch** version. The non-touch board and a plain ESP32 still build, for testing.
 
+The final design adds a custom LED ring board around the Waveshare board and a printed case with a glowing frame. See [hardware/](hardware/README.md). The parts below are for the breadboard prototype.
+
 | Part | Part number to search | Notes |
 |---|---|---|
 | Main board (touch) | **Waveshare ESP32-S3-Touch-LCD-1.69**, SKU **27350** | ESP32-S3R8 (8 MB PSRAM), 16 MB flash, 1.69" 240×280 ST7789V2, CST816T touch, PCF85063 RTC, QMI8658 IMU, buzzer, USB-C |
