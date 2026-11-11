@@ -59,6 +59,8 @@ constexpr uint32_t kPollIntervalMs = 20 * 1000;
 constexpr uint32_t kMaxBackoffMs = 5 * 60 * 1000;
 constexpr uint32_t kHttpTimeoutMs = 6000;
 
+constexpr uint32_t kMaxGifBytes = 700 * 1024;  // the app sends at most 600 KB
+
 constexpr uint32_t kStaleAfterSec = 24 * 3600;  // cached calendar older than this isn't trusted
 
 constexpr uint32_t kSetupHoldMs = 3000;  // hold the button this long at boot for the Wi-Fi setup page

@@ -1,6 +1,7 @@
 #include "net.h"
 
 #include <HTTPClient.h>
+#include <LittleFS.h>
 #include <Preferences.h>
 #include <WiFi.h>
 #include <WiFiClientSecure.h>
@@ -27,6 +28,14 @@ static volatile bool g_hasPendingReport = false;
 static volatile bool g_lastSyncOk = false;
 static bool g_portalOpen = false;
 static bool g_clockFromNtp = false;
+
+// GIFs. g_wanted is only touched by the network task. g_installed (the hash of the
+// GIF on flash for each status) and the swap queue are shared, guarded by g_mx.
+static bzzy::GifRef g_wanted[bzzy::kGifSlots];
+static bool g_haveWanted = false;
+static char g_installed[bzzy::kGifSlots][17];
+static uint8_t g_swapMask = 0;  // bit i: slot i has a new file (or a removal) waiting
+static char g_swapSha[bzzy::kGifSlots][17];
 
 // ---- settings ----
 static void loadSettings() {
@@ -97,6 +106,95 @@ static bool httpRequest(const char* method, const String& u, const String& body,
   return ok;
 }
 
+// ---- GIFs (network task) ----
+static const char* slotName(size_t i) { return bzzy::statusName(static_cast<bzzy::Status>(i)); }
+
+static void gifPath(char* out, size_t n, size_t slot, const char* ext) {
+  snprintf(out, n, "/gif/%s.%s", slotName(slot), ext);
+}
+
+#if BZZY_HAS_DISPLAY
+static bool downloadTo(const char* u, const char* path) {
+  WiFiClientSecure client;
+  client.setInsecure();  // see the TODO in httpRequest
+  HTTPClient http;
+  http.setTimeout(cfg::kHttpTimeoutMs * 2);
+  http.setConnectTimeout(cfg::kHttpTimeoutMs);
+  http.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
+  if (!http.begin(client, u)) return false;
+  // Only hand our token to our own app, never to another host.
+  if (g_settings.token[0] && strncmp(u, g_settings.apiBase, strlen(g_settings.apiBase)) == 0) {
+    http.addHeader("Authorization", String("Bearer ") + g_settings.token);
+  }
+  int code = http.GET();
+  if (code != 200) {
+    Serial.printf("[gif] GET %s -> %d\n", u, code);
+    http.end();
+    return false;
+  }
+  int len = http.getSize();  // -1 when the server doesn't say
+  size_t free = LittleFS.totalBytes() - LittleFS.usedBytes();
+  if (len > (int)cfg::kMaxGifBytes || (len > 0 && (size_t)len + 32 * 1024 > free)) {
+    Serial.printf("[gif] %d bytes won't fit (%u free)\n", len, (unsigned)free);
+    http.end();
+    return false;
+  }
+  LittleFS.mkdir("/gif");
+  File f = LittleFS.open(path, "w");
+  if (!f) {
+    http.end();
+    return false;
+  }
+  int written = http.writeToStream(&f);
+  f.close();
+  http.end();
+  if (written <= 0 || (len > 0 && written != len) || written > (int)cfg::kMaxGifBytes) {
+    LittleFS.remove(path);
+    return false;
+  }
+  return true;
+}
+#endif
+
+// At most one download per sync, so a status change is never stuck behind four GIFs.
+static void syncGifs() {
+#if BZZY_HAS_DISPLAY
+  if (!g_haveWanted) return;
+  for (size_t i = 0; i < bzzy::kGifSlots; ++i) {
+    char installed[17];
+    bool queued;
+    xSemaphoreTake(g_mx, portMAX_DELAY);
+    strlcpy(installed, g_installed[i], sizeof(installed));
+    queued = g_swapMask & (1u << i);
+    xSemaphoreGive(g_mx);
+    if (queued) continue;
+
+    const bzzy::GifRef& want = g_wanted[i];
+    if (!want.present) {
+      if (installed[0]) {
+        xSemaphoreTake(g_mx, portMAX_DELAY);
+        g_swapSha[i][0] = '\0';
+        g_swapMask |= 1u << i;
+        xSemaphoreGive(g_mx);
+      }
+      continue;
+    }
+    if (strcmp(want.sha, installed) == 0) continue;
+
+    char tmp[32];
+    gifPath(tmp, sizeof(tmp), i, "tmp");
+    if (downloadTo(want.url, tmp)) {
+      xSemaphoreTake(g_mx, portMAX_DELAY);
+      strlcpy(g_swapSha[i], want.sha, sizeof(g_swapSha[i]));
+      g_swapMask |= 1u << i;
+      xSemaphoreGive(g_mx);
+      Serial.printf("[gif] downloaded %s\n", slotName(i));
+    }
+    return;
+  }
+#endif
+}
+
 static bool syncOnce() {
   // 1) Push a button press the app hasn't seen.
   bzzy::Override report;
@@ -132,6 +230,12 @@ static bool syncOnce() {
   g_incoming = parsed;
   g_hasIncoming = true;
   xSemaphoreGive(g_mx);
+
+  // 3) Fetch any GIF that changed. A failed download doesn't fail the sync:
+  //    the status is what matters, and the GIF is retried next time.
+  if (bzzy::parseGifs(resp.c_str(), resp.length(), g_wanted)) g_haveWanted = true;
+  resp = String();  // free it before downloading
+  syncGifs();
   return true;
 }
 
@@ -155,9 +259,20 @@ static void networkTask(void*) {
 }
 
 // ---- public ----
+static void loadInstalledGifs() {
+  Preferences p;
+  p.begin("bzzy-gif", true);
+  for (size_t i = 0; i < bzzy::kGifSlots; ++i) {
+    g_installed[i][0] = '\0';
+    p.getString(slotName(i), g_installed[i], sizeof(g_installed[i]));
+  }
+  p.end();
+}
+
 void begin(bool openSetupPortal) {
   g_mx = xSemaphoreCreateMutex();
   loadSettings();
+  loadInstalledGifs();
   rtc::begin();
   restoreClockFromRtc();
   configTzTime(cfg::kTimezone, cfg::kNtpServer);
@@ -225,6 +340,40 @@ void reportOverride(const bzzy::Override& o) {
   g_pendingReport = o;
   g_hasPendingReport = true;
   xSemaphoreGive(g_mx);
+}
+
+bool gifsReady() {
+  xSemaphoreTake(g_mx, portMAX_DELAY);
+  bool ready = g_swapMask != 0;
+  xSemaphoreGive(g_mx);
+  return ready;
+}
+
+// Main loop only, after display::releaseGif(), so no file is open while it's replaced.
+void installGifs() {
+  uint8_t mask;
+  char shas[bzzy::kGifSlots][17];
+  xSemaphoreTake(g_mx, portMAX_DELAY);
+  mask = g_swapMask;
+  memcpy(shas, g_swapSha, sizeof(shas));
+  xSemaphoreGive(g_mx);
+
+  Preferences p;
+  p.begin("bzzy-gif", false);
+  for (size_t i = 0; i < bzzy::kGifSlots; ++i) {
+    if (!(mask & (1u << i))) continue;
+    char gif[32], tmp[32];
+    gifPath(gif, sizeof(gif), i, "gif");
+    gifPath(tmp, sizeof(tmp), i, "tmp");
+    LittleFS.remove(gif);
+    if (shas[i][0]) LittleFS.rename(tmp, gif);
+    p.putString(slotName(i), shas[i]);
+    xSemaphoreTake(g_mx, portMAX_DELAY);
+    strlcpy(g_installed[i], shas[i], sizeof(g_installed[i]));
+    g_swapMask &= ~(1u << i);
+    xSemaphoreGive(g_mx);
+  }
+  p.end();
 }
 
 }  // namespace net

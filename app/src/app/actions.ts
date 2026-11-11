@@ -5,7 +5,9 @@ import { z } from "zod";
 
 import { signIn, signOut } from "@/auth";
 import { addCalendar, deleteCalendar, ownCalendar, refreshCalendar, setShowTitles } from "@/lib/calendar";
-import { canManageDevice, createDevice, deleteDevice, rotateDeviceToken } from "@/lib/devices";
+import { canManageDevice, createDevice, deleteDevice, deviceTeam, rotateDeviceToken } from "@/lib/devices";
+import { GifError } from "@/lib/gif-process";
+import { deleteGif, setDeviceGif, uploadGif } from "@/lib/gifs";
 import { setPresence } from "@/lib/presence";
 import { clipText, nowSeconds, STATUSES } from "@/lib/protocol";
 import { requireUser } from "@/lib/session";
@@ -120,5 +122,41 @@ export async function removeCalendarAction(id: string) {
   const cal = await ownCalendar(user.id, id);
   if (!cal) return;
   await deleteCalendar(cal.id);
+  refresh();
+}
+
+// ---- GIFs ----
+
+export type GifUploadResult = { ok: true } | { ok: false; error: string } | null;
+
+export async function uploadGifAction(_prev: GifUploadResult, formData: FormData): Promise<GifUploadResult> {
+  const user = await requireUser();
+  const file = formData.get("file");
+  if (!(file instanceof File) || file.size === 0) return { ok: false, error: "Pick a GIF to upload." };
+  const name = z.string().trim().max(60).safeParse(formData.get("name") || file.name.replace(/\.[^.]+$/, ""));
+  try {
+    await uploadGif(user.id, user.name, (name.success && name.data) || "My GIF", new Uint8Array(await file.arrayBuffer()));
+  } catch (err) {
+    if (err instanceof GifError) return { ok: false, error: err.message };
+    console.error("GIF upload failed", err);
+    return { ok: false, error: "Upload failed. If this keeps happening, the GIF storage may not be set up yet." };
+  }
+  refresh();
+  return { ok: true };
+}
+
+export async function deleteGifAction(assetId: string) {
+  const user = await requireUser();
+  await deleteGif(user.id, assetId);
+  refresh();
+}
+
+export async function setDeviceGifAction(deviceId: string, status: string, choice: string) {
+  const user = await requireUser();
+  const s = z.enum(STATUSES).safeParse(status);
+  if (!s.success || !(await canManageDevice(user.id, deviceId))) return;
+  const teamId = await deviceTeam(deviceId);
+  if (!teamId) return;
+  await setDeviceGif(deviceId, teamId, s.data, choice);
   refresh();
 }

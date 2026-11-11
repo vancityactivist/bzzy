@@ -73,4 +73,27 @@ String serializeState(const State& st) {
   return out;
 }
 
+bool parseGifs(const char* json, size_t len, GifRef out[kGifSlots]) {
+  JsonDocument filter;
+  filter["gifs"] = true;  // skip the schedule: only the GIF map matters here
+  JsonDocument doc;
+  if (deserializeJson(doc, json, len, DeserializationOption::Filter(filter))) return false;
+  JsonObjectConst gifs = doc["gifs"];
+  if (gifs.isNull()) return false;
+  for (size_t i = 0; i < kGifSlots; ++i) {
+    GifRef g;
+    JsonObjectConst o = gifs[statusName(static_cast<Status>(i))];
+    const char* url = o["url"] | "";
+    const char* sha = o["sha"] | "";
+    // A URL too long for the buffer would be cut short and fail anyway; treat it as no GIF.
+    if (!o.isNull() && *url && *sha && strlen(url) < sizeof(g.url)) {
+      g.present = true;
+      strlcpy(g.url, url, sizeof(g.url));
+      strlcpy(g.sha, sha, sizeof(g.sha));
+    }
+    out[i] = g;
+  }
+  return true;
+}
+
 }  // namespace bzzy

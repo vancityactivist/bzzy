@@ -17,7 +17,7 @@ The device never needs anything to connect *to* it, so it works on guest Wi-Fi t
 ## Plan
 
 1. Parts and breadboard prototype
-2. **Companion app** ([app/](app/)): sign-in, teams, status buttons, device API ← in progress. GIF uploads next.
+2. **Companion app** ([app/](app/)): sign-in, teams, status buttons, device API, GIF uploads
 3. **Calendar** from an ICS link (Settings → Calendars): meetings make you Busy, out of office makes you Away, manual status still wins
 4. Enclosure and monitor clip (OpenSCAD, sent out for printing)
 
@@ -61,7 +61,7 @@ pio device monitor
 
 **Controls:** tap the screen (or press BOOT) to step Free → Busy → Do not disturb → back to automatic. Long-press the screen for one second to go straight back to automatic (calendar or default).
 
-**GIFs:** put files at `/gif/free.gif`, `/gif/busy.gif`, `/gif/dnd.gif`, `/gif/away.gif` on the device's LittleFS (for now, via `firmware/data/` and `pio run -t uploadfs`). Keep them 240 px wide and up to 200 px tall. Without a GIF the screen shows a coloured card with large text.
+**GIFs:** pick one per status on the app's Devices page (built-in or your own uploads from the GIFs page). The device downloads a GIF when it changes and keeps it in flash, so it still plays offline. Choosing "No GIF" shows a coloured card with large text.
 
 ### When things go wrong
 
@@ -75,4 +75,3 @@ pio device monitor
 
 - HTTPS certificate checking is off (`setInsecure`) until the companion app exists.
 - Untested on real hardware: pin numbers come from Waveshare's V2 schematic.
-- GIFs aren't downloaded from the app yet; that's part of step 2.

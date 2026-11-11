@@ -33,6 +33,9 @@ export async function AppLinks() {
       <Link href="/devices" className="text-muted hover:text-foreground">
         Devices
       </Link>
+      <Link href="/gifs" className="text-muted hover:text-foreground">
+        GIFs
+      </Link>
       <Link href="/settings" className="text-muted hover:text-foreground">
         Settings
       </Link>
