@@ -5,3 +5,9 @@
 .vercel
 .env*
 !.env.example
+
+# Local Node version pin
+/.nvmrc
+
+# KiCad local history snapshots
+hardware/**/.history/
