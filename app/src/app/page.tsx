@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 
-import { SignIn } from "@/components/sign-in";
+import { Landing } from "@/components/landing";
 import { STATUS_META } from "@/components/status-meta";
 import { getPresence } from "@/lib/presence";
 import { nowSeconds, STATUSES, TEXT_MAX } from "@/lib/protocol";
@@ -25,7 +25,7 @@ const DURATIONS = [
 
 async function HomeContent() {
   const user = await getCurrentUser();
-  if (!user) return <SignIn />;
+  if (!user) return <Landing />;
 
   const presence = await getPresence(user.id);
   const now = nowSeconds();

@@ -21,6 +21,11 @@ The device never needs anything to connect *to* it, so it works on guest Wi-Fi t
 3. Calendar rules from the ICS feed, with manual override
 4. Enclosure and monitor clip (OpenSCAD, sent out for printing)
 
+### Later
+
+- **Logo.** Design a proper bzzy logo in the style of the current wordmark: lowercase, black, tight letter spacing (Geist semibold, `tracking-tight`, as in the app's top bar). It should work as an app icon, a favicon, and something small enough to print or engrave on the case.
+- **Landing page images.** The signed-out home page (`app/src/components/landing.tsx`) uses labelled placeholders for the hero photo, the four status shots, the device photos and app screenshots. Swap each for a real image once there's a working device to photograph.
+
 ## Hardware
 
 The target board is the **touch** version. The non-touch board and a plain ESP32 still build, for testing.
