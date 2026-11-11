@@ -2,6 +2,7 @@ import { Suspense } from "react";
 
 import { Landing } from "@/components/landing";
 import { STATUS_META } from "@/components/status-meta";
+import { scheduleForUser } from "@/lib/calendar";
 import { getPresence } from "@/lib/presence";
 import { nowSeconds, STATUSES, TEXT_MAX } from "@/lib/protocol";
 import { getCurrentUser } from "@/lib/session";
@@ -27,8 +28,12 @@ async function HomeContent() {
   const user = await getCurrentUser();
   if (!user) return <Landing />;
 
-  const presence = await getPresence(user.id);
   const now = nowSeconds();
+  const [presence, { schedule }] = await Promise.all([getPresence(user.id), scheduleForUser(user.id, now)]);
+  const current = schedule.find((b) => b.start <= now && now < b.end);
+  const next = schedule.find((b) => b.start > now);
+  const at = (sec: number) =>
+    new Date(sec * 1000).toLocaleTimeString("en-CA", { hour: "numeric", minute: "2-digit", timeZone: "America/Vancouver" });
   const live = presence?.active && (presence.until === 0 || presence.until > now) ? presence : null;
 
   return (
@@ -41,6 +46,12 @@ async function HomeContent() {
             <span className="text-2xl font-semibold">{STATUS_META[live.status].label}</span>
             {live.text && <span className="text-muted">· {live.text}</span>}
           </div>
+        ) : current ? (
+          <div className="mt-2 flex items-center gap-3">
+            <span className={`h-4 w-4 rounded-full ${STATUS_META[current.status].bg}`} />
+            <span className="text-2xl font-semibold">{STATUS_META[current.status].label}</span>
+            {current.text && <span className="text-muted">· {current.text}</span>}
+          </div>
         ) : (
           <p className="mt-2 text-2xl font-semibold">Automatic</p>
         )}
@@ -49,7 +60,11 @@ async function HomeContent() {
             ? live.until
               ? `Until ${new Date(live.until * 1000).toLocaleTimeString("en-CA", { hour: "numeric", minute: "2-digit", timeZone: "America/Vancouver" })}`
               : "Until you change it"
-            : "Following your calendar and each device's default."}
+            : current
+              ? `From your calendar, until ${at(current.end)}`
+              : next
+                ? `Following your calendar. Next: ${STATUS_META[next.status].label.toLowerCase()} at ${at(next.start)}`
+                : "Following your calendar and each device's default."}
         </p>
         {live && (
           <form action={clearStatus} className="mt-4">

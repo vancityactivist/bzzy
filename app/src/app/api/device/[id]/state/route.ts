@@ -1,5 +1,6 @@
 import { after, type NextRequest } from "next/server";
 
+import { refreshCalendar, scheduleForUser } from "@/lib/calendar";
 import { authenticateDevice, markSeen, unauthorized } from "@/lib/device-auth";
 import { getPresence } from "@/lib/presence";
 import { buildState, nowSeconds } from "@/lib/protocol";
@@ -10,10 +11,16 @@ export async function GET(req: NextRequest, ctx: RouteContext<"/api/device/[id]/
   const device = await authenticateDevice(id, req.headers.get("authorization"));
   if (!device) return unauthorized();
 
-  const presence = await getPresence(device.ownerUserId);
-  // Calendar blocks arrive in step 3; until then the schedule is empty.
-  const state = buildState({ now: nowSeconds(), defaultStatus: device.defaultStatus, presence, schedule: [] });
+  const now = nowSeconds();
+  const [presence, { schedule, stale }] = await Promise.all([
+    getPresence(device.ownerUserId),
+    scheduleForUser(device.ownerUserId, now),
+  ]);
+  const state = buildState({ now, defaultStatus: device.defaultStatus, presence, schedule });
 
-  after(() => markSeen(device.id));
+  // Answer from the saved copy right away, then re-read any calendar that's due.
+  after(async () => {
+    await Promise.all([markSeen(device.id), ...stale.map((c) => refreshCalendar(c))]);
+  });
   return Response.json(state, { headers: { "Cache-Control": "no-store" } });
 }

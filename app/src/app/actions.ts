@@ -4,6 +4,7 @@ import { refresh } from "next/cache";
 import { z } from "zod";
 
 import { signIn, signOut } from "@/auth";
+import { addCalendar, deleteCalendar, ownCalendar, refreshCalendar, setShowTitles } from "@/lib/calendar";
 import { canManageDevice, createDevice, deleteDevice, rotateDeviceToken } from "@/lib/devices";
 import { setPresence } from "@/lib/presence";
 import { clipText, nowSeconds, STATUSES } from "@/lib/protocol";
@@ -77,5 +78,47 @@ export async function removeDevice(deviceId: string) {
   const user = await requireUser();
   if (!(await canManageDevice(user.id, deviceId))) return;
   await deleteDevice(deviceId);
+  refresh();
+}
+
+// ---- calendars ----
+
+export type CalendarFormResult = { ok: true } | { ok: false; error: string } | null;
+
+const calendarInput = z.object({
+  name: z.string().trim().min(1, "Give the calendar a name.").max(60),
+  url: z.string().trim().min(1, "Paste the calendar's ICS link.").max(2000),
+});
+
+export async function addCalendarAction(_prev: CalendarFormResult, formData: FormData): Promise<CalendarFormResult> {
+  const user = await requireUser();
+  const input = calendarInput.safeParse({ name: formData.get("name"), url: formData.get("url") });
+  if (!input.success) return { ok: false, error: input.error.issues[0].message };
+  const error = await addCalendar(user.id, input.data.name, input.data.url);
+  if (error) return { ok: false, error };
+  refresh();
+  return { ok: true };
+}
+
+export async function refreshCalendarAction(id: string) {
+  const user = await requireUser();
+  const cal = await ownCalendar(user.id, id);
+  if (cal) await refreshCalendar(cal);
+  refresh();
+}
+
+export async function setCalendarTitlesAction(id: string, showTitles: boolean) {
+  const user = await requireUser();
+  const cal = await ownCalendar(user.id, id);
+  if (!cal) return;
+  await setShowTitles(cal.id, showTitles);
+  refresh();
+}
+
+export async function removeCalendarAction(id: string) {
+  const user = await requireUser();
+  const cal = await ownCalendar(user.id, id);
+  if (!cal) return;
+  await deleteCalendar(cal.id);
   refresh();
 }

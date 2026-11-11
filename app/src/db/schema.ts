@@ -12,6 +12,7 @@ import {
   boolean,
   index,
   integer,
+  jsonb,
   pgEnum,
   pgTable,
   primaryKey,
@@ -20,6 +21,8 @@ import {
   uniqueIndex,
 } from "drizzle-orm/pg-core";
 import type { AdapterAccountType } from "next-auth/adapters";
+
+import type { CachedEvent } from "../lib/ics";
 
 const id = () =>
   text("id")
@@ -191,6 +194,10 @@ export const calendars = pgTable(
     name: text("name").notNull(),
     // The secret ICS URL. Treat like a password: never send it to the browser after saving.
     icsUrl: text("ics_url").notNull(),
+    // Show meeting titles on the device instead of "In a meeting".
+    showTitles: boolean("show_titles").notNull().default(false),
+    // The next week of events from the last good fetch, already expanded.
+    events: jsonb("events").$type<CachedEvent[]>().notNull().default([]),
     lastFetchedAt: timestamp("last_fetched_at", { mode: "date" }),
     lastError: text("last_error"),
     createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),

@@ -27,7 +27,7 @@ Polled every 20 seconds, backing off to 5 minutes while requests keep failing.
 - Times are unix seconds (UTC).
 - `status` is one of `free`, `busy`, `dnd`, `away`.
 - `manual` may be `null`. `until: 0` means "until cleared". Send `active: false` with an `updatedAt` when an override is cleared, so the device can tell old from new.
-- `schedule` should cover roughly the next 24 hours, at most 32 blocks, already expanded from the ICS feed (recurring events resolved, all-day events dropped or mapped as you like). The device does no ICS parsing.
+- `schedule` covers the next 24 hours, at most 32 blocks, already expanded from the ICS feeds (recurring events resolved). The device does no ICS parsing. The app's rules: cancelled and free events are ignored, out of office is `away` (all-day too), other timed events (busy, tentative) are `busy`, other all-day events are ignored. Back-to-back blocks of the same status are joined. `text` is "In a meeting" / "Out of office" unless the person turned on meeting titles for that calendar.
 - `serverTime` is when the response was built. The device treats the schedule as stale after 24 hours without a successful sync.
 
 ## `POST {api}/api/device/{deviceId}/override`
