@@ -64,6 +64,7 @@ constexpr uint32_t kStaleAfterSec = 24 * 3600;  // cached calendar older than th
 constexpr uint32_t kSetupHoldMs = 3000;  // hold the button this long at boot for the Wi-Fi setup page
 constexpr const char* kSetupApName = "bzzy-setup";
 
-constexpr const char* kTimezone = "PST8PDT,M3.2.0,M11.1.0";  // Vancouver
+// BC moved to year-round UTC-7 in 2026, so no daylight-saving rule. (POSIX TZ signs are reversed.)
+constexpr const char* kTimezone = "<-07>7";  // Vancouver
 constexpr const char* kNtpServer = "pool.ntp.org";
 }  // namespace cfg

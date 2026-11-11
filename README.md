@@ -18,7 +18,7 @@ The device never needs anything to connect *to* it, so it works on guest Wi-Fi t
 
 1. Parts and breadboard prototype
 2. **Companion app** ([app/](app/)): sign-in, teams, status buttons, device API ← in progress. GIF uploads next.
-3. Calendar rules from the ICS feed, with manual override
+3. **Calendar** from an ICS link (Settings → Calendars): meetings make you Busy, out of office makes you Away, manual status still wins
 4. Enclosure and monitor clip (OpenSCAD, sent out for printing)
 
 ### Later
