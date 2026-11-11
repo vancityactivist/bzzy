@@ -1,0 +1,78 @@
+// Pure status logic: no Arduino dependencies, so it runs in native unit tests.
+//
+// Decides what the light should show right now from three sources, in priority order:
+//   1. A manual override (from the button on the device, or the companion app).
+//   2. A calendar block that covers "now" (cached from the companion app).
+//   3. The default status.
+// When the cached data is too old to trust, the fallback status replaces 2 and 3.
+#pragma once
+
+#include <stdint.h>
+#include <stddef.h>
+
+namespace bzzy {
+
+enum class Status : uint8_t {
+  Free = 0,
+  Busy,
+  Dnd,
+  Away,
+  Unknown,  // shown when we can't trust what we know (stale data, no clock)
+};
+
+const char* statusName(Status s);
+// Returns false if the name is not recognised; `out` is left unchanged.
+bool parseStatus(const char* name, Status& out);
+
+constexpr size_t kTextMax = 48;
+constexpr size_t kMaxBlocks = 32;
+
+struct Override {
+  bool active = false;
+  Status status = Status::Free;
+  char text[kTextMax] = {0};
+  uint32_t until = 0;      // unix seconds; 0 = until cleared
+  uint32_t updatedAt = 0;  // unix seconds; newer override wins when merging
+  bool local = false;      // set from the device button (not yet reported to the app)
+};
+
+struct Block {
+  uint32_t start = 0;
+  uint32_t end = 0;
+  Status status = Status::Busy;
+  char text[kTextMax] = {0};
+};
+
+struct State {
+  Override manual;
+  Block blocks[kMaxBlocks];
+  size_t blockCount = 0;
+  Status defaultStatus = Status::Free;
+  uint32_t lastSync = 0;  // unix seconds of last successful sync; 0 = never
+};
+
+struct Settings {
+  uint32_t staleAfterSec = 24 * 3600;
+  Status fallback = Status::Unknown;
+};
+
+enum class Source : uint8_t { Manual, Calendar, Default, Fallback };
+
+struct Resolved {
+  Status status;
+  Source source;
+  const char* text;  // points into State, or "" when there is none
+  uint32_t until;    // when this result is expected to change; 0 = unknown
+};
+
+// `now` is unix seconds, or 0 if the clock is not set yet.
+Resolved resolve(const State& st, uint32_t now, const Settings& cfg = Settings());
+
+// Replace the cached server data with a fresh copy, keeping a local button
+// override if it is newer than the server's manual override.
+void mergeFromServer(State& cached, const State& fromServer, uint32_t now);
+
+// Button press: Free -> Busy -> Dnd -> back to automatic (override cleared).
+void cycleLocalOverride(State& st, uint32_t now);
+
+}  // namespace bzzy
