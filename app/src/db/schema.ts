@@ -30,6 +30,9 @@ const id = () =>
 // Auth.js
 // ---------------------------------------------------------------------------
 
+// Site-wide role, separate from team roles. "admin" can open /admin.
+export const userRole = pgEnum("user_role", ["user", "admin"]);
+
 export const users = pgTable("user", {
   id: id(),
   name: text("name"),
@@ -37,6 +40,8 @@ export const users = pgTable("user", {
   emailVerified: timestamp("emailVerified", { mode: "date" }),
   image: text("image"),
   timezone: text("timezone").notNull().default("America/Vancouver"),
+  role: userRole("role").notNull().default("user"),
+  createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
 });
 
 export const accounts = pgTable(
