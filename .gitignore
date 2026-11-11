@@ -2,3 +2,6 @@
 .vscode/
 *.bin
 .DS_Store
+.vercel
+.env*
+!.env.example
