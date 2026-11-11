@@ -51,12 +51,45 @@ static void saveCacheIfChanged() {
   g_savedHash = h;
 }
 
-// ---- button ----
+// ---- buttons ----
 static bool buttonDown() { return digitalRead(PIN_BUTTON) == LOW; }
 
+#ifdef PIN_TOP_BUTTON
+static bool topButtonDown() { return digitalRead(PIN_TOP_BUTTON) == LOW; }
+#else
+static bool topButtonDown() { return false; }
+#endif
+
+enum class Press { None, Short, Long };
+
+// The top button works like the screen: a short press steps the status, holding it
+// for a second goes back to automatic. A short press fires on release, so a long
+// press doesn't also step the status.
+static Press topButtonPoll() {
+  static bool last = false;
+  static uint32_t changedAt = 0;
+  static bool longFired = false;
+  const uint32_t ms = millis();
+  const bool now = topButtonDown();
+  if (now != last && ms - changedAt > 30) {
+    last = now;
+    changedAt = ms;
+    if (now) {
+      longFired = false;
+    } else if (!longFired) {
+      return Press::Short;
+    }
+  } else if (now && last && !longFired && ms - changedAt >= cfg::kLongPressMs) {
+    longFired = true;
+    return Press::Long;
+  }
+  return Press::None;
+}
+
+// Either button held while powering up opens the Wi-Fi setup page.
 static bool heldAtBoot() {
   uint32_t start = millis();
-  while (buttonDown()) {
+  while (buttonDown() || topButtonDown()) {
     if (millis() - start >= cfg::kSetupHoldMs) return true;
     delay(10);
   }
@@ -79,6 +112,9 @@ static bool buttonPressed() {
 void setup() {
   Serial.begin(115200);
   pinMode(PIN_BUTTON, INPUT_PULLUP);
+#ifdef PIN_TOP_BUTTON
+  pinMode(PIN_TOP_BUTTON, INPUT_PULLUP);
+#endif
   g_engineCfg.staleAfterSec = cfg::kStaleAfterSec;
   g_engineCfg.fallback = bzzy::Status::Unknown;
 
@@ -109,10 +145,12 @@ void loop() {
     display::invalidate();
   }
 
-  // Button press or screen tap: next status. Long press on the screen: back to automatic.
+  // Button press or screen tap: next status. Long press on the screen or the top
+  // button: back to automatic.
   const touch::Gesture g = touch::poll();
-  const bool next = buttonPressed() || g == touch::Gesture::Tap;
-  const bool toAuto = g == touch::Gesture::LongPress;
+  const Press top = topButtonPoll();
+  const bool next = buttonPressed() || g == touch::Gesture::Tap || top == Press::Short;
+  const bool toAuto = g == touch::Gesture::LongPress || top == Press::Long;
   if (next || toAuto) {
     if (toAuto) {
       bzzy::clearLocalOverride(g_state, net::now());
