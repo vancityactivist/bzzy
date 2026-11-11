@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { signOutAction } from "@/app/actions";
+import { isAdmin } from "@/lib/admin";
 import { getCurrentUser } from "@/lib/session";
 
 export async function UserMenu() {
@@ -35,6 +36,11 @@ export async function AppLinks() {
       <Link href="/settings" className="text-muted hover:text-foreground">
         Settings
       </Link>
+      {(await isAdmin(user.id)) && (
+        <Link href="/admin" className="text-muted hover:text-foreground">
+          Admin
+        </Link>
+      )}
     </>
   );
 }
