@@ -59,9 +59,9 @@ pio test -e native                               # status logic unit tests, no h
 pio device monitor
 ```
 
-**First boot / changing Wi-Fi:** with nothing saved, or if you hold the BOOT button for 3 seconds while plugging in, the device opens a Wi-Fi network called `bzzy-setup`. Join it from your phone, pick your Wi-Fi, and fill in the companion app URL, device ID and token.
+**First boot / changing Wi-Fi:** with nothing saved, or if you hold the BOOT button (or the top button on the final hardware) for 3 seconds while plugging in, the device opens a Wi-Fi network called `bzzy-setup`. Join it from your phone, pick your Wi-Fi, and fill in the companion app URL, device ID and token.
 
-**Controls:** tap the screen (or press BOOT) to step Free → Busy → Do not disturb → back to automatic. Long-press the screen for one second to go straight back to automatic (calendar or default).
+**Controls:** tap the screen (or press BOOT, or the top button on the final hardware) to step Free → Busy → Do not disturb → back to automatic. Long-press the screen or the top button for one second to go straight back to automatic (calendar or default).
 
 **GIFs:** pick one per status on the app's Devices page (built-in or your own uploads from the GIFs page). The device downloads a GIF when it changes and keeps it in flash, so it still plays offline. Choosing "No GIF" shows a coloured card with large text.
 

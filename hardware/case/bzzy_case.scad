@@ -40,6 +40,8 @@ BUTTON_D = 2.2;      // pinhole for the BOOT button (hold at power-up for Wi-Fi 
 BUTTON_X = -8.0;     // ESTIMATE: set from your board
 BUTTON_Z = -3.5;
 
+TOP_BTN_Z = 0.8;     // height of the top button's plunger above the ring board (Alps SKRT: about 0.8)
+
 MONITOR_T = 14;      // thickness of your monitor's top edge
 CLIP_DROP = 22;      // how far the clip reaches down the back of the monitor
 FRONT_LIP = 3;       // small hook down the front of the monitor
@@ -85,6 +87,7 @@ module waveshare() {
 
 // ---------------------------------------------------------------- parts
 // Translucent front frame: front face + side skirt down past the ring board's edge.
+// The top wall has a flexure tab over the top button: press the top of the device.
 module diffuser() {
   difference() {
     union() {
@@ -97,7 +100,34 @@ module diffuser() {
     }
     translate([0, SCREEN_DY, GLASS_Z - 1]) linear_extrude(FRONT_T + 2) rrect(SCREEN_W, SCREEN_H, SCREEN_R);
     for (h = holes) translate([h[0], h[1], -1]) cylinder(d = SCREW_D, h = GLASS_Z);
+    top_button_cut();
   }
+  top_button_nub();
+}
+
+// Flexure over the top button: a tab in the top wall, hinged on its left end,
+// thinned so a finger can flex it, with a nub that rests on the switch plunger.
+TAB_X0 = TOP_BUTTON_X - 6;    // hinge
+TAB_X1 = TOP_BUTTON_X + 3;    // free end
+TAB_Z0 = -0.3;
+TAB_Z1 = 2.9;
+TAB_SLOT = 0.6;
+TAB_T = 1.2;
+
+module top_button_cut() {
+  y_in = OUT_H / 2 - WALL;
+  difference() {
+    translate([TAB_X0, y_in - 1, TAB_Z0 - TAB_SLOT]) cube([TAB_X1 - TAB_X0 + TAB_SLOT, WALL + 2, TAB_Z1 - TAB_Z0 + 2 * TAB_SLOT]);
+    translate([TAB_X0 - 1, y_in - 2, TAB_Z0]) cube([TAB_X1 - TAB_X0 + 1, WALL + 4, TAB_Z1 - TAB_Z0]);
+  }
+  // thin the tab from the outside
+  translate([TAB_X0 + 1, OUT_H / 2 - (WALL - TAB_T), TAB_Z0]) cube([TAB_X1 - TAB_X0 - 1, 1, TAB_Z1 - TAB_Z0]);
+}
+
+module top_button_nub() {
+  y_in = OUT_H / 2 - WALL;
+  gap = 0.1;   // between the nub and the plunger at rest
+  translate([TOP_BUTTON_X - 1, RING_H / 2 + gap, TOP_BTN_Z - 0.8]) cube([2, y_in - RING_H / 2 - gap + 0.01, 1.6]);
 }
 
 // Opaque sleeve between the LEDs and the screen. Stands on the ring board's inner

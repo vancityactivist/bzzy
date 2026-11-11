@@ -18,6 +18,7 @@
 #define PIN_TOUCH_RST 13
 #define PIN_BUTTON 0     // BOOT button
 #define PIN_LED_DATA 17  // free pins on this board: 2, 3, 17, 18 (3 is a strapping pin)
+#define PIN_TOP_BUTTON 18  // LED ring board's top button (hardware/, rev B): to GND, internal pull-up
 #define BZZY_HAS_RTC 1
 #define BZZY_HAS_TOUCH 1
 #elif defined(BZZY_BOARD_WAVESHARE_S3_LCD169)
@@ -63,7 +64,8 @@ constexpr uint32_t kMaxGifBytes = 700 * 1024;  // the app sends at most 600 KB
 
 constexpr uint32_t kStaleAfterSec = 24 * 3600;  // cached calendar older than this isn't trusted
 
-constexpr uint32_t kSetupHoldMs = 3000;  // hold the button this long at boot for the Wi-Fi setup page
+constexpr uint32_t kLongPressMs = 1000;  // top button: hold this long to go back to automatic
+constexpr uint32_t kSetupHoldMs = 3000;  // hold a button this long at boot for the Wi-Fi setup page
 constexpr const char* kSetupApName = "bzzy-setup";
 
 // BC moved to year-round UTC-7 in 2026, so no daylight-saving rule. (POSIX TZ signs are reversed.)
