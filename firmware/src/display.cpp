@@ -253,6 +253,9 @@ void tick(uint32_t nowMs) {
   g_nextFrameMs = nowMs + (delayMs > 0 ? delayMs : 50);
 }
 
+void releaseGif() { closeGif(); }
+void invalidate() { g_drawn = false; }
+
 }  // namespace display
 
 #else
@@ -261,6 +264,8 @@ namespace display {
 void begin() {}
 void show(const View&) {}
 void tick(uint32_t) {}
+void releaseGif() {}
+void invalidate() {}
 }  // namespace display
 
 #endif

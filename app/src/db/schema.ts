@@ -216,12 +216,17 @@ export const assets = pgTable(
     name: text("name").notNull(),
     blobUrl: text("blob_url").notNull(),
     bytes: integer("bytes").notNull(),
+    // First 16 hex chars of the processed file's SHA-256. Devices compare it to
+    // decide whether to download again.
+    sha: text("sha").notNull().default(""),
     createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
   },
   (t) => [index("asset_team_idx").on(t.teamId)],
 );
 
-// Which GIF a device plays for each status.
+// Which GIF a device plays for each status. No row: the built-in default for that
+// status. A row with an upload or a built-in id: that GIF. A row with neither: no GIF
+// (the plain colour card).
 export const deviceAssets = pgTable(
   "device_asset",
   {
@@ -229,9 +234,8 @@ export const deviceAssets = pgTable(
       .notNull()
       .references(() => devices.id, { onDelete: "cascade" }),
     status: statusKind("status").notNull(),
-    assetId: text("asset_id")
-      .notNull()
-      .references(() => assets.id, { onDelete: "cascade" }),
+    assetId: text("asset_id").references(() => assets.id, { onDelete: "cascade" }),
+    builtin: text("builtin"),
   },
   (t) => [uniqueIndex("device_asset_unique").on(t.deviceId, t.status)],
 );

@@ -11,6 +11,7 @@ import { ensurePersonalTeam, roleInTeam, teamsForUser } from "./teams";
 export type DeviceSummary = {
   id: string;
   name: string;
+  teamId: string;
   teamName: string;
   ownerUserId: string;
   defaultStatus: Status;
@@ -32,6 +33,7 @@ export async function devicesForUser(userId: string): Promise<DeviceSummary[]> {
     return {
       id: d.id,
       name: d.name,
+      teamId: d.teamId,
       teamName: team.name,
       ownerUserId: d.ownerUserId,
       defaultStatus: d.defaultStatus,
@@ -67,4 +69,9 @@ export async function rotateDeviceToken(deviceId: string) {
 
 export async function deleteDevice(deviceId: string) {
   await db().delete(schema.devices).where(eq(schema.devices.id, deviceId));
+}
+
+export async function deviceTeam(deviceId: string): Promise<string | null> {
+  const rows = await db().select({ teamId: schema.devices.teamId }).from(schema.devices).where(eq(schema.devices.id, deviceId)).limit(1);
+  return rows[0]?.teamId ?? null;
 }

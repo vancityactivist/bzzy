@@ -20,7 +20,13 @@ Polled every 20 seconds, backing off to 5 minutes while requests keep failing.
   },
   "schedule": [
     { "start": 1762898400, "end": 1762902000, "status": "busy", "text": "Council meeting" }
-  ]
+  ],
+  "gifs": {
+    "free": { "url": "https://bzzy.vercel.app/gifs/free-ripple.gif", "sha": "d89fee3c49a4aeb2" },
+    "busy": { "url": "https://bzzy.vercel.app/api/device/bz-ab12cd/gif/6f1c…", "sha": "0c4e9a7b1f2d3e4a" },
+    "dnd": null,
+    "away": { "url": "https://bzzy.vercel.app/gifs/away-orbit.gif", "sha": "5b8e…" }
+  }
 }
 ```
 
@@ -28,6 +34,7 @@ Polled every 20 seconds, backing off to 5 minutes while requests keep failing.
 - `status` is one of `free`, `busy`, `dnd`, `away`.
 - `manual` may be `null`. `until: 0` means "until cleared". Send `active: false` with an `updatedAt` when an override is cleared, so the device can tell old from new.
 - `schedule` covers the next 24 hours, at most 32 blocks, already expanded from the ICS feeds (recurring events resolved). The device does no ICS parsing. The app's rules: cancelled and free events are ignored, out of office is `away` (all-day too), other timed events (busy, tentative) are `busy`, other all-day events are ignored. Back-to-back blocks of the same status are joined. `text` is "In a meeting" / "Out of office" unless the person turned on meeting titles for that calendar.
+- `gifs` maps each status to `{ "url": "...", "sha": "..." }`, or `null` for no GIF (the plain colour card). The device downloads a GIF only when its `sha` changes, to `/gif/<status>.tmp`, then swaps it in. URLs on the app itself need the device's bearer token; the device never sends the token anywhere else. Built-in GIFs are static files; uploaded ones come from `GET {api}/api/device/{deviceId}/gif/{assetId}`. Responses without `gifs` (older apps) leave the device's GIFs alone.
 - `serverTime` is when the response was built. The device treats the schedule as stale after 24 hours without a successful sync.
 
 ## `POST {api}/api/device/{deviceId}/override`

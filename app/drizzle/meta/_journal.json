@@ -22,6 +22,13 @@
       "when": 1794434262265,
       "tag": "0002_calendar_cache",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1794434543563,
+      "tag": "0003_gifs",
+      "breakpoints": true
     }
   ]
 }

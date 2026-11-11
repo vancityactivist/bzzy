@@ -19,12 +19,18 @@ export type Presence = {
 
 export type Block = { start: number; end: number; status: Status; text: string };
 
+// Where the device downloads the GIF for each status, and a hash so it only
+// downloads when the GIF changes. null: no GIF, show the colour card.
+export type GifRef = { url: string; sha: string };
+export type GifMap = Record<Status, GifRef | null>;
+
 export type StateResponse = {
   v: 1;
   serverTime: number;
   defaultStatus: Status;
   manual: Presence | null;
   schedule: Block[];
+  gifs?: GifMap;
 };
 
 export const overrideBody = z.object({
@@ -53,6 +59,7 @@ export function buildState(opts: {
   defaultStatus: Status;
   presence: Presence | null;
   schedule: Block[];
+  gifs?: GifMap;
 }): StateResponse {
   const { now, defaultStatus, presence } = opts;
 
@@ -68,7 +75,9 @@ export function buildState(opts: {
     .slice(0, MAX_BLOCKS)
     .map((b) => ({ ...b, text: clipText(b.text) }));
 
-  return { v: 1, serverTime: now, defaultStatus, manual, schedule };
+  const state: StateResponse = { v: 1, serverTime: now, defaultStatus, manual, schedule };
+  if (opts.gifs) state.gifs = opts.gifs;
+  return state;
 }
 
 // Decide whether a button press from the device replaces what we have.

@@ -102,6 +102,13 @@ void loop() {
     saveCacheIfChanged();
   }
 
+  // A new GIF finished downloading: close the one on screen, swap files, redraw.
+  if (net::gifsReady()) {
+    display::releaseGif();
+    net::installGifs();
+    display::invalidate();
+  }
+
   // Button press or screen tap: next status. Long press on the screen: back to automatic.
   const touch::Gesture g = touch::poll();
   const bool next = buttonPressed() || g == touch::Gesture::Tap;

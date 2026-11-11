@@ -1,0 +1,42 @@
+[
+  {
+    "id": "free-ripple",
+    "name": "Ripple",
+    "status": "free",
+    "path": "/gifs/free-ripple.gif",
+    "sha": "d89fee3c49a4aeb2",
+    "bytes": 90496
+  },
+  {
+    "id": "busy-pulse",
+    "name": "Pulse",
+    "status": "busy",
+    "path": "/gifs/busy-pulse.gif",
+    "sha": "a6f056efe0d090e7",
+    "bytes": 36978
+  },
+  {
+    "id": "dnd-sign",
+    "name": "No entry",
+    "status": "dnd",
+    "path": "/gifs/dnd-sign.gif",
+    "sha": "237cf4ccbd4d9819",
+    "bytes": 32179
+  },
+  {
+    "id": "away-orbit",
+    "name": "Orbit",
+    "status": "away",
+    "path": "/gifs/away-orbit.gif",
+    "sha": "9ecd122d1fd1f18c",
+    "bytes": 12438
+  },
+  {
+    "id": "any-dots",
+    "name": "Dots",
+    "status": null,
+    "path": "/gifs/any-dots.gif",
+    "sha": "af8b29d511a4dd06",
+    "bytes": 12366
+  }
+]

@@ -19,5 +19,7 @@ struct View {
 void begin();
 void show(const View& v);  // redraws only when something changed
 void tick(uint32_t nowMs); // advances GIF frames
+void releaseGif();         // close the GIF file so it can be replaced
+void invalidate();         // redraw on the next show(), reopening the GIF
 
 }  // namespace display
