@@ -7,3 +7,4 @@ led-ring/fp-info-cache
 led-ring/*.dsn
 led-ring/*.ses
 led-ring/_autosave-*
+led-ring/fab/gerbers.zip
