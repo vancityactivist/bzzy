@@ -3,22 +3,24 @@
 import { signIn } from "next-auth/webauthn";
 import { useState } from "react";
 
+import { KeyIcon } from "./icons";
+import { Button } from "./ui";
+
 export function PasskeySignIn() {
   return (
-    <button
-      onClick={() => signIn("passkey", { redirectTo: "/" })}
-      className="rounded-md border border-line px-4 py-2 text-sm font-medium hover:bg-background"
-    >
+    <Button type="button" className="w-full" onClick={() => signIn("passkey", { redirectTo: "/" })}>
+      <KeyIcon />
       Use a passkey
-    </button>
+    </Button>
   );
 }
 
 export function AddPasskey() {
   const [state, setState] = useState<"idle" | "busy" | "done" | "error">("idle");
   return (
-    <div className="flex items-center gap-3">
-      <button
+    <div className="flex flex-wrap items-center gap-3">
+      <Button
+        variant="primary"
         disabled={state === "busy"}
         onClick={async () => {
           setState("busy");
@@ -29,12 +31,12 @@ export function AddPasskey() {
             setState("error");
           }
         }}
-        className="rounded-md bg-foreground px-4 py-2 text-sm font-medium text-background disabled:opacity-50"
       >
-        Add a passkey
-      </button>
-      {state === "done" && <span className="text-sm text-free">Passkey added.</span>}
-      {state === "error" && <span className="text-sm text-busy">That didn&apos;t work. Try again?</span>}
+        <KeyIcon />
+        {state === "busy" ? "Waiting for your device…" : "Add a passkey"}
+      </Button>
+      {state === "done" && <span className="text-sm" role="status">Passkey added.</span>}
+      {state === "error" && <span className="text-sm text-danger" role="alert">That didn&apos;t work. Try again?</span>}
     </div>
   );
 }

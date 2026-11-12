@@ -2,6 +2,7 @@ import { Suspense } from "react";
 
 import { Landing } from "@/components/landing";
 import { STATUS_META } from "@/components/status-meta";
+import { Button, Card, CardHeader, Container, StatusDot } from "@/components/ui";
 import { refreshStaleCalendars, scheduleForUser } from "@/lib/calendar";
 import { devicesForUser } from "@/lib/devices";
 import { BUILTIN_GIFS, defaultPreviewSrcs, gifsForUser, previewSrc, resolveDeviceGifs } from "@/lib/gifs";
@@ -13,6 +14,7 @@ import { getShow } from "@/lib/show";
 
 import { clearStatus } from "./actions";
 import {
+  type ActiveStatus,
   type LibraryGif,
   type LiveShow,
   type PreviewDevice,
@@ -24,7 +26,8 @@ import {
 
 export default function Home() {
   return (
-    <Suspense fallback={<p className="text-muted">Loading…</p>}>
+    // Signed-out visitors get this fallback too, so it stays blank rather than app-shaped.
+    <Suspense fallback={<div className="min-h-[70vh]" aria-busy="true" />}>
       <HomeContent />
     </Suspense>
   );
@@ -66,8 +69,8 @@ async function HomeContent() {
       : null;
   const current = schedule.find((b) => b.start <= now && now < b.end);
   const next = schedule.find((b) => b.start > now);
-  const at = (sec: number) =>
-    new Date(sec * 1000).toLocaleTimeString("en-CA", { hour: "numeric", minute: "2-digit", timeZone: "America/Vancouver" });
+  // "3:30 PM", the way the screen writes it (screen.ts untilLabel: fixed UTC-7).
+  const at = (sec: number) => new Date(sec * 1000).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone: "Etc/GMT+7" });
   // Lights that show this person's status (team devices can belong to others).
   const mine = devices.filter((d) => d.ownerUserId === user.id);
   const previews: PreviewDevice[] =
@@ -92,68 +95,71 @@ async function HomeContent() {
           },
         ];
   const live = presence?.active && (presence.until === 0 || presence.until > now) ? presence : null;
+  const active: ActiveStatus | null = live
+    ? { status: live.status, source: "manual" }
+    : current
+      ? { status: current.status, source: "calendar" }
+      : null;
 
+  const shown = live ?? current ?? null;
   const summary = (
-    <div className="text-center">
-      {live ? (
-        <div className="flex items-center justify-center gap-2">
-          <span className={`h-3 w-3 rounded-full ${STATUS_META[live.status].bg}`} />
-          <span className="font-semibold">{STATUS_META[live.status].label}</span>
-          {live.text && <span className="text-muted">· {live.text}</span>}
-        </div>
-      ) : current ? (
-        <div className="flex items-center justify-center gap-2">
-          <span className={`h-3 w-3 rounded-full ${STATUS_META[current.status].bg}`} />
-          <span className="font-semibold">{STATUS_META[current.status].label}</span>
-          {current.text && <span className="text-muted">· {current.text}</span>}
-        </div>
+    <div className="min-w-0">
+      {shown ? (
+        <p className="flex min-w-0 items-center gap-2">
+          <StatusDot status={shown.status} size="lg" />
+          <span className="min-w-0 truncate">
+            <span className="font-semibold">{STATUS_META[shown.status].label}</span>
+            {shown.text && <span className="text-muted"> · {shown.text}</span>}
+          </span>
+        </p>
       ) : (
-        <p className="font-semibold">Automatic</p>
+        <p className="flex items-center gap-2">
+          <span aria-hidden className="size-3 shrink-0 rounded-full border-2 border-line-strong" />
+          <span className="font-semibold">Automatic</span>
+        </p>
       )}
-      <p className="mt-1 text-sm text-muted">
-        {live
-          ? live.until
-            ? `Until ${at(live.until)}`
-            : "Until you change it"
-          : current
-            ? `From your calendar, until ${at(current.end)}`
-            : next
-              ? `Following your calendar. Next: ${STATUS_META[next.status].label.toLowerCase()} at ${at(next.start)}`
-              : "Following your calendar and each device's default."}
-      </p>
-      {live && (
-        <form action={clearStatus} className="mt-3">
-          <button className="rounded-md border border-line px-3 py-1.5 text-sm hover:bg-background">Back to automatic</button>
-        </form>
-      )}
+      <div className="mt-1 flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+        <p className="text-xs text-muted lg:text-sm">
+          {live
+            ? `Set by you · ${live.until ? `until ${at(live.until)}` : "until you change it"}`
+            : current
+              ? `From your calendar · until ${at(current.end)}`
+              : next
+                ? `Following your calendar · ${STATUS_META[next.status].label.toLowerCase()} at ${at(next.start)}`
+                : "Following your calendar and each light's default"}
+        </p>
+        {live && (
+          <form action={clearStatus}>
+            <Button size="sm">Back to automatic</Button>
+          </form>
+        )}
+      </div>
     </div>
   );
 
   return (
-    <StudioProvider library={library} live={liveShow}>
-      <div className="grid gap-8 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:items-start">
-        <section className="sticky top-0 z-10 -mx-4 -mt-8 flex flex-col items-center gap-4 border-b border-line bg-background/90 px-4 py-2 backdrop-blur lg:top-6 lg:mx-0 lg:mt-0 lg:rounded-xl lg:border lg:bg-card lg:p-6 lg:backdrop-blur-none">
-          <StudioPreview devices={previews} />
-          <div className="hidden w-full border-t border-line pt-4 lg:block">{summary}</div>
-        </section>
-
-        <div className="space-y-8">
-          <div className="rounded-xl border border-line bg-card p-4 lg:hidden">{summary}</div>
-          <section className="rounded-xl border border-line bg-card p-6">
-            <h2 className="font-semibold">Show something</h2>
-            <p className="mb-4 mt-1 text-sm text-muted">
-              Put a GIF or a message on your screen right now. Your status light stays the same colour, and pressing the button on the light
-              takes it down.
-            </p>
-            <ShowNowControls />
-          </section>
-          <section className="rounded-xl border border-line bg-card p-6">
-            <h2 className="font-semibold">Set your status</h2>
-            <p className="mb-4 mt-1 text-sm text-muted">Overrides your calendar until it runs out or you go back to automatic.</p>
-            <StatusControls />
-          </section>
+    <Container className="max-lg:pt-0">
+      <StudioProvider library={library} live={liveShow}>
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:items-start lg:gap-8">
+          <StudioPreview devices={previews} example={mine.length === 0} summary={summary} />
+          <div className="space-y-6">
+            <Card>
+              <CardHeader
+                title="Set your status"
+                description="Tap one to set it. It overrides your calendar until it runs out or you go back to automatic."
+              />
+              <StatusControls active={active} className="mt-5" />
+            </Card>
+            <Card>
+              <CardHeader
+                title="Show something"
+                description="Put a GIF or a message on your screen right now. The light keeps your status colour, and a press of its button takes it down."
+              />
+              <ShowNowControls className="mt-5" />
+            </Card>
+          </div>
         </div>
-      </div>
-    </StudioProvider>
+      </StudioProvider>
+    </Container>
   );
 }
