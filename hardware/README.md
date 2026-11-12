@@ -47,8 +47,8 @@ Files are in [led-ring/](led-ring/). Open `bzzy-led-ring.kicad_pro` in KiCad 7 o
 | Data | GPIO17 (3.3 V), then a 74AHCT1G125 buffer to 5 V logic, then 33 Ω to the first LED. A 100 kΩ pull-down keeps the LEDs dark while the ESP32 boots |
 | Power | 5 V from the Waveshare board's 5V pad. A 0.8 mm power ring on the back, a 100 nF cap per LED, and 2 × 10 µF bulk caps. Firmware caps the LEDs at 400 mA |
 | Connection | J1 is three plated holes at the bottom (5V, IO17, GND, labelled on the back). J2 is one pad on the back at the top (IO18). Solder four short wires to the Waveshare board's 5V, GND, GPIO17 and GPIO18 pads |
-| Top button | SW1, an Alps SKRT side-push switch on the top edge, with its plunger pointing up. You press it through a black button cap in the case's top wall. It shorts GPIO18 to GND, and the firmware turns on the internal pull-up |
-| Mounting | 4 × M2 holes in the corners. The screws go through the case's back plate and the ring board into the light ring |
+| Top button | SW1, an Alps SKRT side-push switch on the top edge, with its plunger pointing up. You press it through a flexing tab in the case's top wall. It shorts GPIO18 to GND, and the firmware turns on the internal pull-up |
+| Mounting | 4 × M2 holes in the corners. The screws go through the shell and the ring board into the diffuser |
 | Assembly | Every part is on the front, so JLCPCB assembles one side only. You hand-solder the J1 and J2 wires |
 
 ![schematic](img/schematic.svg)
@@ -146,7 +146,7 @@ Waveshare only publishes the board's outline as a drawing, which I couldn't read
 1. **The Waveshare board's width, height and total thickness** (`WS_W`, `WS_H`, `WS_T` in `gen_led_ring.py`). The cutout and case follow from these. I used 33.0 × 41.5 × 9.5 mm.
 2. **Where the screen sits**: the visible area's size, and whether it's centred on the board (`SCREEN_*`, `SCREEN_DY` in the case).
 3. **The glass height**: when the Waveshare board sits in the ring's cutout, how far its glass stands proud of the ring board's front face (`GLASS_Z`).
-4. **USB-C and BOOT button positions** (`USB_*`, `BOOT_*`). I assumed the USB-C socket is on the bottom edge, in the middle. Also check that the USB-C plug's moulding can pass behind the ring board's bottom edge to reach the socket. If it can't, the ring board needs a notch there.
+4. **USB-C and BOOT button positions** (`USB_*`, `BOOT_*`). I assumed the USB-C socket is on the bottom edge, in the middle. The rev C ring board has a 14 mm notch at the bottom middle for the plug. Check that your cable's plug moulding (12 × 6.5 mm assumed) fits through it.
 5. **Your monitor's top edge thickness** (`MONITOR_T`).
 
 Then print the frame, light ring and back once in cheap PLA to check the fit before ordering boards.

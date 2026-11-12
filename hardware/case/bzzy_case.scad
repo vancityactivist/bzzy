@@ -105,6 +105,8 @@ RAIL_Y = -OUT_H / 2 + 5 + RAIL_L / 2;
 BORDER_X = (LIGHT_W - SLV_W) / 2;            // visible width of the frosted border
 BORDER_Y = (LIGHT_H - SLV_H) / 2;
 holes = [for (h = RING_HOLES) [h[0], -h[1]]];   // KiCad y is down; OpenSCAD y is up
+NOTCH = is_undef(NOTCH_W) ? 0 : NOTCH_W;        // rev C board: open at the bottom for the USB-C plug
+POST_D = is_undef(HOLE_KEEPOUT_R) ? BOSS_D + 1 : min(BOSS_D + 1, 2 * HOLE_KEEPOUT_R);  // back posts sit on bare board
 
 $fn = 48;
 
@@ -137,10 +139,20 @@ module ring_pcb() {
   color("#1b1b1b") difference() {
     rbox(RING_W, RING_H, RING_R, -PCB_T, 0);
     rbox(CUT_W, CUT_H, CUT_R, -PCB_T - 1, 1);
+    if (NOTCH > 0) translate([-NOTCH / 2, -RING_H / 2 - 1, -PCB_T - 1]) cube([NOTCH, RING_H / 2, PCB_T + 2]);
     for (h = holes) translate([h[0], h[1], -5]) cylinder(d = 2.2, h = 10);
   }
   for (l = RING_LEDS) color("white") translate([l[0], -l[1], 0.4]) cube([2, 2, 0.8], center = true);
   color("silver") translate([TOP_BUTTON_X, RING_H / 2 - 1.5, 0.7]) cube([3.5, 3, 1.4], center = true);
+}
+
+// USB-C plug in the Waveshare socket, for checking clearances: metal shell plus
+// a USB_W x USB_H overmould from 6.5 mm out from the board edge to past the case.
+module usb_plug() {
+  y_edge = -WS_H / 2;
+  translate([USB_X, y_edge - 3.3, USB_Z]) cube([8.3, 6.6, 2.5], center = true);
+  translate([USB_X - USB_W / 2 + 0.3, -OUT_H / 2 - CHIN_H - 10, USB_Z - USB_H / 2 + 0.3])
+    cube([USB_W - 0.6, (y_edge - 6.5) + OUT_H / 2 + CHIN_H + 10, USB_H - 0.6]);
 }
 
 module waveshare() {
@@ -239,7 +251,7 @@ module back() {
         rbox(IN_W - 2 * SLIDE, IN_H - 2 * SLIDE, IN_R - SLIDE, SEAM_Z - 0.01, SEAM_Z + 1.5);
         rbox(IN_W - 2 * SLIDE - 2 * lip, IN_H - 2 * SLIDE - 2 * lip, IN_R - SLIDE - lip, SEAM_Z - 1, SEAM_Z + 2);
       }
-      for (h = holes) translate([h[0], h[1], SEAM_Z - 0.01]) cylinder(d = BOSS_D + 1, h = -PCB_T - SEAM_Z);
+      for (h = holes) translate([h[0], h[1], SEAM_Z - 0.01]) cylinder(d = POST_D, h = -PCB_T - SEAM_Z);
       // dovetail rail for the clip, down the back
       translate([0, RAIL_Y, SHELL_Z]) rotate([90, 0, 0]) linear_extrude(RAIL_L, center = true) dovetail(14, 3);
     }
