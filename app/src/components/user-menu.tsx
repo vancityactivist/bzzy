@@ -1,49 +1,39 @@
 import Link from "next/link";
 
-import { signOutAction } from "@/app/actions";
 import { isAdmin } from "@/lib/admin";
 import { getCurrentUser } from "@/lib/session";
 
-export async function UserMenu() {
+import { AccountMenu } from "./account-menu";
+import { NavLinks, TabBar } from "./site-nav";
+import { buttonClass } from "./ui";
+
+// The request-time parts of the app shell. Each reads the session, so the layout renders
+// them inside <Suspense>.
+
+// Header, right of the wordmark. Signed in: section pills (sm and up) and the account menu.
+// Signed out: just a Sign in button.
+export async function HeaderNav() {
   const user = await getCurrentUser();
   if (!user) {
     return (
-      <Link href="/#sign-in" className="rounded-md border border-line px-2 py-1 hover:bg-card">
+      <Link href="/#sign-in" className={buttonClass("secondary", "sm", "ml-auto")}>
         Sign in
       </Link>
     );
   }
+  const admin = await isAdmin(user.id);
   return (
-    <form action={signOutAction} className="flex items-center gap-3">
-      <span className="text-muted">{user.name}</span>
-      <button className="rounded-md border border-line px-2 py-1 hover:bg-card">Sign out</button>
-    </form>
+    <>
+      <NavLinks className="hidden sm:flex" />
+      <div className="ml-auto">
+        <AccountMenu name={user.name} image={user.image} admin={admin} />
+      </div>
+    </>
   );
 }
 
-// The app's own pages, shown only when signed in. Signed out, the nav is just the wordmark.
-export async function AppLinks() {
+// The phone tab bar, signed in only.
+export async function MobileNav() {
   const user = await getCurrentUser();
-  if (!user) return null;
-  return (
-    <>
-      <Link href="/" className="text-muted hover:text-foreground">
-        Status
-      </Link>
-      <Link href="/devices" className="text-muted hover:text-foreground">
-        Devices
-      </Link>
-      <Link href="/gifs" className="text-muted hover:text-foreground">
-        GIFs
-      </Link>
-      <Link href="/settings" className="text-muted hover:text-foreground">
-        Settings
-      </Link>
-      {(await isAdmin(user.id)) && (
-        <Link href="/admin" className="text-muted hover:text-foreground">
-          Admin
-        </Link>
-      )}
-    </>
-  );
+  return user ? <TabBar /> : null;
 }

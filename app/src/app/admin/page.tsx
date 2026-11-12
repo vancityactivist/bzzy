@@ -1,18 +1,21 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 
+import { Container } from "@/components/ui";
 import { adminOverview, requireAdmin } from "@/lib/admin";
 import { countSince, signupsByDay } from "@/lib/admin-stats";
 
-export const metadata: Metadata = { title: "Admin · bzzy", robots: { index: false } };
+export const metadata: Metadata = { title: "Admin", robots: { index: false } };
 
 const TZ = "America/Vancouver";
 
 export default function AdminPage() {
   return (
-    <Suspense fallback={<p className="text-muted">Loading…</p>}>
-      <AdminContent />
-    </Suspense>
+    <Container size="narrow">
+      <Suspense fallback={<p className="text-muted">Loading…</p>}>
+        <AdminContent />
+      </Suspense>
+    </Container>
   );
 }
 

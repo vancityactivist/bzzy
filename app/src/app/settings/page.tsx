@@ -1,8 +1,10 @@
+import type { Metadata } from "next";
 import { Suspense } from "react";
 
 import { AddPasskey } from "@/components/passkey-buttons";
 import { SignIn } from "@/components/sign-in";
 import { STATUS_META } from "@/components/status-meta";
+import { Container } from "@/components/ui";
 import { calendarsForUser, refreshStaleCalendars } from "@/lib/calendar";
 import { blocksForDevice } from "@/lib/ics";
 import { nowSeconds } from "@/lib/protocol";
@@ -11,11 +13,15 @@ import { teamsForUser } from "@/lib/teams";
 
 import { AddCalendarForm, CalendarActions } from "./calendar-forms";
 
+export const metadata: Metadata = { title: "Settings" };
+
 export default function SettingsPage() {
   return (
-    <Suspense fallback={<p className="text-muted">Loading…</p>}>
-      <SettingsContent />
-    </Suspense>
+    <Container size="narrow">
+      <Suspense fallback={<p className="text-muted">Loading…</p>}>
+        <SettingsContent />
+      </Suspense>
+    </Container>
   );
 }
 

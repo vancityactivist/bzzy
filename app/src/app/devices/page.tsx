@@ -1,6 +1,8 @@
+import type { Metadata } from "next";
 import { Suspense } from "react";
 
 import { SignIn } from "@/components/sign-in";
+import { Container } from "@/components/ui";
 import { devicesForUser } from "@/lib/devices";
 import { BUILTIN_GIFS, DEFAULT_BUILTIN, deviceGifChoices, gifsForUser } from "@/lib/gifs";
 import { STATUSES, type Status } from "@/lib/protocol";
@@ -9,11 +11,15 @@ import { getCurrentUser } from "@/lib/session";
 import { AddDeviceForm, DeviceActions } from "./device-forms";
 import { DeviceScreens, type GifOption } from "./device-screens";
 
+export const metadata: Metadata = { title: "Devices" };
+
 export default function DevicesPage() {
   return (
-    <Suspense fallback={<p className="text-muted">Loading…</p>}>
-      <DevicesContent />
-    </Suspense>
+    <Container size="narrow">
+      <Suspense fallback={<p className="text-muted">Loading…</p>}>
+        <DevicesContent />
+      </Suspense>
+    </Container>
   );
 }
 

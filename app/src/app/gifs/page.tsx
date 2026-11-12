@@ -2,18 +2,21 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 
 import { SignIn } from "@/components/sign-in";
+import { Container } from "@/components/ui";
 import { BUILTIN_GIFS, gifsForUser } from "@/lib/gifs";
 import { getCurrentUser } from "@/lib/session";
 
 import { DeleteGifButton, GifLinkForm, UploadGifForm } from "./gif-forms";
 
-export const metadata: Metadata = { title: "GIFs · bzzy" };
+export const metadata: Metadata = { title: "GIFs" };
 
 export default function GifsPage() {
   return (
-    <Suspense fallback={<p className="text-muted">Loading…</p>}>
-      <GifsContent />
-    </Suspense>
+    <Container size="narrow">
+      <Suspense fallback={<p className="text-muted">Loading…</p>}>
+        <GifsContent />
+      </Suspense>
+    </Container>
   );
 }
 

@@ -2,6 +2,7 @@ import { Suspense } from "react";
 
 import { Landing } from "@/components/landing";
 import { STATUS_META } from "@/components/status-meta";
+import { Container } from "@/components/ui";
 import { refreshStaleCalendars, scheduleForUser } from "@/lib/calendar";
 import { devicesForUser } from "@/lib/devices";
 import { BUILTIN_GIFS, defaultPreviewSrcs, gifsForUser, previewSrc, resolveDeviceGifs } from "@/lib/gifs";
@@ -24,7 +25,13 @@ import {
 
 export default function Home() {
   return (
-    <Suspense fallback={<p className="text-muted">Loading…</p>}>
+    <Suspense
+      fallback={
+        <Container>
+          <p className="text-muted">Loading…</p>
+        </Container>
+      }
+    >
       <HomeContent />
     </Suspense>
   );
@@ -32,7 +39,10 @@ export default function Home() {
 
 async function HomeContent() {
   const user = await getCurrentUser();
-  if (!user) return <Landing />;
+  if (!user)
+    return (
+      <Landing />
+    );
 
   const now = nowSeconds();
   await refreshStaleCalendars(user.id);
@@ -130,30 +140,32 @@ async function HomeContent() {
   );
 
   return (
-    <StudioProvider library={library} live={liveShow}>
-      <div className="grid gap-8 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:items-start">
-        <section className="sticky top-0 z-10 -mx-4 -mt-8 flex flex-col items-center gap-4 border-b border-line bg-background/90 px-4 py-2 backdrop-blur lg:top-6 lg:mx-0 lg:mt-0 lg:rounded-xl lg:border lg:bg-card lg:p-6 lg:backdrop-blur-none">
-          <StudioPreview devices={previews} />
-          <div className="hidden w-full border-t border-line pt-4 lg:block">{summary}</div>
-        </section>
+    <Container>
+      <StudioProvider library={library} live={liveShow}>
+        <div className="grid gap-8 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:items-start">
+          <section className="sticky top-14 z-10 -mx-4 -mt-8 flex sm:-mx-6 sm:px-6 flex-col items-center gap-4 border-b border-line bg-background/90 px-4 py-2 backdrop-blur lg:top-20 lg:mx-0 lg:mt-0 lg:rounded-xl lg:border lg:bg-card lg:p-6 lg:backdrop-blur-none">
+            <StudioPreview devices={previews} />
+            <div className="hidden w-full border-t border-line pt-4 lg:block">{summary}</div>
+          </section>
 
-        <div className="space-y-8">
-          <div className="rounded-xl border border-line bg-card p-4 lg:hidden">{summary}</div>
-          <section className="rounded-xl border border-line bg-card p-6">
-            <h2 className="font-semibold">Show something</h2>
-            <p className="mb-4 mt-1 text-sm text-muted">
-              Put a GIF or a message on your screen right now. Your status light stays the same colour, and pressing the button on the light
-              takes it down.
-            </p>
-            <ShowNowControls />
-          </section>
-          <section className="rounded-xl border border-line bg-card p-6">
-            <h2 className="font-semibold">Set your status</h2>
-            <p className="mb-4 mt-1 text-sm text-muted">Overrides your calendar until it runs out or you go back to automatic.</p>
-            <StatusControls />
-          </section>
+          <div className="space-y-8">
+            <div className="rounded-xl border border-line bg-card p-4 lg:hidden">{summary}</div>
+            <section className="rounded-xl border border-line bg-card p-6">
+              <h2 className="font-semibold">Show something</h2>
+              <p className="mb-4 mt-1 text-sm text-muted">
+                Put a GIF or a message on your screen right now. Your status light stays the same colour, and pressing the button on the light
+                takes it down.
+              </p>
+              <ShowNowControls />
+            </section>
+            <section className="rounded-xl border border-line bg-card p-6">
+              <h2 className="font-semibold">Set your status</h2>
+              <p className="mb-4 mt-1 text-sm text-muted">Overrides your calendar until it runs out or you go back to automatic.</p>
+              <StatusControls />
+            </section>
+          </div>
         </div>
-      </div>
-    </StudioProvider>
+      </StudioProvider>
+    </Container>
   );
 }
