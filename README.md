@@ -96,7 +96,7 @@ pio device monitor
 
 **Controls:** tap the screen (or press BOOT, or the top button on the final hardware) to step Free → Busy → Do not disturb → back to automatic. Long-press the screen or the top button for one second to go straight back to automatic (calendar or default).
 
-**Updates:** after the first USB flash, lights update themselves over Wi-Fi from GitHub Releases: push a tag like `fw-v0.3.0`. Updates are signed, wait until you're free or away, and roll back if the new firmware can't reach the app. See [docs/ota.md](docs/ota.md) for the one-time setup (a signing key and a read-only GitHub token).
+**Updates:** after the first USB flash, lights update themselves over Wi-Fi from GitHub Releases: push a tag like `fw-v0.3.0`. Updates are signed, wait until you're free or away, and roll back if the new firmware can't reach the app. See [docs/ota.md](docs/ota.md) for the one-time setup (a signing key).
 
 **GIFs:** pick one per status on the app's Devices page (built-in or your own uploads from the GIFs page). The device downloads a GIF when it changes and keeps it in flash, so it still plays offline. Choosing "No GIF" shows a coloured card with large text.
 
