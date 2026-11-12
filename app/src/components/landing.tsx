@@ -11,7 +11,16 @@ import { viewFor } from "@/lib/screen";
 import { DevicePreview } from "./device-preview";
 import { GithubIcon, type IconProps, UsersIcon, WifiOffIcon } from "./icons";
 import { LandingHeroDevice } from "./landing-hero";
-import { ArrowRightIcon, MessageIcon, PlugIcon, WifiOutIcon, WrenchIcon } from "./landing-icons";
+import {
+  ArrowRightIcon,
+  BoxIcon,
+  ChipIcon,
+  DownloadIcon,
+  MessageIcon,
+  PlugIcon,
+  WifiOutIcon,
+  WrenchIcon,
+} from "./landing-icons";
 import { CalendarSketch, StatusPickerSketch, TapSketch } from "./landing-illustrations";
 import { SignIn } from "./sign-in";
 import { Badge, buttonClass, Card, Container, cx, StatusDot } from "./ui";
@@ -20,6 +29,8 @@ import { Badge, buttonClass, Card, Container, cx, StatusDot } from "./ui";
 // drawing made from the app's own pieces, apart from one concept picture (see DevicePhoto).
 
 const REPO = "https://github.com/vancityactivist/bzzy";
+const HARDWARE = `${REPO}/tree/main/hardware`;
+const ORDERING = `${REPO}/tree/main/hardware#ordering-from-jlcpcb`;
 
 const STATUS_USE: Record<Status, string> = {
   free: "Come over. Questions welcome.",
@@ -74,7 +85,7 @@ const FEATURES: { title: string; body: string; icon: ComponentType<IconProps> }[
   },
   {
     title: "Build your own",
-    body: "Open firmware for a Waveshare ESP32-S3 touch board and a ring of WS2812 LEDs. Parts list on GitHub.",
+    body: "Open design files for the circuit board and case, and open firmware. Order the board, print the case, flash it.",
     icon: WrenchIcon,
   },
 ];
@@ -82,7 +93,7 @@ const FEATURES: { title: string; body: string; icon: ComponentType<IconProps> }[
 const SPECS: { term: string; detail: string }[] = [
   { term: "Screen", detail: '1.69", 240 × 280' },
   { term: "Board", detail: "ESP32-S3 touch" },
-  { term: "Light", detail: "WS2812 LED ring" },
+  { term: "Light", detail: "16 LEDs, custom board" },
   { term: "Power", detail: "USB" },
 ];
 
@@ -116,7 +127,7 @@ export function Landing() {
               <a href="#sign-in" className={buttonClass("primary", "md", "px-5")}>
                 Sign in
               </a>
-              <a href={REPO} className={buttonClass("secondary", "md", "px-5")}>
+              <a href="#get-one" className={buttonClass("secondary", "md", "px-5")}>
                 <GithubIcon />
                 Build one
               </a>
@@ -185,7 +196,8 @@ export function Landing() {
         <Container padded={false}>
           <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-end">
             <SectionHeading id="device-title" eyebrow="The device" title="Small, bright, and yours.">
-              A touch screen and a ring of LEDs that clips to the top of your monitor. Build it from off-the-shelf parts.
+              A touch screen framed by a ring of LEDs on bzzy&apos;s own circuit board. It clips to the top of your monitor, and
+              the design files are open, so you can make one yourself.
             </SectionHeading>
             <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-line bg-line">
               {SPECS.map((spec) => (
@@ -198,6 +210,8 @@ export function Landing() {
           </div>
 
           <DevicePhoto />
+
+          <GetOne />
 
           <ul className="mt-10 grid gap-px overflow-hidden rounded-2xl border border-line bg-line shadow-card sm:grid-cols-2 lg:grid-cols-3">
             {FEATURES.map(({ title, body, icon: Icon }) => (
@@ -220,10 +234,10 @@ export function Landing() {
             <SignIn bare />
           </div>
           <a
-            href={REPO}
+            href="#get-one"
             className="group mt-6 inline-flex items-center gap-1.5 rounded-md text-sm text-muted transition-colors hover:text-foreground"
           >
-            No light yet? Build one from the parts list
+            No light yet? Make one from the design files
             <ArrowRightIcon className="size-4 transition-transform group-hover:translate-x-0.5" />
           </a>
         </Container>
@@ -240,6 +254,73 @@ export function Landing() {
           </a>
         </Container>
       </footer>
+    </div>
+  );
+}
+
+const GET_ONE: {
+  title: string;
+  body: string;
+  icon: ComponentType<IconProps>;
+  link?: { href: string; label: string };
+  later?: boolean;
+}[] = [
+  {
+    title: "Download the files",
+    body: "The circuit board (KiCad and Gerbers), the parts list and the 3D-printable case. All open source.",
+    icon: DownloadIcon,
+    link: { href: HARDWARE, label: "Design files" },
+  },
+  {
+    title: "Order the board, print the case",
+    body: "Upload the files to a board maker like JLCPCB and they'll build and assemble it. Print the case at home or through a print service.",
+    icon: ChipIcon,
+    link: { href: ORDERING, label: "How to order" },
+  },
+  {
+    title: "Or get one ready-made",
+    body: "Pre-built lights, assembled and tested, are on the way. No soldering iron needed.",
+    icon: BoxIcon,
+    later: true,
+  },
+];
+
+// How to get a light: make one from the open files today, or buy one built later.
+function GetOne() {
+  return (
+    <div id="get-one" className="mt-16 scroll-mt-24">
+      <h3 className="text-xl font-semibold tracking-tight">Get a bzzy</h3>
+      <p className="mt-1 max-w-xl text-pretty text-muted">Make your own from the open files today. Pre-built lights come later.</p>
+      <ol className="mt-6 grid gap-4 lg:grid-cols-3">
+        {GET_ONE.map(({ title, body, icon: Icon, link, later }) => (
+          <li key={title}>
+            <div
+              className={cx(
+                "flex h-full flex-col rounded-2xl border p-5 sm:p-6",
+                later ? "border-dashed border-line bg-subtle/40" : "border-line bg-card shadow-card",
+              )}
+            >
+              <div className="flex items-center justify-between gap-3">
+                <span className="flex size-10 items-center justify-center rounded-xl border border-line bg-subtle text-foreground">
+                  <Icon className="size-5" />
+                </span>
+                {later && <Badge>Coming later</Badge>}
+              </div>
+              <h4 className="mt-4 font-semibold tracking-tight">{title}</h4>
+              <p className="mt-1 flex-1 text-sm text-pretty text-muted">{body}</p>
+              {link && (
+                <a
+                  href={link.href}
+                  className="group mt-4 inline-flex items-center gap-1.5 self-start rounded-md text-sm font-medium transition-colors hover:text-muted"
+                >
+                  {link.label}
+                  <ArrowRightIcon className="size-4 transition-transform group-hover:translate-x-0.5" />
+                </a>
+              )}
+            </div>
+          </li>
+        ))}
+      </ol>
     </div>
   );
 }
