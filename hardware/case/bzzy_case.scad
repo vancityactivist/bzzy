@@ -65,7 +65,7 @@ BTN_PLAY = 0.5;      // the cap can float this far outwards. The switch only tra
 
 LOGO_SIZE = 5.5;     // wordmark letter size
 LOGO_DEPTH = 0.6;    // deboss depth
-LOGO_FONT = "Geist:style=SemiBold";   // the app's wordmark font, in fonts/
+LOGO_FONT = "Geist:style=SemiBold";   // the app's wordmark font; render.sh fetches it into fonts/
 CHIN = 9;            // extra black below the border, only when LOGO = "chin"
 
 MONITOR_T = 14;      // thickness of your monitor's top edge

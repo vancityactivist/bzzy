@@ -8,3 +8,4 @@ led-ring/*.dsn
 led-ring/*.ses
 led-ring/_autosave-*
 led-ring/fab/gerbers.zip
+case/fonts/

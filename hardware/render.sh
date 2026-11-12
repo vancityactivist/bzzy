@@ -28,6 +28,15 @@ rm -f led-ring/fab/gerbers.zip
 (cd "$G" && zip -q -r - .) > led-ring/fab/gerbers.zip
 rm -rf "$G"
 
+# The wordmark font (Geist SemiBold, SIL OFL), fetched from npm, not committed.
+if [ ! -f case/fonts/Geist-SemiBold.ttf ]; then
+  F=$(mktemp -d)
+  (cd "$F" && npm pack -q geist@1.3.1 >/dev/null && tar xzf geist-1.3.1.tgz)
+  mkdir -p case/fonts
+  cp "$F/package/dist/fonts/geist-sans/Geist-SemiBold.ttf" "$F/package/LICENSE.TXT" case/fonts/
+  rm -rf "$F"
+fi
+
 SCAD="openscad"
 command -v xvfb-run >/dev/null && [ -z "${DISPLAY:-}" ] && SCAD="xvfb-run -a openscad"
 for view in "noclip:75,0,-28:front:" "noclip:80,0,-12:busy:#ff3b30" "noclip:40,0,-25:top:" \
