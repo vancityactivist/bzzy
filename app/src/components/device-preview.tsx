@@ -47,12 +47,14 @@ function Line({ y, pt, bold, children }: { y: number; pt: number; bold?: boolean
 export function DevicePreview({
   view,
   gifSrc,
+  gifFit = false,
   scale = 1,
   className = "",
   ring,
 }: {
   view: ScreenView;
   gifSrc: string | null; // the status's GIF, or the show-now GIF for "show-gif"; null: no GIF
+  gifFit?: boolean; // scale the GIF to fit, as an import would (for GIFs not already sized for the screen)
   scale?: number;
   className?: string;
   // A flash on the ring (a team push), instead of the steady status colour.
@@ -125,7 +127,7 @@ export function DevicePreview({
                 {/* The firmware draws each frame at its own size, centred in the area (or from
                     the top-left corner when it's bigger, which auto margins also do). */}
                 {/* eslint-disable-next-line @next/next/no-img-element -- animated GIF at native size */}
-                <img src={gif} alt="" className="m-auto max-w-none shrink-0" />
+                <img src={gif} alt="" className={gifFit ? "size-full object-contain" : "m-auto max-w-none shrink-0"} />
               </div>
             )}
             <svg className="absolute left-0 top-0" width={SCREEN_W} height={SCREEN_H} viewBox={`0 0 ${SCREEN_W} ${SCREEN_H}`} aria-hidden>

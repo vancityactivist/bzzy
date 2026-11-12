@@ -58,11 +58,13 @@ const STEPS: { title: string; body: ReactNode; art: (gifs: Record<Status, string
   },
 ];
 
-// The GIF section: three screens, each a real preview with a built-in GIF.
+// The GIF section: three screens, each a real preview with a popular GIPHY GIF, loaded
+// from GIPHY (their terms don't allow keeping copies) and credited under the screens.
+const giphy = (id: string) => `https://media.giphy.com/media/${id}/200w.gif`;
 const GIF_SCREENS: { status: Status; gif: string; text: string; show: boolean; caption: string }[] = [
-  { status: "free", gif: "/gifs/free-ripple.gif", text: "", show: false, caption: "A GIF for each status" },
-  { status: "busy", gif: "/gifs/any-dots.gif", text: "Back in 5", show: true, caption: "Show now, with a message" },
-  { status: "away", gif: "/gifs/away-orbit.gif", text: "Out to lunch", show: false, caption: "A GIF and your status line" },
+  { status: "free", gif: giphy("tXL4FHPSnVJ0A"), text: "", show: false, caption: "A GIF for each status" },
+  { status: "busy", gif: giphy("pHZ8BDWQhJrvLmL29M"), text: "Back in 5", show: true, caption: "Show now, with a message" },
+  { status: "away", gif: giphy("NEvPzZ8bd1V4Y"), text: "Out to lunch", show: false, caption: "A GIF and your status line" },
 ];
 
 const GIF_POINTS: { title: string; body: string }[] = [
@@ -243,12 +245,18 @@ export function Landing() {
                 return (
                   <li key={g.caption} className="flex flex-col items-center text-center">
                     <div className="max-sm:[zoom:0.62]">
-                      <DevicePreview view={g.show ? withShow(base, { text: g.text, until: 0, gif: true }) : base} gifSrc={g.gif} scale={0.6} className="m-4" />
+                      <DevicePreview view={g.show ? withShow(base, { text: g.text, until: 0, gif: true }) : base} gifSrc={g.gif} gifFit scale={0.6} className="m-4" />
                     </div>
                     <p className="mt-1 text-xs text-pretty text-muted sm:text-sm">{g.caption}</p>
                   </li>
                 );
               })}
+              <li className="col-span-3 text-center text-xs text-muted">
+                GIFs from{" "}
+                <a href="https://giphy.com" className="underline underline-offset-2 hover:text-foreground">
+                  GIPHY
+                </a>
+              </li>
             </ul>
           </div>
         </Container>
