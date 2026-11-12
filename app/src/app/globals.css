@@ -37,3 +37,14 @@ body {
   color: var(--foreground);
   font-family: var(--font-sans), system-ui, sans-serif;
 }
+
+/* The LEDs' slow "I don't know right now" breathe (firmware/src/leds.cpp: beatsin8(12, 40, 255)). */
+@keyframes bzzy-breathe {
+  0%,
+  100% {
+    opacity: 0.16;
+  }
+  50% {
+    opacity: 1;
+  }
+}
