@@ -14,6 +14,7 @@ import {
   rotateDeviceToken,
   setAutoUpdate,
 } from "@/lib/devices";
+import { setSuperadmin } from "@/lib/admin";
 import { GifError } from "@/lib/gif-process";
 import { checkGifChoice, deleteGif, importGifFromLink, setDeviceGif, uploadGif } from "@/lib/gifs";
 import { PasskeyError, renamePasskey, revokePasskey } from "@/lib/passkeys";
@@ -24,6 +25,12 @@ import { clearShow, setShow } from "@/lib/show";
 
 export async function signInWithGitHub() {
   await signIn("github", { redirectTo: "/" });
+}
+
+// From an invite page: come back to it after GitHub.
+export async function signInWithGitHubToInvite(token: string) {
+  if (!/^[a-z0-9]{16,64}$/.test(token)) return;
+  await signIn("github", { redirectTo: `/join/${token}` });
 }
 
 export async function signOutAction() {
@@ -310,5 +317,13 @@ export async function setDeviceGifAction(deviceId: string, status: string, choic
   const teamId = await deviceTeam(deviceId);
   if (!teamId) return;
   await setDeviceGif(deviceId, teamId, s.data, choice);
+  refresh();
+}
+
+// ---- superadmin ----
+
+export async function setSuperadminAction(userId: string, on: boolean) {
+  const user = await requireUser();
+  await setSuperadmin(user.id, userId, on);
   refresh();
 }

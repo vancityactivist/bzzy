@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ComponentType } from "react";
 
-import { DeviceIcon, type IconProps, ImageIcon, SlidersIcon, StatusIcon } from "./icons";
+import { DeviceIcon, type IconProps, ImageIcon, SlidersIcon, StatusIcon, UsersIcon } from "./icons";
 import { cx } from "./ui";
 
 // The signed-in app's sections: pills in the header from sm up, a bottom tab bar on phones.
@@ -13,6 +13,7 @@ const SECTIONS: { href: string; label: string; icon: ComponentType<IconProps> }[
   { href: "/", label: "Status", icon: StatusIcon },
   { href: "/devices", label: "Devices", icon: DeviceIcon },
   { href: "/gifs", label: "GIFs", icon: ImageIcon },
+  { href: "/teams", label: "Team", icon: UsersIcon },
   { href: "/settings", label: "Settings", icon: SlidersIcon },
 ];
 
@@ -54,7 +55,7 @@ export function TabBar() {
         aria-label="Main"
         className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-background/80 pb-[env(safe-area-inset-bottom)] backdrop-blur-lg backdrop-saturate-150 sm:hidden"
       >
-        <ul className="mx-auto grid h-16 max-w-md grid-cols-4">
+        <ul className="mx-auto grid h-16 max-w-md grid-cols-5">
           {SECTIONS.map(({ href, label, icon: Icon }) => {
             const active = isActive(pathname, href);
             return (

@@ -10,10 +10,12 @@ import { releaseForPage } from "@/lib/firmware-release";
 import { BUILTIN_GIFS, DEFAULT_BUILTIN, deviceGifChoices, gifsForUser } from "@/lib/gifs";
 import { nowSeconds, STATUSES, type Status } from "@/lib/protocol";
 import { getCurrentUser } from "@/lib/session";
+import { sharedTeamsForUser } from "@/lib/teams";
 
 import { DeviceFirmware } from "./device-firmware";
 import { AddDeviceForm, DeviceActions } from "./device-forms";
 import { DeviceScreens, type GifOption } from "./device-screens";
+import { PushTeamSelect } from "./push-team-select";
 import { absoluteTime, relativeTime } from "./relative-time";
 
 export const metadata: Metadata = { title: "Devices" };
@@ -39,7 +41,12 @@ async function DevicesContent() {
   const user = await getCurrentUser();
   if (!user) return <SignIn />;
   const now = new Date();
-  const [devices, uploads, release] = await Promise.all([devicesForUser(user.id), gifsForUser(user.id), releaseForPage()]);
+  const [devices, uploads, release, sharedTeams] = await Promise.all([
+    devicesForUser(user.id),
+    gifsForUser(user.id),
+    releaseForPage(),
+    sharedTeamsForUser(user.id),
+  ]);
   const choices = await Promise.all(devices.map((d) => (d.canManage ? deviceGifChoices(d.id) : null)));
   const builtinOptions: GifOption[] = BUILTIN_GIFS.map((g) => ({ value: `builtin:${g.id}`, label: `Built in: ${g.name}`, src: g.path }));
   const defaults = Object.fromEntries(
@@ -78,6 +85,13 @@ async function DevicesContent() {
                   autoUpdate={d.firmware.autoUpdate}
                   canManage={d.canManage}
                 />
+                {d.ownerUserId === user.id && sharedTeams.length > 0 && (
+                  <PushTeamSelect
+                    deviceId={d.id}
+                    value={d.pushTeamId}
+                    teams={sharedTeams.map((t) => ({ id: t.id, name: t.name }))}
+                  />
+                )}
                 {choices[i] && (
                   <DeviceScreens
                     deviceId={d.id}

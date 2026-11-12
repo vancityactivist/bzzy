@@ -1,11 +1,14 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { Suspense } from "react";
 
 import { Badge, Card, CardHeader, Container, PageHeader } from "@/components/ui";
 import { adminOverview, requireAdmin } from "@/lib/admin";
+import { allSharedTeams } from "@/lib/teams";
 import { countSince, signupsByDay } from "@/lib/admin-stats";
 
 import { absoluteTime, relativeTime, shortDate } from "../devices/relative-time";
+import { SuperadminToggle } from "./superadmin-toggle";
 
 export const metadata: Metadata = { title: "Admin", robots: { index: false } };
 
@@ -56,8 +59,8 @@ const TH = "px-3 py-2.5 text-xs font-medium tracking-wide whitespace-nowrap text
 const TD = "px-3 py-3 first:pl-5 last:pr-5 sm:first:pl-6 sm:last:pr-6";
 
 async function AdminContent() {
-  await requireAdmin();
-  const { users, devices, sharedTeams } = await adminOverview();
+  const me = await requireAdmin();
+  const [{ users, devices, sharedTeams }, teams] = await Promise.all([adminOverview(), allSharedTeams()]);
   const now = new Date();
   const created = users.map((u) => u.createdAt);
   const days = signupsByDay(created, now, 30, TZ);
@@ -129,7 +132,12 @@ async function AdminContent() {
                       </div>
                     </div>
                   </td>
-                  <td className={TD}>{u.role === "admin" ? <Badge tone="inverse">Admin</Badge> : <Badge>User</Badge>}</td>
+                  <td className={TD}>
+                    <div className="flex items-center gap-2">
+                      {u.role === "admin" ? <Badge tone="inverse">Superadmin</Badge> : <Badge>User</Badge>}
+                      {u.id !== me.id && <SuperadminToggle userId={u.id} name={u.name ?? u.email ?? "this person"} on={u.role === "admin"} />}
+                    </div>
+                  </td>
                   <td className={`${TD} whitespace-nowrap`}>
                     {u.providers.filter((p) => p !== "passkey").join(", ") || "—"}
                     {u.passkeys > 0 && <span className="text-muted">{` + ${u.passkeys} passkey${u.passkeys > 1 ? "s" : ""}`}</span>}
@@ -148,6 +156,42 @@ async function AdminContent() {
             </tbody>
           </table>
         </div>
+      </Card>
+
+      <Card padding="none" className="overflow-hidden">
+        <CardHeader title="Teams" description={`${teams.length} shared ${teams.length === 1 ? "team" : "teams"}. You can open and manage any of them.`} className="p-5 pb-3 sm:p-6 sm:pb-3" />
+        {teams.length === 0 ? (
+          <p className="px-5 pb-5 text-sm text-muted sm:px-6 sm:pb-6">No shared teams yet.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[32rem] text-left text-sm">
+              <thead>
+                <tr className="border-y border-line bg-subtle/60">
+                  <th className={TH}>Team</th>
+                  <th className={TH}>People</th>
+                  <th className={TH}>Lights following</th>
+                  <th className={TH}>Made</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-line">
+                {teams.map((t) => (
+                  <tr key={t.id}>
+                    <td className={`${TD} font-medium`}>
+                      <Link href={`/teams/${t.id}`} className="hover:underline">
+                        {t.name}
+                      </Link>
+                    </td>
+                    <td className={`${TD} tabular-nums`}>{t.members}</td>
+                    <td className={`${TD} tabular-nums`}>{t.devices}</td>
+                    <td className={`${TD} whitespace-nowrap`} title={absoluteTime(t.createdAt)}>
+                      {shortDate(t.createdAt)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </Card>
 
       <Card padding="none" className="overflow-hidden">

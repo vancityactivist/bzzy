@@ -12,6 +12,29 @@ static void copyText(char* dst, const char* src) {
   strlcpy(dst, src, kTextMax);
 }
 
+// {"pattern","color","speed","for"}. Anything missing or unknown makes it unset (solid),
+// so a newer app's pattern this firmware doesn't know is shown steady rather than wrong.
+static LedStyle parseStyle(JsonObjectConst o) {
+  LedStyle st;
+  if (o.isNull() || !parsePattern(o["pattern"] | "", st.pattern)) return st;
+  st.set = true;
+  st.hasColor = parseColor(o["color"] | "", st.color);
+  st.speed = o["speed"] | 2;
+  st.forSec = o["for"] | 0;
+  return st;
+}
+
+static void writeStyle(JsonObject o, const LedStyle& st) {
+  o["pattern"] = patternName(st.pattern);
+  if (st.hasColor) {
+    char hex[8];
+    snprintf(hex, sizeof(hex), "#%06lx", static_cast<unsigned long>(st.color & 0xFFFFFF));
+    o["color"] = hex;
+  }
+  o["speed"] = st.speed;
+  if (st.forSec) o["for"] = st.forSec;
+}
+
 bool parseState(const char* json, size_t len, State& out) {
   JsonDocument doc;
   if (deserializeJson(doc, json, len)) return false;
@@ -54,6 +77,15 @@ bool parseState(const char* json, size_t len, State& out) {
     st.blockCount++;
   }
 
+  JsonObjectConst styles = doc["ledStyles"];
+  for (size_t i = 0; i < 4; ++i) st.ledStyles[i] = parseStyle(styles[statusName(static_cast<Status>(i))]);
+
+  JsonObjectConst mw = doc["meetingWarn"];
+  if (!mw.isNull()) {
+    st.meetingWarn.minutes = mw["minutes"] | 0;
+    st.meetingWarn.leds = parseStyle(mw["leds"]);
+  }
+
   out = st;
   return true;
 }
@@ -87,6 +119,15 @@ String serializeState(const State& st) {
     b["end"] = st.blocks[i].end;
     b["status"] = statusName(st.blocks[i].status);
     b["text"] = st.blocks[i].text;
+  }
+  JsonObject styles = doc["ledStyles"].to<JsonObject>();
+  for (size_t i = 0; i < 4; ++i) {
+    if (st.ledStyles[i].set) writeStyle(styles[statusName(static_cast<Status>(i))].to<JsonObject>(), st.ledStyles[i]);
+  }
+  if (st.meetingWarn.minutes && st.meetingWarn.leds.set) {
+    JsonObject mw = doc["meetingWarn"].to<JsonObject>();
+    mw["minutes"] = st.meetingWarn.minutes;
+    writeStyle(mw["leds"].to<JsonObject>(), st.meetingWarn.leds);
   }
   String out;
   serializeJson(doc, out);

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { Suspense } from "react";
 
 import { CalendarIcon, KeyIcon, UsersIcon } from "@/components/icons";
@@ -168,14 +169,23 @@ async function SettingsContent() {
           }
         />
         <ul className="mt-3 divide-y divide-line text-sm">
-          {teams.map((t) => (
-            <li key={t.id} className="flex items-center justify-between gap-3 py-2.5 first:pt-0 last:pb-0">
-              <span className="min-w-0 truncate font-medium">{t.name}</span>
-              <Badge>{t.personal ? "personal" : t.role}</Badge>
-            </li>
-          ))}
+          {teams
+            .filter((t) => !t.personal)
+            .map((t) => (
+              <li key={t.id} className="flex items-center justify-between gap-3 py-2.5 first:pt-0 last:pb-0">
+                <Link href={`/teams/${t.id}`} className="min-w-0 truncate font-medium hover:underline">
+                  {t.name}
+                </Link>
+                <Badge>{t.role}</Badge>
+              </li>
+            ))}
         </ul>
-        <p className="mt-4 text-sm text-muted">Shared teams for an office come later.</p>
+        <p className="mt-4 text-sm text-muted">
+          {teams.some((t) => !t.personal) ? "" : "You're not in a shared team yet. "}
+          <Link href="/teams" className="underline">
+            Make or manage teams
+          </Link>
+        </p>
       </Card>
     </div>
   );

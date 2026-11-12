@@ -10,6 +10,8 @@
 #include <stdint.h>
 #include <stddef.h>
 
+#include "led_pattern.h"
+
 namespace bzzy {
 
 enum class Status : uint8_t {
@@ -61,6 +63,9 @@ struct State {
   size_t blockCount = 0;
   Status defaultStatus = Status::Free;
   uint32_t lastSync = 0;  // unix seconds of last successful sync; 0 = never
+  // How the ring animates for each status (Free, Busy, Dnd, Away). Unset = solid.
+  LedStyle ledStyles[4];
+  MeetingWarn meetingWarn;
 };
 
 struct Settings {
@@ -84,6 +89,17 @@ Resolved resolve(const State& st, uint32_t now, const Settings& cfg = Settings()
 // changed after it was put up (a button press, a long press, or the app), so the
 // most recent thing someone did wins. A calendar change doesn't hide it.
 bool showVisible(const State& st, uint32_t now);
+
+// Which LED style applies now, highest first: the meeting warning (a meeting starts
+// within its minutes), then the style for the shown status, then solid. `startedAt`
+// is the unix time the warning began, or 0 for a status style (the caller times that
+// from when the status last changed).
+struct LedChoice {
+  LedStyle style;  // style.set == false: solid status colour
+  bool warning = false;
+  uint32_t startedAt = 0;
+};
+LedChoice chooseLeds(const State& st, Status shown, uint32_t now);
 
 // Replace the cached server data with a fresh copy, keeping a local button
 // override if it is newer than the server's manual override.

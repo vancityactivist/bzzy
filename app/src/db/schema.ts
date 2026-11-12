@@ -138,6 +138,53 @@ export const teamMembers = pgTable(
   (t) => [primaryKey({ columns: [t.teamId, t.userId] }), index("team_member_user_idx").on(t.userId)],
 );
 
+// "team": a reusable link for the office chat. "single": one person.
+export const inviteKind = pgEnum("invite_kind", ["team", "single"]);
+
+// Invite links (/join/<token>). Only the token's SHA-256 is stored, like device
+// tokens, so a link is shown once; a lost one is replaced and the old one revoked.
+export const teamInvites = pgTable(
+  "team_invite",
+  {
+    id: id(),
+    teamId: text("team_id")
+      .notNull()
+      .references(() => teams.id, { onDelete: "cascade" }),
+    tokenHash: text("token_hash").notNull().unique(),
+    kind: inviteKind("kind").notNull(),
+    role: teamRole("role").notNull().default("member"),
+    // Set once email invites (Resend) exist; the accepting account must match it.
+    email: text("email"),
+    // Null = unlimited (team links). 1 for single-use links.
+    maxUses: integer("max_uses"),
+    uses: integer("uses").notNull().default(0),
+    expiresAt: timestamp("expires_at", { mode: "date" }).notNull(),
+    revokedAt: timestamp("revoked_at", { mode: "date" }),
+    createdBy: text("created_by").references(() => users.id, { onDelete: "set null" }),
+    createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
+  },
+  (t) => [index("team_invite_team_idx").on(t.teamId)],
+);
+
+// What happened in a team and who did it: joins, removals, role changes, invites,
+// and anything a superadmin does there. Team admins can read it.
+export const teamAudit = pgTable(
+  "team_audit",
+  {
+    id: id(),
+    teamId: text("team_id")
+      .notNull()
+      .references(() => teams.id, { onDelete: "cascade" }),
+    actorUserId: text("actor_user_id").references(() => users.id, { onDelete: "set null" }),
+    action: text("action").notNull(),
+    detail: jsonb("detail").$type<Record<string, unknown>>().notNull().default({}),
+    // True when the actor was acting as superadmin rather than as a member.
+    asSuperadmin: boolean("as_superadmin").notNull().default(false),
+    at: timestamp("at", { mode: "date" }).notNull().defaultNow(),
+  },
+  (t) => [index("team_audit_team_idx").on(t.teamId, t.at)],
+);
+
 // ---------------------------------------------------------------------------
 // Status
 // ---------------------------------------------------------------------------
@@ -180,6 +227,8 @@ export const devices = pgTable(
     // SHA-256 of the device token. The token itself is shown once and never stored.
     tokenHash: text("token_hash").notNull(),
     defaultStatus: statusKind("default_status").notNull().default("free"),
+    // The one team whose pushes this light shows. Null = none. Never a personal team.
+    pushTeamId: text("push_team_id").references(() => teams.id, { onDelete: "set null" }),
     lastSeenAt: timestamp("last_seen_at", { mode: "date" }),
     // Firmware updates (docs/ota.md). The device reports the rest on each poll.
     autoUpdate: boolean("auto_update").notNull().default(true),

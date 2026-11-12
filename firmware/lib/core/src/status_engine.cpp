@@ -117,4 +117,26 @@ void clearLocalOverride(State& st, uint32_t now) {
   o.local = true;
 }
 
+LedChoice chooseLeds(const State& st, Status shown, uint32_t now) {
+  LedChoice c;
+  const MeetingWarn& w = st.meetingWarn;
+  if (now && w.minutes && w.leds.set) {
+    const uint32_t window = static_cast<uint32_t>(w.minutes) * 60u;
+    uint32_t next = 0;
+    for (size_t i = 0; i < st.blockCount; ++i) {
+      const uint32_t start = st.blocks[i].start;
+      if (start > now && start - now <= window && (next == 0 || start < next)) next = start;
+    }
+    if (next) {
+      c.style = w.leds;
+      c.warning = true;
+      c.startedAt = next - window;
+      return c;
+    }
+  }
+  const size_t i = static_cast<size_t>(shown);
+  if (shown != Status::Unknown && i < 4 && st.ledStyles[i].set) c.style = st.ledStyles[i];
+  return c;
+}
+
 }  // namespace bzzy

@@ -14,6 +14,7 @@ Every request also says which firmware the device runs, so the app can offer upd
 | `X-Bzzy-Board` | `waveshare_s3_touch_lcd169` | the PlatformIO env |
 | `X-Bzzy-Update-Failed` | `0.3.0` | only after an update rolled back |
 | `X-Bzzy-Update-Now` | `1762891100` | the last "Update now" press it acted on |
+| `X-Bzzy-Features` | `leds` | comma-separated extras this firmware understands; see below |
 
 ```json
 {
@@ -53,7 +54,33 @@ Every request also says which firmware the device runs, so the app can offer upd
 - `schedule` covers the next 24 hours, at most 32 blocks, already expanded from the ICS feeds (recurring events resolved). The device does no ICS parsing. The app's rules: cancelled and free events are ignored, out of office is `away` (all-day too), other timed events (busy, tentative) are `busy`, other all-day events are ignored. Back-to-back blocks of the same status are joined. `text` is "In a meeting" / "Out of office" unless the person turned on meeting titles for that calendar.
 - `gifs` maps each status to `{ "url": "...", "sha": "..." }`, or `null` for no GIF (the plain colour card). The device downloads a GIF only when its `sha` changes, to `/gif/<status>.tmp`, then swaps it in. URLs on the app itself need the device's bearer token; the device never sends the token anywhere else. Built-in GIFs are static files; uploaded ones come from `GET {api}/api/device/{deviceId}/gif/{assetId}`. Responses without `gifs` (older apps) leave the device's GIFs alone.
 - `firmware` is only there when the device should update: `{ "version": "0.3.0", "url": "{api}/api/device/{deviceId}/firmware/0.3.0", "size": 1234567, "sha256": "<hex>", "sig": "<base64>", "now": 0 }`. `now` is the time someone pressed "Update now" (install right away), or 0 for an automatic update. The `url` answers with a redirect to the file; the device follows it without its token. See [ota.md](ota.md).
+- `ledStyles` (optional, firmware with the `leds` feature) says how the ring moves for each status: `{ "dnd": { "pattern": "pulse", "speed": 1 } }`. A status that's missing stays solid. See **LED styles** below.
+- `meetingWarn` (optional, `leds` feature): `{ "minutes": 5, "leds": { "pattern": "pulse", "color": "#ff2000", "speed": 2 } }` flashes the ring from `minutes` before any `schedule` block starts until it starts. The device times it from the schedule it already has, so it still fires if Wi-Fi drops. `minutes: 0` or no `meetingWarn` turns it off.
 - `serverTime` is when the response was built. The device treats the schedule as stale after 24 hours without a successful sync.
+
+## LED styles
+
+One object describes everything the ring can do. It's used by `ledStyles`, `meetingWarn.leds` and (later) team pushes.
+
+```json
+{ "pattern": "pulse", "color": "#ff2000", "speed": 2, "for": 30 }
+```
+
+| Field | Values | |
+|---|---|---|
+| `pattern` | `solid`, `pulse`, `blink`, `strobe`, `spin` | an unknown name is treated as no style (solid) |
+| `color` | `#rrggbb`, optional | missing = the status colour |
+| `speed` | 1 slow, 2 normal, 3 fast | clamped to 1..3 |
+| `for` | seconds, optional | after this long the ring goes steady in the same colour; missing or 0 = keeps going |
+
+| Pattern | Speed 1 / 2 / 3 |
+|---|---|
+| `pulse`: fades between 25% and 100% | 4 s / 2 s / 1 s per cycle |
+| `blink`: on and off, half each | 1 / 2 / 3 Hz |
+| `strobe`: 60 ms bursts | 1 / 2 / 3 Hz |
+| `spin`: a 4-LED arc with a fading tail goes round the ring (from D1 up) | 0.5 / 1 / 1.5 turns a second |
+
+The firmware never flashes faster than 3 times a second, whatever it's sent. Which style plays, highest first: a meeting warning in its window, then the shown status's style, then solid. The "no recent calendar data" breathe is unchanged. The maths is in `firmware/lib/core/src/led_pattern.cpp`, covered by `firmware/test/`.
 
 ## `POST {api}/api/device/{deviceId}/override`
 
