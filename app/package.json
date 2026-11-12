@@ -16,7 +16,7 @@
     "@auth/drizzle-adapter": "^1.11.3",
     "@neondatabase/serverless": "^1.2.0",
     "@simplewebauthn/browser": "^9.0.1",
-    "@simplewebauthn/server": "^9.0.3",
+    "@simplewebauthn/server": "^13.3.2",
     "@vercel/analytics": "^2.0.1",
     "@vercel/blob": "^2.9.0",
     "@vercel/speed-insights": "^2.1.0",
