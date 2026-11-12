@@ -6,8 +6,10 @@ import { and, desc, eq, inArray } from "drizzle-orm";
 import { db, schema } from "@/db";
 
 import builtinList from "./builtin-gifs.json";
-import { processUpload } from "./gif-process";
+import { type GifLink, GifLinkError, isGifHost, mediaFromPage, parseGifLink } from "./gif-link";
+import { GifError, MAX_LINK_BYTES, processUpload } from "./gif-process";
 import { STATUSES, type Status } from "./protocol";
+import { FetchRefused, fetchPublicBytes } from "./safe-fetch";
 import { ensurePersonalTeam, teamsForUser } from "./teams";
 
 export type BuiltinGif = { id: string; name: string; status: Status | null; path: string; sha: string; bytes: number };
@@ -34,7 +36,71 @@ export type ResolvedGif =
 const ACCESS = "private" as const;
 
 export async function uploadGif(userId: string, displayName: string, name: string, file: Uint8Array) {
-  const { gif, sha } = await processUpload(file);
+  return storeGif(userId, displayName, name, await processUpload(file));
+}
+
+const GIF_ACCEPT = "image/gif, image/webp;q=0.9, image/*;q=0.8";
+
+// A GIF from a pasted GIPHY or Tenor link, through the same resize-and-store steps as
+// an upload. Returns the name it was saved under. Throws GifError with a message to show.
+export async function importGifFromLink(userId: string, displayName: string, name: string, raw: string) {
+  let link: GifLink;
+  try {
+    link = parseGifLink(raw);
+    if (link.media.length === 0 && link.page) {
+      const page = await fetchPublicBytes(link.page, { allowHost: isGifHost, maxBytes: 2 * 1024 * 1024, accept: "text/html" });
+      if (page.contentType.startsWith("image/")) {
+        // A short link that went straight to the GIF.
+        const processed = await processUpload(page.bytes, MAX_LINK_BYTES);
+        const saved = name || link.name || "My GIF";
+        await storeGif(userId, displayName, saved, processed);
+        return saved;
+      }
+      link = { ...link, ...relinked(link, page.url, new TextDecoder().decode(page.bytes)) };
+    }
+  } catch (err) {
+    throw asGifError(err);
+  }
+
+  let lastError: unknown = null;
+  for (const url of link.media) {
+    try {
+      const file = await fetchPublicBytes(url, { allowHost: isGifHost, maxBytes: MAX_LINK_BYTES, accept: GIF_ACCEPT });
+      const processed = await processUpload(file.bytes, MAX_LINK_BYTES);
+      const saved = name || link.name || "My GIF";
+      await storeGif(userId, displayName, saved, processed);
+      return saved;
+    } catch (err) {
+      // Too big or too long: GIPHY has a smaller rendition to try next.
+      lastError = err;
+      if (!(err instanceof GifError || err instanceof FetchRefused)) throw err;
+    }
+  }
+  throw asGifError(lastError);
+}
+
+function relinked(link: GifLink, pageUrl: URL, html: string): Pick<GifLink, "media" | "name"> {
+  // gph.is and tenor short links: the page we landed on names the GIF better.
+  let better: GifLink | null = null;
+  try {
+    better = parseGifLink(pageUrl.toString());
+  } catch {}
+  return {
+    media: better?.media.length ? better.media : mediaFromPage(link.provider, pageUrl, html),
+    name: link.name || better?.name || "",
+  };
+}
+
+function asGifError(err: unknown): Error {
+  if (err instanceof GifError) return err;
+  if (err instanceof GifLinkError || err instanceof FetchRefused) return new GifError(err.message);
+  if (err instanceof Error && (err.name === "TimeoutError" || err.name === "AbortError")) {
+    return new GifError("The GIF site took too long to answer. Try again.");
+  }
+  return err instanceof Error ? err : new Error(String(err));
+}
+
+async function storeGif(userId: string, displayName: string, name: string, { gif, sha }: { gif: Buffer; sha: string }) {
   const teamId = await ensurePersonalTeam(userId, displayName);
   const id = crypto.randomUUID();
   const blob = await put(`gifs/${teamId}/${id}.gif`, gif, { access: ACCESS, contentType: "image/gif", addRandomSuffix: true });

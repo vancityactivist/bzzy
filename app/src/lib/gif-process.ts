@@ -16,8 +16,16 @@ export class GifError extends Error {}
 
 export const shaOf = (buf: Uint8Array) => createHash("sha256").update(buf).digest("hex").slice(0, 16);
 
-export async function processUpload(input: Uint8Array): Promise<{ gif: Buffer; sha: string; frames: number }> {
-  if (input.byteLength > MAX_UPLOAD_BYTES) throw new GifError("That file is over 4 MB. Try a shorter or smaller GIF.");
+// Links are fetched by the server, so they can be bigger than an upload through Vercel.
+export const MAX_LINK_BYTES = 12 * 1024 * 1024;
+
+export async function processUpload(
+  input: Uint8Array,
+  maxBytes = MAX_UPLOAD_BYTES,
+): Promise<{ gif: Buffer; sha: string; frames: number }> {
+  if (input.byteLength > maxBytes) {
+    throw new GifError(`That file is over ${Math.round(maxBytes / 1024 / 1024)} MB. Try a shorter or smaller GIF.`);
+  }
 
   let meta;
   try {

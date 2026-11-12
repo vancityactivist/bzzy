@@ -7,7 +7,7 @@ import { signIn, signOut } from "@/auth";
 import { addCalendar, deleteCalendar, ownCalendar, refreshCalendar, setShowTitles } from "@/lib/calendar";
 import { canManageDevice, createDevice, deleteDevice, deviceTeam, rotateDeviceToken } from "@/lib/devices";
 import { GifError } from "@/lib/gif-process";
-import { deleteGif, setDeviceGif, uploadGif } from "@/lib/gifs";
+import { deleteGif, importGifFromLink, setDeviceGif, uploadGif } from "@/lib/gifs";
 import { setPresence } from "@/lib/presence";
 import { clipText, nowSeconds, STATUSES } from "@/lib/protocol";
 import { requireUser } from "@/lib/session";
@@ -140,6 +140,22 @@ export async function uploadGifAction(_prev: GifUploadResult, formData: FormData
     if (err instanceof GifError) return { ok: false, error: err.message };
     console.error("GIF upload failed", err);
     return { ok: false, error: "Upload failed. If this keeps happening, the GIF storage may not be set up yet." };
+  }
+  refresh();
+  return { ok: true };
+}
+
+export async function importGifLinkAction(_prev: GifUploadResult, formData: FormData): Promise<GifUploadResult> {
+  const user = await requireUser();
+  const link = z.string().trim().min(1).max(2000).safeParse(formData.get("link"));
+  if (!link.success) return { ok: false, error: "Paste a GIPHY or Tenor link." };
+  const name = z.string().trim().max(60).safeParse(formData.get("name") ?? "");
+  try {
+    await importGifFromLink(user.id, user.name, (name.success && name.data) || "", link.data);
+  } catch (err) {
+    if (err instanceof GifError) return { ok: false, error: err.message };
+    console.error("GIF link import failed", err);
+    return { ok: false, error: "Couldn't add that GIF. If this keeps happening, the GIF storage may not be set up yet." };
   }
   refresh();
   return { ok: true };
