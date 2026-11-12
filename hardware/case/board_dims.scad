@@ -10,11 +10,15 @@ RING_W = 52.0;
 RING_H = 61.0;
 RING_R = 4.0;
 PCB_T = 1.6;
+NOTCH_W = 14.0;
+// NOTCH_W: the ring is open at the bottom middle, full depth from the cutout to the
+// edge, so the USB-C plug can reach the Waveshare socket.
 RING_HOLES = [[-22.0, -25.0], [22.0, -25.0], [22.0, 25.0], [-22.0, 25.0]];
-RING_LEDS = [[-7.0, 27.0], [-17.0, 27.0], [-23.0, 18.0], [-23.0, 6.0], [-23.0, -6.0], [-23.0, -18.0], [-15.0, -27.0], [-5.0, -27.0], [5.0, -27.0], [15.0, -27.0], [23.0, -18.0], [23.0, -6.0], [23.0, 6.0], [23.0, 18.0], [17.0, 27.0], [7.0, 27.0]];
+HOLE_KEEPOUT_R = 2.7;  // no copper inside this radius: screw heads can sit here
+RING_LEDS = [[-13.6, 27.0], [-17.2, 27.0], [-23.0, 18.0], [-23.0, 6.0], [-23.0, -6.0], [-23.0, -18.0], [-15.0, -27.0], [-5.0, -27.0], [5.0, -27.0], [15.0, -27.0], [23.0, -18.0], [23.0, -6.0], [23.0, 6.0], [23.0, 18.0], [16.6, 27.0], [13.0, 27.0]];
 TOP_BUTTON_X = 0.0;  // plunger tip is on the board's top edge
 TOP_BUTTON_EDGE_Y = -30.5;  // plunger tip, flush with the edge; 2 mm wide, 0.2 mm travel
 // Hand-soldered wires leave from these pads on the back (keep the case clear of them).
-J1_PADS = [[-2.54, 29.0], [0.0, 29.0], [2.54, 29.0]];  // through-hole: 5V, GPIO17, GND
-J2_PAD = [0.0, -27.6];  // SMD pad on the back: GPIO18
+J1_PADS = [[-19.0, 9.0], [-19.0, 11.54], [-19.0, 14.08]];  // plated holes, left side: 5V, GND, GPIO17
+J2_PAD = [10.5, -28.9];  // plated hole, top right of the button: GPIO18
 // Front part heights: 0805 caps ~1.25, SOT-23-5 ~1.1, LEDs 0.84 mm (SW1: see its datasheet).

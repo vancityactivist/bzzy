@@ -9,7 +9,7 @@ The final device is a frame of light around the screen. It has four parts:
 
 Nothing changes in the firmware. The ring board uses the same data pin (GPIO17) and LED count (16) that `firmware/src/config.h` already has.
 
-This is **rev B, a concept**. Rev B adds a button on top of the device. The board has been through KiCad's design-rule check, but nobody has built one yet. Measure the Waveshare board before you order anything (see [Before you order](#before-you-order)).
+This is **rev C, a concept**. Rev C opens the bottom of the ring so a USB-C plug can reach the Waveshare socket (rev B added the button on top). The board has been through KiCad's design-rule check, but nobody has built one yet. Measure the Waveshare board before you order anything (see [Before you order](#before-you-order)).
 
 | Front | Back | Exploded |
 |---|---|---|
@@ -17,7 +17,7 @@ This is **rev B, a concept**. Rev B adds a button on top of the device. The boar
 
 ## Plan
 
-- **Now (rev B):** an LED ring board around the Waveshare board, with a button on top, plus a printed case. It's cheap and quick to get made.
+- **Now (rev C):** an LED ring board around the Waveshare board, with a button on top, plus a printed case. It's cheap and quick to get made.
 - **v2 (later):** one custom board with the ESP32-S3, the bare screen, USB-C and the LEDs. See [v2: full custom board](#v2-full-custom-board).
 
 ## How it fits together
@@ -40,11 +40,11 @@ Files are in [led-ring/](led-ring/). Open `bzzy-led-ring.kicad_pro` in KiCad 7 o
 
 | | |
 |---|---|
-| Size | 52 × 61 mm, 2 layers, 1.6 mm. The 34.2 × 42.7 mm cutout fits the Waveshare board |
-| LEDs | 16 × WS2812B-2020 (2 × 2 mm), every 10 to 12 mm, chained clockwise from the bottom middle |
+| Size | 52 × 61 mm, 2 layers, 1.6 mm. The 34.2 × 42.7 mm cutout fits the Waveshare board. A 14 mm notch at the bottom middle opens the cutout to the edge, so the USB-C plug can pass through the ring. No copper within 2.7 mm of the M2 holes, so screw heads sit on bare board |
+| LEDs | 16 × WS2812B-2020 (2 × 2 mm), every 10 to 12 mm, chained clockwise from just left of the notch |
 | Data | GPIO17 (3.3 V), then a 74AHCT1G125 buffer to 5 V logic, then 33 Ω to the first LED. A 100 kΩ pull-down keeps the LEDs dark while the ESP32 boots |
 | Power | 5 V from the Waveshare board's 5V pad. A 0.8 mm power ring on the back, a 100 nF cap per LED, and 2 × 10 µF bulk caps. Firmware caps the LEDs at 400 mA |
-| Connection | J1 is three plated holes at the bottom (5V, IO17, GND, labelled on the back). J2 is one pad on the back at the top (IO18). Solder four short wires to the Waveshare board's 5V, GND, GPIO17 and GPIO18 pads |
+| Connection | J1 is three plated holes on the left side (5V, GND, IO17 from top to bottom, labelled on the back). J2 is one plated hole at the top, right of the button (IO18). Both are clear of the USB-C plug. Solder four short wires to the Waveshare board's 5V, GND, GPIO17 and GPIO18 pads |
 | Top button | SW1, an Alps SKRT side-push switch on the top edge, with its plunger pointing up. You press it through a flexing tab in the case's top wall. It shorts GPIO18 to GND, and the firmware turns on the internal pull-up |
 | Mounting | 4 × M2 holes in the corners. The screws go through the shell and the ring board into the diffuser |
 | Assembly | Every part is on the front, so JLCPCB assembles one side only. You hand-solder the J1 and J2 wires |
@@ -62,7 +62,7 @@ Files are in [led-ring/](led-ring/). Open `bzzy-led-ring.kicad_pro` in KiCad 7 o
 - the KiCad schematic, with connectivity checked against the script's netlist
 - the PCB, with parts placed, traces routed and ground poured
 - `fab/bom-jlcpcb.csv` and `fab/cpl-jlcpcb.csv`, for JLCPCB assembly
-- `fab/drc-report.txt`. Rev B: **0 violations, 0 unconnected pads**. The switch's own land pattern puts its pads closer to its peg holes than the board rule allows, so `bzzy-led-ring.kicad_dru` allows that within SW1 only
+- `fab/drc-report.txt`. Rev C: **0 violations, 0 unconnected pads**. The switch's own land pattern puts its pads closer to its peg holes than the board rule allows, so `bzzy-led-ring.kicad_dru` allows that within SW1 only
 - `case/board_dims.scad`, so the case always matches the board
 
 The ring is regular, so the script routes it by rule instead of with an autorouter. Each LED's 5 V pad drops through a via onto the power ring. Its ground pad joins the ground pour. Its data out runs straight to the next LED, and the corners go round the screen side of the mounting holes.
@@ -81,7 +81,7 @@ To change something, edit the script and run `./render.sh` (needs KiCad 7+ and O
 | R2 | 1 | 33 Ω | 0402 | |
 | SW1 | 1 | Alps SKRTLAE010 | SMD side-push | Top button |
 | J1 | – | 3 plated holes, 2.54 mm | – | Wires, hand-soldered |
-| J2 | – | 1.5 mm pad on the back | – | Wire to GPIO18, hand-soldered |
+| J2 | – | 1 plated hole, 1.5 mm pad | – | Wire to GPIO18, hand-soldered |
 | Screws | 4 | M2 × 8 self-tapping (or M2 × 8 with heat-set inserts in the diffuser) | | |
 
 `fab/bom-jlcpcb.csv` has an LCSC part number for every line (set in `gen_led_ring.py`). Check each match in JLCPCB's BOM step, and swap in a Basic part where one fits, since each Extended part adds a small fee. The WS2812B-2020, the 74AHCT1G125 and the SKRTLAE010 are probably Extended.

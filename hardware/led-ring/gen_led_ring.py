@@ -39,6 +39,13 @@ CUT_CLEAR = 0.6              # gap around the Waveshare board in the cutout
 CUT_W, CUT_H, CUT_R = WS_W + 2 * CUT_CLEAR, WS_H + 2 * CUT_CLEAR, 1.5
 OUT_W, OUT_H, OUT_R = 52.0, 61.0, 4.0
 PCB_T = 1.6
+# Rev C: the Waveshare USB-C socket is on its bottom edge, so the plug has to pass
+# through the ring. The notch runs the full depth of the bottom band, from the
+# cutout to the board edge, and is wider than a typical USB-C overmould (~12 mm).
+NOTCH_W = 14.0
+# Keep copper this far from each M2 hole centre, so a screw head or washer
+# can't sit on +5V or GND.
+HOLE_KEEPOUT_R = 2.7
 
 LED_X = OUT_W / 2 - 3.0      # LED centre line on the left/right sides
 LED_Y = OUT_H / 2 - 3.5      # LED centre line on the top/bottom
@@ -46,20 +53,24 @@ CAP_INSET = 2.6              # per-LED 100 nF cap sits this far inside its LED
 
 SIDE_YS = [18.0, 6.0, -6.0, -18.0]   # bottom -> top
 TOP_XS = [-15.0, -5.0, 5.0, 15.0]    # left -> right
+# Bottom LEDs sit either side of the notch. The input circuit (U1 and friends) is
+# between D1 and the notch; TP1 and a bulk cap are between D16 and the notch.
+BOTTOM_LEFT_XS = [-13.6, -17.2]      # D1, D2 (going left)
+BOTTOM_RIGHT_XS = [16.6, 13.0]       # D15, D16 (going left)
 
 
 def led_positions():
-    """16 LEDs clockwise (seen from the front), starting just left of J1 at the bottom.
+    """16 LEDs clockwise (seen from the front), starting just left of the notch at the bottom.
 
     Each LED is turned so its DOUT pad faces the next LED: at 0 degrees the chain
     runs right to left, and KiCad turns parts anticlockwise.
     """
     pos = []
-    pos += [(x, LED_Y, 0) for x in (-7.0, -17.0)]           # bottom, going left
+    pos += [(x, LED_Y, 0) for x in BOTTOM_LEFT_XS]          # bottom, going left
     pos += [(-LED_X, y, 270) for y in SIDE_YS]               # left, going up
     pos += [(x, -LED_Y, 180) for x in TOP_XS]                # top, going right
     pos += [(LED_X, -y, 90) for y in SIDE_YS]                # right, going down
-    pos += [(x, LED_Y, 0) for x in (17.0, 7.0)]              # bottom, going left
+    pos += [(x, LED_Y, 0) for x in BOTTOM_RIGHT_XS]         # bottom, going left
     return pos
 
 
@@ -80,24 +91,25 @@ def part(ref, sym, value, fp, pins, pcb, mpn="", note="", sch=None, assemble=Tru
                       mpn=mpn, note=note, sch=sch, assemble=assemble, back=back))
 
 
+# J1 is on the left side, clear of the USB-C plug: 5V at the top, data at the bottom.
 part("J1", "Connector_Generic:Conn_01x03", "Wire pads", "Connector_PinHeader_2.54mm:PinHeader_1x03_P2.54mm_Vertical",
-     {"1": P5, "2": "LED_DATA_3V3", "3": GND}, (-2.54, 29.0, 90), note="Wire pads, hand-soldered: 5V, GPIO17, GND",
+     {"1": P5, "2": GND, "3": "LED_DATA_3V3"}, (-19.0, 9.0, 0), note="Wire pads, hand-soldered: 5V, GND, GPIO17",
      sch=(45, 60), assemble=False)
 part("R1", "Device:R_Small", "100k", "Resistor_SMD:R_0402_1005Metric",
-     {"1": "LED_DATA_3V3", "2": GND}, (3.6, 26.4, 0), mpn="0402WGF1003TCE", note="Holds data low while the ESP32 boots",
+     {"1": "LED_DATA_3V3", "2": GND}, (-12.6, 22.6, 90), mpn="0402WGF1003TCE", note="Holds data low while the ESP32 boots",
      sch=(70, 75))
 part("U1", "74xGxx:74AHCT1G125", "74AHCT1G125", "Package_TO_SOT_SMD:SOT-23-5",
-     {"1": GND, "2": "LED_DATA_3V3", "3": GND, "4": "LED_DATA_5V", "5": P5}, (0.0, 24.0, 180),
+     {"1": GND, "2": "LED_DATA_3V3", "3": GND, "4": "LED_DATA_5V", "5": P5}, (-10.0, 24.4, 0),
      mpn="74AHCT1G125GV,125", note="3.3 V to 5 V level shifter for the LED data line", sch=(100, 60))
 part("C1", "Device:C_Small", "100nF", "Capacitor_SMD:C_0402_1005Metric",
-     {"1": P5, "2": GND}, (-2.6, 25.3, 90), mpn="CL05B104KO5NNNC", note="U1 decoupling", sch=(100, 90))
+     {"1": P5, "2": GND}, (-8.9, 22.15, 180), mpn="CL05B104KO5NNNC", note="U1 decoupling", sch=(100, 90))
 part("R2", "Device:R_Small", "33R", "Resistor_SMD:R_0402_1005Metric",
-     {"1": "LED_DATA_5V", "2": "DIN1"}, (-3.0, 23.05, 180), mpn="0402WGF330JTCE", note="Series resistor, first LED",
+     {"1": "LED_DATA_5V", "2": "DIN1"}, (-10.4, 27.55, 180), mpn="0402WGF330JTCE", note="Series resistor, first LED",
      sch=(130, 60))
 part("C2", "Device:C_Small", "10uF", "Capacitor_SMD:C_0805_2012Metric",
-     {"1": P5, "2": GND}, (-12.0, 29.4, 0), mpn="CL21A106KAYNNNE", note="Bulk, at the power input", sch=(55, 90))
+     {"1": P5, "2": GND}, (-18.9, 0.0, 90), mpn="CL21A106KAYNNNE", note="Bulk, next to the power input", sch=(55, 90))
 part("C3", "Device:C_Small", "10uF", "Capacitor_SMD:C_0805_2012Metric",
-     {"1": P5, "2": GND}, (10.0, -29.4, 0), mpn="CL21A106KAYNNNE", note="Bulk, far side of the ring", sch=(70, 90))
+     {"1": P5, "2": GND}, (9.6, 23.0, 180), mpn="CL21A106KAYNNNE", note="Bulk, far end of the +5V ring", sch=(70, 90))
 
 for i, (x, y, rot) in enumerate(led_positions(), start=1):
     dout = f"DIN{i + 1}" if i < 16 else "LED_DOUT"
@@ -111,16 +123,16 @@ for i, (x, y, rot) in enumerate(led_positions(), start=1):
          sch=(52 + col * 40, 115 + row * 50))
 
 part("TP1", "Connector:TestPoint", "DOUT", "TestPoint:TestPoint_Pad_D1.0mm",
-     {"1": "LED_DOUT"}, (5.0, 24.4, 0), note="End of the chain, to add more LEDs later", sch=(200, 75),
+     {"1": "LED_DOUT"}, (9.6, 26.45, 0), note="End of the chain, to add more LEDs later", sch=(200, 75),
      assemble=False)
 # Top button: a side-push switch on the top edge, pressed through a flexure in the case.
 # Its plunger tip sits on the board edge.
 part("SW1", "Switch:SW_Push", "Top button", "Button_Switch_SMD:SW_Push_1P1T-MP_NO_Horizontal_Alps_SKRTLAE010",
      {"1": GND, "2": "BTN"}, (0.0, -OUT_H / 2 + 2.04, 180), mpn="SKRTLAE010",
      note="Side-push button, plunger up. Firmware: GPIO18 with the internal pull-up", sch=(150, 60))
-part("J2", "Connector_Generic:Conn_01x01", "To GPIO18", "TestPoint:TestPoint_Pad_1.5x1.5mm",
-     {"1": "BTN"}, (0.0, -27.6, 0), note="Wire pad on the back, top middle: to the Waveshare GPIO18 pad",
-     sch=(175, 60), assemble=False, back=True)
+part("J2", "Connector_Generic:Conn_01x01", "To GPIO18", "TestPoint:TestPoint_THTPad_1.5x1.5mm_Drill0.7mm",
+     {"1": "BTN"}, (10.5, -28.9, 0), note="Plated wire hole, top right of the button: to the Waveshare GPIO18 pad",
+     sch=(175, 60), assemble=False)
 for n, (x, y) in enumerate([(-22.0, -25.0), (22.0, -25.0), (22.0, 25.0), (-22.0, 25.0)], start=1):
     part(f"H{n}", "Mechanical:MountingHole", "M2", "MountingHole:MountingHole_2.2mm_M2",
          {}, (x, y, 0), note="M2 screw or printed peg", sch=(150 + n * 12, 95), assemble=False)
@@ -241,12 +253,12 @@ def write_schematic():
                       ["effects", ["font", ["size", size, size]], ["justify", "left", "bottom"]], ["uuid", uid()]])
 
     text("bzzy LED ring: 16 x WS2812B-2020 around the Waveshare ESP32-S3-Touch-LCD-1.69", 25, 20, 2.5)
-    text("J1 is three wire pads (5V, GPIO17, GND) and J2 one more (GPIO18, top button). Wire them to the Waveshare board's pads.", 25, 25)
+    text("J1 is three wire holes (5V, GND, GPIO17) and J2 one more (GPIO18, top button). Wire them to the Waveshare board's pads.", 25, 25)
     text("U1 lifts the 3.3 V data to 5 V logic. R1 keeps the line low while the ESP32 boots.", 25, 45)
     text("LED chain: D1 (bottom-left) runs clockwise to D16. TP1 is the chain's DOUT, for adding more LEDs later.", 25, 108)
 
     sch = ["kicad_sch", ["version", 20230121], ["generator", "bzzy_gen"], ["uuid", root], ["paper", "A3"],
-           ["title_block", ["title", Q("bzzy LED ring")], ["rev", Q("B")], ["company", Q("bzzy")],
+           ["title_block", ["title", Q("bzzy LED ring")], ["rev", Q("C")], ["company", Q("bzzy")],
             ["comment", 1, Q("Generated by gen_led_ring.py. Edit the script, not this file.")]],
            ["lib_symbols"] + [lib_symbol(l) for l in lib_ids]] + items + \
           [["sheet_instances", ["path", Q("/"), ["page", Q("1")]]]]
@@ -278,15 +290,18 @@ def write_pcb():
     def V(x, y):
         return pcbnew.VECTOR2I(pcbnew.FromMM(O[0] + x), pcbnew.FromMM(O[1] + y))
 
-    def rounded_rect(w, h, r):
-        hw, hh = w / 2, h / 2
-        segs = [((-hw + r, -hh), (hw - r, -hh)), ((hw, -hh + r), (hw, hh - r)),
-                ((hw - r, hh), (-hw + r, hh)), ((-hw, hh - r), (-hw, -hh + r))]
-        for a, b in segs:
-            s = pcbnew.PCB_SHAPE(board, pcbnew.SHAPE_T_SEGMENT)
-            s.SetStart(V(*a)); s.SetEnd(V(*b))
-            s.SetLayer(pcbnew.Edge_Cuts); s.SetWidth(pcbnew.FromMM(0.1))
-            board.Add(s)
+    def edge(a, b):
+        s = pcbnew.PCB_SHAPE(board, pcbnew.SHAPE_T_SEGMENT)
+        s.SetStart(V(*a)); s.SetEnd(V(*b))
+        s.SetLayer(pcbnew.Edge_Cuts); s.SetWidth(pcbnew.FromMM(0.1))
+        board.Add(s)
+
+    def rounded_rect(w, h, r, gap):
+        """A rounded rectangle whose bottom edge is open for |x| < gap / 2."""
+        hw, hh, g = w / 2, h / 2, gap / 2
+        for a, b in [((-hw + r, -hh), (hw - r, -hh)), ((hw, -hh + r), (hw, hh - r)),
+                     ((hw - r, hh), (g, hh)), ((-g, hh), (-hw + r, hh)), ((-hw, hh - r), (-hw, -hh + r))]:
+            edge(a, b)
         for cx, cy, sx, sy in [(hw - r, -hh + r, hw - r, -hh), (hw - r, hh - r, hw, hh - r),
                                (-hw + r, hh - r, -hw + r, hh), (-hw + r, -hh + r, -hw, -hh + r)]:
             s = pcbnew.PCB_SHAPE(board, pcbnew.SHAPE_T_ARC)
@@ -295,8 +310,11 @@ def write_pcb():
             s.SetLayer(pcbnew.Edge_Cuts); s.SetWidth(pcbnew.FromMM(0.1))
             board.Add(s)
 
-    rounded_rect(OUT_W, OUT_H, OUT_R)
-    rounded_rect(CUT_W, CUT_H, CUT_R)
+    # One outline: the board, open at the bottom middle into the screen cutout.
+    rounded_rect(OUT_W, OUT_H, OUT_R, NOTCH_W)
+    rounded_rect(CUT_W, CUT_H, CUT_R, NOTCH_W)
+    for sx in (-1, 1):
+        edge((sx * NOTCH_W / 2, CUT_H / 2), (sx * NOTCH_W / 2, OUT_H / 2))
 
     nets = {}
     for n in NETS:
@@ -333,10 +351,34 @@ def write_pcb():
             t.SetMirrored(True)
         board.Add(t)
 
-    for label, x in (("5V", -2.54), ("IO17", 0.0), ("GND", 2.54)):
-        silk(label, x, 27.2, 0.8, pcbnew.B_SilkS)
-    silk("IO18", 0, -29.6, 0.8, pcbnew.B_SilkS)
-    silk("bzzy LED ring rev B", 0, -23.4, 1.0, pcbnew.B_SilkS)
+    j1 = next(p for p in parts if p["ref"] == "J1")["pcb"]
+    for k, label in enumerate(("5V", "GND", "IO17")):
+        silk(label, j1[0] - 2.8, j1[1] + 2.54 * k, 0.8, pcbnew.B_SilkS)
+    j2 = next(p for p in parts if p["ref"] == "J2")["pcb"]
+    silk("IO18", j2[0], j2[1] + 1.7, 0.8, pcbnew.B_SilkS)
+    silk("bzzy LED ring rev C", 0, -23.4, 1.0, pcbnew.B_SilkS)
+
+    # No copper under the M2 screw heads.
+    for p in parts:
+        if p["ref"].startswith("H"):
+            hx, hy = p["pcb"][:2]
+            ka = pcbnew.ZONE(board)
+            ka.SetIsRuleArea(True)
+            ka.SetDoNotAllowCopperPour(True)
+            ka.SetDoNotAllowTracks(True)
+            ka.SetDoNotAllowVias(True)
+            ka.SetDoNotAllowPads(False)
+            ka.SetDoNotAllowFootprints(False)
+            ls = pcbnew.LSET()
+            ls.AddLayer(pcbnew.F_Cu); ls.AddLayer(pcbnew.B_Cu)
+            ka.SetLayerSet(ls)
+            ka.SetZoneName(f"keepout_{p['ref']}")
+            ol = ka.Outline()
+            ol.NewOutline()
+            for k in range(32):
+                a = 2 * math.pi * k / 32
+                ol.Append(V(hx + HOLE_KEEPOUT_R * math.cos(a), hy + HOLE_KEEPOUT_R * math.sin(a)))
+            board.Add(ka)
 
     route(board, V)
 
@@ -359,7 +401,8 @@ def write_pcb():
 # ---------------------------------------------------------------- routing
 # The ring is regular enough to route by rule rather than with an autorouter:
 #   top    data chain along the LEDs, plus the input circuit; GND pour
-#   bottom a 0.8 mm +5V ring just inside the LEDs (open at the bottom middle); GND pour
+#   bottom a 0.8 mm +5V ring just inside the LEDs (a U, open at the notch), the
+#          GPIO17 and GPIO18 runs; GND pour
 # VDD is on the inside edge of every LED and VSS on the outside, because the chain
 # runs clockwise. Each VDD drops through a via onto the +5V ring.
 RING_IN = 1.25          # VDD pad -> +5V via, towards the screen
@@ -439,66 +482,82 @@ def route(board, V):
         elif inward(lx, ly) == inward(*q["pcb"][:2]):
             track([a, b], f"DIN{i + 1}")
         else:
-            # Round a corner on the screen side of the mounting hole.
+            # Round a corner on the screen side of the mounting hole, outside its keep-out.
             sx, sy = math.copysign(1, lx + q["pcb"][0]), math.copysign(1, ly + q["pcb"][1])
             hx, hy = holes[(sx, sy)]
-            corner = (hx - sx * 1.7, hy - sy * 1.0)
+            corner = (hx - sx * 2.4, hy - sy * 2.2)
             qx, qy = q["pcb"][:2]
+            if sx > 0 and sy > 0:
+                # Bottom right: D15's DIN is on its outer corner, so come down between
+                # its +5V via and the hole's keep-out.
+                corner = (hx - 2.6, hy - 2.2)
+                track([a, corner, (b[0] + 1.235, hy + 0.2), (b[0] + 1.235, b[1] - 0.55), b], f"DIN{i + 1}")
+                continue
             if abs(abs(qx) - LED_X) < 0.01:      # next LED is on a side
                 lead = (b[0], b[1] + sy * 1.58)
             else:
                 lead = (b[0] + sx * 1.58, b[1])
             track([a, corner, lead, b], f"DIN{i + 1}")
 
-    # +5V ring on the bottom layer, fed from J1 and open just right of it.
-    cx, cy, ch_x, ch_y = LED_X - 1.8, LED_Y - RING_IN - 0.55, 2.6, 3.6
-    j1_5v = pad("J1", "1")
-    ring = [j1_5v, (j1_5v[0], cy), (-(cx - ch_x), cy), (-cx, cy - ch_y), (-cx, -(cy - ch_y)),
+    # +5V ring on the bottom layer: a U, open at the notch. J1 feeds it on the left side.
+    # The chamfers keep it clear of the screw-head keep-outs.
+    cx, cy, ch_x, ch_y = LED_X - 1.8, LED_Y - RING_IN - 0.55, 3.6, 4.6
+    u_feed = (-7.75, 22.5)           # +5V via beside U1, at the left end of the U
+    c3_feed = (pad("C3", "1")[0], cy)   # C3's +5V via, at the right end
+    ring = [u_feed, (u_feed[0], cy), (-(cx - ch_x), cy), (-cx, cy - ch_y), (-cx, -(cy - ch_y)),
             (-(cx - ch_x), -cy), (cx - ch_x, -cy), (cx, -(cy - ch_y)), (cx, cy - ch_y),
-            (cx - ch_x, cy), (pad("D16", "4")[0], cy)]
+            (cx - ch_x, cy), c3_feed]
     track(ring, P5, PWR_W, pcbnew.B_Cu)
+    via(u_feed, P5, 0.8, 0.4)
 
-    # Bulk caps: +5V through a via onto the ring.
-    for ref in ("C2", "C3"):
-        c1, c2 = pad(ref, "1"), pad(ref, "2")
-        sy = math.copysign(1, c1[1])
-        v = (c1[0], c1[1] - sy * 1.3)
-        via(v, P5, 0.8, 0.4)
-        track([c1, v], P5, 0.5)
-        track([v, (v[0], sy * cy)], P5, PWR_W, pcbnew.B_Cu)
-        g = (c2[0] + 1.3, c2[1])
-        track([c2, g], GND, 0.5)
-        via(g, GND)
+    # J1 (left side): 5V straight out to the ring, GND to the pours, data down the
+    # inside of the ring on the back to U1.
+    j5, jg, jd = pad("J1", "1"), pad("J1", "2"), pad("J1", "3")
+    track([j5, (-cx, j5[1])], P5, PWR_W, pcbnew.B_Cu)
+    track([jg, (jg[0] + 1.2, jg[1])], GND, 0.5)
+    via((jg[0] + 1.2, jg[1]), GND)
+    d_via = (-12.3, 24.0)
+    track([jd, (-18.2, jd[1] + 0.8), (-18.2, 22.0), (d_via[0], 22.0), d_via], "LED_DATA_3V3", SIG_W, pcbnew.B_Cu)
+    via(d_via, "LED_DATA_3V3")
 
-    # Input: J1 -> R1 pulldown -> U1 (3.3 V -> 5 V) -> R2 -> D1.
-    j_d, a_in = pad("J1", "2"), pad("U1", "2")
-    track([j_d, (j_d[0], 27.7), (2.6, 27.7), (2.6, a_in[1]), a_in], "LED_DATA_3V3")
-    r1d = pad("R1", "1")
-    track([(2.6, r1d[1]), r1d], "LED_DATA_3V3")
-    r1g = pad("R1", "2")
-    track([r1g, (r1g[0], r1g[1] - 1.0)], GND, 0.4)
-    via((r1g[0], r1g[1] - 1.0), GND)
+    # Bulk caps. C2 beside J1, C3 at the far (right) end of the ring.
+    c2p, c2g = pad("C2", "1"), pad("C2", "2")
+    v = (c2p[0] - 1.5, c2p[1])
+    track([c2p, v], P5, 0.6)
+    via(v, P5, 0.8, 0.4)
+    track([v, (-cx, v[1])], P5, PWR_W, pcbnew.B_Cu)
+    track([c2g, (c2g[0], c2g[1] - 1.45)], GND, 0.5)
+    via((c2g[0], c2g[1] - 1.45), GND)
+    c3p, c3g = pad("C3", "1"), pad("C3", "2")
+    track([c3p, c3_feed], P5, 0.6)
+    via(c3_feed, P5, 0.8, 0.4)
+    track([c3g, (c3g[0], c3g[1] + 1.4)], GND, 0.5)
+    via((c3g[0], c3g[1] + 1.4), GND)
 
-    c1p, c1g, u_vcc = pad("C1", "1"), pad("C1", "2"), pad("U1", "5")
-    track([j1_5v, (c1p[0], j1_5v[1] - 1.0), c1p], P5, 0.5)
-    track([c1p, (u_vcc[0], c1p[1]), u_vcc], P5, 0.4)
-    track([c1g, (-3.5, 24.0)], GND, 0.4)
-    via((-3.5, 24.0), GND)
-
-    u_gnd1, u_gnd3 = pad("U1", "1"), pad("U1", "3")
-    track([u_gnd1, (1.0, 26.6)], GND, 0.4)
-    via((1.0, 26.6), GND)
-    track([u_gnd3, (0.0, 22.3)], GND, 0.4)
-    via((0.0, 22.3), GND)
-
-    y_out, r2a, r2b, din1 = pad("U1", "4"), pad("R2", "1"), pad("R2", "2"), pad("D1", "3")
-    track([y_out, r2a], "LED_DATA_5V")
-    track([r2b, (-4.6, r2b[1]), (-4.6, din1[1]), din1], "DIN1")
-
-    track([pad("J1", "3"), (pad("J1", "3")[0], 28.85), (pad("D16", "2")[0], 28.85)], GND, 0.5)
+    # Input, between D1 and the notch: data via -> R1 pull-down and U1.A;
+    # U1.Y -> R2 -> D1.DIN. U1 and C1 take +5V from the via at the end of the U.
+    r1d, r1g = pad("R1", "1"), pad("R1", "2")
+    oe, a_in, u_gnd, y_out, u_vcc = (pad("U1", n) for n in "12345")
+    track([d_via, r1d], "LED_DATA_3V3")
+    track([d_via, a_in], "LED_DATA_3V3")
+    g_top = (oe[0], oe[1] - 0.85)                 # GND via above U1 pin 1 (OE, tied low)
+    track([oe, g_top], GND, 0.4)
+    via(g_top, GND)
+    track([r1g, g_top], GND, 0.3)
+    c1p, c1g = pad("C1", "1"), pad("C1", "2")
+    track([c1g, g_top], GND, 0.3)
+    track([c1p, u_feed], P5, 0.4)
+    track([u_vcc, u_feed], P5, 0.4)
+    g_bot = (u_gnd[0], u_gnd[1] + 1.15)
+    track([u_gnd, g_bot], GND, 0.4)
+    via(g_bot, GND)
+    r2a, r2b, din1 = pad("R2", "1"), pad("R2", "2"), pad("D1", "3")
+    track([y_out, (y_out[0], r2a[1]), r2a], "LED_DATA_5V")
+    track([r2b, din1], "DIN1")
 
     # Top button: tie its two GND pads together round the inside of the BTN pad, and
-    # drop to ground through a via. BTN goes through a via to J2 on the back.
+    # drop to ground through a via. BTN goes through a via, then along the top edge on
+    # the back to J2, a plated hole off to the side so soldering it doesn't heat SW1.
     g_pads = sorted((pcbnew.ToMM(q.GetPosition().x) - 100, pcbnew.ToMM(q.GetPosition().y) - 100)
                     for q in fps["SW1"].Pads() if q.GetNumber() == "1")
     (lx_, ly_), (rx_, ry_) = g_pads
@@ -510,11 +569,12 @@ def route(board, V):
     bv = (btn[0], btn[1] - 1.35)
     track([btn, bv], "BTN", 0.3)
     via(bv, "BTN")
-    track([bv, pad("J2", "1")], "BTN", 0.4, pcbnew.B_Cu)
+    j2 = pad("J2", "1")
+    edge_y = -OUT_H / 2 + 0.65
+    track([bv, (bv[0], edge_y), (j2[0] - 1.5, edge_y), j2], "BTN", 0.3, pcbnew.B_Cu)
 
     dout = pad("D16", "1")
-    tp = pad("TP1", "1")
-    track([dout, (tp[0], dout[1]), tp], "LED_DOUT")
+    track([dout, pad("TP1", "1")], "LED_DOUT")
 
     # Ground pour on both layers.
     outline = pcbnew.SHAPE_POLY_SET()
@@ -593,9 +653,12 @@ def write_case_dims(board=None):
         f.write("// Generated by hardware/led-ring/gen_led_ring.py. Edit the script, not this file.\n")
         f.write("// Board coordinates: origin at screen centre, +y DOWN (KiCad). The case flips y.\n")
         for k, v in dict(WS_W=WS_W, WS_H=WS_H, WS_T=WS_T, CUT_W=CUT_W, CUT_H=CUT_H, CUT_R=CUT_R,
-                         RING_W=OUT_W, RING_H=OUT_H, RING_R=OUT_R, PCB_T=PCB_T).items():
+                         RING_W=OUT_W, RING_H=OUT_H, RING_R=OUT_R, PCB_T=PCB_T, NOTCH_W=NOTCH_W).items():
             f.write(f"{k} = {v};\n")
+        f.write("// NOTCH_W: the ring is open at the bottom middle, full depth from the cutout to the\n")
+        f.write("// edge, so the USB-C plug can reach the Waveshare socket.\n")
         f.write(f"RING_HOLES = {json.dumps([list(h) for h in holes])};\n")
+        f.write(f"HOLE_KEEPOUT_R = {HOLE_KEEPOUT_R};  // no copper inside this radius: screw heads can sit here\n")
         f.write(f"RING_LEDS = {json.dumps([list(l) for l in leds])};\n")
         sw = next(p for p in parts if p["ref"] == "SW1")
         f.write(f"TOP_BUTTON_X = {sw['pcb'][0]};  // plunger tip is on the board's top edge\n")
@@ -608,8 +671,8 @@ def write_case_dims(board=None):
                 return [[round(pcbnew.ToMM(q.GetPosition().x) - 100, 2), round(pcbnew.ToMM(q.GetPosition().y) - 100, 2)]
                         for q in sorted(fp.Pads(), key=lambda q: q.GetNumber())]
             f.write("// Hand-soldered wires leave from these pads on the back (keep the case clear of them).\n")
-            f.write(f"J1_PADS = {json.dumps(pads('J1'))};  // through-hole: 5V, GPIO17, GND\n")
-            f.write(f"J2_PAD = {json.dumps(pads('J2')[0])};  // SMD pad on the back: GPIO18\n")
+            f.write(f"J1_PADS = {json.dumps(pads('J1'))};  // plated holes, left side: 5V, GND, GPIO17\n")
+            f.write(f"J2_PAD = {json.dumps(pads('J2')[0])};  // plated hole, top right of the button: GPIO18\n")
             f.write("// Front part heights: 0805 caps ~1.25, SOT-23-5 ~1.1, LEDs 0.84 mm (SW1: see its datasheet).\n")
 
 
