@@ -1,4 +1,7 @@
+import Image from "next/image";
 import type { ComponentType, ReactNode } from "react";
+
+import deskPhoto from "@/assets/desk.jpg";
 
 import { STATUS_META } from "@/components/status-meta";
 import { defaultPreviewSrcs } from "@/lib/gifs";
@@ -14,7 +17,7 @@ import { SignIn } from "./sign-in";
 import { Badge, buttonClass, Card, Container, cx, StatusDot } from "./ui";
 
 // The signed-out home page. Every picture on it is the real device preview or a small
-// drawing made from the app's own pieces; there are no photos yet (see DevicePhoto).
+// drawing made from the app's own pieces, apart from one concept picture (see DevicePhoto).
 
 const REPO = "https://github.com/vancityactivist/bzzy";
 
@@ -241,20 +244,23 @@ export function Landing() {
   );
 }
 
-/**
- * The one spot for a photo of the real light, when there is one. Until then it renders
- * nothing and the section reads fine without it. To add it: put the picture in public/
- * and return something like
- *
- *   <figure className="mt-10 overflow-hidden rounded-2xl border border-line shadow-card">
- *     <Image src="/device.jpg" alt="bzzy clipped to a monitor, glowing red for Busy" width={1600} height={900}
- *       sizes="(min-width: 1024px) 976px, 100vw" className="aspect-video w-full object-cover" />
- *   </figure>
- *
- * (import Image from "next/image").
- */
+// A picture of the idea: an illustration made before the first light was built, so the
+// caption says so. Swap in a photo of the real thing when there is one.
 function DevicePhoto() {
-  return null;
+  return (
+    <figure className="mt-10">
+      <Image
+        src={deskPhoto}
+        alt="A small black status light clipped to the top of a monitor, casting a red glow on the wall behind it"
+        placeholder="blur"
+        sizes="(min-width: 1024px) 976px, 100vw"
+        className="aspect-video w-full rounded-2xl border border-line object-cover shadow-card"
+      />
+      <figcaption className="mt-3 text-sm text-muted">
+        Busy, from across the room. A concept picture: the first build is still on the bench.
+      </figcaption>
+    </figure>
+  );
 }
 
 function SectionHeading({ id, eyebrow, title, children }: { id: string; eyebrow: string; title: string; children?: ReactNode }) {
