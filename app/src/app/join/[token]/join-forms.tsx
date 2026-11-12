@@ -56,6 +56,8 @@ export function NewAccountForm({ token, teamName }: { token: string; teamName: s
         setError(joined.error);
         return;
       }
+      // A full load on purpose: the header and tab bar were rendered signed out.
+      // eslint-disable-next-line @next/next/no-location-assign-relative-destination
       window.location.assign(`/teams/${joined.teamId}?joined=1`);
     } catch {
       setError("The passkey wasn't saved. Try again?");
