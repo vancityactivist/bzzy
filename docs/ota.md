@@ -5,7 +5,7 @@ Lights update themselves from GitHub Releases, through the companion app. The de
 ```
  git tag fw-v0.3.0 ──▶ GitHub Action: build each board, sign, publish a Release
                                                 │
-                     app reads the latest release (read-only token, every ~10 min)
+                     app reads the latest release (every ~10 min)
                                                 │
  device poll ──(X-Bzzy-Firmware: 0.2.0)──▶ app ──▶ "firmware": { 0.3.0, url, sha256, sig }
                                                 │
@@ -22,7 +22,7 @@ Lights update themselves from GitHub Releases, through the companion app. The de
 
    It keeps the private key in `~/.bzzy/ota-signing-key.pem`, writes the public key into `firmware/src/ota_key.h`, and saves the private key as the `BZZY_OTA_SIGNING_KEY` repo secret (with the GitHub CLI signed in; otherwise it tells you how to add it by hand). Commit `ota_key.h`. Keep the `.pem` file safe: anyone with it can make firmware your lights will install. Until `ota_key.h` has a key, lights never install updates.
 
-2. **Let the app read releases.** The repo is private, so make a [fine-grained token](https://github.com/settings/personal-access-tokens/new) with access to only this repo and only **Contents: Read**. Add it to the Vercel project as `FIRMWARE_GITHUB_TOKEN`. (`FIRMWARE_REPO` defaults to `vancityactivist/bzzy`.) With no token the app tries without one, which only works for a public repo.
+2. **Point the app at your releases.** `FIRMWARE_REPO` defaults to `vancityactivist/bzzy`; set it in Vercel if you release from a fork. A public repo needs nothing else. If your fork is private, also make a [fine-grained token](https://github.com/settings/personal-access-tokens/new) with access to only that repo and only **Contents: Read**, and add it as `FIRMWARE_GITHUB_TOKEN`.
 
 3. **Flash each light over USB once** with firmware that has the key and the update code. After that, updates come over Wi-Fi.
 

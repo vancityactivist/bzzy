@@ -7,9 +7,9 @@ import { db, schema } from "@/db";
 
 import { manifestSchema, type ReleaseManifest } from "./firmware";
 
-// Firmware releases live on GitHub (docs/ota.md). The repo is private, so the app
-// reads them with a read-only token and hands each device a short-lived link to
-// its file. With no token set it tries without one, which works for a public repo.
+// Firmware releases live on GitHub (docs/ota.md). For a public repo the app reads
+// them without a token. For a private one, set FIRMWARE_GITHUB_TOKEN (read-only) and
+// the app hands each device a short-lived link to its file.
 
 const REPO = process.env.FIRMWARE_REPO || "vancityactivist/bzzy";
 const TOKEN = process.env.FIRMWARE_GITHUB_TOKEN || "";
@@ -66,7 +66,7 @@ export async function refreshRelease(): Promise<void> {
       cache: "no-store",
     });
     if (res.status === 404) {
-      update = { lastError: TOKEN ? "No firmware release yet." : "No release found (is FIRMWARE_GITHUB_TOKEN set?)." };
+      update = { lastError: TOKEN ? "No firmware release yet." : "No firmware release yet. (If FIRMWARE_REPO is private, set FIRMWARE_GITHUB_TOKEN.)" };
     } else if (!res.ok) {
       update = { lastError: `GitHub answered ${res.status}.` };
     } else {
