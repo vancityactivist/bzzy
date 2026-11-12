@@ -130,7 +130,7 @@ The switch only travels 0.2 mm, and its plunger tip sits on the board's routed e
 
 ### The wordmark
 
-"bzzy" is debossed 0.6 mm into the top face, right of the button, in Geist SemiBold, the font the app uses, with tight tracking. `render.sh` downloads the font (SIL Open Font License) into `case/fonts/` from the `geist` npm package. Without it, OpenSCAD falls back to its default font. Set `LOGO` to move it:
+"bzzy" is debossed 0.6 mm into the top face, right of the button, in Geist SemiBold, the font the app uses, with tight tracking. The font is in `case/fonts/` (SIL Open Font License). Set `LOGO` to move it:
 
 | `LOGO` | Where |
 |---|---|
