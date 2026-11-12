@@ -5,7 +5,7 @@ import { SignIn } from "@/components/sign-in";
 import { BUILTIN_GIFS, gifsForUser } from "@/lib/gifs";
 import { getCurrentUser } from "@/lib/session";
 
-import { DeleteGifButton, UploadGifForm } from "./gif-forms";
+import { DeleteGifButton, GifLinkForm, UploadGifForm } from "./gif-forms";
 
 export const metadata: Metadata = { title: "GIFs · bzzy" };
 
@@ -45,7 +45,7 @@ async function GifsContent() {
       <div>
         <h1 className="text-xl font-semibold">GIFs</h1>
         <p className="text-sm text-muted">
-          Upload your own, then pick which one each status shows on the Devices page. Uploads are resized to fit the
+          Upload your own or add one from GIPHY or Tenor, then pick which one each status shows on the Devices page. Uploads are resized to fit the
           screen (240 × 200).
         </p>
       </div>
@@ -54,6 +54,24 @@ async function GifsContent() {
         <h2 className="font-semibold">Upload</h2>
         <div className="mt-3">
           <UploadGifForm />
+        </div>
+      </section>
+
+      <section className="rounded-xl border border-line bg-card p-6">
+        <h2 className="font-semibold">From GIPHY or Tenor</h2>
+        <p className="mt-1 text-sm text-muted">
+          Find a GIF on{" "}
+          <a href="https://giphy.com" target="_blank" rel="noreferrer" className="underline">
+            giphy.com
+          </a>{" "}
+          or{" "}
+          <a href="https://tenor.com" target="_blank" rel="noreferrer" className="underline">
+            tenor.com
+          </a>
+          , or in the GIPHY app on your phone. Tap Share, then Copy link, and paste it here.
+        </p>
+        <div className="mt-3">
+          <GifLinkForm />
         </div>
       </section>
 

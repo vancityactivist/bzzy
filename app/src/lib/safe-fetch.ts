@@ -94,3 +94,46 @@ export async function fetchPublicText(start: URL): Promise<string> {
     return new TextDecoder().decode(Buffer.concat(chunks));
   }
 }
+
+// Fetching a file from a link someone pasted, where every hop (redirects too) has to stay
+// on hosts the caller allows. Errors are FetchRefused with a message fit to show.
+export async function fetchPublicBytes(
+  start: URL,
+  opts: { allowHost: (host: string) => boolean; maxBytes: number; accept: string },
+): Promise<{ bytes: Uint8Array; contentType: string; url: URL }> {
+  let url = start;
+  for (let hop = 0; ; hop++) {
+    if (url.protocol !== "https:" || !opts.allowHost(url.hostname)) throw new FetchRefused("That link went somewhere unexpected.");
+    await assertPublicHost(url);
+    const res = await fetch(url, {
+      redirect: "manual",
+      signal: AbortSignal.timeout(TIMEOUT_MS),
+      headers: { accept: opts.accept, "user-agent": "bzzy/1.0" },
+      cache: "no-store",
+    });
+    if (res.status >= 300 && res.status < 400 && res.headers.get("location")) {
+      if (hop >= MAX_REDIRECTS) throw new FetchRefused("That link redirected too many times.");
+      url = new URL(res.headers.get("location")!, url);
+      continue;
+    }
+    if (res.status === 404 || res.status === 410) throw new FetchRefused("That GIF couldn't be found. It may have been removed.");
+    if (!res.ok) throw new FetchRefused(`The GIF site answered with an error (${res.status}).`);
+    const tooBig = () => new FetchRefused(`That file is over ${Math.round(opts.maxBytes / 1024 / 1024)} MB.`);
+    if (Number(res.headers.get("content-length") ?? 0) > opts.maxBytes) throw tooBig();
+
+    const reader = res.body?.getReader();
+    const chunks: Uint8Array[] = [];
+    let total = 0;
+    while (reader) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      total += value.byteLength;
+      if (total > opts.maxBytes) {
+        await reader.cancel();
+        throw tooBig();
+      }
+      chunks.push(value);
+    }
+    return { bytes: new Uint8Array(Buffer.concat(chunks)), contentType: res.headers.get("content-type") ?? "", url };
+  }
+}
