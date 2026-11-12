@@ -59,6 +59,8 @@ export function DevicePreview({
   const until = view.until ? untilLabel(view.until) : null;
   // The device never has a GIF for "unknown" (but "show now" brings its own).
   const gif = view.layout === "show-text" || (view.status === "unknown" && view.layout === "status") ? null : gifSrc;
+  // display.cpp openGif(): a "show now" GIF with no message gets the whole screen.
+  const gifArea = view.layout === "show-gif" && !view.text ? SCREEN_H : GIF_H;
   const oneLineLabel = view.status === "dnd" ? "DO NOT DISTURB" : label.join(" ");
   const [r, g, b] = LED_RGB[view.status];
   const led = (a: number) => `rgb(${r} ${g} ${b} / ${a})`;
@@ -89,17 +91,18 @@ export function DevicePreview({
             style={{ width: SCREEN_W, height: SCREEN_H, transform: `scale(${scale})`, transformOrigin: "0 0" }}
           >
             {gif && (
-              <div className="absolute left-0 top-0 overflow-hidden bg-black" style={{ width: SCREEN_W, height: GIF_H }}>
-                {/* The firmware draws each frame at its own size from the top-left corner. */}
+              <div className="absolute left-0 top-0 flex overflow-hidden bg-black" style={{ width: SCREEN_W, height: gifArea }}>
+                {/* The firmware draws each frame at its own size, centred in the area (or from
+                    the top-left corner when it's bigger, which auto margins also do). */}
                 {/* eslint-disable-next-line @next/next/no-img-element -- animated GIF at native size */}
-                <img src={gif} alt="" className="absolute left-0 top-0 max-w-none" />
+                <img src={gif} alt="" className="m-auto max-w-none shrink-0" />
               </div>
             )}
             <svg className="absolute left-0 top-0" width={SCREEN_W} height={SCREEN_H} viewBox={`0 0 ${SCREEN_W} ${SCREEN_H}`} aria-hidden>
               {view.layout === "show-text" ? (
-                <ShowText view={view} bg={bg} label={oneLineLabel} until={until} />
+                <ShowText view={view} />
               ) : view.layout === "show-gif" && gif ? (
-                <ShowBar view={view} bg={bg} label={oneLineLabel} until={until} />
+                <ShowBar view={view} />
               ) : gif ? (
                 <>
                   <rect x={0} y={GIF_H} width={SCREEN_W} height={SCREEN_H - GIF_H} fill={bg} />
@@ -171,43 +174,38 @@ export function DevicePreview({
   );
 }
 
-// display.cpp drawShowText(): the message big and wrapped, status underneath.
-function ShowText({ view, bg, label, until }: { view: ScreenView; bg: string; label: string; until: string | null }) {
+// display.cpp drawShowText(): "show now" takes over the screen, so just the message,
+// big, on black.
+function ShowText({ view }: { view: ScreenView }) {
   const { font, lines } = wrapMessage(view.text);
   const lh = LINE_HEIGHT[font];
-  const top = 112 - Math.floor((lines.length * lh) / 2);
+  const top = Math.floor((SCREEN_H - lines.length * lh) / 2);
   return (
     <>
-      <rect width={SCREEN_W} height={SCREEN_H} fill={bg} />
+      <rect width={SCREEN_W} height={SCREEN_H} fill="#000" />
       {lines.map((l, i) => (
         <Line key={i} y={topBaseline(top + i * lh, FONT_PT[font])} pt={FONT_PT[font]} bold>
           {l}
         </Line>
       ))}
-      <Line y={topBaseline(222, 9)} pt={9}>
-        {until ? `${label}  ${until}` : label}
-      </Line>
     </>
   );
 }
 
-// display.cpp redraw(), Layout::ShowGif: the bar under the GIF.
-function ShowBar({ view, bg, label, until }: { view: ScreenView; bg: string; label: string; until: string | null }) {
-  const lines = view.text ? wrapBar(view.text) : [label];
-  const top = lines.length > 1 ? GIF_H + 4 : GIF_H + 12;
+// display.cpp redraw(), Layout::ShowGif: the GIF on black, and its message (if any)
+// centred in the bar under it.
+function ShowBar({ view }: { view: ScreenView }) {
+  if (!view.text) return null;
+  const lines = wrapBar(view.text);
+  const top = GIF_H + Math.floor((SCREEN_H - GIF_H - lines.length * LINE_HEIGHT.bold12) / 2);
   return (
     <>
-      <rect x={0} y={GIF_H} width={SCREEN_W} height={SCREEN_H - GIF_H} fill={bg} />
+      <rect x={0} y={GIF_H} width={SCREEN_W} height={SCREEN_H - GIF_H} fill="#000" />
       {lines.map((l, i) => (
         <Line key={i} y={topBaseline(top + i * LINE_HEIGHT.bold12, 12)} pt={12} bold>
           {l}
         </Line>
       ))}
-      {until && lines.length < 2 && (
-        <Line y={topBaseline(GIF_H + 46, 9)} pt={9}>
-          {until}
-        </Line>
-      )}
     </>
   );
 }
