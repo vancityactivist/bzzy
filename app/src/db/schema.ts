@@ -24,6 +24,7 @@ import type { AdapterAccountType } from "next-auth/adapters";
 
 import type { ReleaseManifest } from "../lib/firmware";
 import type { LedStyle } from "../lib/push-rules";
+import type { LedStyles, MeetingWarn } from "../lib/ring";
 import type { CachedEvent } from "../lib/ics";
 
 const id = () =>
@@ -232,6 +233,10 @@ export const devices = pgTable(
     pushTeamId: text("push_team_id").references(() => teams.id, { onDelete: "set null" }),
     // X-Bzzy-Features from the last poll ("leds,push"). Null = firmware from before it.
     features: text("features"),
+    // The ring (docs/protocol.md, "LED styles"). allowFlash off: always steady, pushes too.
+    allowFlash: boolean("allow_flash").notNull().default(true),
+    ledStyles: jsonb("led_styles").$type<LedStyles>(),
+    meetingWarn: jsonb("meeting_warn").$type<MeetingWarn>(),
     lastSeenAt: timestamp("last_seen_at", { mode: "date" }),
     // Firmware updates (docs/ota.md). The device reports the rest on each poll.
     autoUpdate: boolean("auto_update").notNull().default(true),

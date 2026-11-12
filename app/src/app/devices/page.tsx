@@ -14,6 +14,7 @@ import { sharedTeamsForUser } from "@/lib/teams";
 
 import { DeviceFirmware } from "./device-firmware";
 import { AddDeviceForm, DeviceActions } from "./device-forms";
+import { DeviceRingSettings } from "./device-ring";
 import { DeviceScreens, type GifOption } from "./device-screens";
 import { PushTeamSelect } from "./push-team-select";
 import { absoluteTime, relativeTime } from "./relative-time";
@@ -106,6 +107,7 @@ async function DevicesContent() {
                     ]}
                   />
                 )}
+                {d.canManage && <DeviceRingSettings deviceId={d.id} ring={d.ring} defaultStatus={d.defaultStatus} />}
               </Card>
             </li>
           ))}

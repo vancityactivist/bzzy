@@ -7,6 +7,7 @@ import { db, schema } from "@/db";
 import { hashToken, newDeviceId, newDeviceToken } from "./device-token";
 import type { DeviceFirmware } from "./firmware";
 import type { Status } from "./protocol";
+import type { LedStyles, MeetingWarn } from "./ring";
 import { ensurePersonalTeam, roleInTeam, teamsForUser } from "./teams";
 
 export type DeviceSummary = {
@@ -20,7 +21,10 @@ export type DeviceSummary = {
   lastSeenAt: Date | null;
   canManage: boolean;
   firmware: DeviceFirmware;
+  ring: DeviceRing;
 };
+
+export type DeviceRing = { allowFlash: boolean; ledStyles: LedStyles | null; meetingWarn: MeetingWarn | null };
 
 export async function devicesForUser(userId: string): Promise<DeviceSummary[]> {
   const teams = await teamsForUser(userId);
@@ -50,6 +54,7 @@ export async function devicesForUser(userId: string): Promise<DeviceSummary[]> {
         firmwareFailed: d.firmwareFailed,
         updateRequestedAt: d.updateRequestedAt,
       },
+      ring: { allowFlash: d.allowFlash, ledStyles: d.ledStyles, meetingWarn: d.meetingWarn },
     };
   });
 }
@@ -70,6 +75,10 @@ export async function createDevice(userId: string, displayName: string, name: st
   const token = newDeviceToken();
   await db().insert(schema.devices).values({ id, teamId, ownerUserId: userId, name, tokenHash: hashToken(token), autoUpdate });
   return { id, token };
+}
+
+export async function setDeviceRing(deviceId: string, ring: DeviceRing) {
+  await db().update(schema.devices).set(ring).where(eq(schema.devices.id, deviceId));
 }
 
 export async function setAutoUpdate(deviceId: string, autoUpdate: boolean) {

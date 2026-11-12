@@ -24,6 +24,8 @@ export type PreviewDevice = {
   name: string;
   view: ScreenView; // the status part, as it is now
   gifs: Record<Status, string | null>;
+  ring?: LedStyle | null; // what the ring is doing now (a push, a meeting warning, the status's style)
+  styles?: Record<Status, LedStyle | null>; // each status's style, for drafts
 };
 
 // What's on the screens now from "show now", if it's visible.
@@ -135,6 +137,7 @@ export function StudioPreview({
   let view = device.view;
   let gif = view.status === "unknown" ? null : device.gifs[view.status];
   let draft = false;
+  let ring = device.ring ?? null;
   const liveView = () => {
     if (!live) return;
     view = withShow(view, {
@@ -154,6 +157,7 @@ export function StudioPreview({
       until: minutesFromNow(status.minutes),
     });
     gif = device.gifs[s];
+    ring = device.styles?.[s] ?? null;
     draft = true;
   } else if (draftShowGif(show, library) || screenText(show.text.trim())) {
     // A GIF or message picked for "show now" stays on the preview until it's sent or
@@ -218,7 +222,7 @@ export function StudioPreview({
           style={{ ["--stage" as string]: `radial-gradient(closest-side, rgb(${r} ${g} ${b} / 0.16), transparent)` }}
         >
           <div className="max-lg:[zoom:0.5] lg:[background:var(--stage)] lg:rounded-full lg:p-6">
-            <DevicePreview view={view} gifSrc={gif} ring={draft ? null : live?.push?.leds} scale={1} className="max-lg:m-5" />
+            <DevicePreview view={view} gifSrc={gif} ring={ring} scale={1} className="max-lg:m-5" />
           </div>
         </div>
 

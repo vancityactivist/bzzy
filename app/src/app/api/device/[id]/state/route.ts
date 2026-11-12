@@ -9,6 +9,7 @@ import { getPresence } from "@/lib/presence";
 import { buildState, type GifMap, type GifRef, hasFeature, nowSeconds, readFeatures, STATUSES } from "@/lib/protocol";
 import { pushAsShow } from "@/lib/push-rules";
 import { pushForDevice } from "@/lib/pushes";
+import { sentLeds } from "@/lib/ring";
 import { getShow } from "@/lib/show";
 
 // Polled by the device every ~20 s. See docs/protocol.md.
@@ -58,7 +59,11 @@ export async function GET(req: NextRequest, ctx: RouteContext<"/api/device/[id]/
     // so and carries the flash.
     show: push ? { ...pushAsShow(push, presence, now), gif: ref(push.gif) } : show && { ...show, gif: ref(show.gif) },
     push:
-      push && hasFeature(features, "push") ? { id: push.id, updatedAt: push.updatedAt, ...(push.leds ? { leds: push.leds } : {}) } : null,
+      push && hasFeature(features, "push")
+        ? { id: push.id, updatedAt: push.updatedAt, ...(push.leds && device.allowFlash ? { leds: push.leds } : {}) }
+        : null,
+    // How the ring moves. Firmware without the "leds" feature ignores these.
+    leds: sentLeds(device),
     firmware,
   });
 

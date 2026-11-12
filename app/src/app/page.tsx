@@ -11,6 +11,7 @@ import { nowSeconds, showVisible, STATUSES } from "@/lib/protocol";
 import { resolveScreen, screenText, viewFor } from "@/lib/screen";
 import { getCurrentUser } from "@/lib/session";
 import { ringNow } from "@/lib/push-rules";
+import { ringFor } from "@/lib/ring";
 import { pushForDevice } from "@/lib/pushes";
 import { getShow } from "@/lib/show";
 import { sharedTeamsForUser } from "@/lib/teams";
@@ -93,11 +94,17 @@ async function HomeContent() {
       ? await Promise.all(
           mine.map(async (d) => {
             const gifs = await resolveDeviceGifs(d.id);
+            const resolved = resolveScreen({ now, defaultStatus: d.defaultStatus, presence, schedule });
+            const ringPush = push && d.pushTeamId === push.teamId ? push : null;
             return {
               id: d.id,
               name: d.name,
-              view: viewFor(resolveScreen({ now, defaultStatus: d.defaultStatus, presence, schedule })),
+              view: viewFor(resolved),
               gifs: Object.fromEntries(STATUSES.map((s) => [s, previewSrc(gifs[s])])) as PreviewDevice["gifs"],
+              ring: ringFor({ ...d.ring, status: resolved.status, schedule, now, push: ringPush }),
+              styles: Object.fromEntries(
+                STATUSES.map((s) => [s, ringFor({ ...d.ring, meetingWarn: null, status: s, schedule: [], now })]),
+              ) as PreviewDevice["styles"],
             };
           }),
         )

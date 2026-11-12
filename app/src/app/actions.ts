@@ -13,6 +13,7 @@ import {
   requestUpdate,
   rotateDeviceToken,
   setAutoUpdate,
+  setDeviceRing,
 } from "@/lib/devices";
 import { setSuperadmin } from "@/lib/admin";
 import { GifError } from "@/lib/gif-process";
@@ -20,6 +21,7 @@ import { checkGifChoice, deleteGif, importGifFromLink, setDeviceGif, uploadGif }
 import { PasskeyError, renamePasskey, revokePasskey } from "@/lib/passkeys";
 import { setPresence } from "@/lib/presence";
 import { clipText, nowSeconds, STATUSES } from "@/lib/protocol";
+import { ringFromInput, type RingInput, ringInput } from "@/lib/ring";
 import { requireUser } from "@/lib/session";
 import { clearShow, setShow } from "@/lib/show";
 
@@ -318,6 +320,16 @@ export async function setDeviceGifAction(deviceId: string, status: string, choic
   if (!teamId) return;
   await setDeviceGif(deviceId, teamId, s.data, choice);
   refresh();
+}
+
+// The ring: a style per status, the meeting warning, and whether it may flash at all.
+export async function setDeviceRingAction(deviceId: string, raw: RingInput): Promise<{ ok: boolean }> {
+  const user = await requireUser();
+  const input = ringInput.safeParse(raw);
+  if (!input.success || !(await canManageDevice(user.id, deviceId))) return { ok: false };
+  await setDeviceRing(deviceId, ringFromInput(input.data));
+  refresh();
+  return { ok: true };
 }
 
 // ---- superadmin ----
