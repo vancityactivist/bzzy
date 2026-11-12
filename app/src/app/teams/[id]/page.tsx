@@ -6,6 +6,11 @@ import { Suspense } from "react";
 import { CheckIcon, ShieldIcon } from "@/components/icons";
 import { SignIn } from "@/components/sign-in";
 import { Badge, Card, CardHeader, Container, PageHeader } from "@/components/ui";
+import { teamDashboard } from "@/lib/dashboard";
+import { BUILTIN_GIFS, gifsForUser, previewSrc } from "@/lib/gifs";
+import { nowSeconds } from "@/lib/protocol";
+import { ackCount, PUSH_FLASHES, pushLive } from "@/lib/push-rules";
+import { teamPushes } from "@/lib/pushes";
 import { getCurrentUser } from "@/lib/session";
 import { can, canRemove } from "@/lib/team-rules";
 import { teamAccess, teamAuditLog, teamInvites, teamMembers } from "@/lib/teams";
@@ -19,12 +24,16 @@ import {
   RenameTeamForm,
   RevokeInviteButton,
 } from "../team-forms";
+import type { LibraryGif } from "../../studio";
+import { AutoRefresh } from "./auto-refresh";
+import { Dashboard } from "./dashboard";
+import { PushComposer, PushList, type PushSummary } from "./push-composer";
 
 export const metadata: Metadata = { title: "Team" };
 
 export default function TeamPage(props: PageProps<"/teams/[id]">) {
   return (
-    <Container size="narrow">
+    <Container>
       <Suspense fallback={<p className="text-muted">Loading…</p>}>
         <TeamContent {...props} />
       </Suspense>
@@ -46,16 +55,41 @@ async function TeamContent({ params, searchParams }: PageProps<"/teams/[id]">) {
   const { team, access } = found;
   const manage = can(access, "manage");
   const owner = can(access, "owner");
-  const [members, invites, log] = await Promise.all([
+  const nowSec = nowSeconds();
+  const [members, invites, log, pushes, uploads] = await Promise.all([
     teamMembers(team.id),
     manage ? teamInvites(team.id) : Promise.resolve([]),
     manage ? teamAuditLog(team.id) : Promise.resolve([]),
+    manage ? teamPushes(team.id, nowSec) : Promise.resolve([]),
+    manage ? gifsForUser(user.id) : Promise.resolve([]),
   ]);
   const now = new Date();
+  // Admins (and the superadmin) see everyone's light and send pushes; members don't.
+  const cards = manage ? await teamDashboard(members, nowSec) : null;
   const names = new Map(members.map((m) => [m.userId, m.name ?? m.email ?? "Someone"]));
+  const memberIds = members.map((m) => m.userId);
+  const library: LibraryGif[] = [
+    ...uploads.map((g) => ({ choice: `asset:${g.id}`, name: g.name, src: `/api/gifs/${g.id}` })),
+    ...BUILTIN_GIFS.map((g) => ({ choice: `builtin:${g.id}`, name: g.name, src: g.path })),
+  ];
+  const pushList: PushSummary[] = pushes.map((p) => ({
+    id: p.id,
+    text: p.text,
+    gifSrc: previewSrc(p.gif),
+    gifName: p.gif?.name ?? null,
+    who: p.target === "all" ? "Everyone" : p.targets.map((id) => names.get(id) ?? "a former member").join(", "),
+    ...ackCount(p, memberIds),
+    until: p.until,
+    endedAt: p.endedAt,
+    live: pushLive(p, nowSec),
+    by: p.createdByName,
+    flash: p.leds ? (PUSH_FLASHES.find((f) => f.value === p.leds?.pattern)?.label.toLowerCase() ?? null) : null,
+    sentAgo: relativeTime(p.createdAt, now.getTime()),
+  }));
 
   return (
     <div className="space-y-6">
+      {cards && <AutoRefresh />}
       <PageHeader
         title={team.name}
         description={
@@ -90,122 +124,140 @@ async function TeamContent({ params, searchParams }: PageProps<"/teams/[id]">) {
         </div>
       )}
 
-      {!access.role && (
-        <p className="flex items-start gap-2 rounded-xl bg-subtle p-4 text-sm">
-          <ShieldIcon className="mt-0.5 size-4 shrink-0 text-muted" />
-          <span>You&apos;re not in this team. Anything you change here is recorded in its activity log as a superadmin action.</span>
-        </p>
-      )}
-
-      <Card padding="none" className="overflow-hidden">
-        <CardHeader title="People" className="p-5 pb-3 sm:p-6 sm:pb-3" />
-        <ul className="divide-y divide-line border-t border-line">
-          {members.map((m) => {
-            const self = m.userId === user.id;
-            const name = m.name ?? m.email ?? "Someone";
-            return (
-              <li key={m.userId} className="flex flex-wrap items-center gap-x-3 gap-y-2 px-5 py-3 sm:px-6">
-                <span
-                  aria-hidden="true"
-                  className="flex size-9 shrink-0 items-center justify-center rounded-full bg-subtle text-xs font-semibold text-muted uppercase"
-                >
-                  {name.trim().charAt(0) || "?"}
-                </span>
-                <div className="min-w-0 flex-1 basis-40">
-                  <p className="truncate font-medium">
-                    {name}
-                    {self && <span className="font-normal text-muted"> (you)</span>}
-                  </p>
-                  <p className="truncate text-sm text-muted" title={absoluteTime(m.joinedAt)}>
-                    {ROLE_LABEL[m.role]} · joined {shortDate(m.joinedAt)}
-                  </p>
-                </div>
-                {!self && (manage || owner) && (
-                  <MemberControls
-                    teamId={team.id}
-                    memberId={m.userId}
-                    name={name}
-                    role={m.role}
-                    canSetRoles={can(access, "setRoles")}
-                    canRemove={canRemove(access, m.role, false)}
-                    canTransfer={owner}
-                  />
-                )}
-              </li>
-            );
-          })}
-        </ul>
-      </Card>
+      {cards && <Dashboard cards={cards} nowMs={now.getTime()} />}
 
       {manage && (
-        <Card>
-          <CardHeader
-            title="Invite people"
-            description="Anyone with a link can join, even without GitHub: they make an account with a passkey. Links are shown once."
-          />
-          <div className="mt-4">
-            <InviteForm teamId={team.id} canInviteAdmins={can(access, "setRoles")} />
-          </div>
-          {invites.length > 0 && (
-            <ul className="mt-5 divide-y divide-line border-t border-line">
-              {invites.map((inv) => (
-                <li key={inv.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 py-3 text-sm">
-                  <div className="min-w-0 flex-1 basis-56">
-                    <p className="font-medium">
-                      {inv.kind === "team" ? "Team link" : "One-person link"} · joins as {ROLE_LABEL[inv.role].toLowerCase()}
+        <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
+          <PushComposer teamId={team.id} members={members.map((m) => ({ userId: m.userId, name: names.get(m.userId)! }))} library={library} />
+          <PushList teamId={team.id} pushes={pushList} />
+        </div>
+      )}
+
+      <div className="max-w-3xl space-y-6">
+        {!access.role && (
+          <p className="flex items-start gap-2 rounded-xl bg-subtle p-4 text-sm">
+            <ShieldIcon className="mt-0.5 size-4 shrink-0 text-muted" />
+            <span>You&apos;re not in this team. Anything you change here is recorded in its activity log as a superadmin action.</span>
+          </p>
+        )}
+
+        <Card padding="none" className="overflow-hidden">
+          <CardHeader title="People" className="p-5 pb-3 sm:p-6 sm:pb-3" />
+          <ul className="divide-y divide-line border-t border-line">
+            {members.map((m) => {
+              const self = m.userId === user.id;
+              const name = m.name ?? m.email ?? "Someone";
+              return (
+                <li key={m.userId} className="flex flex-wrap items-center gap-x-3 gap-y-2 px-5 py-3 sm:px-6">
+                  <span
+                    aria-hidden="true"
+                    className="flex size-9 shrink-0 items-center justify-center rounded-full bg-subtle text-xs font-semibold text-muted uppercase"
+                  >
+                    {name.trim().charAt(0) || "?"}
+                  </span>
+                  <div className="min-w-0 flex-1 basis-40">
+                    <p className="truncate font-medium">
+                      {name}
+                      {self && <span className="font-normal text-muted"> (you)</span>}
                     </p>
-                    <p className="text-muted">
-                      {inv.uses} {inv.uses === 1 ? "use" : "uses"} ·{" "}
-                      {inv.state === "live" ? (
-                        <span title={absoluteTime(inv.expiresAt)}>ends {shortDate(inv.expiresAt)}</span>
-                      ) : (
-                        INVITE_STATE_LABEL[inv.state].toLowerCase()
-                      )}
-                      {inv.createdByName && ` · made by ${inv.createdByName}`}
+                    <p className="truncate text-sm text-muted" title={absoluteTime(m.joinedAt)}>
+                      {ROLE_LABEL[m.role]} · joined {shortDate(m.joinedAt)}
                     </p>
                   </div>
-                  {inv.state === "live" ? (
-                    <RevokeInviteButton teamId={team.id} inviteId={inv.id} />
-                  ) : (
-                    <Badge>{INVITE_STATE_LABEL[inv.state]}</Badge>
+                  {!self && (manage || owner) && (
+                    <MemberControls
+                      teamId={team.id}
+                      memberId={m.userId}
+                      name={name}
+                      role={m.role}
+                      canSetRoles={can(access, "setRoles")}
+                      canRemove={canRemove(access, m.role, false)}
+                      canTransfer={owner}
+                    />
                   )}
+                </li>
+              );
+            })}
+          </ul>
+        </Card>
+
+        {manage && (
+          <Card>
+            <CardHeader
+              title="Invite people"
+              description="Anyone with a link can join, even without GitHub: they make an account with a passkey. Links are shown once."
+            />
+            <div className="mt-4">
+              <InviteForm teamId={team.id} canInviteAdmins={can(access, "setRoles")} />
+            </div>
+            {invites.length > 0 && (
+              <ul className="mt-5 divide-y divide-line border-t border-line">
+                {invites.map((inv) => (
+                  <li key={inv.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 py-3 text-sm">
+                    <div className="min-w-0 flex-1 basis-56">
+                      <p className="font-medium">
+                        {inv.kind === "team" ? "Team link" : "One-person link"} · joins as {ROLE_LABEL[inv.role].toLowerCase()}
+                      </p>
+                      <p className="text-muted">
+                        {inv.uses} {inv.uses === 1 ? "use" : "uses"} ·{" "}
+                        {inv.state === "live" ? (
+                          <span title={absoluteTime(inv.expiresAt)}>ends {shortDate(inv.expiresAt)}</span>
+                        ) : (
+                          INVITE_STATE_LABEL[inv.state].toLowerCase()
+                        )}
+                        {inv.createdByName && ` · made by ${inv.createdByName}`}
+                      </p>
+                    </div>
+                    {inv.state === "live" ? (
+                      <RevokeInviteButton teamId={team.id} inviteId={inv.id} />
+                    ) : (
+                      <Badge>{INVITE_STATE_LABEL[inv.state]}</Badge>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </Card>
+        )}
+
+        {manage && log.length > 0 && (
+          <Card>
+            <CardHeader title="Activity" description="Who joined, left or changed things. Superadmin actions are marked." />
+            <ul className="mt-4 space-y-2 text-sm">
+              {log.map((e) => (
+                <li key={e.id} className="flex flex-wrap items-baseline gap-x-2">
+                  <span className="text-muted tabular-nums" title={absoluteTime(e.at)}>
+                    {relativeTime(e.at, now.getTime())}
+                  </span>
+                  <span>{describe(e, names)}</span>
+                  {e.asSuperadmin && <Badge tone="inverse">superadmin</Badge>}
                 </li>
               ))}
             </ul>
-          )}
-        </Card>
-      )}
+          </Card>
+        )}
 
-      {manage && log.length > 0 && (
-        <Card>
-          <CardHeader title="Activity" description="Who joined, left or changed things. Superadmin actions are marked." />
-          <ul className="mt-4 space-y-2 text-sm">
-            {log.map((e) => (
-              <li key={e.id} className="flex flex-wrap items-baseline gap-x-2">
-                <span className="text-muted tabular-nums" title={absoluteTime(e.at)}>
-                  {relativeTime(e.at, now.getTime())}
-                </span>
-                <span>{describe(e, names)}</span>
-                {e.asSuperadmin && <Badge tone="inverse">superadmin</Badge>}
-              </li>
-            ))}
-          </ul>
-        </Card>
-      )}
-
-      {owner && (
-        <Card>
-          <CardHeader title="Team settings" />
-          <div className="mt-4 space-y-5">
-            <RenameTeamForm teamId={team.id} name={team.name} />
-            <div className="border-t border-line pt-5">
-              <DeleteTeamButton teamId={team.id} teamName={team.name} />
+        {owner && (
+          <Card>
+            <CardHeader title="Team settings" />
+            <div className="mt-4 space-y-5">
+              <RenameTeamForm teamId={team.id} name={team.name} />
+              <div className="border-t border-line pt-5">
+                <DeleteTeamButton teamId={team.id} teamName={team.name} />
+              </div>
             </div>
-          </div>
-        </Card>
-      )}
+          </Card>
+        )}
 
-      {access.role && access.role !== "owner" && <LeaveTeamButton teamId={team.id} userId={user.id} teamName={team.name} />}
+        {access.role === "member" && (
+          <p className="text-sm text-muted">
+            The team&apos;s admins can see what your light&apos;s screen shows, and where your status came from. They can also put a
+            message on lights that follow this team; the top button on your light dismisses it.
+          </p>
+        )}
+
+        {access.role && access.role !== "owner" && <LeaveTeamButton teamId={team.id} userId={user.id} teamName={team.name} />}
+      </div>
     </div>
   );
 }
@@ -235,6 +287,10 @@ function describe(e: LogEntry, names: Map<string, string>): string {
       return `${who} made a ${d.kind === "team" ? "team" : "one-person"} invite link (${d.role}, ${d.days} days)`;
     case "revoked":
       return `${who} revoked an invite link`;
+    case "push":
+      return `${who} sent a push to ${d.target === "all" ? "everyone" : `${d.people} ${d.people === 1 ? "person" : "people"}`}${d.text ? `: “${d.text}”` : ""}`;
+    case "push-ended":
+      return `${who} ended a push${d.text ? `: “${d.text}”` : ""}`;
     default:
       return `${who}: ${e.action}`;
   }

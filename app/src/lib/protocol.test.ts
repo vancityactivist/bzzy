@@ -4,8 +4,10 @@ import { bearerToken, hashToken, newDeviceId, newDeviceToken, tokenMatches } fro
 import {
   buildState,
   clipText,
+  hasFeature,
   MAX_BLOCKS,
   overrideBody,
+  readFeatures,
   showVisible,
   type ShowState,
   shouldApplyDeviceOverride,
@@ -175,5 +177,38 @@ describe("show now", () => {
     // An expired status doesn't count: the device never hears about it.
     expect(showVisible(show(), presence({ updatedAt: NOW - 10, until: NOW - 1 }), NOW)).toBe(true);
     expect(showVisible(show({ active: false }), null, NOW)).toBe(false);
+  });
+});
+
+describe("push", () => {
+  const show = (s: Partial<ShowState> = {}): ShowState => ({
+    active: true,
+    text: "Lunch!",
+    until: 0,
+    updatedAt: NOW - 30,
+    gif: { url: "https://bzzy.vercel.app/gifs/x.gif", sha: "abc" },
+    ...s,
+  });
+
+  it("rides along only while the show is live", () => {
+    const push = { id: "p1", updatedAt: NOW - 30, leds: { pattern: "pulse" as const } };
+    const live = buildState({ now: NOW, defaultStatus: "free", presence: null, schedule: [], show: show(), push });
+    expect(live.push).toEqual(push);
+    const gone = buildState({ now: NOW, defaultStatus: "free", presence: null, schedule: [], show: show({ until: NOW }), push });
+    expect(gone.push).toBeUndefined();
+  });
+});
+
+describe("readFeatures", () => {
+  it("tidies the header", () => {
+    expect(readFeatures("push, LEDS,push")).toBe("leds,push");
+    expect(readFeatures(null)).toBeNull();
+    expect(readFeatures(" , ")).toBeNull();
+    expect(readFeatures("leds,<script>")).toBe("leds");
+  });
+  it("finds a feature", () => {
+    expect(hasFeature("leds,push", "push")).toBe(true);
+    expect(hasFeature("leds,pushy", "push")).toBe(false);
+    expect(hasFeature(null, "push")).toBe(false);
   });
 });

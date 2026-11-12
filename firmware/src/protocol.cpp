@@ -86,6 +86,18 @@ bool parseState(const char* json, size_t len, State& out) {
     st.meetingWarn.leds = parseStyle(mw["leds"]);
   }
 
+  // A team push: `show` is its content. Ids are UUIDs; anything else is ignored.
+  JsonObjectConst p = doc["push"];
+  const char* pid = p["id"] | "";
+  if (!p.isNull() && *pid && strlen(pid) < kPushIdMax) {
+    st.push.active = true;
+    strlcpy(st.push.id, pid, sizeof(st.push.id));
+    st.push.updatedAt = p["updatedAt"] | 0u;
+    st.push.leds = parseStyle(p["leds"]);
+  }
+  // Only in the on-device cache.
+  strlcpy(st.dismissedPush, doc["dismissedPush"] | "", sizeof(st.dismissedPush));
+
   out = st;
   return true;
 }
@@ -129,6 +141,13 @@ String serializeState(const State& st) {
     mw["minutes"] = st.meetingWarn.minutes;
     writeStyle(mw["leds"].to<JsonObject>(), st.meetingWarn.leds);
   }
+  if (st.push.active) {
+    JsonObject p = doc["push"].to<JsonObject>();
+    p["id"] = st.push.id;
+    p["updatedAt"] = st.push.updatedAt;
+    if (st.push.leds.set) writeStyle(p["leds"].to<JsonObject>(), st.push.leds);
+  }
+  if (st.dismissedPush[0]) doc["dismissedPush"] = st.dismissedPush;
   String out;
   serializeJson(doc, out);
   return out;

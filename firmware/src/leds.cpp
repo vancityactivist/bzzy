@@ -17,6 +17,7 @@ static bzzy::Status g_status = bzzy::Status::Unknown;
 // of a cycle and a style's "for" counts from when it appeared.
 static bzzy::LedStyle g_style;
 static bool g_warning = false;
+static bool g_push = false;
 static uint32_t g_styleStartMs = 0;
 
 static CRGB colorFor(bzzy::Status s) {
@@ -43,18 +44,19 @@ void begin() {
 
 void show(bzzy::Status s, const bzzy::LedChoice& choice, uint32_t nowUnix) {
   const uint32_t ms = millis();
-  const bool changed = s != g_status || choice.warning != g_warning || !sameStyle(choice.style, g_style);
+  const bool changed = s != g_status || choice.warning != g_warning || choice.push != g_push || !sameStyle(choice.style, g_style);
   if (changed) {
     g_styleStartMs = ms;
-    // A meeting warning that began before this moment (say, after a reboot) carries on
-    // where it would have been, so its "for" still ends on time.
-    if (choice.warning && choice.startedAt && nowUnix > choice.startedAt) {
+    // A push or meeting warning that began before this moment (say, after a reboot)
+    // carries on where it would have been, so its "for" still ends on time.
+    if ((choice.warning || choice.push) && choice.startedAt && nowUnix > choice.startedAt) {
       g_styleStartMs = ms - (nowUnix - choice.startedAt) * 1000u;
     }
   }
   g_status = s;
   g_style = choice.style;
   g_warning = choice.warning;
+  g_push = choice.push;
   g_target = choice.style.set && choice.style.hasColor
                  ? CRGB((choice.style.color >> 16) & 0xFF, (choice.style.color >> 8) & 0xFF, choice.style.color & 0xFF)
                  : colorFor(s);
@@ -68,7 +70,7 @@ void tick(uint32_t nowMs) {
   // Fade towards the target colour so changes don't look like glitches.
   g_current = blend(g_current, g_target, 24);
 
-  if (g_status == bzzy::Status::Unknown && !g_warning) {
+  if (g_status == bzzy::Status::Unknown && !g_warning && !g_push) {
     CRGB c = g_current;
     c.nscale8(beatsin8(12, 40, 255));  // slow breathe: "I don't know right now"
     fill_solid(g_leds, cfg::kLedCount, c);

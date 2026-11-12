@@ -4,6 +4,7 @@
 import { z } from "zod";
 
 import type { FirmwareOffer } from "./firmware";
+import type { LedStyle } from "./push-rules";
 
 export const STATUSES = ["free", "busy", "dnd", "away"] as const;
 export type Status = (typeof STATUSES)[number];
@@ -35,6 +36,11 @@ export type Show = {
 };
 export type ShowState = Show & { gif: GifRef | null };
 
+// A team push. Its GIF and message travel in `show`, so firmware from before pushes
+// still shows it; this says that `show` is a push, for firmware with the "push"
+// feature (docs/protocol.md).
+export type PushState = { id: string; updatedAt: number; leds?: LedStyle };
+
 export type StateResponse = {
   v: 1;
   serverTime: number;
@@ -45,6 +51,7 @@ export type StateResponse = {
   gifs?: GifMap;
   // Present only when the device should update (docs/ota.md).
   firmware?: FirmwareOffer;
+  push?: PushState;
 };
 
 export const overrideBody = z.object({
@@ -53,6 +60,23 @@ export const overrideBody = z.object({
   updatedAt: z.number().int().nonnegative(),
 });
 export type OverrideBody = z.infer<typeof overrideBody>;
+
+// POST /api/device/{id}/push-ack: the person dismissed a push with the button.
+export const pushAckBody = z.object({
+  id: z.string().min(1).max(64),
+  at: z.number().int().nonnegative(),
+});
+
+// X-Bzzy-Features ("leds,push"), tidied for saving. null when it's missing or odd.
+export function readFeatures(raw: string | null): string | null {
+  if (!raw || raw.length > 200) return null;
+  const list = [...new Set(raw.split(",").map((f) => f.trim().toLowerCase()))].filter((f) => /^[a-z0-9-]{1,20}$/.test(f));
+  return list.length ? list.sort().join(",") : null;
+}
+
+export function hasFeature(features: string | null | undefined, name: string): boolean {
+  return !!features && features.split(",").includes(name);
+}
 
 export const nowSeconds = () => Math.floor(Date.now() / 1000);
 
@@ -76,6 +100,7 @@ export function buildState(opts: {
   gifs?: GifMap;
   show?: ShowState | null;
   firmware?: FirmwareOffer | null;
+  push?: PushState | null;
 }): StateResponse {
   const { now, defaultStatus, presence } = opts;
 
@@ -113,6 +138,7 @@ export function buildState(opts: {
   };
   if (opts.gifs) state.gifs = opts.gifs;
   if (opts.firmware) state.firmware = opts.firmware;
+  if (opts.push && show?.active) state.push = opts.push;
   return state;
 }
 

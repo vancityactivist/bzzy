@@ -337,6 +337,7 @@ void test_update_now_ignores_quiet_time() {
 }
 
 void run_led_pattern_tests();  // test_led_pattern.cpp
+void run_push_tests();         // test_push.cpp
 
 int main(int, char**) {
   UNITY_BEGIN();
@@ -371,5 +372,6 @@ int main(int, char**) {
   RUN_TEST(test_rolled_back_version_needs_a_new_press);
   RUN_TEST(test_update_now_ignores_quiet_time);
   run_led_pattern_tests();
+  run_push_tests();
   return UNITY_END();
 }

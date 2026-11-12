@@ -10,7 +10,10 @@ import { getPresence } from "@/lib/presence";
 import { nowSeconds, showVisible, STATUSES } from "@/lib/protocol";
 import { resolveScreen, screenText, viewFor } from "@/lib/screen";
 import { getCurrentUser } from "@/lib/session";
+import { ringNow } from "@/lib/push-rules";
+import { pushForDevice } from "@/lib/pushes";
 import { getShow } from "@/lib/show";
+import { sharedTeamsForUser } from "@/lib/teams";
 
 import { clearStatus } from "./actions";
 import {
@@ -58,8 +61,22 @@ async function HomeContent() {
       src: g.path,
     })),
   ];
-  const liveShow: LiveShow | null =
-    show && showVisible(show, presence, now)
+  // Lights that show this person's status (team devices can belong to others).
+  const mine = devices.filter((d) => d.ownerUserId === user.id);
+  // A team push beats their own show now. It's the same on all their lights that
+  // follow that team, so take the first one that has one.
+  const following = mine.find((d) => d.pushTeamId);
+  const push = following ? await pushForDevice(following, now) : null;
+  const pushTeam = push ? ((await sharedTeamsForUser(user.id)).find((t) => t.id === push.teamId)?.name ?? null) : null;
+  const liveShow: LiveShow | null = push
+    ? {
+        text: screenText(push.text),
+        until: push.until,
+        gifSrc: previewSrc(push.gif),
+        gifName: push.gif?.name ?? null,
+        push: { team: pushTeam ?? "your team", leds: ringNow(push.leds, push.updatedAt, now) },
+      }
+    : show && showVisible(show, presence, now)
       ? {
           text: screenText(show.text),
           until: show.until,
@@ -71,8 +88,6 @@ async function HomeContent() {
   const next = schedule.find((b) => b.start > now);
   // "3:30 PM", the way the screen writes it (screen.ts untilLabel: fixed UTC-7).
   const at = (sec: number) => new Date(sec * 1000).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone: "Etc/GMT+7" });
-  // Lights that show this person's status (team devices can belong to others).
-  const mine = devices.filter((d) => d.ownerUserId === user.id);
   const previews: PreviewDevice[] =
     mine.length > 0
       ? await Promise.all(

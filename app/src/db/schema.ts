@@ -23,6 +23,7 @@ import {
 import type { AdapterAccountType } from "next-auth/adapters";
 
 import type { ReleaseManifest } from "../lib/firmware";
+import type { LedStyle } from "../lib/push-rules";
 import type { CachedEvent } from "../lib/ics";
 
 const id = () =>
@@ -229,6 +230,8 @@ export const devices = pgTable(
     defaultStatus: statusKind("default_status").notNull().default("free"),
     // The one team whose pushes this light shows. Null = none. Never a personal team.
     pushTeamId: text("push_team_id").references(() => teams.id, { onDelete: "set null" }),
+    // X-Bzzy-Features from the last poll ("leds,push"). Null = firmware from before it.
+    features: text("features"),
     lastSeenAt: timestamp("last_seen_at", { mode: "date" }),
     // Firmware updates (docs/ota.md). The device reports the rest on each poll.
     autoUpdate: boolean("auto_update").notNull().default(true),
@@ -319,6 +322,67 @@ export const showNow = pgTable("show_now", {
   until: integer("until").notNull().default(0),
   updatedAt: integer("updated_at").notNull().default(0),
 });
+
+// ---------------------------------------------------------------------------
+// Team pushes
+// ---------------------------------------------------------------------------
+
+export const pushTarget = pgEnum("push_target", ["all", "users"]);
+
+// A team-level "show now" an admin sends to everyone or to picked people: a message
+// and/or GIF, plus an optional flash. It beats the person's own show now until it
+// ends, is ended early, or they dismiss it with the light's top button.
+export const teamPushes = pgTable(
+  "team_push",
+  {
+    id: id(),
+    teamId: text("team_id")
+      .notNull()
+      .references(() => teams.id, { onDelete: "cascade" }),
+    createdBy: text("created_by").references(() => users.id, { onDelete: "set null" }),
+    target: pushTarget("target").notNull().default("all"),
+    text: text("text").notNull().default(""),
+    assetId: text("asset_id").references(() => assets.id, { onDelete: "set null" }),
+    builtin: text("builtin"),
+    leds: jsonb("leds").$type<LedStyle>(),
+    // Unix seconds, like the device protocol. until 0 = until ended.
+    until: integer("until").notNull().default(0),
+    updatedAt: integer("updated_at").notNull(),
+    endedAt: integer("ended_at"),
+    createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
+  },
+  (t) => [index("team_push_team_idx").on(t.teamId, t.updatedAt)],
+);
+
+// Who a "users" push is for.
+export const teamPushTargets = pgTable(
+  "team_push_target",
+  {
+    pushId: text("push_id")
+      .notNull()
+      .references(() => teamPushes.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+  },
+  (t) => [primaryKey({ columns: [t.pushId, t.userId] })],
+);
+
+// A person dismissed a push with their light's button. Counts for all their lights.
+export const teamPushAcks = pgTable(
+  "team_push_ack",
+  {
+    pushId: text("push_id")
+      .notNull()
+      .references(() => teamPushes.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    at: integer("at").notNull(),
+    deviceId: text("device_id"),
+  },
+  (t) => [primaryKey({ columns: [t.pushId, t.userId] })],
+);
 
 // ---------------------------------------------------------------------------
 // Firmware releases

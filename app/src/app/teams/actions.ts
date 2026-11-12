@@ -4,6 +4,10 @@ import { refresh } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 
+import { checkGifChoice } from "@/lib/gifs";
+import { nowSeconds } from "@/lib/protocol";
+import { pushInput, pushLeds } from "@/lib/push-rules";
+import { createPush, endPush } from "@/lib/pushes";
 import { requireUser } from "@/lib/session";
 import { ASSIGNABLE_ROLES, INVITE_DAYS } from "@/lib/team-rules";
 import {
@@ -154,6 +158,52 @@ export async function setPushTeamAction(deviceId: string, teamId: string): Promi
   const user = await requireUser();
   try {
     await setDevicePushTeam(user.id, deviceId, teamId || null);
+  } catch (e) {
+    return failed(e);
+  }
+  refresh();
+  return { ok: true };
+}
+
+// ---- pushes ----
+
+export type PushResult = { ok: true; at: number } | { ok: false; error: string } | null;
+
+// Put a message and/or GIF (and maybe a flash) on everyone's light, or picked people's.
+export async function sendPushAction(teamId: string, _prev: PushResult, formData: FormData): Promise<PushResult> {
+  const user = await requireUser();
+  const input = pushInput.safeParse({
+    gif: formData.get("gif") ?? "none",
+    text: formData.get("text") ?? "",
+    minutes: formData.get("minutes") ?? 15,
+    flash: formData.get("flash") ?? "none",
+    color: formData.get("color") ?? "",
+    speed: formData.get("speed") ?? 2,
+    flashFor: formData.get("flashFor") ?? 30,
+    target: formData.get("target") ?? "all",
+    users: formData.getAll("users").map(String),
+  });
+  if (!input.success) return { ok: false, error: "Something in the form didn't look right. Try again." };
+  const { gif, text, minutes, target, users } = input.data;
+  let choice: { assetId: string | null; builtin: string | null } = { assetId: null, builtin: null };
+  if (gif !== "none") {
+    const checked = await checkGifChoice(user.id, gif);
+    if (!checked) return { ok: false, error: "That GIF isn't available any more. Pick another." };
+    choice = checked;
+  }
+  try {
+    await createPush(user.id, teamId, { ...choice, text, minutes, target, users, leds: pushLeds(input.data) });
+  } catch (e) {
+    return failed(e);
+  }
+  refresh();
+  return { ok: true, at: nowSeconds() };
+}
+
+export async function endPushAction(teamId: string, pushId: string): Promise<TeamResult> {
+  const user = await requireUser();
+  try {
+    await endPush(user.id, teamId, pushId);
   } catch (e) {
     return failed(e);
   }

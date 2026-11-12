@@ -26,6 +26,8 @@ static bzzy::State g_incoming;  // guarded by g_mx
 static bool g_hasIncoming = false;
 static bzzy::Override g_pendingReport;
 static volatile bool g_hasPendingReport = false;
+static char g_pendingAck[bzzy::kPushIdMax] = "";  // a dismissed push the app hasn't heard about
+static uint32_t g_pendingAckAt = 0;
 static volatile bool g_lastSyncOk = false;
 static bool g_portalOpen = false;
 static bool g_clockFromNtp = false;
@@ -99,8 +101,8 @@ static bool httpRequest(const char* method, const String& u, const String& body,
   http.addHeader("X-Bzzy-Firmware", ota::version());
   http.addHeader("X-Bzzy-Board", ota::board());
   // What this firmware understands beyond protocol v1, so the app only offers it where
-  // it works: "leds" = ledStyles and meetingWarn.
-  http.addHeader("X-Bzzy-Features", "leds");
+  // it works: "leds" = ledStyles and meetingWarn; "push" = team pushes and push-ack.
+  http.addHeader("X-Bzzy-Features", "leds,push");
   if (ota::failedVersion()[0]) http.addHeader("X-Bzzy-Update-Failed", ota::failedVersion());
   if (ota::lastNowId()) http.addHeader("X-Bzzy-Update-Now", String(ota::lastNowId()));
   int code;
@@ -228,6 +230,21 @@ static bool syncOnce() {
     if (g_hasPendingReport && g_pendingReport.updatedAt == report.updatedAt) {
       g_hasPendingReport = false;
     }
+    xSemaphoreGive(g_mx);
+  }
+
+  // 1b) Tell the app about a dismissed team push, so it stops sending it.
+  char ackId[bzzy::kPushIdMax];
+  uint32_t ackAt = 0;
+  xSemaphoreTake(g_mx, portMAX_DELAY);
+  strlcpy(ackId, g_pendingAck, sizeof(ackId));
+  ackAt = g_pendingAckAt;
+  xSemaphoreGive(g_mx);
+  if (ackId[0]) {
+    String body = String("{\"id\":\"") + ackId + "\",\"at\":" + ackAt + "}";
+    if (!httpRequest("POST", url("/push-ack"), body, nullptr)) return false;
+    xSemaphoreTake(g_mx, portMAX_DELAY);
+    if (strcmp(g_pendingAck, ackId) == 0) g_pendingAck[0] = '\0';
     xSemaphoreGive(g_mx);
   }
 
@@ -366,6 +383,17 @@ void reportOverride(const bzzy::Override& o) {
   xSemaphoreTake(g_mx, portMAX_DELAY);
   g_pendingReport = o;
   g_hasPendingReport = true;
+  xSemaphoreGive(g_mx);
+}
+
+void reportPushAck(const char* id, uint32_t at) {
+  // Ids from the app are UUIDs; don't put anything else in the JSON by hand.
+  for (const char* c = id; *c; ++c) {
+    if (!isalnum(static_cast<unsigned char>(*c)) && *c != '-') return;
+  }
+  xSemaphoreTake(g_mx, portMAX_DELAY);
+  strlcpy(g_pendingAck, id, sizeof(g_pendingAck));
+  g_pendingAckAt = at;
   xSemaphoreGive(g_mx);
 }
 

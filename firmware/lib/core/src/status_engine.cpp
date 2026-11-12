@@ -67,17 +67,46 @@ Resolved resolve(const State& st, uint32_t now, const Settings& cfg) {
   return {st.defaultStatus, Source::Default, "", nextChange};
 }
 
-bool showVisible(const State& st, uint32_t now) {
-  const Show& s = st.show;
+// strlcpy isn't in every libc the native tests build with.
+static void copyId(char* dst, const char* src) {
+  strncpy(dst, src, kPushIdMax - 1);
+  dst[kPushIdMax - 1] = '\0';
+}
+
+static bool showLive(const Show& s, uint32_t now) {
   if (!s.active) return false;
-  if (s.until != 0 && now != 0 && now >= s.until) return false;
-  return s.updatedAt >= st.manual.updatedAt;
+  return s.until == 0 || now == 0 || now < s.until;
+}
+
+bool pushVisible(const State& st, uint32_t now) {
+  return st.push.active && showLive(st.show, now) && strcmp(st.push.id, st.dismissedPush) != 0;
+}
+
+bool showVisible(const State& st, uint32_t now) {
+  if (st.push.active) return pushVisible(st, now);
+  if (!showLive(st.show, now)) return false;
+  return st.show.updatedAt >= st.manual.updatedAt;
+}
+
+bool dismissPush(State& st) {
+  // Expiry doesn't matter here: a press on an expired push is still "I've seen it".
+  if (!st.push.active || !st.show.active || strcmp(st.push.id, st.dismissedPush) == 0) return false;
+  copyId(st.dismissedPush, st.push.id);
+  return true;
 }
 
 void mergeFromServer(State& cached, const State& fromServer, uint32_t now) {
   (void)now;
   const Override keep = cached.manual;
+  char dismissed[kPushIdMax];
+  copyId(dismissed, cached.dismissedPush);
   cached = fromServer;
+  // Once the app stops sending the dismissed push, forget it.
+  if (fromServer.push.active && strcmp(fromServer.push.id, dismissed) == 0) {
+    copyId(cached.dismissedPush, dismissed);
+  } else {
+    cached.dismissedPush[0] = '\0';
+  }
   // A button press the app hasn't seen yet wins over anything older from the
   // app, including a clear (inactive tombstone) so a cleared override stays
   // cleared. Ties go to the app, which is where reported presses end up.
@@ -119,6 +148,12 @@ void clearLocalOverride(State& st, uint32_t now) {
 
 LedChoice chooseLeds(const State& st, Status shown, uint32_t now) {
   LedChoice c;
+  if (st.push.leds.set && pushVisible(st, now)) {
+    c.style = st.push.leds;
+    c.push = true;
+    c.startedAt = st.push.updatedAt;
+    return c;
+  }
   const MeetingWarn& w = st.meetingWarn;
   if (now && w.minutes && w.leds.set) {
     const uint32_t window = static_cast<uint32_t>(w.minutes) * 60u;

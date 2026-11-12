@@ -4,6 +4,7 @@
 // The firmware uses LovyanGFX's FreeSans fonts (a Helvetica clone, rendered at
 // 141 dpi) and never wraps text, so long messages run off both edges here too.
 
+import type { LedStyle } from "@/lib/push-rules";
 import {
   FONT_PT,
   GIF_H,
@@ -48,11 +49,14 @@ export function DevicePreview({
   gifSrc,
   scale = 1,
   className = "",
+  ring,
 }: {
   view: ScreenView;
   gifSrc: string | null; // the status's GIF, or the show-now GIF for "show-gif"; null: no GIF
   scale?: number;
   className?: string;
+  // A flash on the ring (a team push), instead of the steady status colour.
+  ring?: LedStyle | null;
 }) {
   const bg = SCREEN_BG[view.status];
   const label = SCREEN_LABEL[view.status];
@@ -62,25 +66,51 @@ export function DevicePreview({
   // display.cpp openGif(): a "show now" GIF with no message gets the whole screen.
   const gifArea = view.layout === "show-gif" && !view.text ? SCREEN_H : GIF_H;
   const oneLineLabel = view.status === "dnd" ? "DO NOT DISTURB" : label.join(" ");
-  const [r, g, b] = LED_RGB[view.status];
+  const [r, g, b] = ring?.color ? hexRgb(ring.color) : LED_RGB[view.status];
+  const flash = ring && ring.pattern !== "solid" ? ring : null;
   const led = (a: number) => `rgb(${r} ${g} ${b} / ${a})`;
   const bezel = 14 * scale;
 
-  const summary = [gif ? "GIF" : "Colour card", view.text || oneLineLabel, until, view.notice, view.online ? null : "offline"]
+  const summary = [
+    gif ? "GIF" : "Colour card",
+    view.text || oneLineLabel,
+    until,
+    view.notice,
+    view.online ? null : "offline",
+    flash ? `ring ${PATTERN_WORD[flash.pattern]}` : null,
+  ]
     .filter(Boolean)
     .join(", ");
 
   return (
     <div className={`relative inline-block h-max ${className}`} role="img" aria-label={`Screen preview: ${summary}`}>
       {/* LED glow through the translucent frame. "unknown" breathes, like leds.cpp. */}
-      <div
-        aria-hidden
-        className={`absolute inset-0 rounded-[28%/24%] ${view.status === "unknown" ? "animate-[bzzy-breathe_5s_ease-in-out_infinite]" : ""}`}
-        style={{
-          background: led(0.55),
-          boxShadow: `0 0 ${24 * scale}px ${6 * scale}px ${led(0.55)}, 0 0 ${60 * scale}px ${12 * scale}px ${led(0.25)}`,
-        }}
-      />
+      {flash?.pattern === "spin" ? (
+        // An arc going round: a turning cone of light behind the frame.
+        <div aria-hidden className="absolute -inset-[6%] overflow-hidden rounded-[32%/28%]" style={{ filter: `blur(${10 * scale}px)` }}>
+          <div
+            className="bzzy-ring absolute top-1/2 left-1/2 aspect-square w-[160%] -translate-x-1/2 -translate-y-1/2"
+            style={{
+              background: `conic-gradient(${led(0.95)} 0deg 90deg, ${led(0.35)} 140deg, transparent 180deg)`,
+              animation: `bzzy-spin ${patternSeconds(flash)}s linear infinite`,
+            }}
+          />
+        </div>
+      ) : (
+        <div
+          aria-hidden
+          className={`bzzy-ring absolute inset-0 rounded-[28%/24%] ${view.status === "unknown" && !flash ? "animate-[bzzy-breathe_5s_ease-in-out_infinite]" : ""}`}
+          style={{
+            background: led(0.55),
+            boxShadow: `0 0 ${24 * scale}px ${6 * scale}px ${led(0.55)}, 0 0 ${60 * scale}px ${12 * scale}px ${led(0.25)}`,
+            ...(flash
+              ? {
+                  animation: `bzzy-${flash.pattern} ${patternSeconds(flash)}s ${flash.pattern === "pulse" ? "ease-in-out" : "linear"} infinite`,
+                }
+              : {}),
+          }}
+        />
+      )}
       <div className="relative rounded-[24%/20%] bg-[#151515]" style={{ padding: bezel }}>
         <div
           className="relative overflow-hidden bg-black"
@@ -172,6 +202,35 @@ export function DevicePreview({
       </div>
     </div>
   );
+}
+
+const PATTERN_WORD: Record<LedStyle["pattern"], string> = {
+  solid: "steady",
+  pulse: "pulsing",
+  blink: "blinking",
+  strobe: "strobing",
+  spin: "spinning",
+};
+
+// led_pattern.cpp patternPeriodMs(), in seconds.
+function patternSeconds(s: LedStyle): number {
+  const speed = Math.min(3, Math.max(1, s.speed ?? 2));
+  switch (s.pattern) {
+    case "pulse":
+      return 4 / 2 ** (speed - 1);
+    case "blink":
+    case "strobe":
+      return 1 / speed;
+    case "spin":
+      return [2, 1, 0.667][speed - 1];
+    default:
+      return 0;
+  }
+}
+
+function hexRgb(hex: string): [number, number, number] {
+  const n = parseInt(hex.slice(1), 16);
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
 }
 
 // display.cpp drawShowText(): "show now" takes over the screen, so just the message,
