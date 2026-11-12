@@ -1,9 +1,10 @@
 # bzzy companion app
 
-Next.js app that holds your status, talks to bzzy devices, and (soon) reads your calendar and hosts GIFs.
+Next.js app that holds your status, talks to bzzy devices, reads your calendar and hosts GIFs. It runs on Vercel at [bzzy.vercel.app](https://bzzy.vercel.app).
 
 - **Sign-in:** Auth.js with GitHub, plus passkeys added from Settings.
 - **Data:** Postgres on Neon via Drizzle. Schema in `src/db/schema.ts`, migrations in `drizzle/`.
+- **Files:** uploaded GIFs live in Vercel Blob.
 - **Teams:** every user gets a personal team on sign-up. Devices, calendars and GIFs belong to a team, so shared office teams are a later addition, not a rewrite.
 - **Device API:** `src/app/api/device/[id]/…`, implementing [docs/protocol.md](../docs/protocol.md).
 
@@ -11,7 +12,7 @@ Next.js app that holds your status, talks to bzzy devices, and (soon) reads your
 
 ```sh
 cp .env.example .env.local   # fill in the values
-npm install
+npm ci                       # not npm install: see CLAUDE.md
 npm run db:migrate
 npm run dev
 ```
