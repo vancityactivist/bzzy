@@ -7,12 +7,14 @@ import { SignIn } from "@/components/sign-in";
 import { Badge, Card, CardHeader, Container, PageHeader, StatusDot } from "@/components/ui";
 import { calendarsForUser, refreshStaleCalendars } from "@/lib/calendar";
 import { blocksForDevice } from "@/lib/ics";
+import { passkeysForUser } from "@/lib/passkeys";
 import { nowSeconds } from "@/lib/protocol";
 import { getCurrentUser } from "@/lib/session";
 import { teamsForUser } from "@/lib/teams";
 
 import { absoluteTime, relativeTime } from "../devices/relative-time";
 import { AddCalendarForm, CalendarActions } from "./calendar-forms";
+import { PasskeyActions } from "./passkey-forms";
 
 export const metadata: Metadata = { title: "Settings" };
 
@@ -30,7 +32,11 @@ async function SettingsContent() {
   const user = await getCurrentUser();
   if (!user) return <SignIn />;
   await refreshStaleCalendars(user.id);
-  const [teams, calendars] = await Promise.all([teamsForUser(user.id), calendarsForUser(user.id)]);
+  const [teams, calendars, passkeys] = await Promise.all([
+    teamsForUser(user.id),
+    calendarsForUser(user.id),
+    passkeysForUser(user.id),
+  ]);
   const now = nowSeconds();
 
   return (
@@ -115,8 +121,40 @@ async function SettingsContent() {
           }
           description="Sign in with your fingerprint, face or device PIN instead of GitHub."
         />
-        <div className="mt-4">
-          <AddPasskey />
+        {passkeys.length > 0 && (
+          <ul className="mt-5 divide-y divide-line rounded-xl border border-line">
+            {passkeys.map((p) => (
+              <li key={p.credentialID} className="flex flex-wrap items-start justify-between gap-3 p-4">
+                <div className="min-w-0">
+                  <p className="flex flex-wrap items-center gap-2 font-medium">
+                    <span className="truncate">{p.name}</span>
+                    <Badge title={p.synced ? "Backed up and synced across your devices" : "Lives on one device or security key"}>
+                      {p.synced ? "synced" : "this device only"}
+                    </Badge>
+                  </p>
+                  <p className="mt-0.5 text-sm text-muted">
+                    {p.createdAt ? (
+                      <span title={absoluteTime(p.createdAt)}>added {relativeTime(p.createdAt)}</span>
+                    ) : (
+                      "added a while ago"
+                    )}
+                    {" · "}
+                    {p.lastUsedAt ? (
+                      <span title={absoluteTime(p.lastUsedAt)}>last used {relativeTime(p.lastUsedAt)}</span>
+                    ) : p.createdAt ? (
+                      "not used to sign in yet"
+                    ) : (
+                      "no sign-ins recorded yet"
+                    )}
+                  </p>
+                </div>
+                <PasskeyActions credentialID={p.credentialID} name={p.name} />
+              </li>
+            ))}
+          </ul>
+        )}
+        <div className="mt-5">
+          <AddPasskey first={passkeys.length === 0} />
         </div>
       </Card>
 

@@ -43,6 +43,13 @@
       "when": 1794451185204,
       "tag": "0005_firmware_updates",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1794455357526,
+      "tag": "0006_passkey_details",
+      "breakpoints": true
     }
   ]
 }

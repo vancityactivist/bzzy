@@ -100,6 +100,11 @@ export const authenticators = pgTable(
     credentialDeviceType: text("credentialDeviceType").notNull(),
     credentialBackedUp: boolean("credentialBackedUp").notNull(),
     transports: text("transports"),
+    // Ours, not Auth.js's: shown on Settings so people can tell passkeys apart.
+    // Null on passkeys added before these columns existed.
+    name: text("name"),
+    createdAt: timestamp("createdAt", { mode: "date" }).$defaultFn(() => new Date()),
+    lastUsedAt: timestamp("lastUsedAt", { mode: "date" }),
   },
   (t) => [primaryKey({ columns: [t.userId, t.credentialID] })],
 );
