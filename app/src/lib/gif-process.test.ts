@@ -42,4 +42,26 @@ describe("processUpload", () => {
       (err) => expect(String(err)).toMatch(/too long/),
     );
   }, 60_000);
+
+  it("drops frames from a long GIF instead of refusing it, keeping its speed", async () => {
+    const long = await sharp(await animated(240, 200, 60, true), { animated: true }).gif({ delay: 50 }).toBuffer();
+    const out = await processUpload(long);
+    expect(out.gif.byteLength).toBeLessThanOrEqual(MAX_GIF_BYTES);
+    const meta = await sharp(out.gif, { animated: true }).metadata();
+    expect(meta.pages).toBe(out.frames);
+    expect(out.frames).toBeLessThan(60);
+    const total = (meta.delay ?? []).reduce((a, b) => a + b, 0);
+    expect(total).toBeGreaterThanOrEqual(60 * 50 - 50);
+  }, 120_000);
+
+  it("thins a GIF with more frames than the device takes", async () => {
+    const frames = await Promise.all(
+      Array.from({ length: 250 }, (_, i) =>
+        sharp({ create: { width: 60, height: 50, channels: 3, background: { r: i, g: 0, b: 255 - i } } }).png().toBuffer(),
+      ),
+    );
+    const out = await processUpload(await sharp(frames, { join: { animated: true } }).gif().toBuffer());
+    expect(out.frames).toBeLessThanOrEqual(200);
+    expect((await sharp(out.gif, { animated: true }).metadata()).pages).toBe(out.frames);
+  }, 120_000);
 });
