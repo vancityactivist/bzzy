@@ -66,7 +66,7 @@ export async function refreshRelease(): Promise<void> {
       cache: "no-store",
     });
     if (res.status === 404) {
-      update = { lastError: TOKEN ? "No firmware release yet." : "No release found (is the repo private? Then set FIRMWARE_GITHUB_TOKEN)." };
+      update = { lastError: TOKEN ? "No firmware release yet." : "No firmware release yet. (If FIRMWARE_REPO is private, set FIRMWARE_GITHUB_TOKEN.)" };
     } else if (!res.ok) {
       update = { lastError: `GitHub answered ${res.status}.` };
     } else {
