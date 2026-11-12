@@ -48,13 +48,22 @@ export function AddDeviceForm() {
   return (
     <Card>
       <CardHeader title="Add a device" description="Give it a name, then enter the details we show you on the device's setup page." />
-      <form action={action} className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end">
-        <Field label="Name" htmlFor="device-name" className="flex-1" error={state?.ok === false ? state.error : undefined}>
-          <Input id="device-name" name="name" required maxLength={60} placeholder="Desk light" aria-invalid={state?.ok === false || undefined} />
-        </Field>
-        <Button variant="primary" disabled={pending}>
-          {pending ? "Adding…" : "Add device"}
-        </Button>
+      <form action={action} className="mt-4 space-y-3">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+          <Field label="Name" htmlFor="device-name" className="flex-1" error={state?.ok === false ? state.error : undefined}>
+            <Input id="device-name" name="name" required maxLength={60} placeholder="Desk light" aria-invalid={state?.ok === false || undefined} />
+          </Field>
+          <Button variant="primary" disabled={pending}>
+            {pending ? "Adding…" : "Add device"}
+          </Button>
+        </div>
+        <label className="flex cursor-pointer items-start gap-2 text-sm">
+          <input type="checkbox" name="autoUpdate" defaultChecked className="mt-0.5 size-4 shrink-0 accent-foreground" />
+          <span>
+            Update the firmware automatically
+            <span className="block text-muted">New versions install when you&apos;re free or away. You can change this later.</span>
+          </span>
+        </label>
       </form>
       {state?.ok && (
         <div className="mt-4">

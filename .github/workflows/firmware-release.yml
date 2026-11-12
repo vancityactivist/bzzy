@@ -1,0 +1,83 @@
+name: firmware-release
+
+# Push a tag like fw-v0.2.0 to build, sign and publish a firmware release. Lights
+# with auto-update on pick it up on their next quiet moment. See docs/ota.md.
+on:
+  push:
+    tags: ["fw-v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: true
+      matrix:
+        env: [waveshare_s3_touch_lcd169, waveshare_s3_lcd169, esp32_generic]
+    defaults:
+      run:
+        working-directory: firmware
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/cache@v4
+        with:
+          path: ~/.platformio
+          key: pio-${{ matrix.env }}-${{ hashFiles('firmware/platformio.ini') }}
+      - run: pip install platformio
+      - name: Build ${{ matrix.env }}
+        env:
+          BZZY_FW_VERSION: ${{ github.ref_name }}
+        run: |
+          export BZZY_FW_VERSION="${BZZY_FW_VERSION#fw-v}"
+          pio run -e ${{ matrix.env }}
+          mkdir -p ../bins
+          cp .pio/build/${{ matrix.env }}/firmware.bin ../bins/${{ matrix.env }}.bin
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bin-${{ matrix.env }}
+          path: bins/${{ matrix.env }}.bin
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: bin-*
+          path: bins
+          merge-multiple: true
+      - name: Check the signing key matches the one built into the firmware
+        env:
+          BZZY_OTA_SIGNING_KEY: ${{ secrets.BZZY_OTA_SIGNING_KEY }}
+        run: |
+          if [ -z "$BZZY_OTA_SIGNING_KEY" ]; then
+            echo "::error::The BZZY_OTA_SIGNING_KEY secret isn't set. Run firmware/scripts/make-ota-key.sh (docs/ota.md)."
+            exit 1
+          fi
+          (umask 077 && printf '%s\n' "$BZZY_OTA_SIGNING_KEY" > "$RUNNER_TEMP/key.pem")
+          openssl ec -in "$RUNNER_TEMP/key.pem" -pubout 2>/dev/null > "$RUNNER_TEMP/from-secret.pem"
+          python3 -c 'import re,sys; print("".join(s.encode().decode("unicode_escape") for s in re.findall(r"\"([^\"]*)\"", open(sys.argv[1]).read())), end="")' \
+            firmware/src/ota_key.h > "$RUNNER_TEMP/in-firmware.pem"
+          if ! diff -q "$RUNNER_TEMP/from-secret.pem" "$RUNNER_TEMP/in-firmware.pem" >/dev/null; then
+            echo "::error::firmware/src/ota_key.h doesn't hold the public half of BZZY_OTA_SIGNING_KEY, so lights would refuse this release."
+            exit 1
+          fi
+      - name: Sign and write the manifest
+        run: |
+          python3 firmware/scripts/sign_release.py \
+            --version "${GITHUB_REF_NAME#fw-v}" --tag "$GITHUB_REF_NAME" \
+            --key "$RUNNER_TEMP/key.pem" --out dist bins/*.bin
+          rm -f "$RUNNER_TEMP/key.pem"
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          prerelease=""
+          case "$GITHUB_REF_NAME" in *-*) prerelease="--prerelease" ;; esac
+          gh release create "$GITHUB_REF_NAME" dist/* --title "Firmware ${GITHUB_REF_NAME#fw-v}" --generate-notes $prerelease

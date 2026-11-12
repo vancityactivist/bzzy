@@ -12,6 +12,7 @@
 #include "display.h"
 #include "leds.h"
 #include "net.h"
+#include "ota.h"
 #include "protocol.h"
 #include "status_engine.h"
 #include "touch.h"
@@ -123,6 +124,7 @@ void setup() {
   touch::begin();
   if (!LittleFS.begin(true)) Serial.println("[fs] LittleFS mount failed");
   loadCache();
+  ota::begin();
 
   const bool wantSetupPage = heldAtBoot();
   net::begin(wantSetupPage);
@@ -131,6 +133,7 @@ void setup() {
 void loop() {
   const uint32_t ms = millis();
   net::loop();
+  ota::loop(ms);
 
   static bzzy::State incoming;  // off the stack
   if (net::takeIncoming(incoming)) {
@@ -163,8 +166,16 @@ void loop() {
 
   const bzzy::Resolved r = bzzy::resolve(g_state, net::now(), g_engineCfg);
 
+  // Automatic updates wait for a moment when a restart won't matter.
+  const bool showing = bzzy::showVisible(g_state, net::now());
+  net::setQuiet(!showing && (r.status == bzzy::Status::Free || r.status == bzzy::Status::Away));
+
   const char* notice = nullptr;
-  if (net::setupPortalOpen()) {
+  static char updating[32];
+  if (ota::progress() >= 0) {
+    snprintf(updating, sizeof(updating), "Updating firmware %d%%", ota::progress());
+    notice = updating;
+  } else if (net::setupPortalOpen()) {
     notice = "Wi-Fi setup: join bzzy-setup";
   } else if (r.source == bzzy::Source::Fallback) {
     notice = net::now() ? "No recent calendar data" : "Waiting for the clock";

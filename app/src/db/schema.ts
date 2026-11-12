@@ -22,6 +22,7 @@ import {
 } from "drizzle-orm/pg-core";
 import type { AdapterAccountType } from "next-auth/adapters";
 
+import type { ReleaseManifest } from "../lib/firmware";
 import type { CachedEvent } from "../lib/ics";
 
 const id = () =>
@@ -175,6 +176,13 @@ export const devices = pgTable(
     tokenHash: text("token_hash").notNull(),
     defaultStatus: statusKind("default_status").notNull().default("free"),
     lastSeenAt: timestamp("last_seen_at", { mode: "date" }),
+    // Firmware updates (docs/ota.md). The device reports the rest on each poll.
+    autoUpdate: boolean("auto_update").notNull().default(true),
+    firmwareVersion: text("firmware_version"), // "0.2.0", or "dev" for a build flashed over USB
+    board: text("board"), // the PlatformIO env it was built for
+    firmwareFailed: text("firmware_failed"), // a version that installed but rolled back
+    // Unix seconds of the last "Update now" press; 0 = none waiting.
+    updateRequestedAt: integer("update_requested_at").notNull().default(0),
     createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
   },
   (t) => [index("device_team_idx").on(t.teamId), index("device_owner_idx").on(t.ownerUserId)],
@@ -256,4 +264,23 @@ export const showNow = pgTable("show_now", {
   // Unix seconds, matching the device protocol. 0 = until cleared.
   until: integer("until").notNull().default(0),
   updatedAt: integer("updated_at").notNull().default(0),
+});
+
+// ---------------------------------------------------------------------------
+// Firmware releases
+// ---------------------------------------------------------------------------
+
+// The latest firmware release on GitHub, re-read when a device or page needs it and
+// the copy is older than a few minutes. One row, id "latest". A failed check keeps
+// the last good release and records the error.
+export const firmwareRelease = pgTable("firmware_release", {
+  id: text("id").primaryKey(),
+  // Null until a release has been read successfully.
+  tag: text("tag"),
+  version: text("version"),
+  // The release's manifest.json, plus where each file can be downloaded from.
+  manifest: jsonb("manifest").$type<ReleaseManifest>(),
+  assets: jsonb("assets").$type<Record<string, string>>().notNull().default({}),
+  checkedAt: timestamp("checked_at", { mode: "date" }).notNull(),
+  lastError: text("last_error"),
 });

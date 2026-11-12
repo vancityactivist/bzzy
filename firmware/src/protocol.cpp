@@ -128,4 +128,30 @@ bool parseGifs(const char* json, size_t len, GifRef out[kGifSlots]) {
   return true;
 }
 
+bool parseFirmwareOffer(const char* json, size_t len, ota::Offer& out) {
+  JsonDocument filter;
+  filter["firmware"] = true;
+  JsonDocument doc;
+  if (deserializeJson(doc, json, len, DeserializationOption::Filter(filter))) return false;
+  JsonObjectConst f = doc["firmware"];
+  if (f.isNull()) return false;
+  const char* version = f["version"] | "";
+  const char* url = f["url"] | "";
+  const char* sha = f["sha256"] | "";
+  const char* sig = f["sig"] | "";
+  ota::Offer o;
+  if (!*version || !*url || !*sha || !*sig || strlen(version) >= sizeof(o.version) ||
+      strlen(url) >= sizeof(o.url) || strlen(sha) >= sizeof(o.sha256) || strlen(sig) >= sizeof(o.sig)) {
+    return false;
+  }
+  strlcpy(o.version, version, sizeof(o.version));
+  strlcpy(o.url, url, sizeof(o.url));
+  strlcpy(o.sha256, sha, sizeof(o.sha256));
+  strlcpy(o.sig, sig, sizeof(o.sig));
+  o.size = f["size"] | 0u;
+  o.nowId = f["now"] | 0u;
+  out = o;
+  return true;
+}
+
 }  // namespace bzzy

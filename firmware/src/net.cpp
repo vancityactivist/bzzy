@@ -9,6 +9,7 @@
 #include <sys/time.h>
 
 #include "config.h"
+#include "ota.h"
 #include "protocol.h"
 #include "rtc.h"
 
@@ -28,6 +29,8 @@ static volatile bool g_hasPendingReport = false;
 static volatile bool g_lastSyncOk = false;
 static bool g_portalOpen = false;
 static bool g_clockFromNtp = false;
+static volatile bool g_quiet = false;     // set by the main loop: a good moment for an automatic update
+static uint32_t g_nextUpdateTryMs = 0;    // after a failed update, wait before trying again
 
 // GIFs. g_wanted is only touched by the network task. g_installed (the hash of the
 // GIF on flash for each status) and the swap queue are shared, guarded by g_mx.
@@ -92,6 +95,11 @@ static bool httpRequest(const char* method, const String& u, const String& body,
   http.setConnectTimeout(cfg::kHttpTimeoutMs);
   if (!http.begin(client, u)) return false;
   if (g_settings.token[0]) http.addHeader("Authorization", String("Bearer ") + g_settings.token);
+  // So the app knows which firmware to offer (docs/ota.md).
+  http.addHeader("X-Bzzy-Firmware", ota::version());
+  http.addHeader("X-Bzzy-Board", ota::board());
+  if (ota::failedVersion()[0]) http.addHeader("X-Bzzy-Update-Failed", ota::failedVersion());
+  if (ota::lastNowId()) http.addHeader("X-Bzzy-Update-Now", String(ota::lastNowId()));
   int code;
   if (strcmp(method, "POST") == 0) {
     http.addHeader("Content-Type", "application/json");
@@ -233,7 +241,19 @@ static bool syncOnce() {
   g_hasIncoming = true;
   xSemaphoreGive(g_mx);
 
-  // 3) Fetch any GIF that changed. A failed download doesn't fail the sync:
+  // 3) A firmware update, if the app offers one and now's a good time. On success this
+  //    restarts the device; on failure, carry on and try again in a while.
+  static ota::Offer offer;
+  if (bzzy::parseFirmwareOffer(resp.c_str(), resp.length(), offer) && ota::wanted(offer, g_quiet) &&
+      (int32_t)(millis() - g_nextUpdateTryMs) >= 0) {
+    resp = String();
+    if (!ota::install(offer, g_settings.apiBase, g_settings.token)) {
+      g_nextUpdateTryMs = millis() + 10 * 60 * 1000;
+    }
+    return true;  // the state above was fine; GIFs can wait for the next sync
+  }
+
+  // 4) Fetch any GIF that changed. A failed download doesn't fail the sync:
   //    the status is what matters, and the GIF is retried next time.
   if (bzzy::parseGifs(resp.c_str(), resp.length(), g_wanted)) g_haveWanted = true;
   resp = String();  // free it before downloading
@@ -247,6 +267,7 @@ static void networkTask(void*) {
     if (WiFi.status() == WL_CONNECTED && configured()) {
       bool ok = syncOnce();
       g_lastSyncOk = ok;
+      if (ok) ota::markHealthy();  // the first good sync after an update keeps it
       backoff = ok ? cfg::kPollIntervalMs : min<uint32_t>(backoff * 2, cfg::kMaxBackoffMs);
     } else {
       g_lastSyncOk = false;
@@ -301,7 +322,7 @@ void begin(bool openSetupPortal) {
     WiFi.begin();
   }
 
-  xTaskCreatePinnedToCore(networkTask, "bzzy-net", 8192, nullptr, 1, nullptr, 0);
+  xTaskCreatePinnedToCore(networkTask, "bzzy-net", 12288, nullptr, 1, nullptr, 0);
 }
 
 void loop() {
@@ -324,6 +345,7 @@ void loop() {
 
 bool online() { return WiFi.status() == WL_CONNECTED && g_lastSyncOk; }
 bool setupPortalOpen() { return g_portalOpen; }
+void setQuiet(bool quiet) { g_quiet = quiet; }
 
 bool takeIncoming(bzzy::State& out) {
   bool got = false;

@@ -5,10 +5,13 @@ import { DeviceIcon } from "@/components/icons";
 import { SignIn } from "@/components/sign-in";
 import { Badge, Card, Container, EmptyState, PageHeader } from "@/components/ui";
 import { devicesForUser } from "@/lib/devices";
+import { firmwareState } from "@/lib/firmware";
+import { releaseForPage } from "@/lib/firmware-release";
 import { BUILTIN_GIFS, DEFAULT_BUILTIN, deviceGifChoices, gifsForUser } from "@/lib/gifs";
-import { STATUSES, type Status } from "@/lib/protocol";
+import { nowSeconds, STATUSES, type Status } from "@/lib/protocol";
 import { getCurrentUser } from "@/lib/session";
 
+import { DeviceFirmware } from "./device-firmware";
 import { AddDeviceForm, DeviceActions } from "./device-forms";
 import { DeviceScreens, type GifOption } from "./device-screens";
 import { absoluteTime, relativeTime } from "./relative-time";
@@ -36,7 +39,7 @@ async function DevicesContent() {
   const user = await getCurrentUser();
   if (!user) return <SignIn />;
   const now = new Date();
-  const [devices, uploads] = await Promise.all([devicesForUser(user.id), gifsForUser(user.id)]);
+  const [devices, uploads, release] = await Promise.all([devicesForUser(user.id), gifsForUser(user.id), releaseForPage()]);
   const choices = await Promise.all(devices.map((d) => (d.canManage ? deviceGifChoices(d.id) : null)));
   const builtinOptions: GifOption[] = BUILTIN_GIFS.map((g) => ({ value: `builtin:${g.id}`, label: `Built in: ${g.name}`, src: g.path }));
   const defaults = Object.fromEntries(
@@ -69,6 +72,12 @@ async function DevicesContent() {
                   </div>
                 </div>
                 {d.canManage && <DeviceActions deviceId={d.id} />}
+                <DeviceFirmware
+                  deviceId={d.id}
+                  state={firmwareState(d.firmware, release?.manifest, nowSeconds())}
+                  autoUpdate={d.firmware.autoUpdate}
+                  canManage={d.canManage}
+                />
                 {choices[i] && (
                   <DeviceScreens
                     deviceId={d.id}

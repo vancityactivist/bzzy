@@ -5,7 +5,15 @@ import { z } from "zod";
 
 import { signIn, signOut } from "@/auth";
 import { addCalendar, deleteCalendar, ownCalendar, refreshCalendar, setShowTitles } from "@/lib/calendar";
-import { canManageDevice, createDevice, deleteDevice, deviceTeam, rotateDeviceToken } from "@/lib/devices";
+import {
+  canManageDevice,
+  createDevice,
+  deleteDevice,
+  deviceTeam,
+  requestUpdate,
+  rotateDeviceToken,
+  setAutoUpdate,
+} from "@/lib/devices";
 import { GifError } from "@/lib/gif-process";
 import { checkGifChoice, deleteGif, importGifFromLink, setDeviceGif, uploadGif } from "@/lib/gifs";
 import { setPresence } from "@/lib/presence";
@@ -153,9 +161,25 @@ export async function addDevice(_prev: NewDeviceResult, formData: FormData): Pro
   const user = await requireUser();
   const name = z.string().trim().min(1).max(60).safeParse(formData.get("name"));
   if (!name.success) return { ok: false, error: "Give the device a name (up to 60 characters)." };
-  const { id, token } = await createDevice(user.id, user.name, name.data);
+  // Auto-update is on unless the box was unticked (docs/ota.md).
+  const autoUpdate = formData.get("autoUpdate") === "on";
+  const { id, token } = await createDevice(user.id, user.name, name.data, autoUpdate);
   refresh();
   return { ok: true, id, token };
+}
+
+export async function setAutoUpdateAction(deviceId: string, autoUpdate: boolean) {
+  const user = await requireUser();
+  if (!(await canManageDevice(user.id, deviceId))) return;
+  await setAutoUpdate(deviceId, autoUpdate);
+  refresh();
+}
+
+export async function updateNowAction(deviceId: string) {
+  const user = await requireUser();
+  if (!(await canManageDevice(user.id, deviceId))) return;
+  await requestUpdate(deviceId, nowSeconds());
+  refresh();
 }
 
 export async function newDeviceToken(deviceId: string): Promise<NewDeviceResult> {

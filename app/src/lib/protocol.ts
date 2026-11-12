@@ -3,6 +3,8 @@
 
 import { z } from "zod";
 
+import type { FirmwareOffer } from "./firmware";
+
 export const STATUSES = ["free", "busy", "dnd", "away"] as const;
 export type Status = (typeof STATUSES)[number];
 
@@ -41,6 +43,8 @@ export type StateResponse = {
   show: ShowState | null;
   schedule: Block[];
   gifs?: GifMap;
+  // Present only when the device should update (docs/ota.md).
+  firmware?: FirmwareOffer;
 };
 
 export const overrideBody = z.object({
@@ -71,6 +75,7 @@ export function buildState(opts: {
   schedule: Block[];
   gifs?: GifMap;
   show?: ShowState | null;
+  firmware?: FirmwareOffer | null;
 }): StateResponse {
   const { now, defaultStatus, presence } = opts;
 
@@ -107,6 +112,7 @@ export function buildState(opts: {
     schedule,
   };
   if (opts.gifs) state.gifs = opts.gifs;
+  if (opts.firmware) state.firmware = opts.firmware;
   return state;
 }
 
