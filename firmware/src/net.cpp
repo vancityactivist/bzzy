@@ -98,6 +98,9 @@ static bool httpRequest(const char* method, const String& u, const String& body,
   // So the app knows which firmware to offer (docs/ota.md).
   http.addHeader("X-Bzzy-Firmware", ota::version());
   http.addHeader("X-Bzzy-Board", ota::board());
+  // What this firmware understands beyond protocol v1, so the app only offers it where
+  // it works: "leds" = ledStyles and meetingWarn.
+  http.addHeader("X-Bzzy-Features", "leds");
   if (ota::failedVersion()[0]) http.addHeader("X-Bzzy-Update-Failed", ota::failedVersion());
   if (ota::lastNowId()) http.addHeader("X-Bzzy-Update-Now", String(ota::lastNowId()));
   int code;

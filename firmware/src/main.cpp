@@ -199,7 +199,7 @@ void loop() {
     }
   }
 
-  leds::show(r.status);
+  leds::show(r.status, bzzy::chooseLeds(g_state, r.status, net::now()), net::now());
   display::show(view);
 
   leds::tick(ms);

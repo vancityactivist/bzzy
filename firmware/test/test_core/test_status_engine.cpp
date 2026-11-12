@@ -336,6 +336,8 @@ void test_update_now_ignores_quiet_time() {
   TEST_ASSERT_TRUE(shouldInstall({"0.3.0", 5}, ctx));
 }
 
+void run_led_pattern_tests();  // test_led_pattern.cpp
+
 int main(int, char**) {
   UNITY_BEGIN();
   RUN_TEST(test_default_when_nothing_scheduled);
@@ -368,5 +370,6 @@ int main(int, char**) {
   RUN_TEST(test_test_builds_only_update_when_asked);
   RUN_TEST(test_rolled_back_version_needs_a_new_press);
   RUN_TEST(test_update_now_ignores_quiet_time);
+  run_led_pattern_tests();
   return UNITY_END();
 }
