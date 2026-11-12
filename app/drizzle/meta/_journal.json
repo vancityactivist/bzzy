@@ -50,6 +50,13 @@
       "when": 1794455357526,
       "tag": "0006_passkey_details",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1794456274463,
+      "tag": "0007_teams_invites",
+      "breakpoints": true
     }
   ]
 }

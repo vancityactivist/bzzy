@@ -7,13 +7,14 @@ import Passkey from "next-auth/providers/passkey";
 
 import { db, schema } from "@/db";
 import { passkeyLabel } from "@/lib/passkey-label";
-import { ensurePersonalTeam } from "@/lib/teams";
+import { ensurePersonalTeam, lookupInvite } from "@/lib/teams";
 
-// Sign in with GitHub first, then add a passkey from Settings. More providers
-// (email magic links, Google, Microsoft for org sign-in) drop in here later.
+// Sign in with GitHub, or with a passkey. A brand-new account can be made with a
+// passkey alone only from a live team invite link (/join), so the site isn't open to
+// anonymous passkey sign-ups. Email magic links (Resend) drop in here later.
 export const { handlers, auth, signIn, signOut } = NextAuth((req) => ({
   adapter: adapter(req?.headers.get("user-agent")),
-  providers: [GitHub, Passkey],
+  providers: [GitHub, Passkey({ getUserInfo: passkeyUserInfo })],
   experimental: { enableWebAuthn: true },
   session: { strategy: "database" },
   events: {
@@ -22,6 +23,22 @@ export const { handlers, auth, signIn, signOut } = NextAuth((req) => ({
     },
   },
 }));
+
+// Who a passkey request is for. Signed-in people adding a passkey never get here (Auth.js
+// uses the session). With an email: an existing account signs in with its passkeys; a new
+// one is only allowed alongside a live invite token. Without one: a plain passkey sign-in.
+type PasskeyUserInfo = NonNullable<Parameters<typeof Passkey>[0]>["getUserInfo"];
+const passkeyUserInfo: PasskeyUserInfo = async (_options, request) => {
+  const params = (request.method === "POST" ? request.body : request.query) ?? {};
+  const email = typeof params.email === "string" ? params.email.trim().toLowerCase() : "";
+  if (!email) return null;
+  const existing = await db().select().from(schema.users).where(eq(schema.users.email, email)).limit(1);
+  if (existing[0]) return { user: existing[0], exists: true };
+  const invite = typeof params.invite === "string" ? await lookupInvite(params.invite) : null;
+  if (invite?.state !== "live") return null;
+  const name = typeof params.name === "string" ? params.name.trim().slice(0, 80) : "";
+  return { user: { email, name: name || null }, exists: false };
+};
 
 // The stock Drizzle adapter, plus the passkey details Settings shows: a name taken
 // from the browser that registered it, and when it was last used to sign in.

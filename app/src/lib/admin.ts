@@ -101,3 +101,11 @@ export async function adminOverview() {
     sharedTeams: teams.filter((t) => !t.personal).length,
   };
 }
+
+// Grant or remove superadmin. Never on yourself, so the site can't end up with nobody
+// able to get back in (and nobody demotes themself by accident).
+export async function setSuperadmin(actorId: string, userId: string, on: boolean) {
+  if (!(await isAdmin(actorId))) throw new Error("Not a superadmin");
+  if (actorId === userId) throw new Error("You can't change your own superadmin role");
+  await db().update(schema.users).set({ role: on ? "admin" : "user" }).where(eq(schema.users.id, userId));
+}

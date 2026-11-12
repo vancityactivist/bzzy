@@ -16,6 +16,7 @@ export type DeviceSummary = {
   teamName: string;
   ownerUserId: string;
   defaultStatus: Status;
+  pushTeamId: string | null;
   lastSeenAt: Date | null;
   canManage: boolean;
   firmware: DeviceFirmware;
@@ -39,6 +40,7 @@ export async function devicesForUser(userId: string): Promise<DeviceSummary[]> {
       teamName: team.name,
       ownerUserId: d.ownerUserId,
       defaultStatus: d.defaultStatus,
+      pushTeamId: d.pushTeamId,
       lastSeenAt: d.lastSeenAt,
       canManage: d.ownerUserId === userId || team.role === "owner" || team.role === "admin",
       firmware: {
