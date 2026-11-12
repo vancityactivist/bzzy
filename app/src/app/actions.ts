@@ -16,6 +16,7 @@ import {
 } from "@/lib/devices";
 import { GifError } from "@/lib/gif-process";
 import { checkGifChoice, deleteGif, importGifFromLink, setDeviceGif, uploadGif } from "@/lib/gifs";
+import { PasskeyError, renamePasskey, revokePasskey } from "@/lib/passkeys";
 import { setPresence } from "@/lib/presence";
 import { clipText, nowSeconds, STATUSES } from "@/lib/protocol";
 import { requireUser } from "@/lib/session";
@@ -235,6 +236,28 @@ export async function removeCalendarAction(id: string) {
   const cal = await ownCalendar(user.id, id);
   if (!cal) return;
   await deleteCalendar(cal.id);
+  refresh();
+}
+
+// ---- Passkeys ----
+
+export async function revokePasskeyAction(credentialID: string): Promise<{ error?: string }> {
+  const user = await requireUser();
+  try {
+    await revokePasskey(user.id, credentialID);
+  } catch (err) {
+    if (err instanceof PasskeyError) return { error: err.message };
+    throw err;
+  }
+  refresh();
+  return {};
+}
+
+export async function renamePasskeyAction(credentialID: string, name: string) {
+  const user = await requireUser();
+  const parsed = z.string().trim().min(1).max(60).safeParse(name);
+  if (!parsed.success) return;
+  await renamePasskey(user.id, credentialID, parsed.data);
   refresh();
 }
 
