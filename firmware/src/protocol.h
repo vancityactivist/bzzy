@@ -4,6 +4,7 @@
 
 #include <Arduino.h>
 
+#include "ota.h"
 #include "status_engine.h"
 
 namespace bzzy {
@@ -26,5 +27,9 @@ struct GifRef {
 
 // Returns false if the response has no "gifs" (an older app): leave GIFs as they are.
 bool parseGifs(const char* json, size_t len, GifRef out[kGifSlots]);
+
+// The update the app is offering ("firmware" in the response). Returns false when
+// there isn't one, or it's malformed.
+bool parseFirmwareOffer(const char* json, size_t len, ota::Offer& out);
 
 }  // namespace bzzy

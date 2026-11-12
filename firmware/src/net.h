@@ -22,6 +22,10 @@ bool online();         // Wi-Fi up AND the last sync worked
 bool setupPortalOpen();
 uint32_t now();        // unix seconds, or 0 if the clock isn't set yet
 
+// Whether now is a good moment for an automatic firmware update (free or away, and
+// nothing from the app on the screen). "Update now" from the app doesn't wait.
+void setQuiet(bool quiet);
+
 // If a new state arrived from the app since the last call, copy it out.
 bool takeIncoming(bzzy::State& out);
 // Tell the app about a button press (retried until it succeeds).

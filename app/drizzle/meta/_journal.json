@@ -36,6 +36,13 @@
       "when": 1794443893099,
       "tag": "0004_show_now",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1794451185204,
+      "tag": "0005_firmware_updates",
+      "breakpoints": true
     }
   ]
 }

@@ -6,6 +6,15 @@ The device only ever makes **outbound** HTTPS requests, so it works on guest Wi-
 
 Polled every 20 seconds, backing off to 5 minutes while requests keep failing.
 
+Every request also says which firmware the device runs, so the app can offer updates ([ota.md](ota.md)):
+
+| Header | Example | |
+|---|---|---|
+| `X-Bzzy-Firmware` | `0.2.0` | `dev` for a build flashed over USB |
+| `X-Bzzy-Board` | `waveshare_s3_touch_lcd169` | the PlatformIO env |
+| `X-Bzzy-Update-Failed` | `0.3.0` | only after an update rolled back |
+| `X-Bzzy-Update-Now` | `1762891100` | the last "Update now" press it acted on |
+
 ```json
 {
   "v": 1,
@@ -43,6 +52,7 @@ Polled every 20 seconds, backing off to 5 minutes while requests keep failing.
 - `show` is "show now": a GIF and/or message someone put on their screen from the app, on top of whatever the status is. It may be `null`. `gif` is `{ "url", "sha" }` like the entries in `gifs`, or `null` for a message on its own. `until: 0` means "until cleared". An expired or cleared one is sent as `active: false` with no GIF, so the device frees the file. The device downloads the GIF to `/gif/show.tmp` (before any status GIF, since someone just asked for it) and swaps it in as `/gif/show.gif`.
 - `schedule` covers the next 24 hours, at most 32 blocks, already expanded from the ICS feeds (recurring events resolved). The device does no ICS parsing. The app's rules: cancelled and free events are ignored, out of office is `away` (all-day too), other timed events (busy, tentative) are `busy`, other all-day events are ignored. Back-to-back blocks of the same status are joined. `text` is "In a meeting" / "Out of office" unless the person turned on meeting titles for that calendar.
 - `gifs` maps each status to `{ "url": "...", "sha": "..." }`, or `null` for no GIF (the plain colour card). The device downloads a GIF only when its `sha` changes, to `/gif/<status>.tmp`, then swaps it in. URLs on the app itself need the device's bearer token; the device never sends the token anywhere else. Built-in GIFs are static files; uploaded ones come from `GET {api}/api/device/{deviceId}/gif/{assetId}`. Responses without `gifs` (older apps) leave the device's GIFs alone.
+- `firmware` is only there when the device should update: `{ "version": "0.3.0", "url": "{api}/api/device/{deviceId}/firmware/0.3.0", "size": 1234567, "sha256": "<hex>", "sig": "<base64>", "now": 0 }`. `now` is the time someone pressed "Update now" (install right away), or 0 for an automatic update. The `url` answers with a redirect to the file; the device follows it without its token. See [ota.md](ota.md).
 - `serverTime` is when the response was built. The device treats the schedule as stale after 24 hours without a successful sync.
 
 ## `POST {api}/api/device/{deviceId}/override`

@@ -2,6 +2,7 @@
 #include <unity.h>
 
 #include "status_engine.h"
+#include "ota_policy.h"
 #include "text_wrap.h"
 
 using namespace bzzy;
@@ -270,6 +271,71 @@ void test_wrap_breaks_long_words() {
   TEST_ASSERT_EQUAL(strlen(t), total);
 }
 
+// ---- over-the-air updates ----
+
+void test_release_versions() {
+  TEST_ASSERT_TRUE(isReleaseVersion("0.2.0"));
+  TEST_ASSERT_TRUE(isReleaseVersion("12.3.45-rc.1"));
+  TEST_ASSERT_FALSE(isReleaseVersion(""));
+  TEST_ASSERT_FALSE(isReleaseVersion("dev"));
+  TEST_ASSERT_FALSE(isReleaseVersion("1.2"));
+  TEST_ASSERT_FALSE(isReleaseVersion("1.2.3."));
+  TEST_ASSERT_FALSE(isReleaseVersion("v1.2.3"));
+  TEST_ASSERT_FALSE(isReleaseVersion("1.2.3-"));
+}
+
+void test_version_order() {
+  TEST_ASSERT_TRUE(compareVersions("0.2.0", "0.10.0") < 0);
+  TEST_ASSERT_TRUE(compareVersions("1.0.0", "0.99.99") > 0);
+  TEST_ASSERT_EQUAL(0, compareVersions("1.2.3", "1.2.3"));
+  TEST_ASSERT_TRUE(compareVersions("1.2.0-rc.1", "1.2.0") < 0);
+  TEST_ASSERT_TRUE(compareVersions("1.2.0-rc.2", "1.2.0-rc.1") > 0);
+}
+
+void test_signed_message() {
+  char buf[128];
+  size_t n = otaSignedMessage(buf, sizeof(buf), "waveshare_s3_touch_lcd169", "0.2.0", "ab12");
+  TEST_ASSERT_EQUAL_STRING("bzzy-fw|1|waveshare_s3_touch_lcd169|0.2.0|ab12", buf);
+  TEST_ASSERT_EQUAL(strlen(buf), n);
+  char tiny[8];
+  TEST_ASSERT_EQUAL(0, otaSignedMessage(tiny, sizeof(tiny), "b", "0.2.0", "ab12"));
+}
+
+void test_auto_update_waits_for_a_quiet_moment() {
+  OtaOffer offer = {"0.3.0", 0};
+  OtaContext ctx = {"0.2.0", "", 0, false};
+  TEST_ASSERT_FALSE(shouldInstall(offer, ctx));
+  ctx.quiet = true;
+  TEST_ASSERT_TRUE(shouldInstall(offer, ctx));
+}
+
+void test_never_downgrades() {
+  OtaContext ctx = {"0.3.0", "", 0, true};
+  TEST_ASSERT_FALSE(shouldInstall({"0.3.0", 0}, ctx));
+  TEST_ASSERT_FALSE(shouldInstall({"0.2.9", 0}, ctx));
+  TEST_ASSERT_FALSE(shouldInstall({"0.2.9", 7}, ctx));  // not even when asked
+  TEST_ASSERT_FALSE(shouldInstall({"dev", 7}, ctx));
+}
+
+void test_test_builds_only_update_when_asked() {
+  OtaContext ctx = {"dev", "", 0, true};
+  TEST_ASSERT_FALSE(shouldInstall({"0.3.0", 0}, ctx));
+  TEST_ASSERT_TRUE(shouldInstall({"0.3.0", 7}, ctx));
+}
+
+void test_rolled_back_version_needs_a_new_press() {
+  OtaContext ctx = {"0.2.0", "0.3.0", 7, true};
+  TEST_ASSERT_FALSE(shouldInstall({"0.3.0", 0}, ctx));
+  TEST_ASSERT_FALSE(shouldInstall({"0.3.0", 7}, ctx));  // that press was already used
+  TEST_ASSERT_TRUE(shouldInstall({"0.3.0", 8}, ctx));
+  TEST_ASSERT_TRUE(shouldInstall({"0.3.1", 0}, ctx));   // a newer release is fine
+}
+
+void test_update_now_ignores_quiet_time() {
+  OtaContext ctx = {"0.2.0", "", 0, false};
+  TEST_ASSERT_TRUE(shouldInstall({"0.3.0", 5}, ctx));
+}
+
 int main(int, char**) {
   UNITY_BEGIN();
   RUN_TEST(test_default_when_nothing_scheduled);
@@ -294,5 +360,13 @@ int main(int, char**) {
   RUN_TEST(test_wrap_breaks_at_spaces);
   RUN_TEST(test_wrap_falls_back_to_small_font);
   RUN_TEST(test_wrap_breaks_long_words);
+  RUN_TEST(test_release_versions);
+  RUN_TEST(test_version_order);
+  RUN_TEST(test_signed_message);
+  RUN_TEST(test_auto_update_waits_for_a_quiet_moment);
+  RUN_TEST(test_never_downgrades);
+  RUN_TEST(test_test_builds_only_update_when_asked);
+  RUN_TEST(test_rolled_back_version_needs_a_new_press);
+  RUN_TEST(test_update_now_ignores_quiet_time);
   return UNITY_END();
 }
