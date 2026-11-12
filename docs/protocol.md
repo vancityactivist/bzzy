@@ -63,10 +63,12 @@ The app should store it as the current manual override, keeping `updatedAt` as s
 
 If the last successful sync is more than 24 hours old (or the clock isn't set yet), steps 2 and 3 are replaced by the **fallback** status: a slow grey breathing light and a "No recent calendar data" note. A manual override still shows.
 
-The status sets the LED colour and the screen's colours. On top of that, **show now** replaces the screen's content while it's live (not expired) and its `updatedAt` is at least the manual override's `updatedAt`. So a later button press, long press or status change from the app hides it, and a calendar change doesn't:
+The status sets the LED colour and, normally, the screen's colours. On top of that, **show now** replaces the screen's content while it's live (not expired) and its `updatedAt` is at least the manual override's `updatedAt`. So a later button press, long press or status change from the app hides it, and a calendar change doesn't.
 
-- With a GIF that has finished downloading: the show GIF, with the message (wrapped to 2 lines) or the status label in the bar under it.
-- Otherwise, with a message: the message big and word-wrapped on the status colour (18 pt up to 4 lines, else 12 pt up to 6), the status label underneath.
+It takes over the whole screen, on black, with no status label or time (the LEDs still show the status):
+
+- With a GIF that has finished downloading: the GIF centred on the screen, or, with a message, centred in the top 200 rows with the message (wrapped to 2 lines) in the bar under it.
+- Otherwise, with a message: the message big and word-wrapped in the middle of the screen (18 pt up to 4 lines, else 12 pt up to 6).
 - With neither yet (a GIF still downloading and no message): the normal status screen.
 
 The logic is in `firmware/lib/core/src/status_engine.cpp` and `text_wrap.cpp`, covered by `firmware/test/`. The app's preview (`app/src/lib/screen.ts`) mirrors both.

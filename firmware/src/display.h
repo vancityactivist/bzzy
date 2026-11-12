@@ -11,8 +11,8 @@ namespace display {
 
 enum class Layout : uint8_t {
   Status,    // the status's GIF and label (or its colour card)
-  ShowGif,   // the "show now" GIF, with its message (or the status label) in the bar
-  ShowText,  // the "show now" message, big, on the status colour
+  ShowGif,   // the "show now" GIF on black, full screen (or above its message)
+  ShowText,  // the "show now" message, big, on black
 };
 
 struct View {
