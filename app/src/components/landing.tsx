@@ -58,6 +58,20 @@ const STEPS: { title: string; body: ReactNode; art: (gifs: Record<Status, string
   },
 ];
 
+// The GIF section: three screens, each a real preview with a built-in GIF.
+const GIF_SCREENS: { status: Status; gif: string; text: string; show: boolean; caption: string }[] = [
+  { status: "free", gif: "/gifs/free-ripple.gif", text: "", show: false, caption: "A GIF for each status" },
+  { status: "busy", gif: "/gifs/any-dots.gif", text: "Back in 5", show: true, caption: "Show now, with a message" },
+  { status: "away", gif: "/gifs/away-orbit.gif", text: "Out to lunch", show: false, caption: "A GIF and your status line" },
+];
+
+const GIF_POINTS: { title: string; body: string }[] = [
+  { title: "One for every status", body: "Pick a GIF for Free, Busy, Do not disturb and Away on each light, or keep the plain colour card." },
+  { title: "Bring your own", body: "Upload a GIF, or paste a GIPHY or Tenor link. bzzy resizes it to fit the screen and keeps a copy on the light." },
+  { title: "Show now", body: "Put any GIF or message on your screen for a while, whatever your status. A press of the light takes it down." },
+  { title: "Share with your team", body: "Team GIFs are there for everyone, and admins can push one to every light at once." },
+];
+
 // The ring's flashing patterns, each on a real preview. Spin leads: it's the one that
 // gets noticed from across the room.
 const FLASHES: { name: string; use: string; ring: LedStyle; status: Status; message?: string }[] = [
@@ -109,8 +123,8 @@ const FEATURES: { title: string; body: string; icon: ComponentType<IconProps> }[
     icon: WifiOffIcon,
   },
   {
-    title: "GIFs and messages",
-    body: 'A 1.69" colour screen shows a GIF for each status, or a line of text like "On a call, back at 3".',
+    title: "Messages too",
+    body: 'Add a line like "On a call, back at 3" under your status, or put a message up on its own in big letters.',
     icon: MessageIcon,
   },
   {
@@ -160,8 +174,8 @@ export function Landing() {
               A light on your desk that says when you&apos;re heads down.
             </h1>
             <p className="mt-5 max-w-md text-lg text-pretty text-muted">
-              bzzy is a small status light for your monitor. Keep your door open, and let it tell people when now isn&apos;t a
-              good time.
+              bzzy is a small status light with its own GIF screen. Keep your door open, and let it tell people when now
+              isn&apos;t a good time.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <a href="#sign-in" className={buttonClass("primary", "md", "px-5")}>
@@ -203,6 +217,40 @@ export function Landing() {
               </li>
             ))}
           </ul>
+        </Container>
+      </section>
+
+      {/* GIFs */}
+      <section aria-labelledby="gifs-title" className="pb-20 sm:pb-28">
+        <Container padded={false}>
+          <div className="grid gap-10 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:items-center">
+            <div>
+              <SectionHeading id="gifs-title" eyebrow="GIFs" title="Your screen, your GIFs.">
+                A 1.69&quot; colour screen sits inside the ring, so your status can be a GIF as well as a colour.
+              </SectionHeading>
+              <dl className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+                {GIF_POINTS.map((p) => (
+                  <div key={p.title}>
+                    <dt className="font-semibold tracking-tight">{p.title}</dt>
+                    <dd className="mt-1 text-sm text-pretty text-muted">{p.body}</dd>
+                  </div>
+                ))}
+              </dl>
+            </div>
+            <ul className="grid grid-cols-3 gap-2 rounded-3xl border border-line bg-subtle/50 p-3 sm:gap-4 sm:p-6">
+              {GIF_SCREENS.map((g) => {
+                const base = viewFor({ status: g.status, text: g.show ? "" : g.text, until: 0 });
+                return (
+                  <li key={g.caption} className="flex flex-col items-center text-center">
+                    <div className="max-sm:[zoom:0.62]">
+                      <DevicePreview view={g.show ? withShow(base, { text: g.text, until: 0, gif: true }) : base} gifSrc={g.gif} scale={0.6} className="m-4" />
+                    </div>
+                    <p className="mt-1 text-xs text-pretty text-muted sm:text-sm">{g.caption}</p>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
         </Container>
       </section>
 
