@@ -153,3 +153,17 @@ export async function deviceMayFetch(deviceId: string, assetId: string) {
     .limit(1);
   return rows[0]?.blobUrl ?? null;
 }
+
+// Where the app's own pages load a resolved GIF from, for previews.
+export function previewSrc(g: ResolvedGif): string | null {
+  if (!g) return null;
+  return g.kind === "builtin" ? g.path : `/api/gifs/${g.id}`;
+}
+
+// What a brand-new device shows, before anyone picks GIFs.
+export function defaultPreviewSrcs(): Record<Status, string | null> {
+  return Object.fromEntries(STATUSES.map((s) => [s, builtinById.get(DEFAULT_BUILTIN[s])?.path ?? null])) as Record<
+    Status,
+    string | null
+  >;
+}

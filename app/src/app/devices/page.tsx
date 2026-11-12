@@ -56,6 +56,7 @@ async function DevicesContent() {
               {choices[i] && (
                 <DeviceScreens
                   deviceId={d.id}
+                  defaultStatus={d.defaultStatus}
                   choices={choices[i]}
                   defaults={defaults}
                   options={[

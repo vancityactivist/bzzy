@@ -179,11 +179,15 @@ static void redraw(const View& v) {
   const bool gif = openGifFor(v.status);
 
   if (gif) {
+    // Clear the GIF area too: a GIF smaller than 240x200 doesn't cover all of it.
+    g_lcd.fillRect(0, 0, kW, kGifH, TFT_BLACK);
     g_lcd.fillRect(0, kGifH, kW, kH - kGifH, bg);
     g_lcd.setTextDatum(lgfx::top_center);
     g_lcd.setFont(&fonts::FreeSansBold12pt7b);
     g_lcd.setTextColor(TFT_WHITE, bg);
-    g_lcd.drawString(v.text && *v.text ? v.text : labelFor(v.status), kW / 2, kGifH + 12);
+    // One line in the bar; drawString would drop the '\n' and run "DO NOTDISTURB" together.
+    const char* label = v.status == bzzy::Status::Dnd ? "DO NOT DISTURB" : labelFor(v.status);
+    g_lcd.drawString(v.text && *v.text ? v.text : label, kW / 2, kGifH + 12);
     drawUntil(v.until, kGifH + 46, bg);
   } else {
     g_lcd.fillScreen(bg);
