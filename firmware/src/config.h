@@ -52,7 +52,7 @@
 #endif
 
 namespace cfg {
-constexpr uint16_t kLedCount = 16;         // 12 for the prototype ring; ~16 for the bezel strip
+constexpr uint16_t kLedCount = 16;         // 16 on the ring board (12 if you use a 12-LED prototype ring)
 constexpr uint16_t kLedMaxMilliamps = 400;  // keeps total draw comfortable on a laptop USB port
 constexpr uint8_t kLedBrightness = 96;
 
