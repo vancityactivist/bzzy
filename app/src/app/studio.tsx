@@ -284,8 +284,10 @@ function Chips({
 }
 
 export function StatusControls({ active = null, className }: { active?: ActiveStatus | null; className?: string }) {
-  const { focus, setFocus, status, setStatus: setDraft } = useStudio();
+  const { focus, setFocus, status, setStatus: setDraft, live } = useStudio();
   const form = useRef<HTMLFormElement>(null);
+  // While a show has the screen, the status is only what the light glows.
+  const covered = live !== null;
   return (
     <form
       ref={form}
@@ -314,7 +316,11 @@ export function StatusControls({ active = null, className }: { active?: ActiveSt
               name="status"
               value={s}
               aria-pressed={isActive}
-              aria-label={isActive ? `${meta.label} (now${active?.source === "calendar" ? ", from your calendar" : ""})` : `Set ${meta.label}`}
+              aria-label={
+                isActive
+                  ? `${meta.label} (${covered ? "light colour only, the screen is showing something else" : "now"}${active?.source === "calendar" ? ", from your calendar" : ""})`
+                  : `Set ${meta.label}`
+              }
               onMouseEnter={() => setDraft({ status: s })}
               onFocus={() => setDraft({ status: s })}
               className={cx(
@@ -334,7 +340,7 @@ export function StatusControls({ active = null, className }: { active?: ActiveSt
                     )}
                   >
                     {active?.source === "calendar" ? <CalendarIcon className="size-3" strokeWidth={2.5} /> : <CheckIcon className="size-3" strokeWidth={3} />}
-                    Now
+                    {covered ? "Light" : "Now"}
                   </span>
                 )}
               </span>
