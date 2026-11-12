@@ -28,7 +28,14 @@ export function Container({
 }: ComponentProps<"div"> & { size?: "default" | "narrow"; padded?: boolean }) {
   return (
     <div
-      className={cx("mx-auto w-full px-4 sm:px-6", size === "narrow" ? "max-w-3xl" : "max-w-5xl", padded && "py-8", className)}
+      // "narrow" keeps the header's left edge and caps the content width with padding on the
+      // right, so page titles line up with the wordmark.
+      className={cx(
+        "mx-auto w-full max-w-5xl px-4 sm:px-6",
+        size === "narrow" && "lg:pr-[14.5rem]",
+        padded && "py-8",
+        className,
+      )}
       {...props}
     />
   );

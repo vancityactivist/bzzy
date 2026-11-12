@@ -1,6 +1,9 @@
 "use client";
 
-import { useActionState, useEffect, useRef, useTransition } from "react";
+import { useActionState, useEffect, useId, useRef, useTransition } from "react";
+
+import { PlusIcon, RefreshIcon, TrashIcon } from "@/components/icons";
+import { Button, Field, Input } from "@/components/ui";
 
 import {
   addCalendarAction,
@@ -13,41 +16,40 @@ import {
 export function AddCalendarForm({ first }: { first: boolean }) {
   const [state, action, pending] = useActionState<CalendarFormResult, FormData>(addCalendarAction, null);
   const form = useRef<HTMLFormElement>(null);
+  const id = useId();
   useEffect(() => {
     if (state?.ok) form.current?.reset();
   }, [state]);
 
   return (
-    <form ref={form} action={action} className="space-y-2">
-      <div className="flex flex-col gap-2 sm:flex-row">
-        <input
-          name="name"
-          required
-          maxLength={60}
-          defaultValue={first ? "Work" : ""}
-          placeholder="Work"
-          aria-label="Calendar name"
-          className="rounded-md border border-line bg-background px-3 py-2 sm:w-32"
-        />
-        <input
-          name="url"
-          required
-          type="text"
-          inputMode="url"
-          autoComplete="off"
-          spellCheck={false}
-          placeholder="https://outlook.office365.com/owa/calendar/…/calendar.ics"
-          aria-label="ICS link"
-          className="min-w-0 flex-1 rounded-md border border-line bg-background px-3 py-2 font-mono text-sm"
-        />
-        <button
-          disabled={pending}
-          className="rounded-md bg-foreground px-4 py-2 text-sm font-medium text-background disabled:opacity-50"
-        >
+    <form ref={form} action={action} className="space-y-3">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
+        <Field label="Name" htmlFor={`${id}-name`} className="sm:w-36">
+          <Input id={`${id}-name`} name="name" required maxLength={60} defaultValue={first ? "Work" : ""} placeholder="Work" />
+        </Field>
+        <Field label="ICS link" htmlFor={`${id}-url`} className="min-w-0 flex-1">
+          <Input
+            id={`${id}-url`}
+            name="url"
+            required
+            type="text"
+            inputMode="url"
+            autoComplete="off"
+            spellCheck={false}
+            placeholder="https://outlook.office365.com/owa/calendar/…/calendar.ics"
+            className="font-mono text-[13px]"
+          />
+        </Field>
+        <Button variant="primary" disabled={pending} className="sm:mt-[1.625rem]">
+          <PlusIcon />
           {pending ? "Checking…" : "Add"}
-        </button>
+        </Button>
       </div>
-      {state?.ok === false && <p className="text-sm text-busy">{state.error}</p>}
+      {state?.ok === false && (
+        <p className="text-sm text-danger" role="alert">
+          {state.error}
+        </p>
+      )}
     </form>
   );
 }
@@ -55,10 +57,11 @@ export function AddCalendarForm({ first }: { first: boolean }) {
 export function CalendarActions({ id, showTitles }: { id: string; showTitles: boolean }) {
   const [pending, start] = useTransition();
   return (
-    <div className="flex flex-wrap items-center gap-3 text-sm">
+    <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3 text-sm">
       <label className="flex cursor-pointer items-center gap-2">
         <input
           type="checkbox"
+          className="size-4 accent-foreground"
           checked={showTitles}
           disabled={pending}
           onChange={(e) => {
@@ -68,23 +71,22 @@ export function CalendarActions({ id, showTitles }: { id: string; showTitles: bo
         />
         Show meeting titles on the device
       </label>
-      <span className="ml-auto flex gap-2">
-        <button
-          disabled={pending}
-          onClick={() => start(() => refreshCalendarAction(id))}
-          className="rounded-md border border-line px-3 py-1.5 hover:bg-background disabled:opacity-50"
-        >
+      <span className="flex gap-2">
+        <Button size="sm" disabled={pending} onClick={() => start(() => refreshCalendarAction(id))}>
+          <RefreshIcon />
           {pending ? "Working…" : "Refresh"}
-        </button>
-        <button
+        </Button>
+        <Button
+          size="sm"
+          variant="danger"
           disabled={pending}
           onClick={() => {
             if (confirm("Remove this calendar? Your lights will stop following it.")) start(() => removeCalendarAction(id));
           }}
-          className="rounded-md border border-line px-3 py-1.5 text-busy hover:bg-background disabled:opacity-50"
         >
+          <TrashIcon />
           Remove
-        </button>
+        </Button>
       </span>
     </div>
   );

@@ -1,9 +1,11 @@
 "use client";
 
-import { useOptimistic, useState, useTransition } from "react";
+import { useId, useOptimistic, useState, useTransition } from "react";
 
 import { DevicePreview } from "@/components/device-preview";
+import { ChevronRightIcon } from "@/components/icons";
 import { STATUS_META } from "@/components/status-meta";
+import { Button, cx, Field, Input, Select, StatusDot } from "@/components/ui";
 import { type Status, STATUSES, TEXT_MAX } from "@/lib/protocol";
 import { STALE_VIEW, screenText } from "@/lib/screen";
 
@@ -33,50 +35,67 @@ export function DeviceScreens({
   };
 
   return (
-    <details className="w-full text-sm">
-      <summary className="cursor-pointer text-muted hover:text-foreground">Screen and GIFs</summary>
-      <ScreenSimulator defaultStatus={defaultStatus} srcFor={srcFor} />
-      <ul className="mt-3 grid gap-3 sm:grid-cols-2">
-        {(Object.keys(STATUS_META) as Status[]).map((s) => {
-          const choice = current[s];
-          const opt = choice === "default" ? defaults[s] : options.find((o) => o.value === choice);
-          return (
-            <li key={s} className="flex items-center gap-3">
-              <div className="flex h-12 w-14 shrink-0 items-center justify-center overflow-hidden rounded bg-[#0b0b0c]">
-                {opt?.src ? (
-                  // eslint-disable-next-line @next/next/no-img-element -- animated GIF preview
-                  <img src={opt.src} alt="" className="max-h-full max-w-full" />
-                ) : (
-                  <span className={`h-full w-full ${STATUS_META[s].bg}`} />
-                )}
-              </div>
-              <label className="min-w-0 flex-1">
-                <span className="block text-xs text-muted">{STATUS_META[s].label}</span>
-                <select
-                  value={choice}
-                  disabled={pending}
-                  onChange={(e) => {
-                    const v = e.target.value;
-                    start(async () => {
-                      setCurrent({ ...current, [s]: v });
-                      await setDeviceGifAction(deviceId, s, v);
-                    });
-                  }}
-                  className="w-full rounded-md border border-line bg-background px-2 py-1"
-                >
-                  <option value="default">Default ({defaults[s].label})</option>
-                  {options.map((o) => (
-                    <option key={o.value} value={o.value}>
-                      {o.label}
-                    </option>
-                  ))}
-                  <option value="none">No GIF (colour card)</option>
-                </select>
-              </label>
-            </li>
-          );
-        })}
-      </ul>
+    <details className="group w-full border-t border-line pt-3">
+      <summary className="-mx-2 flex h-8 w-fit cursor-pointer list-none items-center gap-1.5 rounded-lg px-2 text-sm font-medium text-muted transition-colors select-none hover:bg-subtle hover:text-foreground [&::-webkit-details-marker]:hidden">
+        <ChevronRightIcon className="size-4 transition-transform duration-150 group-open:rotate-90" />
+        Screen and GIFs
+      </summary>
+      <div className="mt-4 space-y-6">
+        <ScreenSimulator defaultStatus={defaultStatus} srcFor={srcFor} />
+        <div>
+          <h3 className="text-sm font-medium">GIF for each status</h3>
+          <ul className="mt-3 grid gap-4 sm:grid-cols-2">
+            {(Object.keys(STATUS_META) as Status[]).map((s) => {
+              const choice = current[s];
+              const opt = choice === "default" ? defaults[s] : options.find((o) => o.value === choice);
+              const id = `gif-${deviceId}-${s}`;
+              return (
+                <li key={s} className="flex items-end gap-3">
+                  <div className="flex h-10 w-12 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-[#0b0b0c]">
+                    {opt?.src ? (
+                      // eslint-disable-next-line @next/next/no-img-element -- animated GIF preview
+                      <img src={opt.src} alt="" className="max-h-full max-w-full" />
+                    ) : (
+                      <span className={cx("h-full w-full", STATUS_META[s].bg)} />
+                    )}
+                  </div>
+                  <Field
+                    label={
+                      <span className="inline-flex items-center gap-1.5">
+                        <StatusDot status={s} size="sm" />
+                        {STATUS_META[s].label}
+                      </span>
+                    }
+                    htmlFor={id}
+                    className="min-w-0 flex-1"
+                  >
+                    <Select
+                      id={id}
+                      value={choice}
+                      disabled={pending}
+                      onChange={(e) => {
+                        const v = e.target.value;
+                        start(async () => {
+                          setCurrent({ ...current, [s]: v });
+                          await setDeviceGifAction(deviceId, s, v);
+                        });
+                      }}
+                    >
+                      <option value="default">Default ({defaults[s].label})</option>
+                      {options.map((o) => (
+                        <option key={o.value} value={o.value}>
+                          {o.label}
+                        </option>
+                      ))}
+                      <option value="none">No GIF (colour card)</option>
+                    </Select>
+                  </Field>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      </div>
     </details>
   );
 }
@@ -84,6 +103,7 @@ export function DeviceScreens({
 // Try out what the screen shows for each status, a message and the offline states,
 // before the device is on your desk.
 function ScreenSimulator({ defaultStatus, srcFor }: { defaultStatus: Status; srcFor: (s: Status) => string | null }) {
+  const idBase = useId();
   const [status, setStatus] = useState<Status | "stale">(defaultStatus);
   const [text, setText] = useState("");
   const [timed, setTimed] = useState(false);
@@ -95,48 +115,59 @@ function ScreenSimulator({ defaultStatus, srcFor }: { defaultStatus: Status; src
     status === "stale"
       ? STALE_VIEW
       : { layout: "status" as const, status, text: screenText(text.trim()), until: timed ? until : 0, online, notice: null };
-  const chip = (active: boolean) =>
-    `rounded-full border px-3 py-1 ${active ? "border-foreground bg-foreground text-background" : "border-line hover:bg-background"}`;
+  const check = "size-4 accent-foreground";
 
   return (
-    <div className="mt-3 flex flex-col items-center gap-4 sm:flex-row sm:items-start">
-      <DevicePreview view={view} gifSrc={status === "stale" ? null : srcFor(status)} scale={0.6} className="m-4 shrink-0" />
-      <div className="w-full min-w-0 space-y-3">
-        <div className="flex flex-wrap gap-2" role="group" aria-label="Status to preview">
-          {STATUSES.map((s) => (
-            <button key={s} type="button" onClick={() => setStatus(s)} className={chip(status === s)} aria-pressed={status === s}>
-              {STATUS_META[s].label}
-            </button>
-          ))}
-          <button
-            type="button"
-            onClick={() => setStatus("stale")}
-            className={chip(status === "stale")}
-            aria-pressed={status === "stale"}
-            title="What it shows after a day without reaching the app"
-          >
-            No data
-          </button>
+    <div className="flex flex-col items-center gap-5 rounded-xl bg-subtle p-4 sm:flex-row sm:items-start">
+      <DevicePreview view={view} gifSrc={status === "stale" ? null : srcFor(status)} scale={0.6} className="shrink-0" />
+      <div className="w-full min-w-0 space-y-4">
+        <div>
+          <h3 className="text-sm font-medium">Preview the screen</h3>
+          <div className="mt-2 flex flex-wrap gap-2" role="group" aria-label="Status to preview">
+            {STATUSES.map((s) => (
+              <Button
+                key={s}
+                type="button"
+                size="sm"
+                variant={status === s ? "primary" : "secondary"}
+                onClick={() => setStatus(s)}
+                aria-pressed={status === s}
+              >
+                <StatusDot status={s} size="sm" />
+                {STATUS_META[s].label}
+              </Button>
+            ))}
+            <Button
+              type="button"
+              size="sm"
+              variant={status === "stale" ? "primary" : "secondary"}
+              onClick={() => setStatus("stale")}
+              aria-pressed={status === "stale"}
+              title="What it shows after a day without reaching the app"
+            >
+              No data
+            </Button>
+          </div>
         </div>
-        <label className="block">
-          <span className="text-xs text-muted">Message</span>
-          <input
+        <Field label="Message" htmlFor={`sim-text-${idBase}`}>
+          <Input
+            id={`sim-text-${idBase}`}
             value={text}
             maxLength={TEXT_MAX}
             onChange={(e) => setText(e.target.value)}
             disabled={status === "stale"}
             placeholder="On a call, back at 3"
-            className="mt-1 w-full rounded-md border border-line bg-background px-2 py-1"
           />
-        </label>
-        <div className="flex flex-wrap gap-4">
+        </Field>
+        <div className="flex flex-wrap gap-x-5 gap-y-2 text-sm">
           <label className="flex items-center gap-2">
-            <input type="checkbox" checked={timed} onChange={(e) => setTimed(e.target.checked)} disabled={status === "stale"} />
+            <input type="checkbox" className={check} checked={timed} onChange={(e) => setTimed(e.target.checked)} disabled={status === "stale"} />
             With an end time
           </label>
           <label className="flex items-center gap-2">
             <input
               type="checkbox"
+              className={check}
               checked={!online}
               onChange={(e) => setOnline(!e.target.checked)}
               disabled={status === "stale"}
