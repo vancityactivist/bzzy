@@ -30,12 +30,15 @@ rm -rf "$G"
 
 SCAD="openscad"
 command -v xvfb-run >/dev/null && [ -z "${DISPLAY:-}" ] && SCAD="xvfb-run -a openscad"
-for view in "assembly:75,0,-28:front" "assembly:70,0,145:back" "exploded:70,0,-55:exploded"; do
-  IFS=: read -r part cam name <<<"$view"
-  $SCAD -q -D "PART=\"$part\"" -o "img/case-$name.png" --imgsize=1400,1050 \
+for view in "noclip:75,0,-28:front:" "noclip:80,0,-12:busy:#ff3b30" "noclip:40,0,-25:top:" \
+            "assembly:70,0,145:back:" "exploded:70,0,-55:exploded:"; do
+  IFS=: read -r part cam name glow <<<"$view"
+  $SCAD -q -D "PART=\"$part\"" -D "GLOW=\"$glow\"" -o "img/case-$name.png" --imgsize=1400,1050 \
     --camera=0,0,0,$cam,0 --viewall --autocenter --colorscheme=Tomorrow case/bzzy_case.scad
 done
-for part in diffuser baffle shell clip; do
+# One STL per printed part, already turned the way it prints best.
+# Frosted white: light. Black: frame, back, trim, button, clip.
+for part in light frame back trim button clip; do
   openscad -q -D "PART=\"$part\"" -o "case/stl/$part.stl" case/bzzy_case.scad
 done
 echo "done: img/, case/stl/, led-ring/fab/gerbers.zip"
