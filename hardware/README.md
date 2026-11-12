@@ -84,7 +84,7 @@ To change something, edit the script and run `./render.sh` (needs KiCad 7+ and O
 | SW1 | 1 | Alps SKRTLAE010 | SMD side-push | Top button |
 | J1 | – | 3 plated holes, 2.54 mm | – | Wires, hand-soldered |
 | J2 | – | 1.5 mm pad on the back | – | Wire to GPIO18, hand-soldered |
-| Screws | 4 | M2 × 8 self-tapping (or M2 × 8 with heat-set inserts in the light ring) | | |
+| Screws | 4 | M2 × 8 self-tapping (or M2 × 8 with heat-set inserts in the diffuser) | | |
 
 The MPNs in `fab/bom-jlcpcb.csv` are suggestions. The LCSC part number column is blank on purpose. Fill it in from JLCPCB's parts search when you order, and use Basic parts where you can, since each Extended part adds a small fee. The WS2812B-2020 and the 74AHCT1G125 will probably be Extended.
 
