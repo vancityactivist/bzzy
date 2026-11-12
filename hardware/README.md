@@ -45,8 +45,8 @@ Files are in [led-ring/](led-ring/). Open `bzzy-led-ring.kicad_pro` in KiCad 7 o
 | Data | GPIO17 (3.3 V), then a 74AHCT1G125 buffer to 5 V logic, then 33 Ω to the first LED. A 100 kΩ pull-down keeps the LEDs dark while the ESP32 boots |
 | Power | 5 V from the Waveshare board's 5V pad. A 0.8 mm power ring on the back, a 100 nF cap per LED, and 2 × 10 µF bulk caps. Firmware caps the LEDs at 400 mA |
 | Connection | J1 is three plated holes on the left side (5V, GND, IO17 from top to bottom, labelled on the back). J2 is one plated hole at the top, right of the button (IO18). Both are clear of the USB-C plug. Solder four short wires to the Waveshare board's 5V, GND, GPIO17 and GPIO18 pads |
-| Top button | SW1, an Alps SKRT side-push switch on the top edge, with its plunger pointing up. You press it through a flexing tab in the case's top wall. It shorts GPIO18 to GND, and the firmware turns on the internal pull-up |
-| Mounting | 4 × M2 holes in the corners. The screws go through the shell and the ring board into the diffuser |
+| Top button | SW1, an Alps SKRT side-push switch on the top edge, with its plunger pointing up. You press it through a black button cap in the case's top wall. It shorts GPIO18 to GND, and the firmware turns on the internal pull-up |
+| Mounting | 4 × M2 holes in the corners. The screws go through the case's back plate and the ring board into the light ring |
 | Assembly | Every part is on the front, so JLCPCB assembles one side only. You hand-solder the J1 and J2 wires |
 
 ![schematic](img/schematic.svg)
@@ -82,7 +82,7 @@ To change something, edit the script and run `./render.sh` (needs KiCad 7+ and O
 | SW1 | 1 | Alps SKRTLAE010 | SMD side-push | Top button |
 | J1 | – | 3 plated holes, 2.54 mm | – | Wires, hand-soldered |
 | J2 | – | 1 plated hole, 1.5 mm pad | – | Wire to GPIO18, hand-soldered |
-| Screws | 4 | M2 × 8 self-tapping (or M2 × 8 with heat-set inserts in the diffuser) | | |
+| Screws | 4 | M2 × 8 self-tapping (or M2 × 8 with heat-set inserts in the light ring) | | |
 
 `fab/bom-jlcpcb.csv` has an LCSC part number for every line (set in `gen_led_ring.py`). Check each match in JLCPCB's BOM step, and swap in a Basic part where one fits, since each Extended part adds a small fee. The WS2812B-2020, the 74AHCT1G125 and the SKRTLAE010 are probably Extended.
 
