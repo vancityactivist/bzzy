@@ -4,14 +4,23 @@ import { Landing } from "@/components/landing";
 import { STATUS_META } from "@/components/status-meta";
 import { refreshStaleCalendars, scheduleForUser } from "@/lib/calendar";
 import { devicesForUser } from "@/lib/devices";
-import { defaultPreviewSrcs, previewSrc, resolveDeviceGifs } from "@/lib/gifs";
+import { BUILTIN_GIFS, defaultPreviewSrcs, gifsForUser, previewSrc, resolveDeviceGifs } from "@/lib/gifs";
 import { getPresence } from "@/lib/presence";
-import { nowSeconds, STATUSES } from "@/lib/protocol";
-import { resolveScreen, viewFor } from "@/lib/screen";
+import { nowSeconds, showVisible, STATUSES } from "@/lib/protocol";
+import { resolveScreen, screenText, viewFor } from "@/lib/screen";
 import { getCurrentUser } from "@/lib/session";
+import { getShow } from "@/lib/show";
 
-import { clearStatus, setStatus } from "./actions";
-import { DraftProvider, LivePreview, MessageInput, type PreviewDevice } from "./status-preview";
+import { clearStatus } from "./actions";
+import {
+  type LibraryGif,
+  type LiveShow,
+  type PreviewDevice,
+  ShowNowControls,
+  StatusControls,
+  StudioPreview,
+  StudioProvider,
+} from "./studio";
 
 export default function Home() {
   return (
@@ -21,24 +30,40 @@ export default function Home() {
   );
 }
 
-const DURATIONS = [
-  { minutes: 0, label: "Until I change it" },
-  { minutes: 30, label: "30 min" },
-  { minutes: 60, label: "1 hour" },
-  { minutes: 120, label: "2 hours" },
-];
-
 async function HomeContent() {
   const user = await getCurrentUser();
   if (!user) return <Landing />;
 
   const now = nowSeconds();
   await refreshStaleCalendars(user.id);
-  const [presence, { schedule }, devices] = await Promise.all([
+  const [presence, { schedule }, devices, show, uploads] = await Promise.all([
     getPresence(user.id),
     scheduleForUser(user.id, now),
     devicesForUser(user.id),
+    getShow(user.id),
+    gifsForUser(user.id),
   ]);
+  const library: LibraryGif[] = [
+    ...uploads.map((g) => ({
+      choice: `asset:${g.id}`,
+      name: g.name,
+      src: `/api/gifs/${g.id}`,
+    })),
+    ...BUILTIN_GIFS.map((g) => ({
+      choice: `builtin:${g.id}`,
+      name: g.name,
+      src: g.path,
+    })),
+  ];
+  const liveShow: LiveShow | null =
+    show && showVisible(show, presence, now)
+      ? {
+          text: screenText(show.text),
+          until: show.until,
+          gifSrc: previewSrc(show.gif),
+          gifName: show.gif?.name ?? null,
+        }
+      : null;
   const current = schedule.find((b) => b.start <= now && now < b.end);
   const next = schedule.find((b) => b.start > now);
   const at = (sec: number) =>
@@ -68,81 +93,67 @@ async function HomeContent() {
         ];
   const live = presence?.active && (presence.until === 0 || presence.until > now) ? presence : null;
 
+  const summary = (
+    <div className="text-center">
+      {live ? (
+        <div className="flex items-center justify-center gap-2">
+          <span className={`h-3 w-3 rounded-full ${STATUS_META[live.status].bg}`} />
+          <span className="font-semibold">{STATUS_META[live.status].label}</span>
+          {live.text && <span className="text-muted">· {live.text}</span>}
+        </div>
+      ) : current ? (
+        <div className="flex items-center justify-center gap-2">
+          <span className={`h-3 w-3 rounded-full ${STATUS_META[current.status].bg}`} />
+          <span className="font-semibold">{STATUS_META[current.status].label}</span>
+          {current.text && <span className="text-muted">· {current.text}</span>}
+        </div>
+      ) : (
+        <p className="font-semibold">Automatic</p>
+      )}
+      <p className="mt-1 text-sm text-muted">
+        {live
+          ? live.until
+            ? `Until ${at(live.until)}`
+            : "Until you change it"
+          : current
+            ? `From your calendar, until ${at(current.end)}`
+            : next
+              ? `Following your calendar. Next: ${STATUS_META[next.status].label.toLowerCase()} at ${at(next.start)}`
+              : "Following your calendar and each device's default."}
+      </p>
+      {live && (
+        <form action={clearStatus} className="mt-3">
+          <button className="rounded-md border border-line px-3 py-1.5 text-sm hover:bg-background">Back to automatic</button>
+        </form>
+      )}
+    </div>
+  );
+
   return (
-    <DraftProvider>
-      <div className="space-y-8">
-        <section className="flex flex-col gap-6 rounded-xl border border-line bg-card p-6 sm:flex-row sm:items-center">
-          <div className="min-w-0 flex-1">
-            <p className="text-sm text-muted">Right now</p>
-            {live ? (
-              <div className="mt-2 flex items-center gap-3">
-                <span className={`h-4 w-4 rounded-full ${STATUS_META[live.status].bg}`} />
-                <span className="text-2xl font-semibold">{STATUS_META[live.status].label}</span>
-                {live.text && <span className="text-muted">· {live.text}</span>}
-              </div>
-            ) : current ? (
-              <div className="mt-2 flex items-center gap-3">
-                <span className={`h-4 w-4 rounded-full ${STATUS_META[current.status].bg}`} />
-                <span className="text-2xl font-semibold">{STATUS_META[current.status].label}</span>
-                {current.text && <span className="text-muted">· {current.text}</span>}
-              </div>
-            ) : (
-              <p className="mt-2 text-2xl font-semibold">Automatic</p>
-            )}
-            <p className="mt-1 text-sm text-muted">
-              {live
-                ? live.until
-                  ? `Until ${new Date(live.until * 1000).toLocaleTimeString("en-CA", { hour: "numeric", minute: "2-digit", timeZone: "America/Vancouver" })}`
-                  : "Until you change it"
-                : current
-                  ? `From your calendar, until ${at(current.end)}`
-                  : next
-                    ? `Following your calendar. Next: ${STATUS_META[next.status].label.toLowerCase()} at ${at(next.start)}`
-                    : "Following your calendar and each device's default."}
-            </p>
-            {live && (
-              <form action={clearStatus} className="mt-4">
-                <button className="rounded-md border border-line px-3 py-1.5 text-sm hover:bg-background">
-                  Back to automatic
-                </button>
-              </form>
-            )}
-          </div>
-          <LivePreview devices={previews} />
+    <StudioProvider library={library} live={liveShow}>
+      <div className="grid gap-8 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:items-start">
+        <section className="sticky top-0 z-10 -mx-4 -mt-8 flex flex-col items-center gap-4 border-b border-line bg-background/90 px-4 py-2 backdrop-blur lg:top-6 lg:mx-0 lg:mt-0 lg:rounded-xl lg:border lg:bg-card lg:p-6 lg:backdrop-blur-none">
+          <StudioPreview devices={previews} />
+          <div className="hidden w-full border-t border-line pt-4 lg:block">{summary}</div>
         </section>
 
-        <form action={setStatus} className="space-y-5">
-          <div className="grid grid-cols-2 gap-3">
-            {STATUSES.map((s) => (
-              <button
-                key={s}
-                name="status"
-                value={s}
-                className={`rounded-xl px-4 py-6 text-lg font-semibold text-white ${STATUS_META[s].bg} hover:opacity-90 focus:outline-none focus-visible:ring-4 ${STATUS_META[s].ring} ring-offset-2`}
-              >
-                {STATUS_META[s].label}
-              </button>
-            ))}
-          </div>
-
-          <fieldset className="flex flex-wrap gap-2">
-            <legend className="mb-2 text-sm text-muted">For how long</legend>
-            {DURATIONS.map((d, i) => (
-              <label key={d.minutes} className="cursor-pointer">
-                <input type="radio" name="minutes" value={d.minutes} defaultChecked={i === 0} className="peer sr-only" />
-                <span className="block rounded-full border border-line px-3 py-1.5 text-sm peer-checked:bg-foreground peer-checked:text-background">
-                  {d.label}
-                </span>
-              </label>
-            ))}
-          </fieldset>
-
-          <label className="block">
-            <span className="text-sm text-muted">Message on the screen (optional)</span>
-            <MessageInput />
-          </label>
-        </form>
+        <div className="space-y-8">
+          <div className="rounded-xl border border-line bg-card p-4 lg:hidden">{summary}</div>
+          <section className="rounded-xl border border-line bg-card p-6">
+            <h2 className="font-semibold">Set your status</h2>
+            <p className="mb-4 mt-1 text-sm text-muted">Overrides your calendar until it runs out or you go back to automatic.</p>
+            <StatusControls />
+          </section>
+          <section className="rounded-xl border border-line bg-card p-6">
+            <h2 className="font-semibold">Show something</h2>
+            <p className="mb-4 mt-1 text-sm text-muted">
+              Put a GIF or a message on your screen right now. Your status light stays the same colour, and pressing the button on the light
+              takes it down.
+            </p>
+            <ShowNowControls />
+          </section>
+        </div>
       </div>
-    </DraftProvider>
+    </StudioProvider>
   );
 }

@@ -6,6 +6,8 @@ import {
   clipText,
   MAX_BLOCKS,
   overrideBody,
+  showVisible,
+  type ShowState,
   shouldApplyDeviceOverride,
   TEXT_MAX,
   type Presence,
@@ -29,7 +31,14 @@ describe("buildState", () => {
       v: 1,
       serverTime: NOW,
       defaultStatus: "free",
-      manual: { active: true, status: "busy", text: "On a call", until: 0, updatedAt: NOW - 60 },
+      manual: {
+        active: true,
+        status: "busy",
+        text: "On a call",
+        until: 0,
+        updatedAt: NOW - 60,
+      },
+      show: null,
       schedule: [],
     });
   });
@@ -119,5 +128,52 @@ describe("device tokens", () => {
     expect(bearerToken("bearer   abc123 ")).toBe("abc123");
     expect(bearerToken("Basic abc")).toBeNull();
     expect(bearerToken(null)).toBeNull();
+  });
+});
+
+describe("show now", () => {
+  const show = (s: Partial<ShowState> = {}): ShowState => ({
+    active: true,
+    text: "Lunch!",
+    until: 0,
+    updatedAt: NOW - 30,
+    gif: { url: "https://bzzy.vercel.app/gifs/x.gif", sha: "abc" },
+    ...s,
+  });
+
+  it("is sent as is while live", () => {
+    const s = buildState({
+      now: NOW,
+      defaultStatus: "free",
+      presence: null,
+      schedule: [],
+      show: show(),
+    });
+    expect(s.show).toEqual(show());
+  });
+
+  it("is sent as cleared once it expires, without its GIF", () => {
+    const s = buildState({
+      now: NOW,
+      defaultStatus: "free",
+      presence: null,
+      schedule: [],
+      show: show({ until: NOW }),
+    });
+    expect(s.show).toEqual({
+      active: false,
+      text: "",
+      until: 0,
+      updatedAt: NOW - 30,
+      gif: null,
+    });
+  });
+
+  it("is hidden by a newer status change, like on the device", () => {
+    expect(showVisible(show(), presence({ updatedAt: NOW - 60 }), NOW)).toBe(true);
+    expect(showVisible(show(), presence({ updatedAt: NOW - 10 }), NOW)).toBe(false);
+    // An expired status doesn't count: the device never hears about it.
+    expect(showVisible(show(), presence({ updatedAt: NOW - 10, until: NOW - 1 }), NOW)).toBe(true);
+    expect(showVisible(show({ active: false }), null, NOW)).toBe(false);
   });
 });

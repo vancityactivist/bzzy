@@ -2,6 +2,7 @@ import { after, type NextRequest } from "next/server";
 
 import { authenticateDevice, markSeen, unauthorized } from "@/lib/device-auth";
 import { getPresence, setPresence } from "@/lib/presence";
+import { clearShow } from "@/lib/show";
 import { nowSeconds, overrideBody, presenceFromDevice, shouldApplyDeviceOverride } from "@/lib/protocol";
 
 // Sent when someone presses the button or taps the screen on the device.
@@ -17,7 +18,13 @@ export async function POST(req: NextRequest, ctx: RouteContext<"/api/device/[id]
 
   const current = await getPresence(device.ownerUserId);
   const applied = shouldApplyDeviceOverride(current, parsed.data, nowSeconds());
-  if (applied) await setPresence(device.ownerUserId, presenceFromDevice(parsed.data), device.id);
+  if (applied) {
+    // A press on the device also takes down "show now" (the device already has).
+    await Promise.all([
+      setPresence(device.ownerUserId, presenceFromDevice(parsed.data), device.id),
+      clearShow(device.ownerUserId, parsed.data.updatedAt),
+    ]);
+  }
 
   after(() => markSeen(device.id));
   // 200 either way: an ignored (older) press is not an error, and the device

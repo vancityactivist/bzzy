@@ -12,8 +12,12 @@ namespace bzzy {
 bool parseState(const char* json, size_t len, State& out);
 String serializeState(const State& st);
 
-// The GIF the app wants for each status, indexed by Status (Free, Busy, Dnd, Away).
-constexpr size_t kGifSlots = 4;
+// The GIF the app wants for each status, indexed by Status (Free, Busy, Dnd, Away),
+// plus one more slot for "show now".
+constexpr size_t kGifSlots = 5;
+constexpr size_t kShowSlot = 4;
+// "free", "busy", "dnd", "away", "show": the file name and settings key for a slot.
+const char* gifSlotName(size_t slot);
 struct GifRef {
   bool present = false;  // false: no GIF, show the colour card
   char url[200] = "";

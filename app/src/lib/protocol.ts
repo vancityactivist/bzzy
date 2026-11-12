@@ -24,11 +24,21 @@ export type Block = { start: number; end: number; status: Status; text: string }
 export type GifRef = { url: string; sha: string };
 export type GifMap = Record<Status, GifRef | null>;
 
+// "Show now": a GIF and/or message on the screen, whatever the status.
+export type Show = {
+  active: boolean;
+  text: string;
+  until: number; // unix seconds; 0 = until cleared
+  updatedAt: number;
+};
+export type ShowState = Show & { gif: GifRef | null };
+
 export type StateResponse = {
   v: 1;
   serverTime: number;
   defaultStatus: Status;
   manual: Presence | null;
+  show: ShowState | null;
   schedule: Block[];
   gifs?: GifMap;
 };
@@ -60,14 +70,11 @@ export function buildState(opts: {
   presence: Presence | null;
   schedule: Block[];
   gifs?: GifMap;
+  show?: ShowState | null;
 }): StateResponse {
   const { now, defaultStatus, presence } = opts;
 
-  // An expired override is the same as none; don't make the device work it out.
-  let manual: Presence | null = null;
-  if (presence && (presence.active ? presence.until === 0 || presence.until > now : presence.updatedAt > 0)) {
-    manual = { ...presence, text: clipText(presence.text) };
-  }
+  const manual = sentManual(presence, now);
 
   const schedule = opts.schedule
     .filter((b) => b.end > now && b.end > b.start)
@@ -75,7 +82,30 @@ export function buildState(opts: {
     .slice(0, MAX_BLOCKS)
     .map((b) => ({ ...b, text: clipText(b.text) }));
 
-  const state: StateResponse = { v: 1, serverTime: now, defaultStatus, manual, schedule };
+  // Same idea for "show now": an expired one is sent as cleared, so the device drops its GIF.
+  let show: ShowState | null = null;
+  const s = opts.show;
+  if (s && (s.active || s.updatedAt > 0)) {
+    const live = showLive(s, now);
+    show = live
+      ? { ...s, text: clipText(s.text) }
+      : {
+          active: false,
+          text: "",
+          until: 0,
+          updatedAt: s.updatedAt,
+          gif: null,
+        };
+  }
+
+  const state: StateResponse = {
+    v: 1,
+    serverTime: now,
+    defaultStatus,
+    manual,
+    show,
+    schedule,
+  };
   if (opts.gifs) state.gifs = opts.gifs;
   return state;
 }
@@ -91,4 +121,24 @@ export function shouldApplyDeviceOverride(current: Presence | null, incoming: Ov
 
 export function presenceFromDevice(incoming: OverrideBody): Presence {
   return { active: incoming.active, status: incoming.status, text: "", until: 0, updatedAt: incoming.updatedAt };
+}
+
+// The manual override as the device gets it. An expired override is the same as
+// none; don't make the device work it out.
+export function sentManual(presence: Presence | null, now: number): Presence | null {
+  if (presence && (presence.active ? presence.until === 0 || presence.until > now : presence.updatedAt > 0)) {
+    return { ...presence, text: clipText(presence.text) };
+  }
+  return null;
+}
+
+export function showLive(s: Show, now: number): boolean {
+  return s.active && (s.until === 0 || now < s.until);
+}
+
+// The device's showVisible() (firmware/lib/core/src/status_engine.cpp): on screen while
+// it hasn't expired and nobody changed the status after putting it up.
+export function showVisible(s: Show | null, presence: Presence | null, now: number): boolean {
+  if (!s || !showLive(s, now)) return false;
+  return s.updatedAt >= (sentManual(presence, now)?.updatedAt ?? 0);
 }

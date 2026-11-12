@@ -4,7 +4,20 @@
 // The firmware uses LovyanGFX's FreeSans fonts (a Helvetica clone, rendered at
 // 141 dpi) and never wraps text, so long messages run off both edges here too.
 
-import { GIF_H, LED_RGB, SCREEN_BG, SCREEN_H, SCREEN_LABEL, SCREEN_W, type ScreenView, untilLabel } from "@/lib/screen";
+import {
+  FONT_PT,
+  GIF_H,
+  LED_RGB,
+  LINE_HEIGHT,
+  SCREEN_BG,
+  SCREEN_H,
+  SCREEN_LABEL,
+  SCREEN_W,
+  type ScreenView,
+  untilLabel,
+  wrapBar,
+  wrapMessage,
+} from "@/lib/screen";
 
 const FONT = "Helvetica, Arial, 'Liberation Sans', Arimo, sans-serif";
 const em = (pt: number) => (pt * 141) / 72;
@@ -37,20 +50,21 @@ export function DevicePreview({
   className = "",
 }: {
   view: ScreenView;
-  gifSrc: string | null; // null: no GIF for this status, so the colour card
+  gifSrc: string | null; // the status's GIF, or the show-now GIF for "show-gif"; null: no GIF
   scale?: number;
   className?: string;
 }) {
   const bg = SCREEN_BG[view.status];
   const label = SCREEN_LABEL[view.status];
   const until = view.until ? untilLabel(view.until) : null;
-  // The device never has a GIF for "unknown".
-  const gif = view.status === "unknown" ? null : gifSrc;
+  // The device never has a GIF for "unknown" (but "show now" brings its own).
+  const gif = view.layout === "show-text" || (view.status === "unknown" && view.layout === "status") ? null : gifSrc;
+  const oneLineLabel = view.status === "dnd" ? "DO NOT DISTURB" : label.join(" ");
   const [r, g, b] = LED_RGB[view.status];
   const led = (a: number) => `rgb(${r} ${g} ${b} / ${a})`;
   const bezel = 14 * scale;
 
-  const summary = [gif ? "GIF" : "Colour card", view.text || label.join(" "), until, view.notice, view.online ? null : "offline"]
+  const summary = [gif ? "GIF" : "Colour card", view.text || oneLineLabel, until, view.notice, view.online ? null : "offline"]
     .filter(Boolean)
     .join(", ");
 
@@ -81,14 +95,12 @@ export function DevicePreview({
                 <img src={gif} alt="" className="absolute left-0 top-0 max-w-none" />
               </div>
             )}
-            <svg
-              className="absolute left-0 top-0"
-              width={SCREEN_W}
-              height={SCREEN_H}
-              viewBox={`0 0 ${SCREEN_W} ${SCREEN_H}`}
-              aria-hidden
-            >
-              {gif ? (
+            <svg className="absolute left-0 top-0" width={SCREEN_W} height={SCREEN_H} viewBox={`0 0 ${SCREEN_W} ${SCREEN_H}`} aria-hidden>
+              {view.layout === "show-text" ? (
+                <ShowText view={view} bg={bg} label={oneLineLabel} until={until} />
+              ) : view.layout === "show-gif" && gif ? (
+                <ShowBar view={view} bg={bg} label={oneLineLabel} until={until} />
+              ) : gif ? (
                 <>
                   <rect x={0} y={GIF_H} width={SCREEN_W} height={SCREEN_H - GIF_H} fill={bg} />
                   <Line y={topBaseline(GIF_H + 12, 12)} pt={12} bold>
@@ -156,5 +168,46 @@ export function DevicePreview({
         </div>
       </div>
     </div>
+  );
+}
+
+// display.cpp drawShowText(): the message big and wrapped, status underneath.
+function ShowText({ view, bg, label, until }: { view: ScreenView; bg: string; label: string; until: string | null }) {
+  const { font, lines } = wrapMessage(view.text);
+  const lh = LINE_HEIGHT[font];
+  const top = 112 - Math.floor((lines.length * lh) / 2);
+  return (
+    <>
+      <rect width={SCREEN_W} height={SCREEN_H} fill={bg} />
+      {lines.map((l, i) => (
+        <Line key={i} y={topBaseline(top + i * lh, FONT_PT[font])} pt={FONT_PT[font]} bold>
+          {l}
+        </Line>
+      ))}
+      <Line y={topBaseline(222, 9)} pt={9}>
+        {until ? `${label}  ${until}` : label}
+      </Line>
+    </>
+  );
+}
+
+// display.cpp redraw(), Layout::ShowGif: the bar under the GIF.
+function ShowBar({ view, bg, label, until }: { view: ScreenView; bg: string; label: string; until: string | null }) {
+  const lines = view.text ? wrapBar(view.text) : [label];
+  const top = lines.length > 1 ? GIF_H + 4 : GIF_H + 12;
+  return (
+    <>
+      <rect x={0} y={GIF_H} width={SCREEN_W} height={SCREEN_H - GIF_H} fill={bg} />
+      {lines.map((l, i) => (
+        <Line key={i} y={topBaseline(top + i * LINE_HEIGHT.bold12, 12)} pt={12} bold>
+          {l}
+        </Line>
+      ))}
+      {until && lines.length < 2 && (
+        <Line y={topBaseline(GIF_H + 46, 9)} pt={9}>
+          {until}
+        </Line>
+      )}
+    </>
   );
 }

@@ -92,7 +92,9 @@ function ScreenSimulator({ defaultStatus, srcFor }: { defaultStatus: Status; src
   const [until] = useState(() => Math.ceil(Date.now() / 1000 / 1800) * 1800);
 
   const view =
-    status === "stale" ? STALE_VIEW : { status, text: screenText(text.trim()), until: timed ? until : 0, online, notice: null };
+    status === "stale"
+      ? STALE_VIEW
+      : { layout: "status" as const, status, text: screenText(text.trim()), until: timed ? until : 0, online, notice: null };
   const chip = (active: boolean) =>
     `rounded-full border px-3 py-1 ${active ? "border-foreground bg-foreground text-background" : "border-line hover:bg-background"}`;
 

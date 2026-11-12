@@ -30,6 +30,8 @@ void reportOverride(const bzzy::Override& o);
 // New GIFs are downloaded in the background to /gif/<status>.tmp. The main loop
 // swaps them in (after closing the one on screen) when this says some are ready.
 bool gifsReady();
+// Whether the GIF with this sha is the one on flash for a slot (see protocol.h).
+bool gifInstalled(size_t slot, const char* sha);
 void installGifs();
 
 }  // namespace net
