@@ -170,9 +170,26 @@ void loop() {
     notice = net::now() ? "No recent calendar data" : "Waiting for the clock";
   }
 
+  // "Show now" from the app replaces what's on the screen, not the status: the
+  // LEDs and the screen's colours still say whether you can be interrupted.
+  display::View view = {display::Layout::Status, r.status, r.text,
+                        r.source == bzzy::Source::Fallback ? 0 : r.until, net::online(), notice};
+  const bzzy::Show& show = g_state.show;
+  if (bzzy::showVisible(g_state, net::now())) {
+    // Until its GIF has downloaded, a show with a message shows just the message.
+    if (show.hasGif && net::gifInstalled(bzzy::kShowSlot, show.gifSha)) {
+      view.layout = display::Layout::ShowGif;
+    } else if (show.text[0]) {
+      view.layout = display::Layout::ShowText;
+    }
+    if (view.layout != display::Layout::Status) {
+      view.text = show.text;
+      view.until = show.until;
+    }
+  }
+
   leds::show(r.status);
-  display::show({r.status, r.text, r.source == bzzy::Source::Fallback ? 0 : r.until,
-                 net::online(), notice});
+  display::show(view);
 
   leds::tick(ms);
   display::tick(ms);

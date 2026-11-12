@@ -1,5 +1,6 @@
 // Screen: a GIF (if one is stored for the status) above a text bar, or a solid
-// colour card with big text when there's no GIF. No-ops on boards without a screen.
+// colour card with big text when there's no GIF. "Show now" swaps in its own GIF
+// (ShowGif) or a big wrapped message (ShowText). No-ops on boards without a screen.
 #pragma once
 
 #include <stdint.h>
@@ -8,9 +9,16 @@
 
 namespace display {
 
+enum class Layout : uint8_t {
+  Status,    // the status's GIF and label (or its colour card)
+  ShowGif,   // the "show now" GIF, with its message (or the status label) in the bar
+  ShowText,  // the "show now" message, big, on the status colour
+};
+
 struct View {
+  Layout layout;
   bzzy::Status status;
-  const char* text;  // event or custom text; may be ""
+  const char* text;  // event, custom or show-now text; may be ""
   uint32_t until;    // unix seconds; 0 = don't show a time
   bool online;
   const char* notice;  // one-off line such as "Wi-Fi setup: join bzzy-setup"; may be nullptr

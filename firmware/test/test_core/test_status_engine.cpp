@@ -2,6 +2,7 @@
 #include <unity.h>
 
 #include "status_engine.h"
+#include "text_wrap.h"
 
 using namespace bzzy;
 
@@ -179,6 +180,96 @@ void test_status_names_round_trip() {
   TEST_ASSERT_EQUAL(Status::Busy, untouched);
 }
 
+
+static void putShow(State& st, uint32_t updatedAt, uint32_t until = 0) {
+  st.show.active = true;
+  strncpy(st.show.text, "Lunch!", kTextMax - 1);
+  st.show.until = until;
+  st.show.updatedAt = updatedAt;
+}
+
+void test_show_stays_up_through_calendar_changes() {
+  State st = freshState();
+  addBlock(st, T0 + 600, T0 + 3600, Status::Busy, "Council meeting");
+  putShow(st, T0 + 10);
+  TEST_ASSERT_TRUE(showVisible(st, T0 + 60));
+  TEST_ASSERT_TRUE(showVisible(st, T0 + 700));
+  // The status underneath still follows the calendar (for the LEDs).
+  TEST_ASSERT_EQUAL(Status::Busy, resolve(st, T0 + 700).status);
+}
+
+void test_show_expires() {
+  State st = freshState();
+  putShow(st, T0, T0 + 3600);
+  TEST_ASSERT_TRUE(showVisible(st, T0 + 3599));
+  TEST_ASSERT_FALSE(showVisible(st, T0 + 3600));
+  // Without a clock, keep showing it (same as a manual override).
+  TEST_ASSERT_TRUE(showVisible(st, 0));
+}
+
+void test_newer_button_press_hides_show() {
+  State st = freshState();
+  putShow(st, T0 + 10);
+  cycleLocalOverride(st, T0 + 20);
+  TEST_ASSERT_FALSE(showVisible(st, T0 + 21));
+
+  State st2 = freshState();
+  putShow(st2, T0 + 10);
+  clearLocalOverride(st2, T0 + 20);  // long press: back to automatic, and hides it
+  TEST_ASSERT_FALSE(showVisible(st2, T0 + 21));
+}
+
+void test_show_newer_than_status_is_visible() {
+  State st = freshState();
+  cycleLocalOverride(st, T0 + 5);
+  putShow(st, T0 + 10);
+  TEST_ASSERT_TRUE(showVisible(st, T0 + 11));
+  st.show.active = false;
+  TEST_ASSERT_FALSE(showVisible(st, T0 + 11));
+}
+
+static void lineEquals(const char* text, const Line& l, const char* want) {
+  char buf[kTextMax] = {0};
+  memcpy(buf, text + l.start, l.len);
+  TEST_ASSERT_EQUAL_STRING(want, buf);
+}
+
+void test_wrap_short_message_is_one_big_line() {
+  Wrapped w = wrapMessage("Lunch!");
+  TEST_ASSERT_EQUAL(Font::Bold18, w.font);
+  TEST_ASSERT_EQUAL(1, w.count);
+  lineEquals("Lunch!", w.lines[0], "Lunch!");
+}
+
+void test_wrap_breaks_at_spaces() {
+  const char* t = "Back in 10 minutes, grab a coffee";
+  Wrapped w = wrapMessage(t);
+  TEST_ASSERT_EQUAL(Font::Bold18, w.font);
+  TEST_ASSERT_TRUE(w.count > 1);
+  for (size_t i = 0; i < w.count; ++i) {
+    TEST_ASSERT_TRUE(textWidth(t + w.lines[i].start, w.lines[i].len, w.font) <= kMessageWidth);
+    TEST_ASSERT_NOT_EQUAL(' ', t[w.lines[i].start]);
+  }
+}
+
+void test_wrap_falls_back_to_small_font() {
+  const char* t = "WWWWWWWW WWWWWWWW WWWWWWWW WWWWWWWW WWWWWWW";
+  Wrapped w = wrapMessage(t);
+  TEST_ASSERT_EQUAL(Font::Bold12, w.font);
+}
+
+void test_wrap_breaks_long_words() {
+  const char* t = "Supercalifragilisticexpialidocious";
+  Line lines[kMaxLines];
+  bool cut = true;
+  size_t n = wrapText(t, Font::Bold18, kMessageWidth, 4, lines, &cut);
+  TEST_ASSERT_TRUE(n >= 2);
+  TEST_ASSERT_FALSE(cut);
+  size_t total = 0;
+  for (size_t i = 0; i < n; ++i) total += lines[i].len;
+  TEST_ASSERT_EQUAL(strlen(t), total);
+}
+
 int main(int, char**) {
   UNITY_BEGIN();
   RUN_TEST(test_default_when_nothing_scheduled);
@@ -195,5 +286,13 @@ int main(int, char**) {
   RUN_TEST(test_merge_takes_newer_server_override);
   RUN_TEST(test_merge_keeps_local_clear_over_older_server_override);
   RUN_TEST(test_status_names_round_trip);
+  RUN_TEST(test_show_stays_up_through_calendar_changes);
+  RUN_TEST(test_show_expires);
+  RUN_TEST(test_newer_button_press_hides_show);
+  RUN_TEST(test_show_newer_than_status_is_visible);
+  RUN_TEST(test_wrap_short_message_is_one_big_line);
+  RUN_TEST(test_wrap_breaks_at_spaces);
+  RUN_TEST(test_wrap_falls_back_to_small_font);
+  RUN_TEST(test_wrap_breaks_long_words);
   return UNITY_END();
 }

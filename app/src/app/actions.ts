@@ -7,10 +7,11 @@ import { signIn, signOut } from "@/auth";
 import { addCalendar, deleteCalendar, ownCalendar, refreshCalendar, setShowTitles } from "@/lib/calendar";
 import { canManageDevice, createDevice, deleteDevice, deviceTeam, rotateDeviceToken } from "@/lib/devices";
 import { GifError } from "@/lib/gif-process";
-import { deleteGif, importGifFromLink, setDeviceGif, uploadGif } from "@/lib/gifs";
+import { checkGifChoice, deleteGif, importGifFromLink, setDeviceGif, uploadGif } from "@/lib/gifs";
 import { setPresence } from "@/lib/presence";
 import { clipText, nowSeconds, STATUSES } from "@/lib/protocol";
 import { requireUser } from "@/lib/session";
+import { clearShow, setShow } from "@/lib/show";
 
 export async function signInWithGitHub() {
   await signIn("github", { redirectTo: "/" });
@@ -36,23 +37,111 @@ export async function setStatus(formData: FormData) {
     text: formData.get("text") ?? "",
   });
   const now = nowSeconds();
-  await setPresence(
-    user.id,
-    {
-      active: true,
-      status: input.status,
-      text: clipText(input.text.trim()),
-      until: input.minutes > 0 ? now + input.minutes * 60 : 0,
-      updatedAt: now,
-    },
-    "web",
-  );
+  // Changing the status takes down "show now", like a press on the device does.
+  await Promise.all([
+    setPresence(
+      user.id,
+      {
+        active: true,
+        status: input.status,
+        text: clipText(input.text.trim()),
+        until: input.minutes > 0 ? now + input.minutes * 60 : 0,
+        updatedAt: now,
+      },
+      "web",
+    ),
+    clearShow(user.id, now),
+  ]);
   refresh();
 }
 
 export async function clearStatus() {
   const user = await requireUser();
-  await setPresence(user.id, { active: false, status: "free", text: "", until: 0, updatedAt: nowSeconds() }, "web");
+  const now = nowSeconds();
+  await Promise.all([
+    setPresence(user.id, { active: false, status: "free", text: "", until: 0, updatedAt: now }, "web"),
+    clearShow(user.id, now),
+  ]);
+  refresh();
+}
+
+// ---- show now ----
+
+export type ShowNowResult = { ok: true; at: number } | { ok: false; error: string } | null;
+
+const showInput = z.object({
+  gif: z.string().max(100).default("none"),
+  link: z.string().trim().max(2000).default(""),
+  text: z.string().max(200).default(""),
+  minutes: z.coerce
+    .number()
+    .int()
+    .min(0)
+    .max(24 * 60),
+});
+
+// Put a GIF and/or message on the screen. The GIF can be one from the library, a
+// pasted GIPHY/Tenor link or a file, and the last two are saved to the library too.
+export async function showNowAction(_prev: ShowNowResult, formData: FormData): Promise<ShowNowResult> {
+  const user = await requireUser();
+  const input = showInput.safeParse({
+    gif: formData.get("gif") ?? "none",
+    link: formData.get("link") ?? "",
+    text: formData.get("text") ?? "",
+    minutes: formData.get("minutes") ?? 60,
+  });
+  if (!input.success)
+    return {
+      ok: false,
+      error: "Something in the form didn't look right. Try again.",
+    };
+  const { gif, link, minutes } = input.data;
+  const text = clipText(input.data.text.trim());
+  const file = formData.get("file");
+
+  let choice: { assetId: string | null; builtin: string | null } = {
+    assetId: null,
+    builtin: null,
+  };
+  try {
+    if (file instanceof File && file.size > 0) {
+      const name = file.name.replace(/\.[^.]+$/, "").slice(0, 60) || "My GIF";
+      choice.assetId = await uploadGif(user.id, user.name, name, new Uint8Array(await file.arrayBuffer()));
+    } else if (link) {
+      choice.assetId = (await importGifFromLink(user.id, user.name, "", link)).id;
+    } else if (gif !== "none") {
+      const checked = await checkGifChoice(user.id, gif);
+      if (!checked)
+        return {
+          ok: false,
+          error: "That GIF isn't available any more. Pick another.",
+        };
+      choice = checked;
+    }
+  } catch (err) {
+    if (err instanceof GifError) return { ok: false, error: err.message };
+    console.error("Show now: adding the GIF failed", err);
+    return {
+      ok: false,
+      error: "Couldn't add that GIF. If this keeps happening, the GIF storage may not be set up yet.",
+    };
+  }
+  if (!choice.assetId && !choice.builtin && !text) return { ok: false, error: "Pick a GIF or type a message first." };
+
+  const now = nowSeconds();
+  await setShow(user.id, {
+    ...choice,
+    text,
+    until: minutes > 0 ? now + minutes * 60 : 0,
+    updatedAt: now,
+  });
+  refresh();
+  return { ok: true, at: now };
+}
+
+export async function clearShowAction() {
+  const user = await requireUser();
+  await clearShow(user.id, nowSeconds());
   refresh();
 }
 

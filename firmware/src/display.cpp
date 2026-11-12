@@ -1,6 +1,7 @@
 #include "display.h"
 
 #include "config.h"
+#include "text_wrap.h"
 
 #if BZZY_HAS_DISPLAY
 
@@ -65,7 +66,7 @@ static Panel g_lcd;
 static AnimatedGIF g_gif;
 static bool g_gifOpen = false;
 static uint32_t g_nextFrameMs = 0;
-static View g_last = {bzzy::Status::Unknown, nullptr, 0, false, nullptr};
+static View g_last = {Layout::Status, bzzy::Status::Unknown, nullptr, 0, false, nullptr};
 static char g_lastText[bzzy::kTextMax] = "";
 static char g_lastNotice[64] = "";
 static bool g_drawn = false;
@@ -73,6 +74,8 @@ static bool g_drawn = false;
 static constexpr int kW = 240;
 static constexpr int kH = 280;
 static constexpr int kGifH = 200;  // GIF area; the bar below holds text
+static constexpr int kShowTextMid = 112;  // "show now" message card: middle of the text
+static constexpr int kShowFooterY = 222;  // and the status line under it
 
 static uint16_t bgFor(bzzy::Status s) {
   switch (s) {
@@ -141,25 +144,29 @@ static void closeGif() {
   g_gifOpen = false;
 }
 
-static bool openGifFor(bzzy::Status s) {
+static bool openGif(const char* slot) {
   closeGif();
   char path[32];
-  snprintf(path, sizeof(path), "/gif/%s.gif", bzzy::statusName(s));
+  snprintf(path, sizeof(path), "/gif/%s.gif", slot);
   if (!LittleFS.exists(path)) return false;
   g_gifOpen = g_gif.open(path, gifOpen, gifClose, gifRead, gifSeek, gifDraw);
   g_nextFrameMs = 0;
   return g_gifOpen;
 }
 
-static void drawUntil(uint32_t until, int y, uint16_t bg) {
-  if (!until) return;
+static void untilText(uint32_t until, char* buf, size_t n) {
   time_t t = until;
   struct tm lt;
   localtime_r(&t, &lt);
   char clock[12];
   strftime(clock, sizeof(clock), "%I:%M %p", &lt);
+  snprintf(buf, n, "until %s", clock[0] == '0' ? clock + 1 : clock);
+}
+
+static void drawUntil(uint32_t until, int y, uint16_t bg) {
+  if (!until) return;
   char buf[24];
-  snprintf(buf, sizeof(buf), "until %s", clock[0] == '0' ? clock + 1 : clock);
+  untilText(until, buf, sizeof(buf));
   g_lcd.setTextDatum(lgfx::top_center);
   g_lcd.setFont(&fonts::FreeSans9pt7b);
   g_lcd.setTextColor(TFT_WHITE, bg);
@@ -174,11 +181,67 @@ static void drawOfflineBadge(bool online) {
   g_lcd.fillCircle(kW - 14, kH - 14, 3, TFT_BLACK);
 }
 
+static const lgfx::IFont* fontFor(bzzy::Font f) {
+  return f == bzzy::Font::Bold18 ? &fonts::FreeSansBold18pt7b : &fonts::FreeSansBold12pt7b;
+}
+
+// Wrapped lines, centred, the first one's top at y.
+static void drawLines(const char* text, const bzzy::Wrapped& w, int y, uint16_t bg) {
+  g_lcd.setTextDatum(lgfx::top_center);
+  g_lcd.setFont(fontFor(w.font));
+  g_lcd.setTextColor(TFT_WHITE, bg);
+  char line[bzzy::kTextMax];
+  for (size_t i = 0; i < w.count; ++i) {
+    const size_t len = w.lines[i].len < sizeof(line) - 1 ? w.lines[i].len : sizeof(line) - 1;
+    memcpy(line, text + w.lines[i].start, len);
+    line[len] = '\0';
+    g_lcd.drawString(line, kW / 2, y + (int)i * bzzy::lineHeight(w.font));
+  }
+}
+
+// "Show now" with only a message: big wrapped text on the status colour, and the
+// status (and when it ends) in small type underneath, so people can still tell.
+static void drawShowText(const View& v, uint16_t bg) {
+  g_lcd.fillScreen(bg);
+  const bzzy::Wrapped w = bzzy::wrapMessage(v.text);
+  const int block = (int)w.count * bzzy::lineHeight(w.font);
+  drawLines(v.text, w, kShowTextMid - block / 2, bg);
+
+  char footer[48];
+  const char* label = v.status == bzzy::Status::Dnd ? "DO NOT DISTURB" : labelFor(v.status);
+  if (v.until) {
+    char until[24];
+    untilText(v.until, until, sizeof(until));
+    snprintf(footer, sizeof(footer), "%s  %s", label, until);
+  } else {
+    strlcpy(footer, label, sizeof(footer));
+  }
+  g_lcd.setTextDatum(lgfx::top_center);
+  g_lcd.setFont(&fonts::FreeSans9pt7b);
+  g_lcd.setTextColor(TFT_WHITE, bg);
+  g_lcd.drawString(footer, kW / 2, kShowFooterY);
+}
+
 static void redraw(const View& v) {
   const uint16_t bg = bgFor(v.status);
-  const bool gif = openGifFor(v.status);
-
-  if (gif) {
+  if (v.layout == Layout::ShowText) {
+    closeGif();
+    drawShowText(v, bg);
+  } else if (v.layout == Layout::ShowGif && openGif("show")) {
+    g_lcd.fillRect(0, 0, kW, kGifH, TFT_BLACK);
+    g_lcd.fillRect(0, kGifH, kW, kH - kGifH, bg);
+    if (v.text && *v.text) {
+      const bzzy::Wrapped w = bzzy::wrapBar(v.text);
+      drawLines(v.text, w, w.count > 1 ? kGifH + 4 : kGifH + 12, bg);
+      if (w.count < 2) drawUntil(v.until, kGifH + 46, bg);
+    } else {
+      g_lcd.setTextDatum(lgfx::top_center);
+      g_lcd.setFont(&fonts::FreeSansBold12pt7b);
+      g_lcd.setTextColor(TFT_WHITE, bg);
+      g_lcd.drawString(v.status == bzzy::Status::Dnd ? "DO NOT DISTURB" : labelFor(v.status), kW / 2, kGifH + 12);
+      drawUntil(v.until, kGifH + 46, bg);
+    }
+  } else if (openGif(bzzy::statusName(v.status))) {
     // Clear the GIF area too: a GIF smaller than 240x200 doesn't cover all of it.
     g_lcd.fillRect(0, 0, kW, kGifH, TFT_BLACK);
     g_lcd.fillRect(0, kGifH, kW, kH - kGifH, bg);
@@ -231,7 +294,7 @@ void begin() {
 void show(const View& v) {
   const char* text = v.text ? v.text : "";
   const char* notice = v.notice ? v.notice : "";
-  if (g_drawn && v.status == g_last.status && v.until == g_last.until &&
+  if (g_drawn && v.layout == g_last.layout && v.status == g_last.status && v.until == g_last.until &&
       v.online == g_last.online && strcmp(text, g_lastText) == 0 &&
       strcmp(notice, g_lastNotice) == 0) {
     return;

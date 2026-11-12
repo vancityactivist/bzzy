@@ -107,7 +107,7 @@ static bool httpRequest(const char* method, const String& u, const String& body,
 }
 
 // ---- GIFs (network task) ----
-static const char* slotName(size_t i) { return bzzy::statusName(static_cast<bzzy::Status>(i)); }
+static const char* slotName(size_t i) { return bzzy::gifSlotName(i); }
 
 static void gifPath(char* out, size_t n, size_t slot, const char* ext) {
   snprintf(out, n, "/gif/%s.%s", slotName(slot), ext);
@@ -157,10 +157,12 @@ static bool downloadTo(const char* u, const char* path) {
 #endif
 
 // At most one download per sync, so a status change is never stuck behind four GIFs.
+// The "show now" GIF goes first: someone just asked for it.
 static void syncGifs() {
 #if BZZY_HAS_DISPLAY
   if (!g_haveWanted) return;
-  for (size_t i = 0; i < bzzy::kGifSlots; ++i) {
+  for (size_t n = 0; n < bzzy::kGifSlots; ++n) {
+    const size_t i = (bzzy::kShowSlot + n) % bzzy::kGifSlots;
     char installed[17];
     bool queued;
     xSemaphoreTake(g_mx, portMAX_DELAY);
@@ -340,6 +342,14 @@ void reportOverride(const bzzy::Override& o) {
   g_pendingReport = o;
   g_hasPendingReport = true;
   xSemaphoreGive(g_mx);
+}
+
+bool gifInstalled(size_t slot, const char* sha) {
+  if (slot >= bzzy::kGifSlots || !sha || !*sha) return false;
+  xSemaphoreTake(g_mx, portMAX_DELAY);
+  bool same = strcmp(g_installed[slot], sha) == 0;
+  xSemaphoreGive(g_mx);
+  return same;
 }
 
 bool gifsReady() {

@@ -239,3 +239,21 @@ export const deviceAssets = pgTable(
   },
   (t) => [uniqueIndex("device_asset_unique").on(t.deviceId, t.status)],
 );
+
+// "Show now": a GIF and/or message a person puts on their lights' screens, on top of
+// whatever their status is. One row per user, like presence. An upload that's
+// deleted leaves the row with no GIF.
+export const showNow = pgTable("show_now", {
+  userId: text("user_id")
+    .primaryKey()
+    .references(() => users.id, { onDelete: "cascade" }),
+  active: boolean("active").notNull().default(false),
+  assetId: text("asset_id").references(() => assets.id, {
+    onDelete: "set null",
+  }),
+  builtin: text("builtin"),
+  text: text("text").notNull().default(""),
+  // Unix seconds, matching the device protocol. 0 = until cleared.
+  until: integer("until").notNull().default(0),
+  updatedAt: integer("updated_at").notNull().default(0),
+});

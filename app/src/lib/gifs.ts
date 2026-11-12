@@ -42,7 +42,8 @@ export async function uploadGif(userId: string, displayName: string, name: strin
 const GIF_ACCEPT = "image/gif, image/webp;q=0.9, image/*;q=0.8";
 
 // A GIF from a pasted GIPHY or Tenor link, through the same resize-and-store steps as
-// an upload. Returns the name it was saved under. Throws GifError with a message to show.
+// an upload. Returns its id and the name it was saved under. Throws GifError with a
+// message to show.
 export async function importGifFromLink(userId: string, displayName: string, name: string, raw: string) {
   let link: GifLink;
   try {
@@ -53,8 +54,7 @@ export async function importGifFromLink(userId: string, displayName: string, nam
         // A short link that went straight to the GIF.
         const processed = await processUpload(page.bytes, MAX_LINK_BYTES);
         const saved = name || link.name || "My GIF";
-        await storeGif(userId, displayName, saved, processed);
-        return saved;
+        return { id: await storeGif(userId, displayName, saved, processed), name: saved };
       }
       link = { ...link, ...relinked(link, page.url, new TextDecoder().decode(page.bytes)) };
     }
@@ -68,8 +68,7 @@ export async function importGifFromLink(userId: string, displayName: string, nam
       const file = await fetchPublicBytes(url, { allowHost: isGifHost, maxBytes: MAX_LINK_BYTES, accept: GIF_ACCEPT });
       const processed = await processUpload(file.bytes, MAX_LINK_BYTES);
       const saved = name || link.name || "My GIF";
-      await storeGif(userId, displayName, saved, processed);
-      return saved;
+      return { id: await storeGif(userId, displayName, saved, processed), name: saved };
     } catch (err) {
       // Too big or too long: GIPHY has a smaller rendition to try next.
       lastError = err;
@@ -116,6 +115,28 @@ export async function gifsForUser(userId: string) {
     .from(schema.assets)
     .where(inArray(schema.assets.teamId, teams.map((t) => t.id)))
     .orderBy(desc(schema.assets.createdAt));
+}
+
+// A GIF someone picked in the app, checked: a built-in one, or an upload from one of
+// their teams. null for anything else.
+export async function checkGifChoice(
+  userId: string,
+  choice: GifChoice,
+): Promise<{ assetId: string | null; builtin: string | null } | null> {
+  if (choice.startsWith("builtin:")) {
+    const id = choice.slice(8);
+    return builtinById.has(id) ? { assetId: null, builtin: id } : null;
+  }
+  if (choice.startsWith("asset:")) {
+    const asset = await canSeeAsset(userId, choice.slice(6));
+    return asset ? { assetId: asset.id, builtin: null } : null;
+  }
+  return null;
+}
+
+export function builtinGif(id: string): ResolvedGif {
+  const g = builtinById.get(id);
+  return g ? { kind: "builtin", id: g.id, name: g.name, sha: g.sha, path: g.path } : null;
 }
 
 // Uploader or a team owner/admin may delete.
@@ -193,10 +214,7 @@ export async function resolveDeviceGifs(deviceId: string): Promise<Record<Status
     .where(eq(schema.deviceAssets.deviceId, deviceId));
   const byStatus = new Map(rows.map((r) => [r.status, r]));
 
-  const fromBuiltin = (id: string): ResolvedGif => {
-    const g = builtinById.get(id);
-    return g ? { kind: "builtin", id: g.id, name: g.name, sha: g.sha, path: g.path } : null;
-  };
+  const fromBuiltin = builtinGif;
 
   return Object.fromEntries(
     STATUSES.map((s) => {

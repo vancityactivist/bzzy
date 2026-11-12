@@ -36,6 +36,17 @@ struct Override {
   bool local = false;      // set from the device button (not yet reported to the app)
 };
 
+// "Show now" from the app: a GIF and/or a message on the screen, whatever the
+// status is. The status still decides the LED colour and the screen's colours.
+struct Show {
+  bool active = false;
+  bool hasGif = false;      // the GIF itself is downloaded to the "show" slot
+  char gifSha[17] = {0};    // which GIF; the screen waits until this one is on flash
+  char text[kTextMax] = {0};
+  uint32_t until = 0;       // unix seconds; 0 = until cleared
+  uint32_t updatedAt = 0;   // unix seconds
+};
+
 struct Block {
   uint32_t start = 0;
   uint32_t end = 0;
@@ -45,6 +56,7 @@ struct Block {
 
 struct State {
   Override manual;
+  Show show;
   Block blocks[kMaxBlocks];
   size_t blockCount = 0;
   Status defaultStatus = Status::Free;
@@ -67,6 +79,11 @@ struct Resolved {
 
 // `now` is unix seconds, or 0 if the clock is not set yet.
 Resolved resolve(const State& st, uint32_t now, const Settings& cfg = Settings());
+
+// Whether "show now" is on screen. It hides when it expires, and when the status was
+// changed after it was put up (a button press, a long press, or the app), so the
+// most recent thing someone did wins. A calendar change doesn't hide it.
+bool showVisible(const State& st, uint32_t now);
 
 // Replace the cached server data with a fresh copy, keeping a local button
 // override if it is newer than the server's manual override.

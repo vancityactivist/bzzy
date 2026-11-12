@@ -31,6 +31,18 @@ bool parseState(const char* json, size_t len, State& out) {
     st.manual.local = m["local"] | false;  // only set in the on-device cache
   }
 
+  JsonObjectConst sh = doc["show"];
+  if (!sh.isNull()) {
+    st.show.active = sh["active"] | false;
+    copyText(st.show.text, sh["text"] | "");
+    st.show.until = sh["until"] | 0u;
+    st.show.updatedAt = sh["updatedAt"] | 0u;
+    // From the app the GIF is {url, sha}; in the on-device cache it's just the sha.
+    const char* sha = sh["gif"].is<JsonObjectConst>() ? (sh["gif"]["sha"] | "") : (sh["gifSha"] | "");
+    st.show.hasGif = *sha != '\0';
+    strlcpy(st.show.gifSha, sha, sizeof(st.show.gifSha));
+  }
+
   for (JsonObjectConst b : doc["schedule"].as<JsonArrayConst>()) {
     if (st.blockCount >= kMaxBlocks) break;
     Block& blk = st.blocks[st.blockCount];
@@ -60,6 +72,14 @@ String serializeState(const State& st) {
     m["updatedAt"] = st.manual.updatedAt;
     m["local"] = st.manual.local;
   }
+  if (st.show.active || st.show.updatedAt) {
+    JsonObject s = doc["show"].to<JsonObject>();
+    s["active"] = st.show.active;
+    s["text"] = st.show.text;
+    s["until"] = st.show.until;
+    s["updatedAt"] = st.show.updatedAt;
+    if (st.show.hasGif) s["gifSha"] = st.show.gifSha;
+  }
   JsonArray arr = doc["schedule"].to<JsonArray>();
   for (size_t i = 0; i < st.blockCount; ++i) {
     JsonObject b = arr.add<JsonObject>();
@@ -73,16 +93,28 @@ String serializeState(const State& st) {
   return out;
 }
 
+const char* gifSlotName(size_t slot) {
+  return slot == kShowSlot ? "show" : statusName(static_cast<Status>(slot));
+}
+
 bool parseGifs(const char* json, size_t len, GifRef out[kGifSlots]) {
   JsonDocument filter;
-  filter["gifs"] = true;  // skip the schedule: only the GIF map matters here
+  filter["gifs"] = true;  // skip the schedule: only the GIFs matter here
+  filter["show"]["active"] = true;
+  filter["show"]["gif"] = true;
   JsonDocument doc;
   if (deserializeJson(doc, json, len, DeserializationOption::Filter(filter))) return false;
   JsonObjectConst gifs = doc["gifs"];
   if (gifs.isNull()) return false;
   for (size_t i = 0; i < kGifSlots; ++i) {
     GifRef g;
-    JsonObjectConst o = gifs[statusName(static_cast<Status>(i))];
+    // The show slot follows "show now": no show (or a cleared one) frees the file.
+    JsonObjectConst o;
+    if (i != kShowSlot) {
+      o = gifs[gifSlotName(i)].as<JsonObjectConst>();
+    } else if (doc["show"]["active"] | false) {
+      o = doc["show"]["gif"].as<JsonObjectConst>();
+    }
     const char* url = o["url"] | "";
     const char* sha = o["sha"] | "";
     // A URL too long for the buffer would be cut short and fail anyway; treat it as no GIF.

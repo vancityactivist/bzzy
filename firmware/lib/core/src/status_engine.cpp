@@ -67,6 +67,13 @@ Resolved resolve(const State& st, uint32_t now, const Settings& cfg) {
   return {st.defaultStatus, Source::Default, "", nextChange};
 }
 
+bool showVisible(const State& st, uint32_t now) {
+  const Show& s = st.show;
+  if (!s.active) return false;
+  if (s.until != 0 && now != 0 && now >= s.until) return false;
+  return s.updatedAt >= st.manual.updatedAt;
+}
+
 void mergeFromServer(State& cached, const State& fromServer, uint32_t now) {
   (void)now;
   const Override keep = cached.manual;
