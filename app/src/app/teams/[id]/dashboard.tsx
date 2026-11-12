@@ -58,7 +58,7 @@ export function Dashboard({ cards, nowMs }: { cards: MemberCard[]; nowMs: number
               <DevicePreview
                 view={c.view}
                 gifSrc={c.gifSrc}
-                ring={c.push?.leds}
+                ring={c.ring}
                 scale={0.5}
                 className={c.lights.length === 0 ? "m-3 opacity-60" : "m-3"}
               />

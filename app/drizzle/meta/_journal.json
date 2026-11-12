@@ -64,6 +64,13 @@
       "when": 1794457926824,
       "tag": "0008_team_pushes",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1794458976338,
+      "tag": "0009_ring_settings",
+      "breakpoints": true
     }
   ]
 }

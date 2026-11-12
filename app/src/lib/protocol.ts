@@ -5,6 +5,7 @@ import { z } from "zod";
 
 import type { FirmwareOffer } from "./firmware";
 import type { LedStyle } from "./push-rules";
+import type { LedStyles, MeetingWarn } from "./ring";
 
 export const STATUSES = ["free", "busy", "dnd", "away"] as const;
 export type Status = (typeof STATUSES)[number];
@@ -52,6 +53,8 @@ export type StateResponse = {
   // Present only when the device should update (docs/ota.md).
   firmware?: FirmwareOffer;
   push?: PushState;
+  ledStyles?: LedStyles;
+  meetingWarn?: MeetingWarn;
 };
 
 export const overrideBody = z.object({
@@ -101,6 +104,7 @@ export function buildState(opts: {
   show?: ShowState | null;
   firmware?: FirmwareOffer | null;
   push?: PushState | null;
+  leds?: { ledStyles?: LedStyles; meetingWarn?: MeetingWarn };
 }): StateResponse {
   const { now, defaultStatus, presence } = opts;
 
@@ -139,6 +143,8 @@ export function buildState(opts: {
   if (opts.gifs) state.gifs = opts.gifs;
   if (opts.firmware) state.firmware = opts.firmware;
   if (opts.push && show?.active) state.push = opts.push;
+  if (opts.leds?.ledStyles) state.ledStyles = opts.leds.ledStyles;
+  if (opts.leds?.meetingWarn) state.meetingWarn = opts.leds.meetingWarn;
   return state;
 }
 

@@ -7,7 +7,8 @@ import { db, schema } from "@/db";
 import { scheduleForUser } from "./calendar";
 import { defaultPreviewSrcs, previewSrc, resolveDeviceGifs } from "./gifs";
 import { getPresence } from "./presence";
-import { type LedStyle, pushFor, ringNow } from "./push-rules";
+import { type LedStyle, pushFor } from "./push-rules";
+import { ringFor } from "./ring";
 import { livePushes } from "./pushes";
 import { showVisible, STATUSES, type Status } from "./protocol";
 import { resolveScreen, type ScreenSource, type ScreenView, viewFor, withShow } from "./screen";
@@ -32,7 +33,8 @@ export type MemberCard = {
   // For a manual status: whether it was set on a light or in the app.
   setOnLight: boolean;
   showing: boolean; // their own "show now" is up
-  push: { id: string; teamId: string; text: string; leds: LedStyle | null } | null; // a team push is on their screen
+  push: { id: string; teamId: string; text: string } | null; // a team push is on their screen
+  ring: LedStyle | null; // what their ring is doing: a push's flash, a meeting warning or the status's style
   lights: { name: string; lastSeenAt: Date | null }[];
   online: boolean;
   lastSeenAt: Date | null;
@@ -50,6 +52,9 @@ export async function teamDashboard(members: TeamMemberRow[], now: number): Prom
         defaultStatus: schema.devices.defaultStatus,
         lastSeenAt: schema.devices.lastSeenAt,
         pushTeamId: schema.devices.pushTeamId,
+        allowFlash: schema.devices.allowFlash,
+        ledStyles: schema.devices.ledStyles,
+        meetingWarn: schema.devices.meetingWarn,
       })
       .from(schema.devices)
       .where(inArray(schema.devices.ownerUserId, ids))
@@ -101,7 +106,8 @@ export async function teamDashboard(members: TeamMemberRow[], now: number): Prom
         source: resolved.source,
         setOnLight: resolved.source === "manual" && !!source && source !== "web",
         showing: !!live,
-        push: push ? { id: push.id, teamId: push.teamId, text: push.text, leds: ringNow(push.leds, push.updatedAt, now) } : null,
+        push: push ? { id: push.id, teamId: push.teamId, text: push.text } : null,
+        ring: main ? ringFor({ ...main, status: resolved.status, schedule, now, push }) : null,
         lights: lights.map((d) => ({ name: d.name, lastSeenAt: d.lastSeenAt })),
         online,
         lastSeenAt,
