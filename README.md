@@ -112,3 +112,7 @@ pio device monitor
 
 - HTTPS certificate checking is off (`setInsecure`) for the app connection. Firmware updates don't depend on it: they're checked against a signature.
 - Untested on real hardware: pin numbers come from Waveshare's V2 schematic, and the board dimensions the case and ring use are estimates until someone measures one.
+
+## License
+
+bzzy is free to build and use, but not to sell. The software (app and firmware) is under [PolyForm Noncommercial 1.0.0](LICENSES/PolyForm-Noncommercial-1.0.0.md) and the hardware (ring board and case) under [CC BY-NC-SA 4.0](LICENSES/CC-BY-NC-SA-4.0.txt). Using a light you built at your own job is fine. See [LICENSE.md](LICENSE.md) for details, and ask if you'd like to buy one.
