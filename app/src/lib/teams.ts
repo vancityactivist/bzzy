@@ -107,7 +107,7 @@ export async function teamAccess(userId: string, teamId: string): Promise<{ team
   return { team: { id: team.id, name: team.name, createdAt: team.createdAt }, access };
 }
 
-async function requireTeam(userId: string, teamId: string, action: TeamAction) {
+export async function requireTeam(userId: string, teamId: string, action: TeamAction) {
   const t = await teamAccess(userId, teamId);
   if (!t || !can(t.access, action)) throw new TeamError("You can't do that in this team.");
   // Logged as a superadmin action when their team role alone wouldn't allow it.
@@ -115,7 +115,7 @@ async function requireTeam(userId: string, teamId: string, action: TeamAction) {
   return { ...t, asSuperadmin };
 }
 
-function audit(teamId: string, actorUserId: string, action: string, detail: Record<string, unknown> = {}, asSuperadmin = false) {
+export function audit(teamId: string, actorUserId: string, action: string, detail: Record<string, unknown> = {}, asSuperadmin = false) {
   return db().insert(schema.teamAudit).values({ teamId, actorUserId, action, detail, asSuperadmin });
 }
 

@@ -14,7 +14,7 @@ Every request also says which firmware the device runs, so the app can offer upd
 | `X-Bzzy-Board` | `waveshare_s3_touch_lcd169` | the PlatformIO env |
 | `X-Bzzy-Update-Failed` | `0.3.0` | only after an update rolled back |
 | `X-Bzzy-Update-Now` | `1762891100` | the last "Update now" press it acted on |
-| `X-Bzzy-Features` | `leds` | comma-separated extras this firmware understands; see below |
+| `X-Bzzy-Features` | `leds,push` | comma-separated extras this firmware understands: `leds` (LED styles), `push` (team pushes) |
 
 ```json
 {
@@ -56,11 +56,12 @@ Every request also says which firmware the device runs, so the app can offer upd
 - `firmware` is only there when the device should update: `{ "version": "0.3.0", "url": "{api}/api/device/{deviceId}/firmware/0.3.0", "size": 1234567, "sha256": "<hex>", "sig": "<base64>", "now": 0 }`. `now` is the time someone pressed "Update now" (install right away), or 0 for an automatic update. The `url` answers with a redirect to the file; the device follows it without its token. See [ota.md](ota.md).
 - `ledStyles` (optional, firmware with the `leds` feature) says how the ring moves for each status: `{ "dnd": { "pattern": "pulse", "speed": 1 } }`. A status that's missing stays solid. See **LED styles** below.
 - `meetingWarn` (optional, `leds` feature): `{ "minutes": 5, "leds": { "pattern": "pulse", "color": "#ff2000", "speed": 2 } }` flashes the ring from `minutes` before any `schedule` block starts until it starts. The device times it from the schedule it already has, so it still fires if Wi-Fi drops. `minutes: 0` or no `meetingWarn` turns it off.
+- `push` (optional, `push` feature) says that `show` is a **team push**: `{ "id": "…", "updatedAt": 1762891150, "leds": { "pattern": "strobe", "color": "#ff2000", "speed": 2, "for": 30 } }`. See **Team pushes** below. `leds` is missing when the push doesn't flash.
 - `serverTime` is when the response was built. The device treats the schedule as stale after 24 hours without a successful sync.
 
 ## LED styles
 
-One object describes everything the ring can do. It's used by `ledStyles`, `meetingWarn.leds` and (later) team pushes.
+One object describes everything the ring can do. It's used by `ledStyles`, `meetingWarn.leds` and `push.leds`.
 
 ```json
 { "pattern": "pulse", "color": "#ff2000", "speed": 2, "for": 30 }
@@ -80,7 +81,24 @@ One object describes everything the ring can do. It's used by `ledStyles`, `meet
 | `strobe`: 60 ms bursts | 1 / 2 / 3 Hz |
 | `spin`: a 4-LED arc with a fading tail goes round the ring (from D1 up) | 0.5 / 1 / 1.5 turns a second |
 
-The firmware never flashes faster than 3 times a second, whatever it's sent. Which style plays, highest first: a meeting warning in its window, then the shown status's style, then solid. The "no recent calendar data" breathe is unchanged. The maths is in `firmware/lib/core/src/led_pattern.cpp`, covered by `firmware/test/`.
+The firmware never flashes faster than 3 times a second, whatever it's sent. Which style plays, highest first: a team push's flash while the push is on screen (timed from the push's `updatedAt`), a meeting warning in its window, then the shown status's style, then solid. The "no recent calendar data" breathe is unchanged. The maths is in `firmware/lib/core/src/led_pattern.cpp`, covered by `firmware/test/`.
+
+## Team pushes
+
+A team admin can put a message and/or GIF (and a flash) on the lights of everyone in the team, or of picked people. A light shows pushes from the one team it follows (set on the Devices page). The newest live push for the light's owner, that they haven't dismissed, goes out in `show`, in place of their own "show now", so every firmware puts it on screen.
+
+- Firmware **with** the `push` feature also gets `push`. While it's there, the show stays up whatever the status does (a button press, the app) until it expires or the person dismisses it. Any press while it's up (button, tap, long press) dismisses it instead of changing the status: the light hides it, remembers the id (kept across syncs and in its cache until the app stops sending that push) and sends `POST /push-ack`.
+- Firmware **without** it gets the push as a plain `show` whose `updatedAt` is at least the manual override's, so it shows over the current status. A press hides it the usual way, and the app counts that press (via `/override`) as dismissing the push.
+
+## `POST {api}/api/device/{deviceId}/push-ack`
+
+Sent when someone dismisses a team push on the light. Retried until it succeeds. A dismissal counts for all of that person's lights.
+
+```json
+{ "id": "6f1c…", "at": 1762891300 }
+```
+
+The answer is `{ "acked": true }`, or `false` for a push the light's team doesn't have (nothing to retry).
 
 ## `POST {api}/api/device/{deviceId}/override`
 
@@ -100,7 +118,7 @@ The app should store it as the current manual override, keeping `updatedAt` as s
 
 If the last successful sync is more than 24 hours old (or the clock isn't set yet), steps 2 and 3 are replaced by the **fallback** status: a slow grey breathing light and a "No recent calendar data" note. A manual override still shows.
 
-The status sets the LED colour and, normally, the screen's colours. On top of that, **show now** replaces the screen's content while it's live (not expired) and its `updatedAt` is at least the manual override's `updatedAt`. So a later button press, long press or status change from the app hides it, and a calendar change doesn't.
+The status sets the LED colour and, normally, the screen's colours. On top of that, **show now** replaces the screen's content while it's live (not expired) and its `updatedAt` is at least the manual override's `updatedAt` (or, for a team push, until it's dismissed). So a later button press, long press or status change from the app hides it, and a calendar change doesn't.
 
 It takes over the whole screen, on black, with no status label or time (the LEDs still show the status):
 

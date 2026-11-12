@@ -55,7 +55,13 @@ export function Dashboard({ cards, nowMs }: { cards: MemberCard[]; nowMs: number
         {cards.map((c) => (
           <li key={c.userId}>
             <Card padding="sm" className="flex h-full flex-col items-center text-center">
-              <DevicePreview view={c.view} gifSrc={c.gifSrc} scale={0.5} className={c.lights.length === 0 ? "m-3 opacity-60" : "m-3"} />
+              <DevicePreview
+                view={c.view}
+                gifSrc={c.gifSrc}
+                ring={c.push?.leds}
+                scale={0.5}
+                className={c.lights.length === 0 ? "m-3 opacity-60" : "m-3"}
+              />
               <p className="mt-1 w-full truncate font-medium">{c.name}</p>
               <p className="flex items-center gap-1.5 text-sm">
                 <StatusDot status={c.status} size="sm" />
@@ -64,7 +70,7 @@ export function Dashboard({ cards, nowMs }: { cards: MemberCard[]; nowMs: number
               <p className="mt-0.5 text-xs text-pretty text-muted">{sourceLine(c)}</p>
               <div className="mt-auto flex flex-wrap justify-center gap-1.5 pt-3">
                 <LightBadge c={c} nowMs={nowMs} />
-                {c.showing && <Badge tone="inverse">Show now</Badge>}
+                {c.push ? <Badge tone="inverse">Push</Badge> : c.showing && <Badge tone="inverse">Show now</Badge>}
               </div>
             </Card>
           </li>

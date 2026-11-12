@@ -30,6 +30,8 @@ void setQuiet(bool quiet);
 bool takeIncoming(bzzy::State& out);
 // Tell the app about a button press (retried until it succeeds).
 void reportOverride(const bzzy::Override& o);
+// The person dismissed a team push with the button; retried until the app has it.
+void reportPushAck(const char* id, uint32_t at);
 
 // New GIFs are downloaded in the background to /gif/<status>.tmp. The main loop
 // swaps them in (after closing the one on screen) when this says some are ready.

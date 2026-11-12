@@ -49,6 +49,17 @@ struct Show {
   uint32_t updatedAt = 0;   // unix seconds
 };
 
+// A team push (docs/protocol.md): an admin's message and/or GIF. Its content arrives in
+// `show`; this says that the show is a push, which no status change hides, only the
+// person dismissing it with the button.
+constexpr size_t kPushIdMax = 40;
+struct Push {
+  bool active = false;     // `show` is this push
+  char id[kPushIdMax] = {0};
+  uint32_t updatedAt = 0;  // unix seconds it was sent; its flash is timed from here
+  LedStyle leds;           // unset: the ring stays on the status
+};
+
 struct Block {
   uint32_t start = 0;
   uint32_t end = 0;
@@ -66,6 +77,10 @@ struct State {
   // How the ring animates for each status (Free, Busy, Dnd, Away). Unset = solid.
   LedStyle ledStyles[4];
   MeetingWarn meetingWarn;
+  Push push;
+  // The push the person dismissed on this light. Kept across syncs (the app keeps
+  // sending it until it hears about the dismissal) and in the cache.
+  char dismissedPush[kPushIdMax] = {0};
 };
 
 struct Settings {
@@ -87,22 +102,32 @@ Resolved resolve(const State& st, uint32_t now, const Settings& cfg = Settings()
 
 // Whether "show now" is on screen. It hides when it expires, and when the status was
 // changed after it was put up (a button press, a long press, or the app), so the
-// most recent thing someone did wins. A calendar change doesn't hide it.
+// most recent thing someone did wins. A calendar change doesn't hide it. When the
+// show is a team push, only dismissing it (or it ending) hides it: see pushVisible.
 bool showVisible(const State& st, uint32_t now);
 
-// Which LED style applies now, highest first: the meeting warning (a meeting starts
-// within its minutes), then the style for the shown status, then solid. `startedAt`
-// is the unix time the warning began, or 0 for a status style (the caller times that
-// from when the status last changed).
+// Whether a team push is on screen: it's live and the person hasn't dismissed it.
+bool pushVisible(const State& st, uint32_t now);
+
+// A press while a push is on screen dismisses it, instead of changing the status.
+// Returns true if it did; the caller reports st.dismissedPush to the app.
+bool dismissPush(State& st);
+
+// Which LED style applies now, highest first: a push's flash, the meeting warning (a
+// meeting starts within its minutes), then the style for the shown status, then solid.
+// `startedAt` is the unix time the push or warning began, or 0 for a status style (the
+// caller times that from when the status last changed).
 struct LedChoice {
   LedStyle style;  // style.set == false: solid status colour
   bool warning = false;
+  bool push = false;
   uint32_t startedAt = 0;
 };
 LedChoice chooseLeds(const State& st, Status shown, uint32_t now);
 
 // Replace the cached server data with a fresh copy, keeping a local button
-// override if it is newer than the server's manual override.
+// override if it is newer than the server's manual override, and a dismissed push
+// while the server still sends it.
 void mergeFromServer(State& cached, const State& fromServer, uint32_t now);
 
 // Button press or screen tap: Free -> Busy -> Dnd -> back to automatic (override cleared).

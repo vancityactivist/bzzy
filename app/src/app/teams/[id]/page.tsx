@@ -7,7 +7,10 @@ import { CheckIcon, ShieldIcon } from "@/components/icons";
 import { SignIn } from "@/components/sign-in";
 import { Badge, Card, CardHeader, Container, PageHeader } from "@/components/ui";
 import { teamDashboard } from "@/lib/dashboard";
+import { BUILTIN_GIFS, gifsForUser, previewSrc } from "@/lib/gifs";
 import { nowSeconds } from "@/lib/protocol";
+import { ackCount, PUSH_FLASHES, pushLive } from "@/lib/push-rules";
+import { teamPushes } from "@/lib/pushes";
 import { getCurrentUser } from "@/lib/session";
 import { can, canRemove } from "@/lib/team-rules";
 import { teamAccess, teamAuditLog, teamInvites, teamMembers } from "@/lib/teams";
@@ -21,8 +24,10 @@ import {
   RenameTeamForm,
   RevokeInviteButton,
 } from "../team-forms";
+import type { LibraryGif } from "../../studio";
 import { AutoRefresh } from "./auto-refresh";
 import { Dashboard } from "./dashboard";
+import { PushComposer, PushList, type PushSummary } from "./push-composer";
 
 export const metadata: Metadata = { title: "Team" };
 
@@ -50,15 +55,37 @@ async function TeamContent({ params, searchParams }: PageProps<"/teams/[id]">) {
   const { team, access } = found;
   const manage = can(access, "manage");
   const owner = can(access, "owner");
-  const [members, invites, log] = await Promise.all([
+  const nowSec = nowSeconds();
+  const [members, invites, log, pushes, uploads] = await Promise.all([
     teamMembers(team.id),
     manage ? teamInvites(team.id) : Promise.resolve([]),
     manage ? teamAuditLog(team.id) : Promise.resolve([]),
+    manage ? teamPushes(team.id, nowSec) : Promise.resolve([]),
+    manage ? gifsForUser(user.id) : Promise.resolve([]),
   ]);
   const now = new Date();
-  // Admins (and the superadmin) see everyone's light; members don't.
-  const cards = manage ? await teamDashboard(members, nowSeconds()) : null;
+  // Admins (and the superadmin) see everyone's light and send pushes; members don't.
+  const cards = manage ? await teamDashboard(members, nowSec) : null;
   const names = new Map(members.map((m) => [m.userId, m.name ?? m.email ?? "Someone"]));
+  const memberIds = members.map((m) => m.userId);
+  const library: LibraryGif[] = [
+    ...uploads.map((g) => ({ choice: `asset:${g.id}`, name: g.name, src: `/api/gifs/${g.id}` })),
+    ...BUILTIN_GIFS.map((g) => ({ choice: `builtin:${g.id}`, name: g.name, src: g.path })),
+  ];
+  const pushList: PushSummary[] = pushes.map((p) => ({
+    id: p.id,
+    text: p.text,
+    gifSrc: previewSrc(p.gif),
+    gifName: p.gif?.name ?? null,
+    who: p.target === "all" ? "Everyone" : p.targets.map((id) => names.get(id) ?? "a former member").join(", "),
+    ...ackCount(p, memberIds),
+    until: p.until,
+    endedAt: p.endedAt,
+    live: pushLive(p, nowSec),
+    by: p.createdByName,
+    flash: p.leds ? (PUSH_FLASHES.find((f) => f.value === p.leds?.pattern)?.label.toLowerCase() ?? null) : null,
+    sentAgo: relativeTime(p.createdAt, now.getTime()),
+  }));
 
   return (
     <div className="space-y-6">
@@ -98,6 +125,13 @@ async function TeamContent({ params, searchParams }: PageProps<"/teams/[id]">) {
       )}
 
       {cards && <Dashboard cards={cards} nowMs={now.getTime()} />}
+
+      {manage && (
+        <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
+          <PushComposer teamId={team.id} members={members.map((m) => ({ userId: m.userId, name: names.get(m.userId)! }))} library={library} />
+          <PushList teamId={team.id} pushes={pushList} />
+        </div>
+      )}
 
       <div className="max-w-3xl space-y-6">
         {!access.role && (
@@ -216,7 +250,10 @@ async function TeamContent({ params, searchParams }: PageProps<"/teams/[id]">) {
         )}
 
         {access.role === "member" && (
-          <p className="text-sm text-muted">The team&apos;s admins can see what your light&apos;s screen shows, and where your status came from.</p>
+          <p className="text-sm text-muted">
+            The team&apos;s admins can see what your light&apos;s screen shows, and where your status came from. They can also put a
+            message on lights that follow this team; the top button on your light dismisses it.
+          </p>
         )}
 
         {access.role && access.role !== "owner" && <LeaveTeamButton teamId={team.id} userId={user.id} teamName={team.name} />}
@@ -250,6 +287,10 @@ function describe(e: LogEntry, names: Map<string, string>): string {
       return `${who} made a ${d.kind === "team" ? "team" : "one-person"} invite link (${d.role}, ${d.days} days)`;
     case "revoked":
       return `${who} revoked an invite link`;
+    case "push":
+      return `${who} sent a push to ${d.target === "all" ? "everyone" : `${d.people} ${d.people === 1 ? "person" : "people"}`}${d.text ? `: “${d.text}”` : ""}`;
+    case "push-ended":
+      return `${who} ended a push${d.text ? `: “${d.text}”` : ""}`;
     default:
       return `${who}: ${e.action}`;
   }

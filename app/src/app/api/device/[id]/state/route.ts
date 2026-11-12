@@ -6,7 +6,9 @@ import { firmwareOffer, firmwarePatch, readFirmwareHeaders } from "@/lib/firmwar
 import { refreshRelease, releaseIsStale, savedRelease } from "@/lib/firmware-release";
 import { resolveDeviceGifs, type ResolvedGif } from "@/lib/gifs";
 import { getPresence } from "@/lib/presence";
-import { buildState, type GifMap, type GifRef, nowSeconds, STATUSES } from "@/lib/protocol";
+import { buildState, type GifMap, type GifRef, hasFeature, nowSeconds, readFeatures, STATUSES } from "@/lib/protocol";
+import { pushAsShow } from "@/lib/push-rules";
+import { pushForDevice } from "@/lib/pushes";
 import { getShow } from "@/lib/show";
 
 // Polled by the device every ~20 s. See docs/protocol.md.
@@ -16,12 +18,13 @@ export async function GET(req: NextRequest, ctx: RouteContext<"/api/device/[id]/
   if (!device) return unauthorized();
 
   const now = nowSeconds();
-  const [presence, { schedule, stale }, resolved, show, release] = await Promise.all([
+  const [presence, { schedule, stale }, resolved, show, release, push] = await Promise.all([
     getPresence(device.ownerUserId),
     scheduleForUser(device.ownerUserId, now),
     resolveDeviceGifs(device.id),
     getShow(device.ownerUserId),
     savedRelease(),
+    pushForDevice(device, now),
   ]);
   const origin = req.nextUrl.origin;
   const ref = (g: ResolvedGif): GifRef | null => {
@@ -32,7 +35,11 @@ export async function GET(req: NextRequest, ctx: RouteContext<"/api/device/[id]/
   const gifs = Object.fromEntries(STATUSES.map((s) => [s, ref(resolved[s])])) as GifMap;
   // Firmware: note what the device is running, and offer the latest release if it
   // should have it (docs/ota.md).
-  const fwPatch = firmwarePatch(device, readFirmwareHeaders(req.headers));
+  const features = readFeatures(req.headers.get("x-bzzy-features"));
+  const fwPatch = {
+    ...firmwarePatch(device, readFirmwareHeaders(req.headers)),
+    ...(features !== device.features ? { features } : {}),
+  };
   const firmware = firmwareOffer({
     manifest: release?.manifest,
     device: { ...device, ...fwPatch },
@@ -46,7 +53,12 @@ export async function GET(req: NextRequest, ctx: RouteContext<"/api/device/[id]/
     presence,
     schedule,
     gifs,
-    show: show && { ...show, gif: ref(show.gif) },
+    // A team push takes the place of the person's own "show now" until it ends or
+    // they dismiss it. Firmware that knows about pushes also gets `push`, which says
+    // so and carries the flash.
+    show: push ? { ...pushAsShow(push, presence, now), gif: ref(push.gif) } : show && { ...show, gif: ref(show.gif) },
+    push:
+      push && hasFeature(features, "push") ? { id: push.id, updatedAt: push.updatedAt, ...(push.leds ? { leds: push.leds } : {}) } : null,
     firmware,
   });
 

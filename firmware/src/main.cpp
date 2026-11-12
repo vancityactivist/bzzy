@@ -149,12 +149,16 @@ void loop() {
   }
 
   // Button press or screen tap: next status. Long press on the screen or the top
-  // button: back to automatic.
+  // button: back to automatic. While a team push is up, any press dismisses it
+  // instead.
   const touch::Gesture g = touch::poll();
   const Press top = topButtonPoll();
   const bool next = buttonPressed() || g == touch::Gesture::Tap || top == Press::Short;
   const bool toAuto = g == touch::Gesture::LongPress || top == Press::Long;
-  if (next || toAuto) {
+  if ((next || toAuto) && bzzy::dismissPush(g_state)) {
+    net::reportPushAck(g_state.dismissedPush, net::now());
+    saveCacheIfChanged();
+  } else if (next || toAuto) {
     if (toAuto) {
       bzzy::clearLocalOverride(g_state, net::now());
     } else {

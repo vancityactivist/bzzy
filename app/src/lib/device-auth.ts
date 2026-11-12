@@ -19,7 +19,7 @@ export async function authenticateDevice(deviceId: string, authHeader: string | 
   return device;
 }
 
-type FirmwareReport = Partial<Pick<AuthedDevice, "firmwareVersion" | "board" | "firmwareFailed" | "updateRequestedAt">>;
+type FirmwareReport = Partial<Pick<AuthedDevice, "firmwareVersion" | "board" | "firmwareFailed" | "updateRequestedAt" | "features">>;
 
 // Also saves what the device said about its firmware, if that changed. Clearing an
 // "Update now" press (updateRequestedAt: 0) only clears the one the device acted on

@@ -7,6 +7,8 @@ import { db, schema } from "@/db";
 import { scheduleForUser } from "./calendar";
 import { defaultPreviewSrcs, previewSrc, resolveDeviceGifs } from "./gifs";
 import { getPresence } from "./presence";
+import { type LedStyle, pushFor, ringNow } from "./push-rules";
+import { livePushes } from "./pushes";
 import { showVisible, STATUSES, type Status } from "./protocol";
 import { resolveScreen, type ScreenSource, type ScreenView, viewFor, withShow } from "./screen";
 import { getShow } from "./show";
@@ -29,7 +31,8 @@ export type MemberCard = {
   source: Exclude<ScreenSource, "fallback">;
   // For a manual status: whether it was set on a light or in the app.
   setOnLight: boolean;
-  showing: boolean; // "show now" is up
+  showing: boolean; // their own "show now" is up
+  push: { id: string; teamId: string; text: string; leds: LedStyle | null } | null; // a team push is on their screen
   lights: { name: string; lastSeenAt: Date | null }[];
   online: boolean;
   lastSeenAt: Date | null;
@@ -46,6 +49,7 @@ export async function teamDashboard(members: TeamMemberRow[], now: number): Prom
         ownerUserId: schema.devices.ownerUserId,
         defaultStatus: schema.devices.defaultStatus,
         lastSeenAt: schema.devices.lastSeenAt,
+        pushTeamId: schema.devices.pushTeamId,
       })
       .from(schema.devices)
       .where(inArray(schema.devices.ownerUserId, ids))
@@ -56,6 +60,13 @@ export async function teamDashboard(members: TeamMemberRow[], now: number): Prom
       .where(inArray(schema.presence.userId, ids)),
   ]);
   const sourceOf = new Map(sources.map((s) => [s.userId, s.source]));
+  // Pushes from whichever team each person's main light follows.
+  const mainOf = new Map<string, (typeof devices)[number]>();
+  for (const d of devices) if (!mainOf.has(d.ownerUserId)) mainOf.set(d.ownerUserId, d);
+  const pushes = await livePushes(
+    [...mainOf.values()].map((d) => d.pushTeamId).filter((t): t is string => !!t),
+    now,
+  );
   const nowMs = now * 1000;
 
   return Promise.all(
@@ -70,10 +81,12 @@ export async function teamDashboard(members: TeamMemberRow[], now: number): Prom
         main ? resolveDeviceGifs(main.id) : Promise.resolve(null),
       ]);
       const resolved = resolveScreen({ now, defaultStatus: main?.defaultStatus ?? "free", presence, schedule });
-      const live = show && showVisible(show, presence, now) ? show : null;
+      const push = main?.pushTeamId ? pushFor(pushes.filter((p) => p.teamId === main.pushTeamId), m.userId, now) : null;
+      const live = !push && show && showVisible(show, presence, now) ? show : null;
       const lastSeenAt = main?.lastSeenAt ?? null;
       const online = lastSeenAt !== null && nowMs - lastSeenAt.getTime() < ONLINE_WINDOW_MS;
-      const view = withShow(viewFor(resolved, online || !main), live ? { text: live.text, until: live.until, gif: !!live.gif } : null);
+      const shown = push ?? live;
+      const view = withShow(viewFor(resolved, online || !main), shown ? { text: shown.text, until: shown.until, gif: !!shown.gif } : null);
       const statusGifs = gifs
         ? (Object.fromEntries(STATUSES.map((s) => [s, previewSrc(gifs[s])])) as Record<Status, string | null>)
         : defaultPreviewSrcs();
@@ -83,11 +96,12 @@ export async function teamDashboard(members: TeamMemberRow[], now: number): Prom
         name: m.name ?? m.email ?? "Someone",
         role: m.role,
         view,
-        gifSrc: live?.gif ? previewSrc(live.gif) : statusGifs[resolved.status],
+        gifSrc: shown?.gif ? previewSrc(shown.gif) : statusGifs[resolved.status],
         status: resolved.status,
         source: resolved.source,
         setOnLight: resolved.source === "manual" && !!source && source !== "web",
         showing: !!live,
+        push: push ? { id: push.id, teamId: push.teamId, text: push.text, leds: ringNow(push.leds, push.updatedAt, now) } : null,
         lights: lights.map((d) => ({ name: d.name, lastSeenAt: d.lastSeenAt })),
         online,
         lastSeenAt,

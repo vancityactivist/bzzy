@@ -14,6 +14,7 @@ import { STATUS_META } from "@/components/status-meta";
 import { Badge, Button, buttonClass, cx, Field, Input, Select, StatusDot } from "@/components/ui";
 import { parseGifLink } from "@/lib/gif-link";
 import { type Status, STATUSES, TEXT_MAX } from "@/lib/protocol";
+import type { LedStyle } from "@/lib/push-rules";
 import { LED_RGB, screenText, type ScreenView, viewFor, withShow, wrapBar, wrapMessage } from "@/lib/screen";
 
 import { clearShowAction, setStatus, showNowAction, type ShowNowResult } from "./actions";
@@ -31,6 +32,8 @@ export type LiveShow = {
   until: number;
   gifSrc: string | null;
   gifName: string | null;
+  // A team push, rather than the person's own show now. They dismiss it on the light.
+  push?: { team: string; leds: LedStyle | null } | null;
 };
 
 export type LibraryGif = { choice: string; name: string; src: string };
@@ -215,7 +218,7 @@ export function StudioPreview({
           style={{ ["--stage" as string]: `radial-gradient(closest-side, rgb(${r} ${g} ${b} / 0.16), transparent)` }}
         >
           <div className="max-lg:[zoom:0.5] lg:[background:var(--stage)] lg:rounded-full lg:p-6">
-            <DevicePreview view={view} gifSrc={gif} scale={1} className="max-lg:m-5" />
+            <DevicePreview view={view} gifSrc={gif} ring={draft ? null : live?.push?.leds} scale={1} className="max-lg:m-5" />
           </div>
         </div>
 
@@ -455,18 +458,21 @@ export function ShowNowControls({ className }: { className?: string }) {
             </span>
           )}
           <div className="min-w-0 flex-1 text-sm">
-            <p className="font-medium">On your screen now</p>
+            <p className="font-medium">{live.push ? `A push from ${live.push.team} is on your screen` : "On your screen now"}</p>
             <p className="truncate text-muted">
               {[live.gifName, live.text && `“${live.text}”`].filter(Boolean).join(" with ")}
               {live.until ? ` · until ${clock(live.until)}` : ""}
             </p>
+            {live.push && <p className="text-muted">Press the top button on your light to dismiss it.</p>}
           </div>
-          <form action={clearShowAction} className="shrink-0">
-            <Button size="sm">
-              <XIcon />
-              Take it down
-            </Button>
-          </form>
+          {!live.push && (
+            <form action={clearShowAction} className="shrink-0">
+              <Button size="sm">
+                <XIcon />
+                Take it down
+              </Button>
+            </form>
+          )}
         </div>
       )}
 

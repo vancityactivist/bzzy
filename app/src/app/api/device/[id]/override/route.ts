@@ -2,8 +2,9 @@ import { after, type NextRequest } from "next/server";
 
 import { authenticateDevice, markSeen, unauthorized } from "@/lib/device-auth";
 import { getPresence, setPresence } from "@/lib/presence";
+import { hasFeature, nowSeconds, overrideBody, presenceFromDevice, shouldApplyDeviceOverride } from "@/lib/protocol";
+import { ackPush, pushForDevice } from "@/lib/pushes";
 import { clearShow } from "@/lib/show";
-import { nowSeconds, overrideBody, presenceFromDevice, shouldApplyDeviceOverride } from "@/lib/protocol";
 
 // Sent when someone presses the button or taps the screen on the device.
 export async function POST(req: NextRequest, ctx: RouteContext<"/api/device/[id]/override">) {
@@ -24,6 +25,13 @@ export async function POST(req: NextRequest, ctx: RouteContext<"/api/device/[id]
       setPresence(device.ownerUserId, presenceFromDevice(parsed.data), device.id),
       clearShow(device.ownerUserId, parsed.data.updatedAt),
     ]);
+  }
+
+  // Firmware from before pushes shows a push as "show now" and hides it on a press, so
+  // a press there counts as dismissing it. Newer firmware dismisses on its own.
+  if (!hasFeature(device.features, "push")) {
+    const push = await pushForDevice(device, nowSeconds());
+    if (push && parsed.data.updatedAt >= push.updatedAt) await ackPush(device, push.id, parsed.data.updatedAt);
   }
 
   after(() => markSeen(device.id));
