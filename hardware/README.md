@@ -84,7 +84,9 @@ To change something, edit the script and run `./render.sh` (needs KiCad 7+ and O
 | J2 | – | 1.5 mm pad on the back | – | Wire to GPIO18, hand-soldered |
 | Screws | 4 | M2 × 8 self-tapping (or M2 × 8 with heat-set inserts in the diffuser) | | |
 
-The MPNs in `fab/bom-jlcpcb.csv` are suggestions. The LCSC part number column is blank on purpose. Fill it in from JLCPCB's parts search when you order, and use Basic parts where you can, since each Extended part adds a small fee. The WS2812B-2020 and the 74AHCT1G125 will probably be Extended.
+`fab/bom-jlcpcb.csv` has an LCSC part number for every line (set in `gen_led_ring.py`). Check each match in JLCPCB's BOM step, and swap in a Basic part where one fits, since each Extended part adds a small fee. The WS2812B-2020, the 74AHCT1G125 and the SKRTLAE010 are probably Extended.
+
+`fab/cpl-jlcpcb.csv` uses the same coordinates as the Gerbers, and its rotations already include JLCPCB's usual offsets (+180° for SOT-23-5, +90° for the WS2812B-2020). JLCPCB's own footprint decides the real orientation, so still check the preview.
 
 **Rough cost:** about US$30 to $50 for 5 assembled boards before shipping and duty. That's an estimate, not a quote.
 
@@ -124,7 +126,7 @@ Then print the shell and diffuser once in cheap PLA to check the fit before orde
 1. Run `./render.sh`, which writes `led-ring/fab/gerbers.zip`. Or, in KiCad, export Gerbers and drill files (File, Fabrication Outputs) with JLCPCB's KiCad settings, and zip the folder.
 2. Upload the zip at jlcpcb.com. Defaults are fine: 2 layers, 1.6 mm, HASL lead-free or ENIG, any colour. Black or white looks best behind a translucent frame.
 3. Turn on **PCB Assembly**, top side, and upload `fab/bom-jlcpcb.csv` and `fab/cpl-jlcpcb.csv`.
-4. In the parts-matching step, pick an LCSC part for each line. In the placement preview, **check every LED's orientation**: the pin 1 dot should match the KiCad drawing. Fix any rotation in the preview if needed.
+4. In the parts-matching step, confirm the LCSC part on each line. In the placement preview, **check every LED, U1 and SW1**: the pin 1 dot should match the KiCad drawing. U1 matters most: placed backwards, it gets 5 V on its GND pin. Fix any rotation in the preview if needed.
 
 ## v2: full custom board
 

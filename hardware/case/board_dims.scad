@@ -13,3 +13,8 @@ PCB_T = 1.6;
 RING_HOLES = [[-22.0, -25.0], [22.0, -25.0], [22.0, 25.0], [-22.0, 25.0]];
 RING_LEDS = [[-7.0, 27.0], [-17.0, 27.0], [-23.0, 18.0], [-23.0, 6.0], [-23.0, -6.0], [-23.0, -18.0], [-15.0, -27.0], [-5.0, -27.0], [5.0, -27.0], [15.0, -27.0], [23.0, -18.0], [23.0, -6.0], [23.0, 6.0], [23.0, 18.0], [17.0, 27.0], [7.0, 27.0]];
 TOP_BUTTON_X = 0.0;  // plunger tip is on the board's top edge
+TOP_BUTTON_EDGE_Y = -30.5;  // plunger tip, flush with the edge; 2 mm wide, 0.2 mm travel
+// Hand-soldered wires leave from these pads on the back (keep the case clear of them).
+J1_PADS = [[-2.54, 29.0], [0.0, 29.0], [2.54, 29.0]];  // through-hole: 5V, GPIO17, GND
+J2_PAD = [0.0, -27.6];  // SMD pad on the back: GPIO18
+// Front part heights: 0805 caps ~1.25, SOT-23-5 ~1.1, LEDs 0.84 mm (SW1: see its datasheet).

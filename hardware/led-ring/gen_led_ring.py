@@ -17,6 +17,7 @@ import csv
 import json
 import math
 import os
+import re
 import uuid
 
 import sexp
@@ -532,6 +533,26 @@ def route(board, V):
 
 
 # ---------------------------------------------------------------- outputs
+# LCSC numbers for JLC assembly, by MPN. Check each one in JLC's BOM matcher.
+LCSC = {
+    "0402WGF1003TCE": "C25741",
+    "74AHCT1G125GV,125": "C12494",
+    "CL05B104KO5NNNC": "C1525",
+    "0402WGF330JTCE": "C25105",
+    "CL21A106KAYNNNE": "C15850",
+    "WS2812B-2020": "C965555",
+    "SKRTLAE010": "C110293",
+}
+
+# JLC's library footprints aren't always oriented like KiCad's, so the CPL needs these
+# offsets (from KiBot's JLC rotation table). Still check every part in JLC's placement
+# preview before ordering: their footprint for a given LCSC part is what counts.
+JLC_ROT_OFFSET = [
+    (r"^SOT-23", 180),
+    (r"^LED_WS2812B-2020", 90),
+]
+
+
 def write_fab(board):
     """JLCPCB-style BOM and placement (CPL). Rotations may need nudging in JLC's preview."""
     os.makedirs(os.path.join(HERE, "fab"), exist_ok=True)
@@ -545,7 +566,7 @@ def write_fab(board):
         w = csv.writer(f)
         w.writerow(["Comment", "Designator", "Footprint", "MPN", "Qty", "LCSC Part #"])
         for (value, fp, mpn), refs in groups.items():
-            w.writerow([value, ",".join(refs), fp.split(":")[1], mpn, len(refs), ""])
+            w.writerow([value, ",".join(refs), fp.split(":")[1], mpn, len(refs), LCSC.get(mpn, "")])
     with open(os.path.join(HERE, "fab", "cpl-jlcpcb.csv"), "w", newline="") as f:
         w = csv.writer(f)
         w.writerow(["Designator", "Mid X", "Mid Y", "Layer", "Rotation"])
@@ -553,14 +574,17 @@ def write_fab(board):
         for p in parts:
             if p["assemble"]:
                 fp = board.FindFootprintByReference(p["ref"])
-                x = pcbnew.ToMM(fp.GetPosition().x) - 100
-                y = pcbnew.ToMM(fp.GetPosition().y) - 100
-                rot = round(fp.GetOrientationDegrees()) % 360
-                # JLC wants +y up, origin anywhere
-                w.writerow([p["ref"], f"{x:.2f}mm", f"{-y:.2f}mm", "Top", rot])
+                # Same frame as the Gerbers (absolute KiCad coordinates, +y up), so JLC
+                # doesn't have to guess an offset between the CPL and the board.
+                x = pcbnew.ToMM(fp.GetPosition().x)
+                y = -pcbnew.ToMM(fp.GetPosition().y)
+                name = fp.GetFPID().GetLibItemName().wx_str()
+                off = next((o for pat, o in JLC_ROT_OFFSET if re.match(pat, name)), 0)
+                rot = (round(fp.GetOrientationDegrees()) + off) % 360
+                w.writerow([p["ref"], f"{x:.2f}mm", f"{y:.2f}mm", "Top", rot])
 
 
-def write_case_dims():
+def write_case_dims(board=None):
     holes = [p["pcb"][:2] for p in parts if p["ref"].startswith("H")]
     leds = [p["pcb"][:2] for p in parts if p["ref"].startswith("D")]
     out = os.path.join(HERE, "..", "case", "board_dims.scad")
@@ -575,10 +599,23 @@ def write_case_dims():
         f.write(f"RING_LEDS = {json.dumps([list(l) for l in leds])};\n")
         sw = next(p for p in parts if p["ref"] == "SW1")
         f.write(f"TOP_BUTTON_X = {sw['pcb'][0]};  // plunger tip is on the board's top edge\n")
+        f.write(f"TOP_BUTTON_EDGE_Y = {-OUT_H / 2};  // plunger tip, flush with the edge; 2 mm wide, 0.2 mm travel\n")
+        if board is not None:
+            import pcbnew
+
+            def pads(ref):
+                fp = board.FindFootprintByReference(ref)
+                return [[round(pcbnew.ToMM(q.GetPosition().x) - 100, 2), round(pcbnew.ToMM(q.GetPosition().y) - 100, 2)]
+                        for q in sorted(fp.Pads(), key=lambda q: q.GetNumber())]
+            f.write("// Hand-soldered wires leave from these pads on the back (keep the case clear of them).\n")
+            f.write(f"J1_PADS = {json.dumps(pads('J1'))};  // through-hole: 5V, GPIO17, GND\n")
+            f.write(f"J2_PAD = {json.dumps(pads('J2')[0])};  // SMD pad on the back: GPIO18\n")
+            f.write("// Front part heights: 0805 caps ~1.25, SOT-23-5 ~1.1, LEDs 0.84 mm (SW1: see its datasheet).\n")
 
 
 if __name__ == "__main__":
     write_schematic()
-    write_case_dims()
-    write_fab(write_pcb())
+    board = write_pcb()
+    write_case_dims(board)
+    write_fab(board)
     print(f"{len(parts)} parts, {len(NETS)} nets")
