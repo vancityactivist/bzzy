@@ -84,3 +84,34 @@ export function ArrowRightIcon(props: IconProps) {
     </Icon>
   );
 }
+
+/** An arrow down into a tray: download the files. */
+export function DownloadIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M12 4v11M7.5 10.5 12 15l4.5-4.5" />
+      <path d="M4 15.5V18a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2.5" />
+    </Icon>
+  );
+}
+
+/** A chip with pins: the circuit board. */
+export function ChipIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <rect x="6" y="6" width="12" height="12" rx="2" />
+      <rect x="9.5" y="9.5" width="5" height="5" rx="0.75" />
+      <path d="M9.5 3v3M14.5 3v3M9.5 18v3M14.5 18v3M3 9.5h3M3 14.5h3M18 9.5h3M18 14.5h3" />
+    </Icon>
+  );
+}
+
+/** A closed box: ready-made. */
+export function BoxIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M20.5 7.5 12 3 3.5 7.5v9L12 21l8.5-4.5v-9Z" />
+      <path d="M3.5 7.5 12 12l8.5-4.5M12 12v9" />
+    </Icon>
+  );
+}

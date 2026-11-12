@@ -24,6 +24,7 @@ The device never needs anything to connect *to* it, so it works on guest Wi-Fi t
 ### Later
 
 - **Logo.** Design a proper bzzy logo in the style of the current wordmark: lowercase, black, tight letter spacing (Geist semibold, `tracking-tight`, as in the app's top bar). It should work as an app icon, a favicon, and something small enough to print or engrave on the case.
+- **Pre-built lights.** Once the custom board is proven, offer assembled and tested bzzys for people who don't want to order and solder their own. The landing page already says they're coming.
 - **Landing page images.** The signed-out home page (`app/src/components/landing.tsx`) uses labelled placeholders for the hero photo, the four status shots, the device photos and app screenshots. Swap each for a real image once there's a working device to photograph.
 
 ## Hardware
