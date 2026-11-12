@@ -136,20 +136,13 @@ export function StudioPreview({ devices }: { devices: PreviewDevice[] }) {
     });
     gif = device.gifs[s];
     draft = true;
-  } else if (focus === "show") {
+  } else if (draftShowGif(show, library) || screenText(show.text.trim())) {
+    // A GIF or message picked for "show now" stays on the preview until it's sent or
+    // cleared, so you can look at it while choosing how long.
     const src = draftShowGif(show, library);
-    const text = screenText(show.text.trim());
-    if (src || text) {
-      view = withShow(device.view, {
-        text,
-        until: minutesFromNow(show.minutes),
-        gif: !!src,
-      });
-      gif = view.layout === "show-gif" ? src : null;
-      draft = true;
-    } else {
-      liveView();
-    }
+    view = withShow(device.view, { text: screenText(show.text.trim()), until: minutesFromNow(show.minutes), gif: !!src });
+    gif = view.layout === "show-gif" ? src : null;
+    draft = true;
   } else {
     liveView();
   }
@@ -184,9 +177,7 @@ export function StudioPreview({ devices }: { devices: PreviewDevice[] }) {
         ) : (
           <span>{device.name}</span>
         )}
-        {focus === "show" && show.linkPending && (
-          <span className="basis-full">The GIF from your link appears here once it&apos;s added.</span>
-        )}
+        {show.linkPending && <span className="basis-full">The GIF from your link appears here once it&apos;s added.</span>}
       </figcaption>
     </figure>
   );
@@ -288,31 +279,44 @@ export function StatusControls() {
 }
 
 // ---- show now ----
+//
+// Kept to a row of GIFs and one button: tap a GIF and it's on the preview, press
+// Show it. Pasting a link or uploading hides behind the "+" tile, the message behind
+// "Add a message", and how long is one small menu that most people never touch.
 
 const SHOW_DURATIONS = [
-  { minutes: 15, label: "15 min" },
-  { minutes: 60, label: "1 hour" },
-  { minutes: 240, label: "4 hours" },
-  { minutes: 0, label: "Until I take it down" },
+  { minutes: 15, label: "for 15 min ▾" },
+  { minutes: 60, label: "for 1 hour ▾" },
+  { minutes: 240, label: "for 4 hours ▾" },
+  { minutes: 0, label: "until I take it down ▾" },
 ];
 
 const MAX_UPLOAD = 4 * 1024 * 1024;
+const TEXT_ONLY = "none";
 
 export function ShowNowControls() {
   const { library, live, setFocus, show, setShow, resetShow } = useStudio();
-  const [result, action, pending] = useActionState<ShowNowResult, FormData>(showNowAction, null);
   const form = useRef<HTMLFormElement>(null);
   const file = useRef<HTMLInputElement>(null);
+  const message = useRef<HTMLInputElement>(null);
+  const [adding, setAdding] = useState(false); // the "+" panel: link or upload
+  const [writing, setWriting] = useState(false); // the message box
+  const [textOnly, setTextOnly] = useState(false); // the "Aa" tile: a message, no GIF
+  const [fileName, setFileName] = useState("");
 
-  // Sent: clear the draft so the preview goes back to what's on the screen.
-  useEffect(() => {
-    if (result?.ok) {
-      form.current?.reset();
+  const [result, action, pending] = useActionState<ShowNowResult, FormData>(async (prev, fd) => {
+    const r = await showNowAction(prev, fd);
+    if (r?.ok) {
+      // Sent: clear the draft so the preview goes back to what's on the screen.
       resetShow();
       setFocus(null);
+      setAdding(false);
+      setWriting(false);
+      setTextOnly(false);
+      setFileName("");
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- only when a new result arrives
-  }, [result]);
+    return r;
+  }, null);
 
   // Free the local copy of a picked file when it's replaced.
   useEffect(() => {
@@ -322,17 +326,29 @@ export function ShowNowControls() {
     };
   }, [show.fileSrc]);
 
+  useEffect(() => {
+    if (writing) message.current?.focus();
+  }, [writing]);
+
   const usingOther = !!(show.fileSrc || show.linkSrc || show.linkPending);
+  const hasGif = usingOther || show.choice !== TEXT_ONLY;
   const text = screenText(show.text.trim());
+  const ready = hasGif || !!text;
   // Under a GIF there's room for two lines; say so before the end goes missing.
-  const withGif = usingOther || show.choice !== "none";
-  const shown = text ? (withGif ? wrapBar(text) : wrapMessage(text).lines).join(" ") : "";
+  const shown = text ? (hasGif ? wrapBar(text) : wrapMessage(text).lines).join(" ") : "";
   const fits =
     text && shown.replace(/ +/g, " ") !== text.replace(/ +/g, " ")
-      ? withGif
-        ? `Under a GIF only “${shown}” fits. Shorten it, or pick “Just a message” for big text.`
+      ? hasGif
+        ? `Under a GIF only “${shown}” fits. Shorten it, or tap Aa for big text.`
         : `Only “${shown}” fits on the screen.`
       : null;
+
+  const pick = (choice: string) => {
+    setFocus("show");
+    setTextOnly(choice === TEXT_ONLY);
+    setShow({ choice, hover: null });
+    if (choice === TEXT_ONLY) setWriting(true);
+  };
 
   return (
     <div className="space-y-4">
@@ -352,38 +368,47 @@ export function ShowNowControls() {
         </div>
       )}
 
-      <form
-        ref={form}
-        action={action}
-        onFocus={() => setFocus("show")}
-        onMouseEnter={() => setFocus("show")}
-        onMouseLeave={() => {
-          setShow({ hover: null });
-          if (!form.current?.contains(document.activeElement)) setFocus(null);
-        }}
-        className="space-y-5"
-      >
-        <fieldset>
-          <legend className="mb-2 text-sm text-muted">Pick a GIF</legend>
-          <div
-            className={`grid max-h-64 grid-cols-3 gap-2 overflow-y-auto p-1 sm:grid-cols-4 ${usingOther ? "opacity-50" : ""}`}
-            onMouseLeave={() => setShow({ hover: null })}
+      <form ref={form} action={action} onFocus={() => setFocus("show")} className="space-y-4">
+        <div
+          role="radiogroup"
+          aria-label="GIF to show"
+          className="-mx-1 grid max-h-72 grid-cols-[repeat(auto-fill,minmax(4.5rem,1fr))] gap-2 overflow-y-auto p-2"
+          onMouseEnter={() => setFocus("show")}
+          onMouseLeave={() => setShow({ hover: null })}
+        >
+          <button
+            type="button"
+            aria-expanded={adding}
+            aria-label="Add a GIF from a link or a file"
+            onClick={() => setAdding((a) => !a)}
+            className={`flex aspect-[6/5] items-center justify-center rounded-lg border-2 border-dashed text-2xl text-muted transition hover:border-foreground hover:text-foreground ${
+              adding || usingOther ? "border-foreground text-foreground" : "border-line"
+            }`}
           >
-            <Tile choice="none" name="Just a message" />
-            {library.map((g) => (
-              <Tile key={g.choice} choice={g.choice} name={g.name} gif={g} />
-            ))}
-          </div>
-        </fieldset>
+            +
+          </button>
+          <Tile name="Just a message" checked={!usingOther && textOnly} onPick={() => pick(TEXT_ONLY)} />
+          {library.map((g) => (
+            <Tile
+              key={g.choice}
+              name={g.name}
+              gif={g}
+              checked={!usingOther && !textOnly && show.choice === g.choice}
+              onPick={() => pick(g.choice)}
+            />
+          ))}
+        </div>
+        {/* The choice goes with the form; tiles are buttons so tapping one previews it. */}
+        <input type="hidden" name="gif" value={textOnly ? TEXT_ONLY : show.choice} />
 
-        <div className="grid gap-3">
-          <label className="block">
-            <span className="text-sm text-muted">Or paste a GIPHY or Tenor link</span>
+        {adding && (
+          <div className="space-y-2 rounded-lg border border-line bg-background p-3">
             <input
               name="link"
               type="url"
               inputMode="url"
-              placeholder="https://giphy.com/gifs/…"
+              aria-label="GIPHY or Tenor link"
+              placeholder="Paste a GIPHY or Tenor link"
               onChange={(e) => {
                 const raw = e.target.value.trim();
                 if (!raw) return setShow({ linkSrc: null, linkPending: false });
@@ -395,88 +420,116 @@ export function ShowNowControls() {
                   setShow({ linkSrc: null, linkPending: false });
                 }
               }}
-              className="mt-1 w-full rounded-md border border-line bg-background px-3 py-2 text-sm"
+              className="w-full rounded-md border border-line bg-card px-3 py-2 text-sm"
             />
-          </label>
-          <label className="block">
-            <span className="text-sm text-muted">Or upload one</span>
+            <div className="flex items-center gap-2 text-sm text-muted">
+              <span>or</span>
+              <button
+                type="button"
+                onClick={() => file.current?.click()}
+                className="rounded-md border border-line bg-card px-3 py-1.5 text-foreground hover:bg-background"
+              >
+                Upload a file
+              </button>
+              {show.fileSrc && <span className="truncate">{fileName}</span>}
+            </div>
             <input
               ref={file}
               name="file"
               type="file"
+              hidden
               accept="image/gif,image/png,image/jpeg,image/webp"
               onChange={(e) => {
                 const f = e.target.files?.[0];
-                e.target.setCustomValidity(f && f.size > MAX_UPLOAD ? "That file is over 4 MB." : "");
-                e.target.reportValidity();
+                if (f && f.size > MAX_UPLOAD) {
+                  e.target.value = "";
+                  alert("That file is over 4 MB.");
+                  return;
+                }
+                setFocus("show");
+                setFileName(f?.name ?? "");
                 setShow({ fileSrc: f ? URL.createObjectURL(f) : null });
               }}
-              className="mt-1 w-full text-sm file:mr-3 file:rounded-md file:border file:border-line file:bg-background file:px-3 file:py-1.5"
             />
+          </div>
+        )}
+
+        {writing ? (
+          <label className="block">
+            <span className="sr-only">Message</span>
+            <input
+              ref={message}
+              name="text"
+              maxLength={TEXT_MAX}
+              value={show.text}
+              onChange={(e) => setShow({ text: e.target.value })}
+              placeholder={textOnly ? "Type your message" : "Add a message (optional)"}
+              className="w-full rounded-md border border-line bg-background px-3 py-2"
+            />
+            {fits && <span className="mt-1 block text-xs text-muted">{fits}</span>}
+            {show.text.trim() && text !== show.text.trim() && (
+              <span className="mt-1 block text-xs text-muted">The screen only has plain letters: emoji and accents are left out.</span>
+            )}
           </label>
-        </div>
+        ) : (
+          <button type="button" onClick={() => setWriting(true)} className="text-sm text-muted underline-offset-4 hover:underline">
+            + Add a message
+          </button>
+        )}
 
-        <label className="block">
-          <span className="flex justify-between text-sm text-muted">
-            <span>Message (optional)</span>
-            <span aria-hidden>
-              {new TextEncoder().encode(show.text).length}/{TEXT_MAX}
-            </span>
-          </span>
-          <input
-            name="text"
-            maxLength={TEXT_MAX}
-            value={show.text}
-            onChange={(e) => setShow({ text: e.target.value })}
-            placeholder="Happy Friday!"
-            className="mt-1 w-full rounded-md border border-line bg-background px-3 py-2"
-          />
-          {fits && <span className="mt-1 block text-xs text-muted">{fits}</span>}
-          {show.text.trim() && text !== show.text.trim() && (
-            <span className="mt-1 block text-xs text-muted">The screen only has plain letters: emoji and accents are left out.</span>
-          )}
-        </label>
-
-        <fieldset>
-          <legend className="mb-2 text-sm text-muted">For how long</legend>
-          <Chips name="minutes" options={SHOW_DURATIONS} value={show.minutes} onChange={(m) => setShow({ minutes: m })} />
-        </fieldset>
-
-        <div className="flex flex-wrap items-center gap-3">
-          <button disabled={pending} className="rounded-md bg-foreground px-5 py-2.5 font-medium text-background disabled:opacity-50">
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            disabled={pending || !ready}
+            className="rounded-md bg-foreground px-5 py-2.5 font-medium text-background disabled:opacity-40"
+          >
             {pending ? "Putting it up…" : "Show it"}
           </button>
-          {result?.ok === false && <p className="text-sm text-busy">{result.error}</p>}
-          {result?.ok && !pending && <p className="text-sm text-muted">Sent. Your light picks it up within about 20 seconds.</p>}
+          <label className="text-sm text-muted">
+            <span className="sr-only">How long</span>
+            <select
+              name="minutes"
+              value={show.minutes}
+              onChange={(e) => setShow({ minutes: Number(e.target.value) })}
+              className="cursor-pointer appearance-none rounded-md bg-transparent px-1 py-1 underline decoration-dotted underline-offset-4 hover:text-foreground"
+            >
+              {SHOW_DURATIONS.map((d) => (
+                <option key={d.minutes} value={d.minutes}>
+                  {d.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          {result?.ok === false && <p className="basis-full text-sm text-busy">{result.error}</p>}
+          {result?.ok && !pending && <p className="basis-full text-sm text-muted">Sent. Your light picks it up within about 20 seconds.</p>}
         </div>
       </form>
     </div>
   );
 }
 
-function Tile({ choice, name, gif }: { choice: string; name: string; gif?: LibraryGif }) {
-  const { show, setShow } = useStudio();
+function Tile({ name, gif, checked, onPick }: { name: string; gif?: LibraryGif; checked: boolean; onPick: () => void }) {
+  const { setShow } = useStudio();
   return (
-    <label className="group cursor-pointer" onMouseEnter={() => setShow({ hover: gif ?? null })} title={name}>
-      <input
-        type="radio"
-        name="gif"
-        value={choice}
-        checked={show.choice === choice}
-        onChange={() => setShow({ choice, hover: null })}
-        className="peer sr-only"
-      />
-      <span className="block overflow-hidden rounded-lg border-2 border-transparent bg-[#0b0b0c] transition peer-checked:border-foreground peer-focus-visible:ring-2 peer-focus-visible:ring-foreground group-hover:scale-[1.03]">
-        <span className="flex aspect-[6/5] items-center justify-center">
-          {gif ? (
-            // eslint-disable-next-line @next/next/no-img-element -- animated GIFs, already sized
-            <img src={gif.src} alt="" loading="lazy" className="max-h-full max-w-full" />
-          ) : (
-            <span className="text-xs text-white/70">Aa</span>
-          )}
-        </span>
+    <button
+      type="button"
+      role="radio"
+      aria-checked={checked}
+      aria-label={name}
+      title={name}
+      onClick={onPick}
+      onMouseEnter={() => setShow({ hover: gif ?? null })}
+      className={`overflow-hidden rounded-lg border-2 bg-[#0b0b0c] transition hover:scale-[1.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground ${
+        checked ? "border-transparent ring-2 ring-foreground ring-offset-2 ring-offset-card" : "border-transparent"
+      }`}
+    >
+      <span className="flex aspect-[6/5] items-center justify-center">
+        {gif ? (
+          // eslint-disable-next-line @next/next/no-img-element -- animated GIFs, already sized
+          <img src={gif.src} alt="" loading="lazy" className="max-h-full max-w-full" />
+        ) : (
+          <span className="text-lg font-semibold text-white/80">Aa</span>
+        )}
       </span>
-      <span className="mt-1 block truncate text-center text-xs text-muted">{name}</span>
-    </label>
+    </button>
   );
 }

@@ -140,17 +140,17 @@ async function HomeContent() {
         <div className="space-y-8">
           <div className="rounded-xl border border-line bg-card p-4 lg:hidden">{summary}</div>
           <section className="rounded-xl border border-line bg-card p-6">
-            <h2 className="font-semibold">Set your status</h2>
-            <p className="mb-4 mt-1 text-sm text-muted">Overrides your calendar until it runs out or you go back to automatic.</p>
-            <StatusControls />
-          </section>
-          <section className="rounded-xl border border-line bg-card p-6">
             <h2 className="font-semibold">Show something</h2>
             <p className="mb-4 mt-1 text-sm text-muted">
               Put a GIF or a message on your screen right now. Your status light stays the same colour, and pressing the button on the light
               takes it down.
             </p>
             <ShowNowControls />
+          </section>
+          <section className="rounded-xl border border-line bg-card p-6">
+            <h2 className="font-semibold">Set your status</h2>
+            <p className="mb-4 mt-1 text-sm text-muted">Overrides your calendar until it runs out or you go back to automatic.</p>
+            <StatusControls />
           </section>
         </div>
       </div>
