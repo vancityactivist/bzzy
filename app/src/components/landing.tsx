@@ -6,7 +6,8 @@ import deskPhoto from "@/assets/desk.jpg";
 import { STATUS_META } from "@/components/status-meta";
 import { defaultPreviewSrcs } from "@/lib/gifs";
 import { type Status, STATUSES } from "@/lib/protocol";
-import { viewFor } from "@/lib/screen";
+import type { LedStyle } from "@/lib/push-rules";
+import { viewFor, withShow } from "@/lib/screen";
 
 import { DevicePreview } from "./device-preview";
 import { GithubIcon, type IconProps, UsersIcon, WifiOffIcon } from "./icons";
@@ -57,6 +58,45 @@ const STEPS: { title: string; body: ReactNode; art: (gifs: Record<Status, string
   },
 ];
 
+// The ring's flashing patterns, each on a real preview. Spin leads: it's the one that
+// gets noticed from across the room.
+const FLASHES: { name: string; use: string; ring: LedStyle; status: Status; message?: string }[] = [
+  {
+    name: "Spin",
+    use: "A bright arc chases round the ring. Hard to miss from across the room, so it's the one for team pushes.",
+    ring: { pattern: "spin", color: "#2979ff", speed: 2 },
+    status: "free",
+    message: "Pizza in the kitchen",
+  },
+  {
+    name: "Pulse",
+    use: "A slow breathe. Good for Do not disturb.",
+    ring: { pattern: "pulse", speed: 1 },
+    status: "dnd",
+  },
+  {
+    name: "Blink",
+    use: "On, off, on. A meeting starts in 5 minutes.",
+    ring: { pattern: "blink", color: "#ff8a00", speed: 1 },
+    status: "busy",
+    message: "Meeting in 5",
+  },
+  {
+    name: "Strobe",
+    use: "Short, sharp bursts for the things that can't wait.",
+    ring: { pattern: "strobe", color: "#ff2000", speed: 2 },
+    status: "free",
+    message: "Fire drill at 3",
+  },
+];
+
+const FLASH_POINTS = [
+  "Pick a pattern, colour and speed for each status.",
+  "Flash a warning a few minutes before every meeting, even if Wi-Fi drops.",
+  "Team admins can push a message to everyone's light, with a flash to match. Any press dismisses it.",
+  "Never faster than 3 flashes a second, and one switch turns flashing off for a light.",
+];
+
 const FEATURES: { title: string; body: string; icon: ComponentType<IconProps> }[] = [
   {
     title: "Works on guest Wi-Fi",
@@ -80,7 +120,7 @@ const FEATURES: { title: string; body: string; icon: ComponentType<IconProps> }[
   },
   {
     title: "For you or your team",
-    body: "Use it alone, or set up a team so everyone's lights live in one place.",
+    body: "Use it alone, or set up a team: admins see everyone's light at a glance and can push a message to all of them.",
     icon: UsersIcon,
   },
   {
@@ -160,6 +200,58 @@ export function Landing() {
                     <p className="mt-1 text-sm text-pretty text-muted">{STATUS_USE[s]}</p>
                   </div>
                 </Card>
+              </li>
+            ))}
+          </ul>
+        </Container>
+      </section>
+
+      {/* The ring: flashing patterns, spin first */}
+      <section aria-labelledby="flash-title" className="pb-20 sm:pb-28">
+        <Container padded={false}>
+          <SectionHeading id="flash-title" eyebrow="The ring" title="It can do more than glow.">
+            Sixteen LEDs round the screen can pulse, blink, strobe or spin, so the light gets noticed when it matters.
+          </SectionHeading>
+          <ul className="mt-10 grid gap-3 sm:grid-cols-3 sm:gap-4">
+            {FLASHES.map((f, i) => {
+              const lead = i === 0;
+              return (
+                <li key={f.name} className={lead ? "sm:col-span-3" : undefined}>
+                  <Card padding="none" className={cx("flex h-full flex-col overflow-hidden", lead && "md:flex-row")}>
+                    <div
+                      className={cx(
+                        "flex items-center justify-center bg-subtle/50",
+                        lead ? "border-b border-line py-8 sm:py-10 md:flex-1 md:border-r md:border-b-0" : "border-b border-line py-3 sm:py-5",
+                      )}
+                    >
+                      <DevicePreview
+                        view={withShow(
+                          viewFor({ status: f.status, text: "", until: 0 }),
+                          f.message ? { text: f.message, until: 0, gif: false } : null,
+                        )}
+                        gifSrc={f.message ? null : gifs[f.status]}
+                        ring={f.ring}
+                        scale={lead ? 0.8 : 0.5}
+                        className="m-4"
+                      />
+                    </div>
+                    <div className={lead ? "p-5 sm:p-8 md:flex md:w-[42%] md:flex-col md:justify-center" : "p-4 sm:p-5"}>
+                      <h3 className={cx("flex items-center gap-2 font-semibold tracking-tight", lead && "text-xl")}>
+                        {f.name}
+                        {lead && <Badge tone="inverse">Our favourite</Badge>}
+                      </h3>
+                      <p className={cx("mt-1 text-pretty text-muted", lead ? "text-base" : "text-sm")}>{f.use}</p>
+                    </div>
+                  </Card>
+                </li>
+              );
+            })}
+          </ul>
+          <ul className="mt-6 grid gap-x-8 gap-y-3 text-sm sm:grid-cols-2">
+            {FLASH_POINTS.map((p) => (
+              <li key={p} className="flex gap-2.5 text-pretty">
+                <span aria-hidden className="mt-1.5 size-1.5 shrink-0 rounded-full bg-foreground/60" />
+                <span className="text-muted">{p}</span>
               </li>
             ))}
           </ul>
