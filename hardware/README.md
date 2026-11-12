@@ -4,16 +4,18 @@ The final device is a frame of light around the screen. It has four parts:
 
 1. The **Waveshare ESP32-S3-Touch-LCD-1.69**, the brains and the screen. It's unchanged from the prototype.
 2. A custom **LED ring board** with 16 small RGB LEDs. It sits around the Waveshare board.
-3. A printed **translucent frame** in front of the LEDs. The whole border glows in the status colour.
-4. A printed **back shell and monitor clip**.
+3. A printed **frosted white border**, about 1 cm wide, round the screen. The LEDs light it in the status colour.
+4. A printed **black case** round all of it, with a button on top, the bzzy wordmark, and a monitor clip.
 
 Nothing changes in the firmware. The ring board uses the same data pin (GPIO17) and LED count (16) that `firmware/src/config.h` already has.
 
 This is **rev C, a concept**. Rev C opens the bottom of the ring so a USB-C plug can reach the Waveshare socket (rev B added the button on top). The board has been through KiCad's design-rule check, but nobody has built one yet. Measure the Waveshare board before you order anything (see [Before you order](#before-you-order)).
 
-| Front | Back | Exploded |
+| Front | Busy (lit red) | Top: button and wordmark |
 |---|---|---|
-| ![front](img/case-front.png) | ![back](img/case-back.png) | ![exploded](img/case-exploded.png) |
+| ![front](img/case-front.png) | ![busy](img/case-busy.png) | ![top](img/case-top.png) |
+| **Back, with the clip** | **Exploded** | |
+| ![back](img/case-back.png) | ![exploded](img/case-exploded.png) | |
 
 ## Plan
 
@@ -92,22 +94,52 @@ To change something, edit the script and run `./render.sh` (needs KiCad 7+ and O
 
 ## Case
 
-[`case/bzzy_case.scad`](case/bzzy_case.scad) is parametric OpenSCAD. Export a part with:
+[`case/bzzy_case.scad`](case/bzzy_case.scad) is parametric OpenSCAD. The case is black, with the screen in the middle of a frosted white border about 1 cm wide (9.2 mm at the sides, 9.5 mm top and bottom). The LEDs sit under the border. Overall it's about 58 × 67 × 15 mm, plus the clip.
+
+Looking at the front, from the middle out: the screen, a thin black trim over the Waveshare board's own glass edge, the frosted border, then a 1.4 mm black rim. The border starts at the Waveshare board's edge, not at the lit screen, because no LED can sit under the board. The ring board didn't need to change for this.
+
+Export a part with:
 
 ```sh
-openscad -D 'PART="diffuser"' -o diffuser.stl case/bzzy_case.scad   # or baffle, shell, clip
+openscad -D 'PART="light"' -o light.stl case/bzzy_case.scad   # or frame, back, trim, button, clip
 ```
 
-`./render.sh` exports all four to `case/stl/`. They aren't committed until the measurements are confirmed.
+`./render.sh` exports all six to `case/stl/`, each already turned the way it prints best. They aren't committed until the measurements are confirmed.
 
-| Part | Material | Notes |
+| Part | Colour and material | Notes |
 |---|---|---|
-| diffuser | Translucent white PETG, or white resin (SLA) | Front frame and sides, all one glowing piece. Print it face down. The 1.2 mm front is thin enough for an even glow, about 4 mm from the LEDs. The top wall has a flexing tab with a nub that presses the top button. Set `TOP_BTN_Z` to the plunger's height once you have the switch |
-| baffle | Black PLA or PETG | Sleeve round the screen, so LED light doesn't leak onto the display |
-| shell | Black PLA, PETG or MJF nylon | Back cover with a USB-C opening and BOOT-button pinhole on the bottom, plus a dovetail rail for the clip |
-| clip | PETG or nylon (needs some flex) | Slides up the rail. Two legs rest on the monitor's top edge, with a lip at the front and a drop at the back. Set `MONITOR_T` to your monitor's thickness |
+| light | **Frosted white.** Translucent white PETG, or clear or white resin (SLA) with a matte finish | The glowing border. 1.6 mm thick at the front, about 2.4 mm in front of the LEDs. Its outer lip sits over the frame's rim, and four bosses take the screws. Print it face down |
+| frame | **Black.** PLA, PETG, or MJF nylon (PA12, dyed black) | Front rim and the four side walls, with the USB-C opening and BOOT pinhole on the bottom, and the button hole and wordmark on top. Print it face down |
+| back | **Black** | Back plate. Four posts press the ring board forward and the screws go through them. Dovetail rail for the clip |
+| trim | **Black** | Sleeve round the Waveshare board, with the thin trim round the screen. Keeps LED light off the display. The light ring holds it down |
+| button | **Black** | Cap for the top button. Sits in a pocket in the frame's top wall, held in by its flange. Print it flange down |
+| clip | **Black.** PETG or nylon (needs some flex) | Slides up the rail. Two legs rest on the monitor's top edge, with a lip at the front and a drop at the back. Set `MONITOR_T` to your monitor's thickness |
 
-Overall it's about 56 × 65 × 15 mm, plus the clip. You can put a square of 3 mm foam tape behind the Waveshare board to press it against the front.
+**For a print service** (JLC3DP, Craftcloud, a local shop): order `light.stl` in translucent or white resin, and the other five in black. MJF nylon in black is tough and has no visible layers, which suits the frame and clip. Resin is fine for the light ring, but ask for the "translucent" or "semi-transparent" option with a matte or sanded finish, so the LEDs don't show as dots. None of the parts need supports in the orientation they're exported in, except the back plate, which stands on its rail. Ask the service to orient it, or use MJF or resin, where it doesn't matter.
+
+### How it goes together
+
+1. Put the button cap into its pocket in the frame's top wall, from the inside.
+2. Hold the frame face up and drop the light ring in from the front, so its lip sits on the frame's rim. Turn the two over together, face down on the table.
+3. Put the trim in from the back, face down, through the light ring's middle.
+4. Put the ring board, LEDs down, onto the light ring's bosses, then the Waveshare board into the trim. The button cap now rests just off the switch.
+5. Put a square of 3 mm foam tape on the back of the Waveshare board, then put the back plate on and do up the four M2 screws. They pull the light ring back, and its lip clamps the frame's rim against the back plate. No glue.
+6. Slide the clip up the rail.
+
+### The top button
+
+The switch only travels 0.2 mm, and its plunger tip sits on the board's routed edge, which is only accurate to about ± 0.2 mm. So the cap rests 0.1 mm off the plunger and can float 0.5 mm outwards. A board that comes back slightly large pushes the cap out a little, instead of holding the switch down. If the switch were held down, the device would boot into setup every time. `TOP_BTN_Z` is the plunger's height above the board (0.8 mm for the Alps SKRT). Check it against the switch once you have one.
+
+### The wordmark
+
+"bzzy" is debossed 0.6 mm into the top face, right of the button, in Geist SemiBold, the font the app uses, with tight tracking. The font is in `case/fonts/` (SIL Open Font License). Set `LOGO` to move it:
+
+| `LOGO` | Where |
+|---|---|
+| `"top"` (default) | Top face, right of the button. People standing at your desk see it |
+| `"chin"` | Front, in a 9 mm black chin below the border. The device gets taller and the screen sits above centre |
+| `"back"` | Back plate, above the clip rail. Hidden when the device is on the monitor |
+| `"none"` | No wordmark |
 
 ## Before you order
 
@@ -116,10 +148,10 @@ Waveshare only publishes the board's outline as a drawing, which I couldn't read
 1. **The Waveshare board's width, height and total thickness** (`WS_W`, `WS_H`, `WS_T` in `gen_led_ring.py`). The cutout and case follow from these. I used 33.0 × 41.5 × 9.5 mm.
 2. **Where the screen sits**: the visible area's size, and whether it's centred on the board (`SCREEN_*`, `SCREEN_DY` in the case).
 3. **The glass height**: when the Waveshare board sits in the ring's cutout, how far its glass stands proud of the ring board's front face (`GLASS_Z`).
-4. **USB-C and BOOT button positions** (`USB_*`, `BUTTON_*`). I assumed the USB-C socket is on the bottom edge, in the middle.
+4. **USB-C and BOOT button positions** (`USB_*`, `BOOT_*`). I assumed the USB-C socket is on the bottom edge, in the middle. The rev C ring board has a 14 mm notch at the bottom middle for the plug. Check that your cable's plug moulding (12 × 6.5 mm assumed) fits through it.
 5. **Your monitor's top edge thickness** (`MONITOR_T`).
 
-Then print the shell and diffuser once in cheap PLA to check the fit before ordering boards.
+Then print the frame, light ring and back once in cheap PLA to check the fit before ordering boards.
 
 ## Ordering from JLCPCB
 
@@ -142,5 +174,4 @@ These are notes for later, once the ring board has proven the case and the light
 
 ## Open questions
 
-- Is a light ring round the screen the right look, or would you rather have a glow on the wall behind the monitor? The board works either way. The case would change.
 - Are 16 LEDs enough? Firmware handles more, and TP1 lets you chain extras.
