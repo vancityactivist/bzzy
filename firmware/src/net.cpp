@@ -50,6 +50,17 @@ static void loadSettings() {
   p.getString("device", g_settings.deviceId, sizeof(g_settings.deviceId));
   p.getString("token", g_settings.token, sizeof(g_settings.token));
   p.end();
+  // A fresh device: offer the usual app URL in the setup portal.
+  if (!g_settings.apiBase[0]) strlcpy(g_settings.apiBase, cfg::kDefaultApiBase, sizeof(g_settings.apiBase));
+  // The app moved from bzzy.vercel.app to bzzy.ca. The old host still answers devices,
+  // but move saved settings over so GIF links and the token check use the new one.
+  if (strcmp(g_settings.apiBase, cfg::kOldApiBase) == 0) {
+    strlcpy(g_settings.apiBase, cfg::kDefaultApiBase, sizeof(g_settings.apiBase));
+    Preferences w;
+    w.begin("bzzy", false);
+    w.putString("api", g_settings.apiBase);
+    w.end();
+  }
 }
 
 static void saveParams() {

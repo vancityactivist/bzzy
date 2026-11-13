@@ -33,7 +33,7 @@ const device = (d: Partial<DeviceFirmware> = {}): DeviceFirmware => ({
   ...d,
 });
 
-const url = (v: string) => `https://bzzy.vercel.app/api/device/bz-ab12cd/firmware/${v}`;
+const url = (v: string) => `https://bzzy.ca/api/device/bz-ab12cd/firmware/${v}`;
 const offer = (d: Partial<DeviceFirmware>, m: ReleaseManifest | null = manifest) =>
   firmwareOffer({ manifest: m, device: device(d), now: NOW, url });
 

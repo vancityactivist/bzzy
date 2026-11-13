@@ -71,4 +71,8 @@ constexpr const char* kSetupApName = "bzzy-setup";
 // BC moved to year-round UTC-7 in 2026, so no daylight-saving rule. (POSIX TZ signs are reversed.)
 constexpr const char* kTimezone = "<-07>7";  // Vancouver
 constexpr const char* kNtpServer = "pool.ntp.org";
+// Pre-filled "Companion app URL" in the setup portal.
+constexpr const char* kDefaultApiBase = "https://bzzy.ca";
+// The app's first home. A device that saved it is moved to kDefaultApiBase on boot.
+constexpr const char* kOldApiBase = "https://bzzy.vercel.app";
 }  // namespace cfg

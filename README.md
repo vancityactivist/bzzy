@@ -2,7 +2,7 @@
 
 A homebrew desk busy light: a small screen that shows GIFs, a ring of light around it, and a status (Free, Busy, Do not disturb, Away) set from your phone, your calendar, or the button on top of the device. It clips to a monitor and is powered over USB-C.
 
-The companion app runs at **[bzzy.vercel.app](https://bzzy.vercel.app)**.
+The companion app runs at **[bzzy.ca](https://bzzy.ca)**.
 
 ## What's in the repo
 
@@ -13,6 +13,7 @@ The companion app runs at **[bzzy.vercel.app](https://bzzy.vercel.app)**.
 | [hardware/](hardware/README.md) | The LED ring board (KiCad, rev C) and the printed case (OpenSCAD) |
 | [docs/protocol.md](docs/protocol.md) | How the device and the app talk |
 | [docs/ota.md](docs/ota.md) | Firmware updates over Wi-Fi |
+| [docs/domains.md](docs/domains.md) | bzzy.ca, the redirect domains, DNS and email records |
 
 ## How it fits together
 

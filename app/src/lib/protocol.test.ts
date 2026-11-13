@@ -139,7 +139,7 @@ describe("show now", () => {
     text: "Lunch!",
     until: 0,
     updatedAt: NOW - 30,
-    gif: { url: "https://bzzy.vercel.app/gifs/x.gif", sha: "abc" },
+    gif: { url: "https://bzzy.ca/gifs/x.gif", sha: "abc" },
     ...s,
   });
 
@@ -186,7 +186,7 @@ describe("push", () => {
     text: "Lunch!",
     until: 0,
     updatedAt: NOW - 30,
-    gif: { url: "https://bzzy.vercel.app/gifs/x.gif", sha: "abc" },
+    gif: { url: "https://bzzy.ca/gifs/x.gif", sha: "abc" },
     ...s,
   });
 
