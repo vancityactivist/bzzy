@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { Suspense } from "react";
 
 import { AppShell } from "@/components/app-shell";
@@ -15,6 +16,7 @@ import { ringNow } from "@/lib/push-rules";
 import { ringFor } from "@/lib/ring";
 import { pushForDevice } from "@/lib/pushes";
 import { getShow } from "@/lib/show";
+import { REPO_URL, SITE_NAME, SITE_URL } from "@/lib/site";
 import { sharedTeamsForUser } from "@/lib/teams";
 
 import { clearStatus } from "./actions";
@@ -29,12 +31,47 @@ import {
   StudioProvider,
 } from "./studio";
 
+// The one public page: search engines should list it as https://bzzy.ca/ whichever of the
+// redirecting domains or ?query variants they found it through.
+export const metadata: Metadata = { alternates: { canonical: "/" } };
+
+// Structured data for search engines: the site's name (shown above the result) and who makes it.
+const JSON_LD = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebSite",
+      "@id": `${SITE_URL}/#website`,
+      url: `${SITE_URL}/`,
+      name: SITE_NAME,
+      alternateName: ["bzzy.ca", "bzzy status light"],
+      inLanguage: "en-CA",
+      publisher: { "@id": `${SITE_URL}/#org` },
+    },
+    {
+      "@type": "Organization",
+      "@id": `${SITE_URL}/#org`,
+      name: SITE_NAME,
+      url: `${SITE_URL}/`,
+      logo: `${SITE_URL}/logo.png`,
+      sameAs: [REPO_URL],
+    },
+  ],
+};
+
 export default function Home() {
   return (
-    // Signed-out visitors get this fallback too, so it stays blank rather than app-shaped.
-    <Suspense fallback={<div className="min-h-[70vh]" aria-busy="true" />}>
-      <HomeContent />
-    </Suspense>
+    <>
+      <script
+        type="application/ld+json"
+        // Static and ours, but escape "<" anyway as the Next.js JSON-LD guide recommends.
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(JSON_LD).replace(/</g, "\\u003c") }}
+      />
+      {/* Signed-out visitors get this fallback too, so it stays blank rather than app-shaped. */}
+      <Suspense fallback={<div className="min-h-[70vh]" aria-busy="true" />}>
+        <HomeContent />
+      </Suspense>
+    </>
   );
 }
 

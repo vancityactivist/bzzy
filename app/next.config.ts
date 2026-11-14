@@ -19,6 +19,15 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+  // Search engines should only list bzzy.ca. The old host keeps serving lights (see above) but
+  // everything it still answers is marked noindex, and so is the API on every host.
+  async headers() {
+    const noindex = [{ key: "X-Robots-Tag", value: "noindex, nofollow" }];
+    return [
+      { source: "/:path*", has: [{ type: "host", value: "bzzy.vercel.app" }], headers: noindex },
+      { source: "/api/:path*", headers: noindex },
+    ];
+  },
   turbopack: {
     rules: {
       "*.css": {

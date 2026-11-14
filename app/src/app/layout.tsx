@@ -3,6 +3,8 @@ import { SpeedInsights } from "@vercel/speed-insights/next";
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 
+import { SITE_NAME, SITE_URL } from "@/lib/site";
+
 import "./globals.css";
 
 // Not preloaded: the signed-out landing page uses its own fonts (SUSE, JetBrains Mono), and a
@@ -14,13 +16,16 @@ const TITLE = "bzzy: a desk status light for heads-down work";
 const DESCRIPTION =
   "bzzy is a small status light for your monitor. Set Free, Busy, Do not disturb or Away from your phone, your calendar or the light itself.";
 
+// Share images come from opengraph-image.jpg and twitter-image.jpg next to this file.
+// Pages that are public set their own canonical URL (page.tsx); the app's pages are noindex.
 export const metadata: Metadata = {
-  metadataBase: new URL("https://bzzy.ca"),
+  metadataBase: new URL(SITE_URL),
   title: { template: "%s · bzzy", default: TITLE },
   description: DESCRIPTION,
-  applicationName: "bzzy",
-  openGraph: { type: "website", siteName: "bzzy", url: "/", title: TITLE, description: DESCRIPTION },
-  twitter: { card: "summary", title: TITLE, description: DESCRIPTION },
+  applicationName: SITE_NAME,
+  robots: { index: true, follow: true, googleBot: { index: true, follow: true, "max-image-preview": "large" } },
+  openGraph: { type: "website", siteName: SITE_NAME, locale: "en_CA", url: "/", title: TITLE, description: DESCRIPTION },
+  twitter: { card: "summary_large_image", title: TITLE, description: DESCRIPTION },
 };
 
 export const viewport: Viewport = {
