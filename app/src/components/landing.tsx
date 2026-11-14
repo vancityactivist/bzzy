@@ -10,6 +10,7 @@ import { defaultPreviewSrcs } from "@/lib/gifs";
 import type { Status } from "@/lib/protocol";
 import { viewFor, withShow } from "@/lib/screen";
 
+import { BzzyMark } from "./brand";
 import { DevicePreview } from "./device-preview";
 import { LandingHeroDevice } from "./landing-hero";
 import { CalendarSketch, StatusPickerSketch, TapSketch } from "./landing-illustrations";
@@ -114,18 +115,6 @@ const MENU: { img: StaticImageData; alt: string; title: string; line: string }[]
   { img: caseBack, alt: "The back of the case, with the clip that holds it on a monitor", title: "The clip", line: "Hooks over a monitor's top edge" },
 ];
 
-// bzzy's mark: the four status colours as a 2 x 2 tile, as on the sign-in card.
-function BzzyMark() {
-  return (
-    <span className="bzzy-mark" aria-hidden="true">
-      <i className="status-dot--free" />
-      <i className="status-dot--busy" />
-      <i className="status-dot--dnd" />
-      <i className="status-dot--away" />
-    </span>
-  );
-}
-
 export function Landing() {
   const gifs = defaultPreviewSrcs();
 
@@ -192,7 +181,7 @@ export function Landing() {
             </div>
           </nav>
           <a className="nav__logo" href="#top">
-            <BzzyMark />
+            <BzzyMark className="bzzy-mark" />
             bzzy
           </a>
           <div className="nav__actions">
@@ -470,7 +459,7 @@ export function Landing() {
             <div className="grid">
               <div className="span-4 stack-4">
                 <a className="nav__logo" href="#top">
-                  <BzzyMark />
+                  <BzzyMark className="bzzy-mark" />
                   bzzy
                 </a>
                 <p className="footer__lede">A desk status light you build yourself.</p>

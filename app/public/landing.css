@@ -106,7 +106,5 @@
    its one screen on a tablet and a phone: hold it to the screen (--g-screen is the band's knob). */
 #build { --g-screen: 100lvh; }
 
-/* bzzy's mark in the nav and the footer: the four status dots on a tile (sign-in.tsx). */
-.bzzy-mark { display: inline-grid; flex: none; grid-template-columns: repeat(2, 7px); gap: 4px; place-content: center;
-  width: 28px; height: 28px; border: 1px solid var(--line-strong, rgb(255 255 255 / 0.2)); border-radius: 8px; background: var(--surface); }
-.bzzy-mark > i { width: 7px; height: 7px; border-radius: 999px; }
+/* bzzy's mark in the nav and the footer (components/brand.tsx), on the page's own surface. */
+.bzzy-mark { flex: none; width: 28px; height: 28px; --mark-tile: var(--surface); --mark-line: var(--line-strong, rgb(255 255 255 / 0.2)); }
