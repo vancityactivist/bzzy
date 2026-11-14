@@ -4,7 +4,7 @@ import caseBack from "@/assets/case-back.png";
 import caseExploded from "@/assets/case-exploded.png";
 import caseFront from "@/assets/case-front.png";
 import caseTop from "@/assets/case-top.png";
-import deskPhoto from "@/assets/desk.jpg";
+import heroRender from "@/assets/hero.jpg";
 
 import { defaultPreviewSrcs } from "@/lib/gifs";
 import type { Status } from "@/lib/protocol";
@@ -21,7 +21,7 @@ import { LandingKit } from "./landing-kit";
 // the app's header, and the home page only adds it when someone is signed in.
 //
 // type: product (hardware: site-kind tech)
-// deal: hero product (the desk photo), nav nav-split, close close-word, footer footer-dark,
+// deal: hero product (the render of the real case), nav nav-split, close close-word, footer footer-dark,
 //       rhythm dark-band (#light), buttons block, ground sage; the mark is bzzy's own
 //       four status dots (as on the sign-in card), in place of the dealt ring
 //       palette lunar-grey-bronze, type suse; grounds bg-mist (hero), bg-band (#build)
@@ -234,13 +234,13 @@ export function Landing() {
                 </div>
               </div>
               <div className="hero__stage">
-                {/* Client slot: a photograph of the first built bzzy replaces this concept picture. */}
+                {/* A render made from the real case CAD; a photo of the first built bzzy can replace it. */}
                 <Image
-                  src={deskPhoto}
+                  src={heroRender}
                   sizes="100vw"
                   priority
-                  alt="A small black status light clipped to the top of a monitor, casting a red Busy glow on the wall behind it"
-                  style={{ ["--ly-pos" as string]: "50% 45%" }}
+                  alt="A bzzy light clipped to the top of a monitor, its frosted ring glowing red and its screen reading Busy"
+                  style={{ ["--ly-pos" as string]: "70% 45%" }}
                 />
               </div>
             </div>
