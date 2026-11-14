@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Suspense, type ReactNode } from "react";
 
+import { BzzyMark } from "./brand";
 import { HeaderNav, MobileNav } from "./user-menu";
 
 // The app's chrome: skip link, sticky header, main and the phone tab bar. Every app page
@@ -17,7 +18,8 @@ export function AppShell({ children }: { children: ReactNode }) {
       </a>
       <header className="sticky top-0 z-40 border-b border-line bg-background/75 backdrop-blur-lg backdrop-saturate-150">
         <div className="mx-auto flex h-14 max-w-5xl items-center gap-4 px-4 sm:gap-6 sm:px-6">
-          <Link href="/" className="text-lg font-semibold tracking-tight">
+          <Link href="/" className="flex items-center gap-2 text-lg font-semibold tracking-tight">
+            <BzzyMark className="size-6 shrink-0" />
             bzzy
           </Link>
           <Suspense fallback={null}>

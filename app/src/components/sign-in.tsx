@@ -1,9 +1,9 @@
 import { signInWithGitHub } from "@/app/actions";
-import { STATUSES } from "@/lib/protocol";
 
+import { BzzyMark } from "./brand";
 import { GithubIcon } from "./icons";
 import { PasskeySignIn } from "./passkey-buttons";
-import { Button, Card, StatusDot } from "./ui";
+import { Button, Card } from "./ui";
 
 /**
  * The sign-in card: GitHub (a server action) or a passkey. On its own it centres itself
@@ -13,11 +13,7 @@ export function SignIn({ bare = false }: { bare?: boolean }) {
   const card = (
     <Card className="w-full p-6 sm:p-8">
       <div className="flex flex-col items-center text-center">
-        <span aria-hidden className="grid size-11 grid-cols-2 place-items-center rounded-xl border border-line bg-subtle p-2.5">
-          {STATUSES.map((s) => (
-            <StatusDot key={s} status={s} size="sm" />
-          ))}
-        </span>
+        <BzzyMark className="size-11" />
         <h2 className="mt-4 text-xl font-semibold tracking-tight">Sign in to bzzy</h2>
         <p className="mt-1.5 text-sm text-pretty text-muted">Set your desk light from your phone or laptop.</p>
       </div>
