@@ -13,6 +13,7 @@ import { viewFor, withShow } from "@/lib/screen";
 import { DevicePreview } from "./device-preview";
 import { LandingHeroDevice } from "./landing-hero";
 import { CalendarSketch, StatusPickerSketch, TapSketch } from "./landing-illustrations";
+import { LANDING_BOOT } from "./landing-boot";
 import { LandingKit } from "./landing-kit";
 
 // The signed-out home page, built with the taste skill's design system (public/assets,
@@ -58,14 +59,6 @@ const TOKENS = `:root {
   --display-tracking: -0.03em;
   --display-tracking-xl: -0.04em;
 }`;
-
-// Runs as the page is parsed, before the first paint of the landing: the kit reads these
-// from <html>. m-enter holds the hero's words for motion.js (700ms at most); mo-js the moment.
-const BOOT = `(function(){var h=document.documentElement;
-h.setAttribute("data-type","product");h.setAttribute("data-radius","soft");h.setAttribute("data-buttons","block");
-h.setAttribute("data-ground","sage");h.setAttribute("data-motion","");
-h.classList.add("m-enter","mo-js");
-setTimeout(function(){h.classList.add("m-enter-done")},700);setTimeout(function(){h.classList.add("mo-safe")},2500);})();`;
 
 const ARROW = (
   <svg className="m-arrow" viewBox="0 0 12 12" aria-hidden="true">
@@ -150,7 +143,7 @@ export function Landing() {
       <style href="bzzy-landing-tokens" precedence="taste">
         {TOKENS}
       </style>
-      <script dangerouslySetInnerHTML={{ __html: BOOT }} />
+      <script dangerouslySetInnerHTML={{ __html: LANDING_BOOT }} />
       {/* Plain on purpose: it sets the ground tokens before the first paint of this dark page. */}
       {/* eslint-disable-next-line @next/next/no-sync-scripts */}
       <script src="/assets/backgrounds/backgrounds.js" />
