@@ -33,16 +33,16 @@ Every request also says which firmware the device runs, so the app can offer upd
     "text": "Happy Friday!",
     "until": 1762894800,
     "updatedAt": 1762891150,
-    "gif": { "url": "https://bzzy.vercel.app/api/device/bz-ab12cd/gif/9a7e…", "sha": "41d0c2e9b7a3f615" }
+    "gif": { "url": "https://bzzy.ca/api/device/bz-ab12cd/gif/9a7e…", "sha": "41d0c2e9b7a3f615" }
   },
   "schedule": [
     { "start": 1762898400, "end": 1762902000, "status": "busy", "text": "Council meeting" }
   ],
   "gifs": {
-    "free": { "url": "https://bzzy.vercel.app/gifs/free-ripple.gif", "sha": "d89fee3c49a4aeb2" },
-    "busy": { "url": "https://bzzy.vercel.app/api/device/bz-ab12cd/gif/6f1c…", "sha": "0c4e9a7b1f2d3e4a" },
+    "free": { "url": "https://bzzy.ca/gifs/free-ripple.gif", "sha": "d89fee3c49a4aeb2" },
+    "busy": { "url": "https://bzzy.ca/api/device/bz-ab12cd/gif/6f1c…", "sha": "0c4e9a7b1f2d3e4a" },
     "dnd": null,
-    "away": { "url": "https://bzzy.vercel.app/gifs/away-orbit.gif", "sha": "5b8e…" }
+    "away": { "url": "https://bzzy.ca/gifs/away-orbit.gif", "sha": "5b8e…" }
   }
 }
 ```

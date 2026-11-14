@@ -17,7 +17,7 @@ const DESCRIPTION =
   "bzzy is a small status light for your monitor. Set Free, Busy, Do not disturb or Away from your phone, your calendar or the light itself.";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://bzzy.vercel.app"),
+  metadataBase: new URL("https://bzzy.ca"),
   title: { template: "%s · bzzy", default: TITLE },
   description: DESCRIPTION,
   applicationName: "bzzy",

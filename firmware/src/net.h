@@ -9,7 +9,7 @@
 namespace net {
 
 struct Settings {
-  char apiBase[96] = "";   // e.g. https://bzzy.vercel.app
+  char apiBase[96] = "";   // e.g. https://bzzy.ca
   char deviceId[40] = "";
   char token[64] = "";
 };
