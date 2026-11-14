@@ -8,11 +8,10 @@
   .hero--product .btn-row > .btn--secondary { display: none; }
 }
 
-/* Two screens where the stacked content needs them: #ways and #light on a tablet, #light
-   on a phone (#ways sets --hm inline). */
-@media (min-width: 640px) and (max-width: 1023px) { #ways, #light { --h: 2; } }
+/* Two screens where the stacked content needs them: #ways on a tablet and a phone (it sets --hm
+   inline). #light stays one screen and grows with its content, so no empty screen under it. */
+@media (min-width: 640px) and (max-width: 1023px) { #ways { --h: 2; } }
 @media (min-width: 1024px) and (max-width: 1279px) { #ways { --h: 2; } }
-@media (max-width: 639px) { #light { --hm: 2; } }
 
 /* The app's own pieces (the sketches, the live device and its chips) are drawn with the
    app's Tailwind tokens, which globals.css keeps off this page: give them back here. */
@@ -57,16 +56,29 @@
 .light__device { padding-block: var(--s-4); max-width: 100%; }
 /* the status wash behind the device covers the whole piece (it ran past the chips) */
 .light__device > div > div[aria-hidden]:first-child { inset: 0; }
+/* A phone: the four chips on one line (tighter chips, and the frame's sides give them room). */
 @media (max-width: 639px) {
+  .light__frame { padding-inline: var(--s-2); }
+  .light__device [role="group"] button { padding-inline: 7px; gap: 5px; font-size: 12px; }
+}
+@media (max-width: 359px) {
   .light__device [role="group"] { flex-wrap: wrap; justify-content: center; border-radius: var(--r-lg); }
 }
 
 /* GIFs: three screens side by side on the effect's ground. */
 .gifs__frame { margin-top: var(--s-7); display: grid; place-items: center; aspect-ratio: auto; height: 540px; }
+/* The frame's ratio spacer would be a grid row of its own and push the screens below centre. */
+.gifs__frame::before { content: none; }
 .gifs__row { position: relative; z-index: 1; display: flex; justify-content: center; align-items: center; gap: clamp(16px, 4vw, 64px); margin: 0; padding: 0; list-style: none; }
+@media (min-width: 768px) and (max-width: 1023px) { .gifs__row { zoom: 0.75; } }
 @media (max-width: 767px) {
   .gifs__frame { height: 520px; }
   .gifs__row { zoom: 0.56; }
+}
+/* A phone: all three screens inside the frame, on a shorter ground. */
+@media (max-width: 559px) {
+  .gifs__frame { height: 360px; }
+  .gifs__row { zoom: 0.4; gap: 20px; }
 }
 
 /* Networks: the two facts as plain lines. */
@@ -84,6 +96,8 @@
 .build__frame { background: #f8f8f8; }
 .build__frame > .frame__img { object-fit: contain; }
 @media (min-width: 640px) and (max-width: 1023px) { .build__frame { min-height: 480px; } }
+/* A phone: the picture has nothing to stretch to under the steps, so give it a shape of its own. */
+@media (max-width: 639px) { .build__frame { --ratio: 80%; } }
 
 /* The close's name: set by hand so its ascenders are never clipped (close-word). */
 .close__word { line-height: 1; padding-top: 0.06em; }
