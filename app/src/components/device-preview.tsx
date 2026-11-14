@@ -51,6 +51,7 @@ export function DevicePreview({
   scale = 1,
   className = "",
   ring,
+  lazy = false,
 }: {
   view: ScreenView;
   gifSrc: string | null; // the status's GIF, or the show-now GIF for "show-gif"; null: no GIF
@@ -59,6 +60,8 @@ export function DevicePreview({
   className?: string;
   // A flash on the ring (a team push), instead of the steady status colour.
   ring?: LedStyle | null;
+  // Below the fold (the landing page): load the GIF lazily, with its box's size up front.
+  lazy?: boolean;
 }) {
   const bg = SCREEN_BG[view.status];
   const label = SCREEN_LABEL[view.status];
@@ -127,7 +130,12 @@ export function DevicePreview({
                 {/* The firmware draws each frame at its own size, centred in the area (or from
                     the top-left corner when it's bigger, which auto margins also do). */}
                 {/* eslint-disable-next-line @next/next/no-img-element -- animated GIF at native size */}
-                <img src={gif} alt="" className={gifFit ? "size-full object-contain" : "m-auto max-w-none shrink-0"} />
+                <img
+                  src={gif}
+                  alt=""
+                  className={gifFit ? "size-full object-contain" : "m-auto max-w-none shrink-0"}
+                  {...(lazy ? { loading: "lazy" as const, decoding: "async" as const, width: SCREEN_W, height: gifArea } : {})}
+                />
               </div>
             )}
             <svg className="absolute left-0 top-0" width={SCREEN_W} height={SCREEN_H} viewBox={`0 0 ${SCREEN_W} ${SCREEN_H}`} aria-hidden>

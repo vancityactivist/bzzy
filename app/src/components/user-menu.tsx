@@ -16,7 +16,7 @@ export async function HeaderNav() {
   const user = await getCurrentUser();
   if (!user) {
     return (
-      <Link href="/#sign-in" className={buttonClass("secondary", "sm", "ml-auto")}>
+      <Link href="/sign-in" className={buttonClass("secondary", "sm", "ml-auto")}>
         Sign in
       </Link>
     );

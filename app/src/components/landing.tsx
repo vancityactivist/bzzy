@@ -1,505 +1,528 @@
-import Image from "next/image";
-import type { ComponentType, ReactNode } from "react";
+import Image, { type StaticImageData } from "next/image";
 
+import caseBack from "@/assets/case-back.png";
+import caseExploded from "@/assets/case-exploded.png";
+import caseFront from "@/assets/case-front.png";
+import caseTop from "@/assets/case-top.png";
 import deskPhoto from "@/assets/desk.jpg";
 
-import { STATUS_META } from "@/components/status-meta";
 import { defaultPreviewSrcs } from "@/lib/gifs";
-import { type Status, STATUSES } from "@/lib/protocol";
-import type { LedStyle } from "@/lib/push-rules";
+import type { Status } from "@/lib/protocol";
 import { viewFor, withShow } from "@/lib/screen";
 
 import { DevicePreview } from "./device-preview";
-import { GithubIcon, type IconProps, UsersIcon, WifiOffIcon } from "./icons";
 import { LandingHeroDevice } from "./landing-hero";
-import {
-  ArrowRightIcon,
-  BoxIcon,
-  ChipIcon,
-  DownloadIcon,
-  MessageIcon,
-  PlugIcon,
-  WifiOutIcon,
-  WrenchIcon,
-} from "./landing-icons";
 import { CalendarSketch, StatusPickerSketch, TapSketch } from "./landing-illustrations";
-import { SignIn } from "./sign-in";
-import { Badge, buttonClass, Card, Container, cx, StatusDot } from "./ui";
+import { LandingKit } from "./landing-kit";
 
-// The signed-out home page. Every picture on it is the real device preview or a small
-// drawing made from the app's own pieces, apart from one concept picture (see DevicePhoto).
+// The signed-out home page, built with the taste skill's design system (public/assets,
+// loaded only here). It owns the whole screen: app/(app)/layout.tsx gives every other page
+// the app's header, and the home page only adds it when someone is signed in.
+//
+// type: product (hardware: site-kind tech)
+// deal: hero product (the desk photo), nav nav-split, close close-word, footer footer-dark,
+//       rhythm dark-band (#light), buttons block, ground sage; the mark is bzzy's own
+//       four status dots (as on the sign-in card), in place of the dealt ring
+//       palette lunar-grey-bronze, type suse; grounds bg-mist (hero), bg-band (#build)
+//       effect grain-gradient in the one [data-visual] frame (#gifs); moment liquid-type (#open)
 
 const REPO = "https://github.com/vancityactivist/bzzy";
 const HARDWARE = `${REPO}/tree/main/hardware`;
 const ORDERING = `${REPO}/tree/main/hardware#ordering-from-jlcpcb`;
+const FIRMWARE = `${REPO}/tree/main/firmware`;
+const PROTOCOL = `${REPO}/blob/main/docs/protocol.md`;
+const LICENSE = `${REPO}/blob/main/LICENSE.md`;
 
-const STATUS_USE: Record<Status, string> = {
-  free: "Come over. Questions welcome.",
-  busy: "Working or on a call. Interrupt if it matters.",
-  dnd: "Heads down. Save it for later.",
-  away: "Not at your desk, or not in today.",
-};
-
-const STEPS: { title: string; body: ReactNode; art: (gifs: Record<Status, string | null>) => ReactNode }[] = [
-  {
-    title: "Set it from anywhere",
-    body: "Tap Free, Busy, Do not disturb or Away on your phone or laptop. Add a short message and how long it should last.",
-    art: () => <StatusPickerSketch />,
-  },
-  {
-    title: "Or let your calendar do it",
-    body: "Paste your calendar's ICS link and bzzy turns Busy for meetings and back to Free after. No Microsoft Graph or admin approval needed.",
-    art: () => <CalendarSketch />,
-  },
-  {
-    title: "Or just tap the light",
-    body: "Tap the screen to step through statuses. Long-press to hand control back to your calendar.",
-    art: (gifs) => <TapSketch gifSrc={gifs.free} />,
-  },
+const FONTS = "https://fonts.googleapis.com/css2?family=SUSE:wght@400..700&family=JetBrains+Mono:wght@400..500&display=swap";
+const KIT_CSS = [
+  "/assets/system.css",
+  "/assets/ui/cards.css",
+  "/assets/motion/motion.css",
+  "/assets/backgrounds/backgrounds.css",
+  "/assets/layout/layout.css",
+  "/assets/icons/icon.css",
+  "/assets/diagrams/diagram.css",
+  "/landing.css",
 ];
 
-// The GIF section: three screens, each a real preview with a popular GIPHY GIF, loaded
-// from GIPHY (their terms don't allow keeping copies) and credited under the screens.
-const giphy = (id: string) => `https://media.giphy.com/media/${id}/200w.gif`;
-const GIF_SCREENS: { status: Status; gif: string; text: string; show: boolean; caption: string }[] = [
-  { status: "free", gif: giphy("tXL4FHPSnVJ0A"), text: "", show: false, caption: "A GIF for each status" },
-  { status: "busy", gif: giphy("pHZ8BDWQhJrvLmL29M"), text: "Back in 5", show: true, caption: "Show now, with a message" },
-  { status: "away", gif: giphy("NEvPzZ8bd1V4Y"), text: "Out to lunch", show: false, caption: "A GIF and your status line" },
+// The palette and type exactly as start.mjs printed them (lunar-grey-bronze, suse).
+const TOKENS = `:root {
+  --p-bg: #111111; --p-surface: #1c1c1c; --p-ink: #f2f2f2; --p-muted: #8f8f8f;
+  --p-accent: #a08672; --p-accent-ink: #111111; --p-action: #a08672; --p-action-ink: #111111;
+  --p-inv-bg: #f2f2f2; --p-inv-surface: #e0e0e0; --p-inv-ink: #111111; --p-inv-muted: #5c5c5c;
+  --p-inv-accent: #a08672; --p-inv-accent-ink: #111111; --p-inv-action: #a08672; --p-inv-action-ink: #111111;
+  --font-display: "SUSE", system-ui, sans-serif;
+  --font-text: "SUSE", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  --display-weight: 500;
+  --display-tracking: -0.03em;
+  --display-tracking-xl: -0.04em;
+}`;
+
+// Runs as the page is parsed, before the first paint of the landing: the kit reads these
+// from <html>. m-enter holds the hero's words for motion.js (700ms at most); mo-js the moment.
+const BOOT = `(function(){var h=document.documentElement;
+h.setAttribute("data-type","product");h.setAttribute("data-radius","soft");h.setAttribute("data-buttons","block");
+h.setAttribute("data-ground","sage");h.setAttribute("data-motion","");
+h.classList.add("m-enter","mo-js");
+setTimeout(function(){h.classList.add("m-enter-done")},700);setTimeout(function(){h.classList.add("mo-safe")},2500);})();`;
+
+const ARROW = (
+  <svg className="m-arrow" viewBox="0 0 12 12" aria-hidden="true">
+    <path className="m-arrow__stem" d="M1 6h8" />
+    <path className="m-arrow__head" d="M4.5 2.5 8 6l-3.5 3.5" />
+  </svg>
+);
+
+const MAIN_ACTION = "Get the design files";
+
+const STATUS_ROWS: { status: Status; name: string; use: string }[] = [
+  { status: "free", name: "Free", use: "Come over. Questions welcome." },
+  { status: "busy", name: "Busy", use: "Working or on a call. Interrupt if it matters." },
+  { status: "dnd", name: "Do not disturb", use: "Heads down. Save it for later." },
+  { status: "away", name: "Away", use: "Not at your desk, or not in today." },
 ];
 
-const GIF_POINTS: { title: string; body: string }[] = [
-  { title: "One for every status", body: "Pick a GIF for Free, Busy, Do not disturb and Away on each light, or keep the plain colour card." },
-  { title: "Bring your own", body: "Upload a GIF, or paste a GIPHY or Tenor link. bzzy resizes it to fit the screen and keeps a copy on the light." },
-  { title: "Show now", body: "Put any GIF or message on your screen for a while, whatever your status. A press of the light takes it down." },
-  { title: "Share with your team", body: "Team GIFs are there for everyone, and admins can push one to every light at once." },
-];
-
-// The ring's flashing patterns, each on a real preview. Spin leads: it's the one that
-// gets noticed from across the room.
-const FLASHES: { name: string; use: string; ring: LedStyle; status: Status; message?: string }[] = [
-  {
-    name: "Spin",
-    use: "A bright arc chases round the ring. Hard to miss from across the room, so it's the one for team pushes.",
-    ring: { pattern: "spin", color: "#2979ff", speed: 2 },
-    status: "free",
-    message: "Pizza in the kitchen",
-  },
-  {
-    name: "Pulse",
-    use: "A slow breathe. Good for Do not disturb.",
-    ring: { pattern: "pulse", speed: 1 },
-    status: "dnd",
-  },
-  {
-    name: "Blink",
-    use: "On, off, on. A meeting starts in 5 minutes.",
-    ring: { pattern: "blink", color: "#ff8a00", speed: 1 },
-    status: "busy",
-    message: "Meeting in 5",
-  },
-  {
-    name: "Strobe",
-    use: "Short, sharp bursts for the things that can't wait.",
-    ring: { pattern: "strobe", color: "#ff2000", speed: 2 },
-    status: "free",
-    message: "Fire drill at 3",
-  },
-];
-
-const FLASH_POINTS = [
-  "Pick a pattern, colour and speed for each status.",
-  "Flash a warning a few minutes before every meeting, even if Wi-Fi drops.",
-  "Team admins can push a message to everyone's light, with a flash to match. Any press dismisses it.",
-  "Never faster than 3 flashes a second, and one switch turns flashing off for a light.",
-];
-
-const FEATURES: { title: string; body: string; icon: ComponentType<IconProps> }[] = [
-  {
-    title: "Works on guest Wi-Fi",
-    body: "The light only ever calls out to bzzy. Nothing needs to reach it, so it's happy on locked-down office networks.",
-    icon: WifiOutIcon,
-  },
-  {
-    title: "Keeps going offline",
-    body: "It remembers your last status and today's calendar, and keeps time on its own clock if Wi-Fi drops.",
-    icon: WifiOffIcon,
-  },
-  {
-    title: "Messages too",
-    body: 'Add a line like "On a call, back at 3" under your status, or put a message up on its own in big letters.',
-    icon: MessageIcon,
-  },
-  {
-    title: "USB only",
-    body: "One cable for power. Clips to the top of your monitor. No batteries, no subscription.",
-    icon: PlugIcon,
-  },
-  {
-    title: "For you or your team",
-    body: "Use it alone, or set up a team: admins see everyone's light at a glance and can push a message to all of them.",
-    icon: UsersIcon,
-  },
-  {
-    title: "Build your own",
-    body: "Open design files for the circuit board and case, and open firmware. Order the board, print the case, flash it.",
-    icon: WrenchIcon,
-  },
+// Three screens, each a real preview with a popular GIPHY GIF, loaded from GIPHY (their
+// terms don't allow keeping copies) and credited in the footer. The animated WebP
+// rendition: a quarter of the GIF's weight.
+const giphy = (id: string) => `https://media.giphy.com/media/${id}/200w.webp`;
+const GIF_SCREENS: { status: Status; gif: string; text: string; show: boolean; label: string }[] = [
+  { status: "free", gif: giphy("tXL4FHPSnVJ0A"), text: "", show: false, label: "Free, with a GIF" },
+  { status: "busy", gif: giphy("pHZ8BDWQhJrvLmL29M"), text: "Back in 5", show: true, label: "A GIF shown now, with the message Back in 5" },
+  { status: "away", gif: giphy("NEvPzZ8bd1V4Y"), text: "Out to lunch", show: false, label: "Away, with a GIF and Out to lunch" },
 ];
 
 const SPECS: { term: string; detail: string }[] = [
-  { term: "Screen", detail: '1.69", 240 × 280' },
-  { term: "Board", detail: "ESP32-S3 touch" },
-  { term: "Light", detail: "16 LEDs, custom board" },
-  { term: "Power", detail: "USB" },
+  { term: "Screen", detail: "1.69 in touch, 240 × 280" },
+  { term: "Board", detail: "Waveshare ESP32-S3" },
+  { term: "Light", detail: "16 RGB LEDs on a 52 × 61 mm ring" },
+  { term: "Power", detail: "USB-C, 400 mA cap on the LEDs" },
 ];
+
+// How a status reaches the light (README: How it fits together). Calendar apps that
+// publish an ICS link, by name.
+const FLOW = {
+  layout: "fanin",
+  alt: "Your phone, Google Calendar, Outlook and a team push all set your status at bzzy.ca, and the light fetches it every 20 seconds.",
+  sources: [
+    { label: "Phone or laptop", icon: "ui:smartphone", sub: "Tap a status" },
+    { label: "Google Calendar", icon: "google-calendar", sub: "ICS link" },
+    { label: "Outlook", icon: "file:file-type-outlook", sub: "ICS link" },
+    { label: "Your team", icon: "ui:users", sub: "A push to every light" },
+  ],
+  target: { label: "bzzy.ca", icon: "ui:server" },
+  then: { label: "Your light", icon: "ui:lightbulb", meta: "every 20 s" },
+};
+
+const MENU: { img: StaticImageData; alt: string; title: string; line: string }[] = [
+  { img: caseFront, alt: "The bzzy case from the front: a black frame with a white light border round the screen", title: "The case", line: "Black, with a frosted border" },
+  { img: caseTop, alt: "The top of the case, with the button and the bzzy wordmark", title: "The button", line: "One press changes your status" },
+  { img: caseBack, alt: "The back of the case, with the clip that holds it on a monitor", title: "The clip", line: "Hooks over a monitor's top edge" },
+];
+
+// bzzy's mark: the four status colours as a 2 x 2 tile, as on the sign-in card.
+function BzzyMark() {
+  return (
+    <span className="bzzy-mark" aria-hidden="true">
+      <i className="status-dot--free" />
+      <i className="status-dot--busy" />
+      <i className="status-dot--dnd" />
+      <i className="status-dot--away" />
+    </span>
+  );
+}
 
 export function Landing() {
   const gifs = defaultPreviewSrcs();
 
   return (
-    <div className="overflow-x-clip">
-      {/* Hero */}
-      <section aria-labelledby="hero-title">
-        <Container
-          padded={false}
-          className="grid items-center gap-4 pt-10 pb-16 sm:pt-16 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-10 lg:py-24"
-        >
-          <div className="max-w-xl">
-            <Badge className="mb-5">
-              <StatusDot status="free" size="sm" />
-              Homebrew and open source
-            </Badge>
-            <h1
-              id="hero-title"
-              className="text-[2.5rem] leading-[1.04] font-semibold tracking-[-0.04em] text-balance sm:text-5xl lg:text-[3.5rem]"
-            >
-              A light on your desk that says when you&apos;re heads down.
-            </h1>
-            <p className="mt-5 max-w-md text-lg text-pretty text-muted">
-              bzzy is a small status light with its own GIF screen. Keep your door open, and let it tell people when now
-              isn&apos;t a good time.
-            </p>
-            <div className="mt-8 flex flex-wrap gap-3">
-              <a href="#sign-in" className={buttonClass("primary", "md", "px-5")}>
-                Sign in
-              </a>
-              <a href="#get-one" className={buttonClass("secondary", "md", "px-5")}>
-                <GithubIcon />
-                Build one
+    <>
+      {/* Head: React hoists these into <head>, in this order. */}
+      <meta name="site-kind" content="tech" />
+      <meta name="page-type" content="product" />
+      <link rel="preconnect" href="https://fonts.googleapis.com" />
+      <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
+      <link rel="stylesheet" href={FONTS} precedence="taste" />
+      {KIT_CSS.map((href) => (
+        <link key={href} rel="stylesheet" href={href} precedence="taste" />
+      ))}
+      <style href="bzzy-landing-tokens" precedence="taste">
+        {TOKENS}
+      </style>
+      <script dangerouslySetInnerHTML={{ __html: BOOT }} />
+      {/* Plain on purpose: it sets the ground tokens before the first paint of this dark page. */}
+      {/* eslint-disable-next-line @next/next/no-sync-scripts */}
+      <script src="/assets/backgrounds/backgrounds.js" />
+
+      <header className="nav nav--split">
+        <div className="wrap nav__bar">
+          <a className="skip-link" href="#top">
+            Skip to content
+          </a>
+          <nav className="nav__links" aria-label="Main">
+            <div className="nav__item">
+              <a className="nav__link" href="#light">
+                Light
               </a>
             </div>
-          </div>
-          <LandingHeroDevice gifs={gifs} />
-        </Container>
-      </section>
-
-      {/* Four statuses */}
-      <section aria-labelledby="statuses-title" className="pt-12 pb-20 sm:pt-16 sm:pb-28">
-        <Container padded={false}>
-          <SectionHeading id="statuses-title" eyebrow="Four statuses" title="Everyone knows at a glance.">
-            The ring of LEDs glows the status colour and the screen spells it out, so nobody has to ask.
-          </SectionHeading>
-          <ul className="mt-10 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-            {STATUSES.map((s) => (
-              <li key={s}>
-                <Card padding="none" className="h-full overflow-hidden">
-                  <div className="flex justify-center border-b border-line bg-subtle/50 py-3 sm:py-5">
-                    <div className="sm:[zoom:1.15]">
-                      <DevicePreview view={viewFor({ status: s, text: "", until: 0 })} gifSrc={gifs[s]} scale={0.5} className="m-3" />
-                    </div>
-                  </div>
-                  <div className="p-4 sm:p-5">
-                    <h3 className="flex items-center gap-2 font-semibold tracking-tight">
-                      <StatusDot status={s} />
-                      {STATUS_META[s].label}
-                    </h3>
-                    <p className="mt-1 text-sm text-pretty text-muted">{STATUS_USE[s]}</p>
-                  </div>
-                </Card>
-              </li>
-            ))}
-          </ul>
-        </Container>
-      </section>
-
-      {/* GIFs */}
-      <section aria-labelledby="gifs-title" className="pb-20 sm:pb-28">
-        <Container padded={false}>
-          <div className="grid gap-10 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:items-center">
-            <div>
-              <SectionHeading id="gifs-title" eyebrow="GIFs" title="Your screen, your GIFs.">
-                A 1.69&quot; colour screen sits inside the ring, so your status can be a GIF as well as a colour.
-              </SectionHeading>
-              <dl className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
-                {GIF_POINTS.map((p) => (
-                  <div key={p.title}>
-                    <dt className="font-semibold tracking-tight">{p.title}</dt>
-                    <dd className="mt-1 text-sm text-pretty text-muted">{p.body}</dd>
-                  </div>
-                ))}
-              </dl>
+            <div className="nav__item">
+              <a className="nav__link" href="#gifs">
+                GIFs
+              </a>
             </div>
-            <ul className="grid grid-cols-3 gap-2 rounded-3xl border border-line bg-subtle/50 p-3 sm:gap-4 sm:p-6">
-              {GIF_SCREENS.map((g) => {
-                const base = viewFor({ status: g.status, text: g.show ? "" : g.text, until: 0 });
-                return (
-                  <li key={g.caption} className="flex flex-col items-center text-center">
-                    <div className="max-sm:[zoom:0.62]">
-                      <DevicePreview view={g.show ? withShow(base, { text: g.text, until: 0, gif: true }) : base} gifSrc={g.gif} gifFit scale={0.6} className="m-4" />
-                    </div>
-                    <p className="mt-1 text-xs text-pretty text-muted sm:text-sm">{g.caption}</p>
-                  </li>
-                );
-              })}
-              <li className="col-span-3 text-center text-xs text-muted">
-                GIFs from{" "}
-                <a href="https://giphy.com" className="underline underline-offset-2 hover:text-foreground">
-                  GIPHY
-                </a>
-              </li>
-            </ul>
-          </div>
-        </Container>
-      </section>
-
-      {/* The ring: flashing patterns, spin first */}
-      <section aria-labelledby="flash-title" className="pb-20 sm:pb-28">
-        <Container padded={false}>
-          <SectionHeading id="flash-title" eyebrow="The ring" title="It can do more than glow.">
-            Sixteen LEDs round the screen can pulse, blink, strobe or spin, so the light gets noticed when it matters.
-          </SectionHeading>
-          <ul className="mt-10 grid gap-3 sm:grid-cols-3 sm:gap-4">
-            {FLASHES.map((f, i) => {
-              const lead = i === 0;
-              return (
-                <li key={f.name} className={lead ? "sm:col-span-3" : undefined}>
-                  <Card padding="none" className={cx("flex h-full flex-col overflow-hidden", lead && "md:flex-row")}>
-                    <div
-                      className={cx(
-                        "flex items-center justify-center bg-subtle/50",
-                        lead ? "border-b border-line py-8 sm:py-10 md:flex-1 md:border-r md:border-b-0" : "border-b border-line py-3 sm:py-5",
-                      )}
-                    >
-                      <DevicePreview
-                        view={withShow(
-                          viewFor({ status: f.status, text: "", until: 0 }),
-                          f.message ? { text: f.message, until: 0, gif: false } : null,
-                        )}
-                        gifSrc={f.message ? null : gifs[f.status]}
-                        ring={f.ring}
-                        scale={lead ? 0.8 : 0.5}
-                        className="m-4"
-                      />
-                    </div>
-                    <div className={lead ? "p-5 sm:p-8 md:flex md:w-[42%] md:flex-col md:justify-center" : "p-4 sm:p-5"}>
-                      <h3 className={cx("flex items-center gap-2 font-semibold tracking-tight", lead && "text-xl")}>
-                        {f.name}
-                        {lead && <Badge tone="inverse">Our favourite</Badge>}
-                      </h3>
-                      <p className={cx("mt-1 text-pretty text-muted", lead ? "text-base" : "text-sm")}>{f.use}</p>
-                    </div>
-                  </Card>
-                </li>
-              );
-            })}
-          </ul>
-          <ul className="mt-6 grid gap-x-8 gap-y-3 text-sm sm:grid-cols-2">
-            {FLASH_POINTS.map((p) => (
-              <li key={p} className="flex gap-2.5 text-pretty">
-                <span aria-hidden className="mt-1.5 size-1.5 shrink-0 rounded-full bg-foreground/60" />
-                <span className="text-muted">{p}</span>
-              </li>
-            ))}
-          </ul>
-        </Container>
-      </section>
-
-      {/* Three ways to set it */}
-      <section aria-labelledby="ways-title" className="border-y border-line bg-subtle/40 py-20 sm:py-28">
-        <Container padded={false}>
-          <SectionHeading id="ways-title" eyebrow="How it works" title="Three ways to set it.">
-            Pick whichever is closest. Anything you set by hand wins over the calendar until it runs out.
-          </SectionHeading>
-          <ol className="mt-10 grid gap-4 lg:grid-cols-3">
-            {STEPS.map((step, i) => (
-              <li key={step.title}>
-                <Card padding="none" className="flex h-full flex-col overflow-hidden">
-                  <div className="flex h-60 items-center justify-center border-b border-line bg-background/60 px-6">
-                    {step.art(gifs)}
-                  </div>
-                  <div className="p-5 sm:p-6">
-                    <p className="font-mono text-xs text-muted">{String(i + 1).padStart(2, "0")}</p>
-                    <h3 className="mt-1 font-semibold tracking-tight">{step.title}</h3>
-                    <p className="mt-1.5 text-sm text-pretty text-muted">{step.body}</p>
-                  </div>
-                </Card>
-              </li>
-            ))}
-          </ol>
-        </Container>
-      </section>
-
-      {/* The device */}
-      <section aria-labelledby="device-title" className="py-20 sm:py-28">
-        <Container padded={false}>
-          <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-end">
-            <SectionHeading id="device-title" eyebrow="The device" title="Small, bright, and yours.">
-              A touch screen framed by a ring of LEDs on bzzy&apos;s own circuit board. It clips to the top of your monitor, and
-              the design files are open, so you can make one yourself.
-            </SectionHeading>
-            <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-line bg-line">
-              {SPECS.map((spec) => (
-                <div key={spec.term} className="bg-card px-4 py-3">
-                  <dt className="font-mono text-[11px] tracking-wider text-muted uppercase">{spec.term}</dt>
-                  <dd className="mt-0.5 text-sm font-medium">{spec.detail}</dd>
+            <div className="nav__item">
+              <a className="nav__link" href="#ways">
+                Setup
+              </a>
+            </div>
+            <div className="nav__item">
+              <a className="nav__link" href="#build">
+                Build{" "}
+                <svg className="chev" viewBox="0 0 12 12" aria-hidden="true">
+                  <path d="M3 4.5l3 3 3-3" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </a>
+              <div className="nav__menu">
+                <div className="wrap grid">
+                  {MENU.map((m) => (
+                    <a key={m.title} className="menu-card span-4" href="#build">
+                      <div className="panel">
+                        <Image className="frame__img" src={m.img} alt={m.alt} sizes="(min-width: 1024px) 410px, 100vw" />
+                      </div>
+                      <span className="t-card">{m.title}</span>
+                      <span className="t-small muted">{m.line}</span>
+                    </a>
+                  ))}
                 </div>
-              ))}
-            </dl>
-          </div>
-
-          <DevicePhoto />
-
-          <GetOne />
-
-          <ul className="mt-10 grid gap-px overflow-hidden rounded-2xl border border-line bg-line shadow-card sm:grid-cols-2 lg:grid-cols-3">
-            {FEATURES.map(({ title, body, icon: Icon }) => (
-              <li key={title} className="bg-card p-6">
-                <span className="flex size-10 items-center justify-center rounded-xl border border-line bg-subtle text-foreground">
-                  <Icon className="size-5" />
-                </span>
-                <h3 className="mt-4 font-semibold tracking-tight">{title}</h3>
-                <p className="mt-1 text-sm text-pretty text-muted">{body}</p>
-              </li>
-            ))}
-          </ul>
-        </Container>
-      </section>
-
-      {/* Sign in: the header's and hero's "Sign in" link here. */}
-      <section id="sign-in" aria-label="Sign in" className="border-t border-line bg-subtle/40 py-20 sm:py-28">
-        <Container padded={false} className="flex flex-col items-center">
-          <div className="w-full max-w-sm">
-            <SignIn bare />
-          </div>
-          <a
-            href="#get-one"
-            className="group mt-6 inline-flex items-center gap-1.5 rounded-md text-sm text-muted transition-colors hover:text-foreground"
-          >
-            No light yet? Make one from the design files
-            <ArrowRightIcon className="size-4 transition-transform group-hover:translate-x-0.5" />
-          </a>
-        </Container>
-      </section>
-
-      <footer className="border-t border-line">
-        <Container padded={false} className="flex flex-col gap-4 py-10 sm:flex-row sm:items-center sm:justify-between">
-          <p className="flex items-baseline gap-3 text-sm text-muted">
-            <span className="text-lg font-semibold tracking-tight text-foreground">bzzy</span>a homebrew desk busy light
-          </p>
-          <a href={REPO} className={cx(buttonClass("ghost", "sm"), "-ml-3 self-start sm:ml-0 sm:self-auto")}>
-            <GithubIcon />
-            GitHub
-          </a>
-        </Container>
-      </footer>
-    </div>
-  );
-}
-
-const GET_ONE: {
-  title: string;
-  body: string;
-  icon: ComponentType<IconProps>;
-  link?: { href: string; label: string };
-  later?: boolean;
-}[] = [
-  {
-    title: "Download the files",
-    body: "The circuit board (KiCad and Gerbers), the parts list and the 3D-printable case. All open source.",
-    icon: DownloadIcon,
-    link: { href: HARDWARE, label: "Design files" },
-  },
-  {
-    title: "Order the board, print the case",
-    body: "Upload the files to a board maker like JLCPCB and they'll build and assemble it. Print the case at home or through a print service.",
-    icon: ChipIcon,
-    link: { href: ORDERING, label: "How to order" },
-  },
-  {
-    title: "Or get one ready-made",
-    body: "Pre-built lights, assembled and tested, are on the way. No soldering iron needed.",
-    icon: BoxIcon,
-    later: true,
-  },
-];
-
-// How to get a light: make one from the open files today, or buy one built later.
-function GetOne() {
-  return (
-    <div id="get-one" className="mt-16 scroll-mt-24">
-      <h3 className="text-xl font-semibold tracking-tight">Get a bzzy</h3>
-      <p className="mt-1 max-w-xl text-pretty text-muted">Make your own from the open files today. Pre-built lights come later.</p>
-      <ol className="mt-6 grid gap-4 lg:grid-cols-3">
-        {GET_ONE.map(({ title, body, icon: Icon, link, later }) => (
-          <li key={title}>
-            <div
-              className={cx(
-                "flex h-full flex-col rounded-2xl border p-5 sm:p-6",
-                later ? "border-dashed border-line bg-subtle/40" : "border-line bg-card shadow-card",
-              )}
-            >
-              <div className="flex items-center justify-between gap-3">
-                <span className="flex size-10 items-center justify-center rounded-xl border border-line bg-subtle text-foreground">
-                  <Icon className="size-5" />
-                </span>
-                {later && <Badge>Coming later</Badge>}
               </div>
-              <h4 className="mt-4 font-semibold tracking-tight">{title}</h4>
-              <p className="mt-1 flex-1 text-sm text-pretty text-muted">{body}</p>
-              {link && (
-                <a
-                  href={link.href}
-                  className="group mt-4 inline-flex items-center gap-1.5 self-start rounded-md text-sm font-medium transition-colors hover:text-muted"
-                >
-                  {link.label}
-                  <ArrowRightIcon className="size-4 transition-transform group-hover:translate-x-0.5" />
-                </a>
-              )}
             </div>
-          </li>
-        ))}
-      </ol>
-    </div>
-  );
-}
+          </nav>
+          <a className="nav__logo" href="#top">
+            <BzzyMark />
+            bzzy
+          </a>
+          <div className="nav__actions">
+            <a className="nav__link" href="/sign-in">
+              Sign in
+            </a>
+            <a className="btn btn--primary" href="#build">
+              {MAIN_ACTION}
+            </a>
+          </div>
+          <button className="nav__toggle" type="button" aria-expanded="false" aria-label="Menu">
+            <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">
+              <path d="M2 5h14M2 13h14" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+            </svg>
+          </button>
+        </div>
+      </header>
 
-// A picture of the idea: an illustration made before the first light was built, so the
-// caption says so. Swap in a photo of the real thing when there is one.
-function DevicePhoto() {
-  return (
-    <figure className="mt-10">
-      <Image
-        src={deskPhoto}
-        alt="A small black status light clipped to the top of a monitor, casting a red glow on the wall behind it"
-        placeholder="blur"
-        sizes="(min-width: 1024px) 976px, 100vw"
-        className="aspect-video w-full rounded-2xl border border-line object-cover shadow-card"
-      />
-      <figcaption className="mt-3 text-sm text-muted">
-        Busy, from across the room. A concept picture: the first build is still on the bench.
-      </figcaption>
-    </figure>
-  );
-}
+      <main id="top">
+        {/* Hero (product): the head row, then the photograph edge to edge down to the fold. */}
+        <section className="hero hero--product bg-mist" data-enter aria-labelledby="hero-h">
+          <div className="wrap">
+            <div className="hero-text hero__in">
+              <div className="hero__head">
+                <div>
+                  <h1 id="hero-h">Desk status light for heads-down work</h1>
+                  <p className="hero__lead">
+                    bzzy clips to your monitor and shows your status on a ring of 16 LEDs around a small GIF screen.
+                  </p>
+                </div>
+                <div className="btn-row">
+                  <a className="btn btn--primary" href="#build">
+                    {MAIN_ACTION}
+                    {ARROW}
+                  </a>
+                  <a className="btn btn--secondary" href="#light">
+                    See the four statuses
+                  </a>
+                </div>
+              </div>
+              <div className="hero__stage">
+                {/* Client slot: a photograph of the first built bzzy replaces this concept picture. */}
+                <Image
+                  src={deskPhoto}
+                  sizes="100vw"
+                  priority
+                  alt="A small black status light clipped to the top of a monitor, casting a red Busy glow on the wall behind it"
+                  style={{ ["--ly-pos" as string]: "50% 45%" }}
+                />
+              </div>
+            </div>
+          </div>
+        </section>
 
-function SectionHeading({ id, eyebrow, title, children }: { id: string; eyebrow: string; title: string; children?: ReactNode }) {
-  return (
-    <div className="max-w-xl">
-      <p className="font-mono text-xs tracking-wider text-muted uppercase">{eyebrow}</p>
-      <h2 id={id} className="mt-2 text-3xl font-semibold tracking-[-0.03em] text-balance sm:text-4xl">
-        {title}
-      </h2>
-      {children && <p className="mt-3 text-pretty text-muted sm:text-lg">{children}</p>}
-    </div>
+        {/* Three ways to set it (steps): the app's own pieces, one per way. */}
+        <section className="section" id="ways" aria-labelledby="ways-h" style={{ ["--hm" as string]: 2 }}>
+          <div className="wrap">
+            <div className="section-head">
+              <h2 id="ways-h">
+                Set your status 3 ways. <span className="muted">What you set by hand wins until it runs out.</span>
+              </h2>
+            </div>
+            <div className="grid">
+              <article className="card card--row span-4">
+                <h3>Tap a status on your phone</h3>
+                <p>Pick one of four, add a short message and say how long it lasts.</p>
+                <div className="panel">
+                  <div className="ui ways__art bzzy-ui" role="img" aria-label="The app's status picker with Busy chosen and the message On a call, back at 3">
+                    <StatusPickerSketch />
+                  </div>
+                </div>
+              </article>
+              <article className="card card--row span-4">
+                <h3>Follow your calendar</h3>
+                <p>Paste an ICS link and meetings turn the light Busy. No admin approval needed.</p>
+                <div className="panel">
+                  <div className="ui ways__art bzzy-ui" role="img" aria-label="A morning calendar with three meetings, and the light's colour changing to match">
+                    <CalendarSketch />
+                  </div>
+                </div>
+              </article>
+              <article className="card card--row span-4">
+                <h3>Tap the light itself</h3>
+                <p>A tap steps through the statuses. A long press hands control back to the calendar.</p>
+                <div className="panel">
+                  <div className="ui ways__art ways__art--tap bzzy-ui" role="img" aria-label="A tap on the light's screen steps from Free to Busy to Do not disturb">
+                    <TapSketch gifSrc={gifs.free} />
+                  </div>
+                </div>
+              </article>
+            </div>
+          </div>
+        </section>
+
+        {/* The light (dark-band: the page's one contrasting ground), the live preview. */}
+        <section className="section ground-inverse" id="light" aria-labelledby="light-h">
+          <div className="wrap grid">
+            <div className="span-5">
+              <div className="section-head">
+                <h2 id="light-h">Four statuses on a ring of 16 LEDs</h2>
+              </div>
+              <ul className="rows">
+                {STATUS_ROWS.map((r) => (
+                  <li key={r.status}>
+                    <span className="rows__name">
+                      <span className={`status-dot status-dot--${r.status}`} aria-hidden="true" />
+                      {r.name}
+                    </span>
+                    <p>{r.use}</p>
+                  </li>
+                ))}
+              </ul>
+              <p className="light__note">The ring can also pulse, blink, strobe or spin, and flashes a few minutes before each meeting.</p>
+            </div>
+            <div className="light__frame span-6 start-7">
+              <div className="ui bzzy-ui bzzy-ui--light light__device">
+                <LandingHeroDevice gifs={gifs} scale={0.8} hint={false} />
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* GIFs: the page's one effect, in its one [data-visual] frame. */}
+        <section className="section" id="gifs" aria-labelledby="gifs-h">
+          <div className="wrap">
+            <div className="section-head">
+              <h2 id="gifs-h">
+                A GIF for every status. <span className="muted">Upload one or paste a GIPHY or Tenor link.</span>
+              </h2>
+            </div>
+            <div className="frame frame--hero gifs__frame" data-visual data-fx="grain-gradient" data-fx-seed="11">
+              <ul className="ui gifs__row bzzy-ui">
+                {GIF_SCREENS.map((g) => {
+                  const base = viewFor({ status: g.status, text: g.show ? "" : g.text, until: 0 });
+                  return (
+                    <li key={g.label} role="img" aria-label={g.label}>
+                      <DevicePreview
+                        view={g.show ? withShow(base, { text: g.text, until: 0, gif: true }) : base}
+                        gifSrc={g.gif}
+                        gifFit
+                        lazy
+                        scale={0.8}
+                      />
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        {/* Networks (split-text-left): how a status reaches the light, as a diagram. */}
+        <section className="section" id="network" aria-labelledby="network-h">
+          <div className="wrap grid">
+            <div className="span-5 stack-5">
+              <h2 id="network-h">The light works on guest Wi-Fi</h2>
+              <p className="t-lead">
+                The light only ever calls out to bzzy.ca, every 20 seconds. Nothing has to reach it, so guest networks that
+                keep devices apart are fine.
+              </p>
+              <ul className="network__facts">
+                <li>Keeps your last status and today&apos;s calendar if Wi-Fi drops</li>
+                <li>Signed firmware updates over Wi-Fi</li>
+              </ul>
+              <a className="link" href={PROTOCOL}>
+                Read the device protocol
+              </a>
+            </div>
+            <div className="frame frame--split span-6 start-7">
+              <div className="dg" data-diagram="">
+                <script type="application/json" dangerouslySetInnerHTML={{ __html: JSON.stringify(FLOW) }} />
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* The statement, with the dealt liquid-type moment on its headline; the specs under it. */}
+        <section className="section" id="open" aria-labelledby="open-h">
+          <div className="wrap">
+            <h2 id="open-h" className="mo-lt__type" data-moment="liquid-type" data-moment-opts='{"strength": 1}'>
+              Every bzzy design file on GitHub
+            </h2>
+            <div className="grid open__grid">
+              <div className="span-5 stack-5">
+                <p className="t-lead">
+                  The board, the case and the firmware are yours to build and change, at home or at work, as long as nobody
+                  is charged for them.
+                </p>
+                <a className="link" href={LICENSE}>
+                  Read the licence
+                </a>
+              </div>
+              <ul className="rows rows--spec span-6 start-7">
+                {SPECS.map((s) => (
+                  <li key={s.term}>
+                    <span className="rows__name">{s.term}</span>
+                    <span className="rows__value">{s.detail}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        {/* Build one: the steps beside the exploded case. */}
+        <section className="section bg-band bg-bleed" id="build" aria-labelledby="build-h">
+          <div className="wrap grid">
+            <div className="span-5">
+              <div className="section-head">
+                <h2 id="build-h">
+                  Build a bzzy from the files. <span className="muted">Pre-built lights come later.</span>
+                </h2>
+              </div>
+              <ul className="rows build__steps">
+                <li>
+                  <span className="rows__name">1. Download the files</span>
+                  <p>
+                    The ring board in KiCad with its Gerbers and parts list, and the printable case.{" "}
+                    <a className="link" href={HARDWARE}>
+                      Open the hardware folder
+                    </a>
+                  </p>
+                </li>
+                <li>
+                  <span className="rows__name">2. Order the board</span>
+                  <p>
+                    JLCPCB builds and assembles it from the files; you solder four wires.{" "}
+                    <a className="link" href={ORDERING}>
+                      Read how to order
+                    </a>
+                  </p>
+                </li>
+                <li>
+                  <span className="rows__name">3. Print the case and flash it</span>
+                  <p>
+                    Print the case in black and the border in white, then flash the firmware over USB.{" "}
+                    <a className="link" href={FIRMWARE}>
+                      See the firmware
+                    </a>
+                  </p>
+                </li>
+              </ul>
+              <p className="build__note">Rev C of the board has passed KiCad&apos;s design checks. The first one is being built now.</p>
+            </div>
+            <div className="frame frame--photo build__frame span-6 start-7">
+              <Image
+                className="frame__img"
+                src={caseExploded}
+                sizes="(min-width: 1024px) 628px, 100vw"
+                alt="The case taken apart: back plate and clip, the Waveshare board, the LED ring board, the black frame and the white light border"
+              />
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <footer className="footer closing footer--dark ground-inverse" id="contact" aria-labelledby="close-h">
+        <div className="wrap">
+          <div className="closing__cta close--word">
+            <div className="section-head--split">
+              <div>
+                <h2 id="close-h">Build your own desk light</h2>
+                <p className="t-lead">The files, the parts list and the firmware are on GitHub.</p>
+              </div>
+              <a className="btn btn--primary" href="#build">
+                {MAIN_ACTION}
+                {ARROW}
+              </a>
+            </div>
+            <p className="close__word" aria-hidden="true">
+              bzzy
+            </p>
+          </div>
+          <div className="closing__links">
+            <div className="grid">
+              <div className="span-4 stack-4">
+                <a className="nav__logo" href="#top">
+                  <BzzyMark />
+                  bzzy
+                </a>
+                <p className="footer__lede">A desk status light you build yourself.</p>
+              </div>
+              <div className="span-2 footer__col">
+                <h3>Light</h3>
+                <ul>
+                  <li><a href="#light">Statuses</a></li>
+                  <li><a href="#gifs">GIFs</a></li>
+                </ul>
+              </div>
+              <div className="span-2 footer__col">
+                <h3>Setup</h3>
+                <ul>
+                  <li><a href="#ways">Three ways</a></li>
+                  <li><a href="#network">Office Wi-Fi</a></li>
+                </ul>
+              </div>
+              <div className="span-2 footer__col">
+                <h3>Build</h3>
+                <ul>
+                  <li><a href="#build">Design files</a></li>
+                  <li><a href="#open">Specs</a></li>
+                </ul>
+              </div>
+              <div className="span-2 footer__col">
+                <h3>App</h3>
+                <ul>
+                  <li><a href="/sign-in">Sign in</a></li>
+                  <li><a href={REPO}>GitHub</a></li>
+                </ul>
+              </div>
+            </div>
+            <div className="footer__legal">
+              <span>&copy; 2026 Adam Glover</span>
+              <div className="socials" />
+              <a className="credits" href="https://giphy.com">
+                GIFs via GIPHY. Product names and logos are trademarks of their owners
+              </a>
+            </div>
+          </div>
+        </div>
+      </footer>
+
+      <LandingKit />
+    </>
   );
 }

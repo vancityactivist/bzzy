@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 
+import { AppShell } from "@/components/app-shell";
 import { Landing } from "@/components/landing";
 import { STATUS_META } from "@/components/status-meta";
 import { Button, Card, CardHeader, Container, StatusDot } from "@/components/ui";
@@ -160,28 +161,30 @@ async function HomeContent() {
   );
 
   return (
-    <Container className="max-lg:pt-0">
-      <StudioProvider library={library} live={liveShow}>
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:items-start lg:gap-8">
-          <StudioPreview devices={previews} example={mine.length === 0} summary={summary} />
-          <div className="space-y-6">
-            <Card>
-              <CardHeader
-                title="Set your status"
-                description="Tap one to set it. It overrides your calendar until it runs out or you go back to automatic."
-              />
-              <StatusControls active={active} className="mt-5" />
-            </Card>
-            <Card>
-              <CardHeader
-                title="Show something"
-                description="Put a GIF or a message on your screen right now. The light keeps your status colour, and a press of its button takes it down."
-              />
-              <ShowNowControls className="mt-5" />
-            </Card>
+    <AppShell>
+      <Container className="max-lg:pt-0">
+        <StudioProvider library={library} live={liveShow}>
+          <div className="grid gap-6 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:items-start lg:gap-8">
+            <StudioPreview devices={previews} example={mine.length === 0} summary={summary} />
+            <div className="space-y-6">
+              <Card>
+                <CardHeader
+                  title="Set your status"
+                  description="Tap one to set it. It overrides your calendar until it runs out or you go back to automatic."
+                />
+                <StatusControls active={active} className="mt-5" />
+              </Card>
+              <Card>
+                <CardHeader
+                  title="Show something"
+                  description="Put a GIF or a message on your screen right now. The light keeps your status colour, and a press of its button takes it down."
+                />
+                <ShowNowControls className="mt-5" />
+              </Card>
+            </div>
           </div>
-        </div>
-      </StudioProvider>
-    </Container>
+        </StudioProvider>
+      </Container>
+    </AppShell>
   );
 }

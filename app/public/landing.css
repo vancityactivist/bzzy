@@ -1,0 +1,98 @@
+/* Page CSS for the signed-out landing page (src/components/landing.tsx): only what sits
+   inside a visual and the kit (public/assets) lacks. */
+
+/* Hero on a phone: the photograph square (the kit's 4:5 leaves the words no room on one
+   screen) and only the main button. */
+@media (max-width: 639px) {
+  .hero--product .hero__stage { aspect-ratio: 1 / 1; }
+  .hero--product .btn-row > .btn--secondary { display: none; }
+}
+
+/* Two screens where the stacked content needs them: #ways and #light on a tablet, #light
+   on a phone (#ways sets --hm inline). */
+@media (min-width: 640px) and (max-width: 1023px) { #ways, #light { --h: 2; } }
+@media (min-width: 1024px) and (max-width: 1279px) { #ways { --h: 2; } }
+@media (max-width: 639px) { #light { --hm: 2; } }
+
+/* The app's own pieces (the sketches, the live device and its chips) are drawn with the
+   app's Tailwind tokens, which globals.css keeps off this page: give them back here. */
+.bzzy-ui {
+  --background: #0a0a0a; --foreground: #ededed; --card: #141414; --subtle: #1d1d1d;
+  --muted: #a3a3a3; --line: #262626; --line-strong: #383838;
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.5);
+  --shadow-pop: 0 16px 40px -8px rgb(0 0 0 / 0.7), 0 0 0 1px rgb(255 255 255 / 0.03);
+  color: var(--foreground);
+  font-family: var(--font-text);
+  /* the app's font utilities (font-sans, font-mono) point at Geist: use this page's faces */
+  --font-geist-sans: var(--font-text);
+  --font-geist-mono: var(--font-mono);
+}
+.bzzy-ui--light {
+  --background: #f8f8f7; --foreground: #171717; --card: #ffffff; --subtle: #f0f0ee;
+  --muted: #62625f; --line: #e6e6e3; --line-strong: #d3d3cf;
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.04), 0 1px 1px rgb(0 0 0 / 0.02);
+  --shadow-pop: 0 12px 32px -8px rgb(0 0 0 / 0.14), 0 2px 6px rgb(0 0 0 / 0.05);
+}
+
+/* The kit's .grid (12 columns) would take over the app's own grid-cols-2 inside these pieces. */
+.bzzy-ui .grid.grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+.bzzy-ui .grid.grid-cols-2 > * { grid-column: auto; }
+
+/* Set your status 3 ways: each sketch centred on its panel. */
+#ways .panel { --p-h: 300px; }
+.ways__art { position: absolute; inset: 0; display: grid; place-items: center; padding: var(--s-5); }
+.ways__art > * { width: 100%; max-width: 256px; }
+/* The tap sketch has no card of its own: give it the app's card so its labels read. */
+.ways__art--tap > * { width: auto; max-width: none; padding: var(--s-5); border-radius: var(--r-md); background: var(--card); box-shadow: var(--shadow-pop); }
+@media (max-width: 639px) { #ways .panel { --p-h: 220px; } }
+
+/* The light: the status rows' dots, and the live device on the frame. */
+.status-dot { display: inline-block; width: 10px; height: 10px; border-radius: 999px; margin-right: var(--s-3); vertical-align: 1px; }
+.status-dot--free { background: #16a34a; }
+.status-dot--busy { background: #dc2626; }
+.status-dot--dnd { background: #7c3aed; }
+.status-dot--away { background: #ea580c; }
+.light__note { margin-top: var(--s-5); max-width: 44ch; }
+.light__frame { display: grid; place-items: center; align-self: start; padding: var(--s-6) var(--s-5); border-radius: var(--r-lg); background: var(--surface); }
+.light__device { padding-block: var(--s-4); max-width: 100%; }
+/* the status wash behind the device covers the whole piece (it ran past the chips) */
+.light__device > div > div[aria-hidden]:first-child { inset: 0; }
+@media (max-width: 639px) {
+  .light__device [role="group"] { flex-wrap: wrap; justify-content: center; border-radius: var(--r-lg); }
+}
+
+/* GIFs: three screens side by side on the effect's ground. */
+.gifs__frame { margin-top: var(--s-7); display: grid; place-items: center; aspect-ratio: auto; height: 540px; }
+.gifs__row { position: relative; z-index: 1; display: flex; justify-content: center; align-items: center; gap: clamp(16px, 4vw, 64px); margin: 0; padding: 0; list-style: none; }
+@media (max-width: 767px) {
+  .gifs__frame { height: 520px; }
+  .gifs__row { zoom: 0.56; }
+}
+
+/* Networks: the two facts as plain lines. */
+.network__facts { margin-bottom: 0; padding: 0; list-style: none; display: grid; gap: var(--s-3); }
+#network .frame--split { min-height: 420px; }
+@media (max-width: 639px) { #network .frame--split { min-height: 300px; } }
+
+/* The statement and its specs. */
+.open__grid { margin-top: var(--s-8); }
+@media (max-width: 639px) { .open__grid { margin-top: var(--s-6); } }
+@media (min-width: 640px) and (max-width: 1023px) { #open .mo-lt__type { font-size: 104px; } }
+
+/* Build: the three steps and the exploded case. */
+.build__note { margin-top: var(--s-5); max-width: 44ch; }
+.build__frame { background: #f8f8f8; }
+.build__frame > .frame__img { object-fit: contain; }
+@media (min-width: 640px) and (max-width: 1023px) { .build__frame { min-height: 480px; } }
+
+/* The close's name: set by hand so its ascenders are never clipped (close-word). */
+.close__word { line-height: 1; padding-top: 0.06em; }
+
+/* Build sits on the band ground, whose own minimum height (88svh) would make it shorter than
+   its one screen on a tablet and a phone: hold it to the screen (--g-screen is the band's knob). */
+#build { --g-screen: 100lvh; }
+
+/* bzzy's mark in the nav and the footer: the four status dots on a tile (sign-in.tsx). */
+.bzzy-mark { display: inline-grid; flex: none; grid-template-columns: repeat(2, 7px); gap: 4px; place-content: center;
+  width: 28px; height: 28px; border: 1px solid var(--line-strong, rgb(255 255 255 / 0.2)); border-radius: 8px; background: var(--surface); }
+.bzzy-mark > i { width: 7px; height: 7px; border-radius: 999px; }

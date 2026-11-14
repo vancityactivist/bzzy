@@ -137,7 +137,7 @@ export function TapSketch({ gifSrc }: { gifSrc: string | null }) {
   return (
     <div aria-hidden className="flex items-center gap-4">
       <div className="relative">
-        <DevicePreview view={viewFor({ status: "free", text: "", until: 0 })} gifSrc={gifSrc} scale={0.38} className="m-3" />
+        <DevicePreview view={viewFor({ status: "free", text: "", until: 0 })} gifSrc={gifSrc} scale={0.38} className="m-3" lazy />
         <span className="absolute top-[44%] left-1/2 flex size-8 -translate-x-1/2 -translate-y-1/2 items-center justify-center">
           <span className="absolute inset-0 rounded-full bg-white/60 motion-safe:animate-ping" />
           <span className="relative size-5 rounded-full border-2 border-white bg-white/40 shadow-pop" />
