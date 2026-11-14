@@ -2,17 +2,15 @@ import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import Link from "next/link";
-import { Suspense } from "react";
-
-import { HeaderNav, MobileNav } from "@/components/user-menu";
 
 import "./globals.css";
 
-const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
-const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
+// Not preloaded: the signed-out landing page uses its own fonts (SUSE, JetBrains Mono), and a
+// preload would fetch Geist there too. The app's pages fetch it as soon as text uses it.
+const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"], preload: false });
+const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"], preload: false });
 
-const TITLE = "bzzy — a desk light that says when you're heads down";
+const TITLE = "bzzy: a desk status light for heads-down work";
 const DESCRIPTION =
   "bzzy is a small status light for your monitor. Set Free, Busy, Do not disturb or Away from your phone, your calendar or the light itself.";
 
@@ -37,30 +35,13 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
+    <html
+      lang="en"
+      // The landing page sets data-* and classes on <html> before hydration (components/landing.tsx).
+      suppressHydrationWarning
+      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
       <body className="flex min-h-full flex-col">
-        <a
-          href="#main"
-          className="sr-only rounded-lg bg-foreground px-3 py-2 text-sm font-medium text-background focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50"
-        >
-          Skip to content
-        </a>
-        <header className="sticky top-0 z-40 border-b border-line bg-background/75 backdrop-blur-lg backdrop-saturate-150">
-          <div className="mx-auto flex h-14 max-w-5xl items-center gap-4 px-4 sm:gap-6 sm:px-6">
-            <Link href="/" className="text-lg font-semibold tracking-tight">
-              bzzy
-            </Link>
-            <Suspense fallback={null}>
-              <HeaderNav />
-            </Suspense>
-          </div>
-        </header>
-        <main id="main" className="flex min-w-0 flex-1 flex-col">
-          {children}
-        </main>
-        <Suspense fallback={null}>
-          <MobileNav />
-        </Suspense>
+        {children}
         <Analytics />
         <SpeedInsights />
       </body>

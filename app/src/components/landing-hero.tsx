@@ -32,7 +32,15 @@ const tint = (s: Status, a: number) => {
   return `rgb(${r} ${g} ${b} / ${a})`;
 };
 
-export function LandingHeroDevice({ gifs }: { gifs: Record<Status, string | null> }) {
+export function LandingHeroDevice({
+  gifs,
+  scale = 1.1,
+  hint = true,
+}: {
+  gifs: Record<Status, string | null>;
+  scale?: number;
+  hint?: boolean; // the "Try it" line under the chips
+}) {
   const [status, setStatus] = useState<Status>("busy");
   const [auto, setAuto] = useState(true);
 
@@ -83,7 +91,8 @@ export function LandingHeroDevice({ gifs }: { gifs: Record<Status, string | null
         <DevicePreview
           view={view}
           gifSrc={gifs[status]}
-          scale={1.1}
+          scale={scale}
+          lazy
           className="m-10 [&>div:first-child]:transition-[background-color,box-shadow] [&>div:first-child]:duration-500"
         />
       </div>
@@ -115,10 +124,12 @@ export function LandingHeroDevice({ gifs }: { gifs: Record<Status, string | null
           );
         })}
       </div>
-      <p className="mt-3 flex items-center gap-1.5 text-xs text-muted">
-        <span aria-hidden className="font-mono">↑</span>
-        Try it: pick a status and watch the light change.
-      </p>
+      {hint && (
+        <p className="mt-3 flex items-center gap-1.5 text-xs text-muted">
+          <span aria-hidden className="font-mono">↑</span>
+          Try it: pick a status and watch the light change.
+        </p>
+      )}
     </div>
   );
 }

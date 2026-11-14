@@ -1,5 +1,11 @@
 @import "tailwindcss";
 
+/* The landing page uses the taste kit's own class names, and some of them are also Tailwind
+   utilities (its column-start classes would become inset offsets): keep Tailwind off it. */
+@source not "../components/landing.tsx";
+@source not "../../public/assets";
+@source not "../../public/landing.css";
+
 /*
  * Design tokens. Calm neutrals everywhere; the four status colours are the only colour.
  * Every token has a light and a dark value; the dark ones follow prefers-color-scheme.
@@ -10,8 +16,11 @@
  *   line         hairline borders              line-strong   hovered / emphasised borders
  *   ring         focus ring                    danger        destructive text (busy red, AA-tuned)
  *   shadow-card  resting cards and controls    shadow-pop    menus and popovers
+ *
+ * Not on the signed-out landing page (html[data-type]): it loads its own design system
+ * (public/assets, from the taste skill), which uses some of the same token names.
  */
-:root {
+:root:not([data-type]) {
   color-scheme: light;
   --background: #f8f8f7;
   --foreground: #171717;
@@ -27,7 +36,7 @@
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-type]) {
     color-scheme: dark;
     --background: #0a0a0a;
     --foreground: #ededed;
