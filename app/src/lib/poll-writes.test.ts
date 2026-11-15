@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { CachedEvent } from "./ics";
-import { SEEN_DB_EVERY_MS, SEEN_WRITE_EVERY_MS, sameEvents, sameJson, shouldMarkSeen } from "./poll-writes";
+import { isOnline, SEEN_DB_EVERY_MS, SEEN_WRITE_EVERY_MS, sameEvents, sameJson, shouldMarkSeen } from "./poll-writes";
 
 const NOW = 1_762_891_200_000;
 
@@ -72,5 +72,20 @@ describe("sameJson", () => {
     expect(sameJson([1, 2], [2, 1])).toBe(false);
     expect(sameJson({ a: [1] }, { a: { 0: 1 } })).toBe(false);
     expect(sameJson(null, {})).toBe(false);
+  });
+});
+
+describe("isOnline", () => {
+  const seen = new Date(1_800_000_000_000);
+  it("allows 2 minutes at the normal 20 s poll", () => {
+    expect(isOnline(seen, seen.getTime() + 110_000)).toBe(true);
+    expect(isOnline(seen, seen.getTime() + 130_000)).toBe(false);
+  });
+  it("waits for a slower poll outside working hours", () => {
+    expect(isOnline(seen, seen.getTime() + 330_000, 300)).toBe(true);
+    expect(isOnline(seen, seen.getTime() + 370_000, 300)).toBe(false);
+  });
+  it("is never online without a sighting", () => {
+    expect(isOnline(null, 0)).toBe(false);
   });
 });

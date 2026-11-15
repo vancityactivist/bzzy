@@ -4,7 +4,7 @@ The device only ever makes **outbound** HTTPS requests, so it works on guest Wi-
 
 ## `GET {api}/api/device/{deviceId}/state`
 
-Polled every 20 seconds, backing off to 5 minutes while requests keep failing.
+Polled every 20 seconds, or as often as the last answer's `poll` says (outside working hours, every 5 minutes), backing off to 5 minutes while requests keep failing.
 
 Every request also says which firmware the device runs, so the app can offer updates ([ota.md](ota.md)):
 
@@ -14,7 +14,7 @@ Every request also says which firmware the device runs, so the app can offer upd
 | `X-Bzzy-Board` | `waveshare_s3_touch_lcd169` | the PlatformIO env |
 | `X-Bzzy-Update-Failed` | `0.3.0` | only after an update rolled back |
 | `X-Bzzy-Update-Now` | `1762891100` | the last "Update now" press it acted on |
-| `X-Bzzy-Features` | `leds,push` | comma-separated extras this firmware understands: `leds` (LED styles), `push` (team pushes) |
+| `X-Bzzy-Features` | `hours,leds,push` | comma-separated extras this firmware understands: `hours` (working hours and `poll`), `leds` (LED styles), `push` (team pushes) |
 
 ```json
 {
@@ -43,7 +43,12 @@ Every request also says which firmware the device runs, so the app can offer upd
     "busy": { "url": "https://bzzy.ca/api/device/bz-ab12cd/gif/6f1c…", "sha": "0c4e9a7b1f2d3e4a" },
     "dnd": null,
     "away": { "url": "https://bzzy.ca/gifs/away-orbit.gif", "sha": "5b8e…" }
-  }
+  },
+  "poll": 20,
+  "workHours": [
+    { "start": 1762876800, "end": 1762905600 },
+    { "start": 1762963200, "end": 1762992000 }
+  ]
 }
 ```
 
@@ -58,6 +63,8 @@ Every request also says which firmware the device runs, so the app can offer upd
 - `meetingWarn` (optional, `leds` feature): `{ "minutes": 5, "leds": { "pattern": "pulse", "color": "#ff2000", "speed": 2 } }` flashes the ring from `minutes` before any `schedule` block starts until it starts. The device times it from the schedule it already has, so it still fires if Wi-Fi drops. `minutes: 0` or no `meetingWarn` turns it off.
 - The app sends `ledStyles`, `meetingWarn` and `push.leds` from the light's ring settings on the Devices page. With **Let this light flash** off it sends none of them, so the ring stays steady.
 - `push` (optional, `push` feature) says that `show` is a **team push**: `{ "id": "…", "updatedAt": 1762891150, "leds": { "pattern": "strobe", "color": "#ff2000", "speed": 2, "for": 30 } }`. See **Team pushes** below. `leds` is missing when the push doesn't flash.
+- `poll` is how many seconds to wait before the next poll: 20, or, outside working hours, up to 300 (never past the start of the next working window, so the light is quick again as the day begins). Firmware with the `hours` feature waits that long, kept between 20 s and 10 minutes; while someone has woken it, it polls every 20 s anyway.
+- `workHours` (optional, `hours` feature) lists the owner's coming working windows, oldest first: today's (if it hasn't ended) and the next week's, at most 14. It's missing when they haven't set working hours, and then the light is always on. They're set on the Settings page (days, start and end time, time zone) and worked out in the owner's time zone, daylight saving included. Outside every window the light goes dark (screen and ring off); see **Working hours** below.
 - `serverTime` is when the response was built. The device treats the schedule as stale after 24 hours without a successful sync.
 
 ## LED styles
@@ -126,5 +133,13 @@ It takes over the whole screen, on black, with no status label or time (the LEDs
 - With a GIF that has finished downloading: the GIF centred on the screen, or, with a message, centred in the top 200 rows with the message (wrapped to 2 lines) in the bar under it.
 - Otherwise, with a message: the message big and word-wrapped in the middle of the screen (18 pt up to 4 lines, else 12 pt up to 6).
 - With neither yet (a GIF still downloading and no message): the normal status screen.
+
+## Working hours
+
+When `workHours` is set and the clock is known, the light is dark whenever no window covers now: backlight off, ring faded out. It keeps polling (every `poll` seconds) and following everything as usual, so it's right the moment it turns back on. It stays on, rather than guess, if every window it has has already passed (offline for over a week), and while the Wi-Fi setup page is open or an update is installing.
+
+Any press (the button, the top button or a tap) while it's dark only wakes it, for 5 minutes. Presses while it's awake work as usual and keep it awake for another 5 minutes. While awake it polls every 20 s, so changes in the app show up quickly.
+
+The app counts a light as online for a minute past the poll it was told to make, so a dark light polling every 5 minutes doesn't show as offline.
 
 The logic is in `firmware/lib/core/src/status_engine.cpp` and `text_wrap.cpp`, covered by `firmware/test/`. The app's preview (`app/src/lib/screen.ts`) mirrors both.

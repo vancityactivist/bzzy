@@ -22,6 +22,8 @@ export type DeviceSummary = {
   defaultStatus: Status;
   pushTeamId: string | null;
   lastSeenAt: Date | null;
+  // Seconds until its next poll, as last told (see isOnline).
+  pollSec: number;
   canManage: boolean;
   firmware: DeviceFirmware;
   ring: DeviceRing;
@@ -51,6 +53,7 @@ export async function devicesForUser(userId: string): Promise<DeviceSummary[]> {
       defaultStatus: d.defaultStatus,
       pushTeamId: d.pushTeamId,
       lastSeenAt: d.lastSeenAt,
+      pollSec: d.pollSec,
       canManage: d.ownerUserId === userId || team.role === "owner" || team.role === "admin",
       firmware: {
         autoUpdate: d.autoUpdate,

@@ -32,6 +32,8 @@ static volatile bool g_lastSyncOk = false;
 static bool g_portalOpen = false;
 static bool g_clockFromNtp = false;
 static volatile bool g_quiet = false;     // set by the main loop: a good moment for an automatic update
+static volatile bool g_fastPoll = false;  // set by the main loop: awake outside working hours
+static volatile uint32_t g_pollMs = cfg::kPollIntervalMs;  // what the app asked for last
 static uint32_t g_nextUpdateTryMs = 0;    // after a failed update, wait before trying again
 
 // GIFs. g_wanted is only touched by the network task. g_installed (the hash of the
@@ -113,7 +115,7 @@ static bool httpRequest(const char* method, const String& u, const String& body,
   http.addHeader("X-Bzzy-Board", ota::board());
   // What this firmware understands beyond protocol v1, so the app only offers it where
   // it works: "leds" = ledStyles and meetingWarn; "push" = team pushes and push-ack.
-  http.addHeader("X-Bzzy-Features", "leds,push");
+  http.addHeader("X-Bzzy-Features", "hours,leds,push");
   if (ota::failedVersion()[0]) http.addHeader("X-Bzzy-Update-Failed", ota::failedVersion());
   if (ota::lastNowId()) http.addHeader("X-Bzzy-Update-Now", String(ota::lastNowId()));
   int code;
@@ -267,6 +269,7 @@ static bool syncOnce() {
     Serial.println("[net] couldn't parse state response");
     return false;
   }
+  g_pollMs = bzzy::pollIntervalSec(parsed, cfg::kPollIntervalMs / 1000, cfg::kMaxPollMs / 1000) * 1000;
   xSemaphoreTake(g_mx, portMAX_DELAY);
   g_incoming = parsed;
   g_hasIncoming = true;
@@ -299,15 +302,18 @@ static void networkTask(void*) {
       bool ok = syncOnce();
       g_lastSyncOk = ok;
       if (ok) ota::markHealthy();  // the first good sync after an update keeps it
-      backoff = ok ? cfg::kPollIntervalMs : min<uint32_t>(backoff * 2, cfg::kMaxBackoffMs);
+      // On success, wait as long as the app asked (longer outside working hours).
+      backoff = ok ? (g_fastPoll ? cfg::kPollIntervalMs : g_pollMs) : min<uint32_t>(backoff * 2, cfg::kMaxBackoffMs);
     } else {
       g_lastSyncOk = false;
       backoff = cfg::kPollIntervalMs;
     }
-    // Wake early if there's a button press to report.
+    // Wake early if there's a button press to report, or the light was just woken
+    // during a long off-hours wait.
     for (uint32_t waited = 0; waited < backoff; waited += 250) {
       vTaskDelay(pdMS_TO_TICKS(250));
       if (g_hasPendingReport && WiFi.status() == WL_CONNECTED && waited >= 1000) break;
+      if (g_fastPoll && g_lastSyncOk && waited >= cfg::kPollIntervalMs) break;
     }
   }
 }
@@ -377,6 +383,7 @@ void loop() {
 bool online() { return WiFi.status() == WL_CONNECTED && g_lastSyncOk; }
 bool setupPortalOpen() { return g_portalOpen; }
 void setQuiet(bool quiet) { g_quiet = quiet; }
+void setFastPoll(bool fast) { g_fastPoll = fast; }
 
 bool takeIncoming(bzzy::State& out) {
   bool got = false;

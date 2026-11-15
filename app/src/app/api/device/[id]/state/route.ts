@@ -10,6 +10,7 @@ import { buildState, type GifMap, type GifRef, hasFeature, nowSeconds, readFeatu
 import { pushAsShow, pushFor } from "@/lib/push-rules";
 import { sentLeds } from "@/lib/ring";
 import { noteSeen } from "@/lib/seen";
+import { pollSeconds, workWindows } from "@/lib/work-hours";
 
 // Polled by the device every ~20 s. See docs/protocol.md.
 //
@@ -25,6 +26,9 @@ export async function GET(req: NextRequest, ctx: RouteContext<"/api/device/[id]/
   const nowMs = Date.now();
   const schedule = scheduleFromCalendars(bundle.calendars, now);
   const push = pushFor(bundle.pushes, device.ownerUserId, now);
+  // Outside working hours the light goes dark and polls every 5 minutes instead of 20 s.
+  const windows = workWindows(bundle.workHours, bundle.timeZone, now);
+  const hours = { set: !!bundle.workHours, windows, poll: pollSeconds(bundle.workHours, windows, now) };
   const [stale, releaseStale] = await Promise.all([staleCalendars(bundle.calendars, nowMs), releaseDue(release, nowMs)]);
   const origin = req.nextUrl.origin;
   const ref = (g: ResolvedGif): GifRef | null => {
@@ -64,6 +68,7 @@ export async function GET(req: NextRequest, ctx: RouteContext<"/api/device/[id]/
     // How the ring moves. Firmware without the "leds" feature ignores these.
     leds: sentLeds(device),
     firmware,
+    hours,
   });
 
   // Answer from the saved copies right away, then re-read any calendar (or the
@@ -73,7 +78,8 @@ export async function GET(req: NextRequest, ctx: RouteContext<"/api/device/[id]/
   // back if they changed.
   after(async () => {
     await Promise.all([
-      noteSeen(device, nowMs, fwPatch),
+      // Only firmware that knows about working hours actually waits longer.
+      noteSeen(device, nowMs, fwPatch, hasFeature(features, "hours") ? hours.poll : 20),
       ...stale.map((c) => refreshCalendar(c, bundle.timeZone)),
       releaseStale ? refreshRelease(release) : null,
     ]);

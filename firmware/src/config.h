@@ -58,6 +58,10 @@ constexpr uint8_t kLedBrightness = 96;
 
 constexpr uint32_t kPollIntervalMs = 20 * 1000;
 constexpr uint32_t kMaxBackoffMs = 5 * 60 * 1000;
+// Outside working hours the app asks for slower polls (5 min); never wait longer than this.
+constexpr uint32_t kMaxPollMs = 10 * 60 * 1000;
+// Outside working hours the light is dark; a press wakes it for this long.
+constexpr uint32_t kWakeMs = 5 * 60 * 1000;
 constexpr uint32_t kHttpTimeoutMs = 6000;
 
 constexpr uint32_t kMaxGifBytes = 700 * 1024;  // the app sends at most 600 KB

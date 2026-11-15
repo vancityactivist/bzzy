@@ -336,6 +336,62 @@ void test_update_now_ignores_quiet_time() {
   TEST_ASSERT_TRUE(shouldInstall({"0.3.0", 5}, ctx));
 }
 
+// ---- working hours ----
+
+static State withHours() {
+  State st = freshState();
+  st.hoursSet = true;
+  st.hours[0] = WorkWindow{T0, T0 + 8 * 3600};                 // today 9-5
+  st.hours[1] = WorkWindow{T0 + 24 * 3600, T0 + 32 * 3600};    // tomorrow 9-5
+  st.hoursCount = 2;
+  return st;
+}
+
+void test_always_on_without_hours() {
+  State st = freshState();
+  TEST_ASSERT_FALSE(offHours(st, T0 + 20 * 3600));
+}
+
+void test_dark_outside_hours_only() {
+  State st = withHours();
+  TEST_ASSERT_FALSE(offHours(st, T0));                   // start is inside
+  TEST_ASSERT_FALSE(offHours(st, T0 + 4 * 3600));
+  TEST_ASSERT_TRUE(offHours(st, T0 + 8 * 3600));         // end is outside
+  TEST_ASSERT_TRUE(offHours(st, T0 + 20 * 3600));        // overnight
+  TEST_ASSERT_TRUE(offHours(st, T0 - 60));               // before the day starts
+}
+
+void test_stays_on_without_a_clock_or_once_hours_run_out() {
+  State st = withHours();
+  TEST_ASSERT_FALSE(offHours(st, 0));
+  TEST_ASSERT_FALSE(offHours(st, T0 + 40 * 3600));       // every window has passed
+}
+
+void test_hours_set_but_empty_stays_on() {
+  State st = freshState();
+  st.hoursSet = true;
+  TEST_ASSERT_FALSE(offHours(st, T0));
+}
+
+void test_poll_interval_is_clamped() {
+  State st = freshState();
+  TEST_ASSERT_EQUAL_UINT(20, pollIntervalSec(st, 20, 600));
+  st.pollSec = 300;
+  TEST_ASSERT_EQUAL_UINT(300, pollIntervalSec(st, 20, 600));
+  st.pollSec = 5;
+  TEST_ASSERT_EQUAL_UINT(20, pollIntervalSec(st, 20, 600));
+  st.pollSec = 86400;
+  TEST_ASSERT_EQUAL_UINT(600, pollIntervalSec(st, 20, 600));
+}
+
+void test_merge_takes_the_apps_hours() {
+  State cached = withHours();
+  State fresh = freshState();
+  mergeFromServer(cached, fresh, T0);
+  TEST_ASSERT_FALSE(cached.hoursSet);
+  TEST_ASSERT_FALSE(offHours(cached, T0 + 20 * 3600));
+}
+
 void run_led_pattern_tests();  // test_led_pattern.cpp
 void run_push_tests();         // test_push.cpp
 
@@ -371,6 +427,12 @@ int main(int, char**) {
   RUN_TEST(test_test_builds_only_update_when_asked);
   RUN_TEST(test_rolled_back_version_needs_a_new_press);
   RUN_TEST(test_update_now_ignores_quiet_time);
+  RUN_TEST(test_always_on_without_hours);
+  RUN_TEST(test_dark_outside_hours_only);
+  RUN_TEST(test_stays_on_without_a_clock_or_once_hours_run_out);
+  RUN_TEST(test_hours_set_but_empty_stays_on);
+  RUN_TEST(test_poll_interval_is_clamped);
+  RUN_TEST(test_merge_takes_the_apps_hours);
   run_led_pattern_tests();
   run_push_tests();
   return UNITY_END();

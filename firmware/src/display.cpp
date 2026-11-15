@@ -66,6 +66,7 @@ static Panel g_lcd;
 static AnimatedGIF g_gif;
 static bool g_gifOpen = false;
 static uint32_t g_nextFrameMs = 0;
+static constexpr uint8_t kBrightness = 180;
 static View g_last = {Layout::Status, bzzy::Status::Unknown, nullptr, 0, false, nullptr};
 static char g_lastText[bzzy::kTextMax] = "";
 static char g_lastNotice[64] = "";
@@ -217,7 +218,20 @@ static void drawShowText(const View& v) {
   drawLines(v.text, w, (kH - block) / 2, TFT_BLACK);
 }
 
+static bool g_dark = false;
+
 static void redraw(const View& v) {
+  if (v.layout == Layout::Off) {
+    closeGif();
+    g_lcd.fillScreen(TFT_BLACK);
+    g_lcd.setBrightness(0);
+    g_dark = true;
+    return;
+  }
+  if (g_dark) {
+    g_lcd.setBrightness(kBrightness);
+    g_dark = false;
+  }
   const uint16_t bg = bgFor(v.status);
   const bool showMessage = v.text && *v.text;
   if (v.layout == Layout::ShowText) {
@@ -276,7 +290,7 @@ static void redraw(const View& v) {
 void begin() {
   g_lcd.init();
   g_lcd.setRotation(0);
-  g_lcd.setBrightness(180);
+  g_lcd.setBrightness(kBrightness);
   g_lcd.fillScreen(TFT_BLACK);
   g_gif.begin(LITTLE_ENDIAN_PIXELS);
 }

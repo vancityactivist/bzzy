@@ -60,6 +60,13 @@ struct Push {
   LedStyle leds;           // unset: the ring stays on the status
 };
 
+// A stretch of working hours (unix seconds, end exclusive). See offHours.
+constexpr size_t kMaxWorkWindows = 14;
+struct WorkWindow {
+  uint32_t start = 0;
+  uint32_t end = 0;
+};
+
 struct Block {
   uint32_t start = 0;
   uint32_t end = 0;
@@ -81,6 +88,12 @@ struct State {
   // The push the person dismissed on this light. Kept across syncs (the app keeps
   // sending it until it hears about the dismissal) and in the cache.
   char dismissedPush[kPushIdMax] = {0};
+  // Working hours: when set, the light goes dark outside these windows.
+  bool hoursSet = false;
+  WorkWindow hours[kMaxWorkWindows];
+  size_t hoursCount = 0;
+  // Seconds the app asked us to wait before the next poll; 0 = the default.
+  uint32_t pollSec = 0;
 };
 
 struct Settings {
@@ -124,6 +137,15 @@ struct LedChoice {
   uint32_t startedAt = 0;
 };
 LedChoice chooseLeds(const State& st, Status shown, uint32_t now);
+
+// Whether the light should be dark now: working hours are set, the clock is known, and
+// no window covers `now`. Once every window has passed (a long time offline) it stays
+// on rather than guess.
+bool offHours(const State& st, uint32_t now);
+
+// How long to wait before the next poll, in seconds: what the app asked for, kept
+// between `minSec` and `maxSec`, or `minSec` when it asked for nothing.
+uint32_t pollIntervalSec(const State& st, uint32_t minSec, uint32_t maxSec);
 
 // Replace the cached server data with a fresh copy, keeping a local button
 // override if it is newer than the server's manual override, and a dismissed push

@@ -42,6 +42,7 @@ describe("buildState", () => {
       },
       show: null,
       schedule: [],
+      poll: 20,
     });
   });
 

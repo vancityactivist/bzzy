@@ -9,4 +9,6 @@ void begin();
 void show(bzzy::Status s, const bzzy::LedChoice& choice, uint32_t nowUnix);
 // Call often; animates patterns, the "unknown" breathing and colour changes.
 void tick(uint32_t nowMs);
+// Outside working hours: fade the ring out and keep it dark until set back.
+void setOff(bool off);
 }  // namespace leds

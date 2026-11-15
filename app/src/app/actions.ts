@@ -4,7 +4,15 @@ import { refresh } from "next/cache";
 import { z } from "zod";
 
 import { signIn, signOut } from "@/auth";
-import { addCalendar, deleteCalendar, ownCalendar, refreshCalendar, setShowTitles } from "@/lib/calendar";
+import {
+  addCalendar,
+  deleteCalendar,
+  ownCalendar,
+  refreshCalendar,
+  saveUserClock,
+  setShowTitles,
+  validTimeZone,
+} from "@/lib/calendar";
 import {
   canManageDevice,
   createDevice,
@@ -24,6 +32,7 @@ import { clipText, nowSeconds, STATUSES } from "@/lib/protocol";
 import { ringFromInput, type RingInput, ringInput } from "@/lib/ring";
 import { requireUser } from "@/lib/session";
 import { clearShow, setShow } from "@/lib/show";
+import { parseClock, parseWorkHours } from "@/lib/work-hours";
 
 export async function signInWithGitHub() {
   await signIn("github", { redirectTo: "/" });
@@ -246,6 +255,30 @@ export async function removeCalendarAction(id: string) {
   if (!cal) return;
   await deleteCalendar(cal);
   refresh();
+}
+
+// ---- working hours ----
+
+export type WorkHoursResult = { ok: true } | { ok: false; error: string } | null;
+
+export async function saveWorkHoursAction(_prev: WorkHoursResult, formData: FormData): Promise<WorkHoursResult> {
+  const user = await requireUser();
+  const timeZone = String(formData.get("timeZone") ?? "");
+  if (!validTimeZone(timeZone)) return { ok: false, error: "Pick a time zone." };
+  let hours = null;
+  if (formData.get("enabled") === "on") {
+    const days = formData.getAll("day").map(Number);
+    const start = parseClock(String(formData.get("start") ?? ""));
+    const end = parseClock(String(formData.get("end") ?? ""));
+    if (days.length === 0) return { ok: false, error: "Pick at least one day." };
+    if (start === null || end === null) return { ok: false, error: "Enter a start and end time." };
+    if (start >= end) return { ok: false, error: "The day has to end after it starts (overnight hours aren't supported yet)." };
+    hours = parseWorkHours({ days, start, end });
+    if (!hours) return { ok: false, error: "Those hours don't look right." };
+  }
+  await saveUserClock(user.id, timeZone, hours);
+  refresh();
+  return { ok: true };
 }
 
 // ---- Passkeys ----

@@ -62,10 +62,21 @@ void show(bzzy::Status s, const bzzy::LedChoice& choice, uint32_t nowUnix) {
                  : colorFor(s);
 }
 
+static bool g_off = false;
+void setOff(bool off) { g_off = off; }
+
 void tick(uint32_t nowMs) {
   static uint32_t last = 0;
   if (nowMs - last < 20) return;  // ~50 fps is plenty
   last = nowMs;
+
+  if (g_off) {
+    // Fade out, then keep the ring dark (outside working hours).
+    g_current = blend(g_current, CRGB::Black, 24);
+    fill_solid(g_leds, cfg::kLedCount, g_current);
+    FastLED.show();
+    return;
+  }
 
   // Fade towards the target colour so changes don't look like glitches.
   g_current = blend(g_current, g_target, 24);
