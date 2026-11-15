@@ -36,9 +36,22 @@
 #define PIN_LED_DATA 16  // header pin. Any free GPIO works; update if you wire elsewhere.
 #define BZZY_HAS_RTC 1
 #elif defined(BZZY_BOARD_GENERIC)
-#define PIN_BUTTON 0      // BOOT button on most dev boards
+// Any classic ESP32 dev board (ESP32-WROOM-32D/E). Wiring: docs/esp32-test-build.md.
+// Kept clear of the flash pins (6-11), the strapping pins (0, 2, 5, 12, 15) and the
+// input-only pins (34-39).
+#define PIN_BUTTON 0       // BOOT button on most dev boards
 #define PIN_LED_DATA 13
+#define PIN_TOP_BUTTON 27  // optional push button to GND, internal pull-up
 #define BZZY_HAS_RTC 0
+#if BZZY_HAS_TEXT_LCD
+// 16x2 HD44780 character LCD in 4-bit mode (RW tied to GND, so we only write).
+#define PIN_LCD_RS 19
+#define PIN_LCD_EN 23
+#define PIN_LCD_D4 18
+#define PIN_LCD_D5 17
+#define PIN_LCD_D6 16
+#define PIN_LCD_D7 4
+#endif
 #else
 #error "Pick a board env in platformio.ini"
 #endif
@@ -47,12 +60,27 @@
 #define BZZY_HAS_TOUCH 0
 #endif
 
+// BZZY_HAS_DISPLAY is the full colour screen (GIFs, QR codes). BZZY_HAS_TEXT_LCD is a
+// 16x2 character LCD instead: text only, so the light never downloads GIFs.
 #ifndef BZZY_HAS_DISPLAY
 #define BZZY_HAS_DISPLAY 0
 #endif
 
+#ifndef BZZY_HAS_TEXT_LCD
+#define BZZY_HAS_TEXT_LCD 0
+#endif
+
+#if BZZY_HAS_DISPLAY && BZZY_HAS_TEXT_LCD
+#error "Pick one: BZZY_HAS_DISPLAY or BZZY_HAS_TEXT_LCD"
+#endif
+
+// A test strip can be any length: build with -DBZZY_LED_COUNT=30 (platformio.ini).
+#ifndef BZZY_LED_COUNT
+#define BZZY_LED_COUNT 16
+#endif
+
 namespace cfg {
-constexpr uint16_t kLedCount = 16;         // 16 on the ring board (12 if you use a 12-LED prototype ring)
+constexpr uint16_t kLedCount = BZZY_LED_COUNT;  // 16 on the ring board (12 if you use a 12-LED prototype ring)
 constexpr uint16_t kLedMaxMilliamps = 400;  // keeps total draw comfortable on a laptop USB port
 constexpr uint8_t kLedBrightness = 96;
 

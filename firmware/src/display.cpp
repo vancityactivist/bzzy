@@ -446,7 +446,7 @@ void invalidate() { g_drawn = false; }
 
 }  // namespace display
 
-#else
+#elif !BZZY_HAS_TEXT_LCD  // the 16x2 LCD lives in display_lcd1602.cpp
 
 namespace display {
 void begin() {}
