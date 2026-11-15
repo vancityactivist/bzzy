@@ -94,6 +94,10 @@ One leg to **GPIO27**, the other to GND. No resistor needed (the firmware turns 
 
 These stay clear of the flash pins (6 to 11), the strapping pins (0, 2, 5, 12, 15) and the input-only pins (34 to 39). On an ESP32-WROVER board GPIO16 and 17 are taken by PSRAM, so move D5 and D6 elsewhere in `firmware/src/config.h`.
 
+### Adafruit HUZZAH32 (ESP32 Feather)
+
+Every pin above is on the Feather's headers (16 and 17 are labelled RX and TX, 18 MOSI, 19 MISO, 23 SDA, 4 A5). Use the **USB** pin wherever this guide says 5V. GPIO13 also lights the small red LED on the board, which is harmless. The Feather has no BOOT button, so the button on GPIO27 is the only way to change the status by hand. The orange charge light flickers whenever no battery is plugged in. That's normal.
+
 ## Flashing (Windows, PowerShell)
 
 1. Install Python if you don't have it (`py` not recognised means you don't), then **close and reopen PowerShell**, then install PlatformIO:
@@ -118,7 +122,7 @@ These stay clear of the flash pins (6 to 11), the strapping pins (0, 2, 5, 12, 1
    py -m platformio device monitor
    ```
 
-   If it stops at `Connecting....`, hold BOOT until it starts writing. With more than one COM port, add `--upload-port COM5` (your port).
+   If it stops at `Connecting....`, hold BOOT until it starts writing. With more than one COM port, add `--upload-port COM5` (your port). On `Invalid head of packet`, close anything else using the port (an ESPHome dashboard, a serial monitor), plug in directly rather than through a hub, and try `upload_speed = 115200` under `[env:esp32_lcd1602]`.
 
 4. Turn the contrast pot until you see the text. Blank with the backlight on, or a row of solid blocks, both mean the contrast is off.
 
