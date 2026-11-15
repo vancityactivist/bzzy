@@ -12,6 +12,14 @@ export const SEEN_WRITE_EVERY_MS = 60_000;
 // cache forgets), so it's written every few hours instead of waking Postgres every minute.
 export const SEEN_DB_EVERY_MS = 6 * 3600_000;
 
+// A light counts as online if it was seen within 2 minutes, or within a minute past its
+// next poll when it was told to wait longer (outside working hours, every 5 minutes).
+export const ONLINE_WINDOW_MS = 2 * 60_000;
+export function isOnline(lastSeenAt: Date | null, nowMs: number, pollSec = 20): boolean {
+  if (!lastSeenAt) return false;
+  return nowMs - lastSeenAt.getTime() < Math.max(ONLINE_WINDOW_MS, (pollSec + 60) * 1000);
+}
+
 export function shouldMarkSeen(lastSeenAt: Date | null, nowMs: number, hasOtherChanges: boolean, everyMs = SEEN_WRITE_EVERY_MS): boolean {
   if (hasOtherChanges) return true;
   if (!lastSeenAt) return true;

@@ -26,6 +26,7 @@ import type { ReleaseManifest } from "../lib/firmware";
 import type { LedStyle } from "../lib/push-rules";
 import type { LedStyles, MeetingWarn } from "../lib/ring";
 import type { CachedEvent } from "../lib/ics";
+import type { WorkHours } from "../lib/work-hours";
 
 const id = () =>
   text("id")
@@ -46,6 +47,8 @@ export const users = pgTable("user", {
   emailVerified: timestamp("emailVerified", { mode: "date" }),
   image: text("image"),
   timezone: text("timezone").notNull().default("America/Vancouver"),
+  // Working hours (lib/work-hours.ts); null = always on.
+  workHours: jsonb("work_hours").$type<WorkHours>(),
   role: userRole("role").notNull().default("user"),
   createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
 });

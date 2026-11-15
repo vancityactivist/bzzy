@@ -95,6 +95,22 @@ bool dismissPush(State& st) {
   return true;
 }
 
+bool offHours(const State& st, uint32_t now) {
+  if (!st.hoursSet || now == 0) return false;
+  bool anyAhead = false;
+  for (size_t i = 0; i < st.hoursCount; ++i) {
+    const WorkWindow& w = st.hours[i];
+    if (w.start <= now && now < w.end) return false;
+    if (w.end > now) anyAhead = true;
+  }
+  return anyAhead;
+}
+
+uint32_t pollIntervalSec(const State& st, uint32_t minSec, uint32_t maxSec) {
+  if (st.pollSec == 0 || st.pollSec < minSec) return minSec;
+  return st.pollSec > maxSec ? maxSec : st.pollSec;
+}
+
 void mergeFromServer(State& cached, const State& fromServer, uint32_t now) {
   (void)now;
   const Override keep = cached.manual;

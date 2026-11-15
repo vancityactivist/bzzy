@@ -8,8 +8,8 @@ So the poll answers from Vercel's runtime cache, and while nothing changes it do
 
 | Key | Holds | Written |
 |---|---|---|
-| `poll:v1:{deviceId}` | everything the poll reads: the device row, owner's time zone, presence, calendars (with cached events), GIFs, show now, firmware release, live pushes of the team it follows (`app/src/lib/poll-bundle.ts`) | on a miss, 3 h TTL |
-| `seen:{deviceId}` | when the light last polled | about once a minute (`app/src/lib/seen.ts`) |
+| `poll:v2:{deviceId}` | everything the poll reads: the device row, owner's time zone and working hours, presence, calendars (with cached events), GIFs, show now, firmware release, live pushes of the team it follows (`app/src/lib/poll-bundle.ts`) | on a miss, 3 h TTL |
+| `seen:{deviceId}` | when the light last polled, and the `poll` interval it was told | about once a minute (`app/src/lib/seen.ts`) |
 | `calchk:{calendarId}` | when a feed was last read and found unchanged | each refresh (`app/src/lib/calendar.ts`) |
 | `fwchk` | when the firmware release was last checked and found unchanged | each check (`app/src/lib/firmware-release.ts`) |
 
@@ -25,7 +25,7 @@ The database is still the source of truth. Every cache read falls back to it, an
 | Tag | Expire it when |
 |---|---|
 | `d-{deviceId}` | the device row or its GIF choices change (settings, ring, token, update now, push team, delete) |
-| `u-{userId}` | a person's presence, show now, calendars, or their lights' push team change |
+| `u-{userId}` | a person's presence, show now, calendars, time zone or working hours, or their lights' push team change |
 | `t-{teamId}` | a team's pushes, acks or members change, or the team is deleted |
 | `a-{assetId}` | an uploaded GIF is deleted |
 | `fw` | the saved firmware release changes |

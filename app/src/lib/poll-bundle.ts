@@ -5,7 +5,7 @@ import { eq } from "drizzle-orm";
 import { db, schema } from "@/db";
 
 import { cached, tag } from "./cache";
-import { calendarsForUser, type CalendarRow, userTimezone } from "./calendar";
+import { calendarsForUser, type CalendarRow, userClock } from "./calendar";
 import type { AuthedDevice } from "./device-auth";
 import { tokenMatches, bearerToken } from "./device-token";
 import { type ReleaseRow, savedRelease } from "./firmware-release";
@@ -14,6 +14,7 @@ import { getPresence } from "./presence";
 import { nowSeconds, type Presence, type Status } from "./protocol";
 import { followedPushes, type Push } from "./pushes";
 import { type CurrentShow, getShow } from "./show";
+import type { WorkHours } from "./work-hours";
 
 // Everything a light's poll reads from the database, kept in the runtime cache so that a
 // poll while nothing has changed doesn't touch Postgres. Each write that changes any of
@@ -23,6 +24,8 @@ import { type CurrentShow, getShow } from "./show";
 export type PollBundle = {
   device: AuthedDevice;
   timeZone: string;
+  // The owner's working hours; null = always on.
+  workHours: WorkHours | null;
   presence: Presence | null;
   calendars: CalendarRow[];
   gifs: Record<Status, ResolvedGif>;
@@ -37,7 +40,7 @@ export type PollBundle = {
 export const POLL_BUNDLE_TTL_SEC = 3 * 3600;
 
 // Bump the version when PollBundle changes shape: cache entries outlive deployments.
-const key = (deviceId: string) => `poll:v1:${deviceId}`;
+const key = (deviceId: string) => `poll:v2:${deviceId}`;
 
 const assetTags = (...gifs: (ResolvedGif | undefined)[]) =>
   gifs.flatMap((g) => (g?.kind === "asset" ? [tag.asset(g.id)] : []));
@@ -47,8 +50,8 @@ async function loadBundle(deviceId: string) {
   const device = rows[0];
   if (!device) return null;
   const owner = device.ownerUserId;
-  const [timeZone, presence, calendars, gifs, show, release, pushes] = await Promise.all([
-    userTimezone(owner),
+  const [{ timeZone, workHours }, presence, calendars, gifs, show, release, pushes] = await Promise.all([
+    userClock(owner),
     getPresence(owner),
     calendarsForUser(owner),
     resolveDeviceGifs(device.id),
@@ -56,7 +59,7 @@ async function loadBundle(deviceId: string) {
     savedRelease(),
     followedPushes(device, nowSeconds()),
   ]);
-  const value: PollBundle = { device, timeZone, presence, calendars, gifs, show, release, pushes };
+  const value: PollBundle = { device, timeZone, workHours, presence, calendars, gifs, show, release, pushes };
   const tags = [
     tag.device(device.id),
     tag.user(owner),

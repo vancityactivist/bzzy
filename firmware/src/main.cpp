@@ -148,13 +148,28 @@ void loop() {
     display::invalidate();
   }
 
+  // Outside working hours the light is dark. Any press wakes it for a few minutes
+  // (and does nothing else); presses while it's awake work as usual and keep it awake.
+  // Never dark while it has something to tell you (setup page, an update running).
+  static uint32_t awakeUntilMs = 0;
+  const bool busyNotice = ota::progress() >= 0 || net::setupPortalOpen();
+  const bool offHours = !busyNotice && bzzy::offHours(g_state, net::now());
+  const bool awake = awakeUntilMs != 0 && (int32_t)(awakeUntilMs - ms) > 0;
+  if (!awake) awakeUntilMs = 0;
+
   // Button press or screen tap: next status. Long press on the screen or the top
   // button: back to automatic. While a team push is up, any press dismisses it
   // instead.
   const touch::Gesture g = touch::poll();
   const Press top = topButtonPoll();
-  const bool next = buttonPressed() || g == touch::Gesture::Tap || top == Press::Short;
-  const bool toAuto = g == touch::Gesture::LongPress || top == Press::Long;
+  bool next = buttonPressed() || g == touch::Gesture::Tap || top == Press::Short;
+  bool toAuto = g == touch::Gesture::LongPress || top == Press::Long;
+  if ((next || toAuto) && offHours) {
+    if (!awake) next = toAuto = false;  // this press only wakes it
+    awakeUntilMs = (ms + cfg::kWakeMs) | 1;  // never 0, which means "not awake"
+  }
+  const bool dark = offHours && awakeUntilMs == 0;
+  net::setFastPoll(offHours && !dark);
   if ((next || toAuto) && bzzy::dismissPush(g_state)) {
     net::reportPushAck(g_state.dismissedPush, net::now());
     saveCacheIfChanged();
@@ -172,7 +187,8 @@ void loop() {
 
   // Automatic updates wait for a moment when a restart won't matter.
   const bool showing = bzzy::showVisible(g_state, net::now());
-  net::setQuiet(!showing && (r.status == bzzy::Status::Free || r.status == bzzy::Status::Away));
+  // A dark light is always a good moment.
+  net::setQuiet(dark || (!showing && (r.status == bzzy::Status::Free || r.status == bzzy::Status::Away)));
 
   const char* notice = nullptr;
   static char updating[32];
@@ -203,6 +219,8 @@ void loop() {
     }
   }
 
+  if (dark) view = {display::Layout::Off, r.status, "", 0, true, nullptr};
+  leds::setOff(dark);
   leds::show(r.status, bzzy::chooseLeds(g_state, r.status, net::now()), net::now());
   display::show(view);
 

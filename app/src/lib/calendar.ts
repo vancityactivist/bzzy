@@ -10,6 +10,7 @@ import { blocksForDevice, type CachedEvent, eventsFromIcs, IcsError } from "./ic
 import type { Block } from "./protocol";
 import { sameEvents } from "./poll-writes";
 import { FetchRefused, fetchPublicText, normalizeCalendarUrl } from "./safe-fetch";
+import { parseWorkHours, type WorkHours } from "./work-hours";
 
 // Feeds are re-read when a device or page needs them and the copy is older than this.
 // Outlook only republishes every few minutes anyway.
@@ -40,8 +41,33 @@ async function withLastCheck(cals: CalendarRow[]): Promise<CalendarRow[]> {
 }
 
 export async function userTimezone(userId: string) {
-  const rows = await db().select({ tz: schema.users.timezone }).from(schema.users).where(eq(schema.users.id, userId)).limit(1);
-  return rows[0]?.tz ?? "America/Vancouver";
+  return (await userClock(userId)).timeZone;
+}
+
+// The owner's time zone and working hours, which together decide when a light is on.
+export async function userClock(userId: string) {
+  const rows = await db()
+    .select({ tz: schema.users.timezone, workHours: schema.users.workHours })
+    .from(schema.users)
+    .where(eq(schema.users.id, userId))
+    .limit(1);
+  return { timeZone: rows[0]?.tz ?? "America/Vancouver", workHours: parseWorkHours(rows[0]?.workHours) };
+}
+
+export function validTimeZone(tz: string) {
+  try {
+    new Intl.DateTimeFormat("en-US", { timeZone: tz });
+    return tz.length <= 64;
+  } catch {
+    return false;
+  }
+}
+
+// Saves the owner's time zone and working hours (null = always on). Their lights pick
+// it up on the next poll.
+export async function saveUserClock(userId: string, timeZone: string, workHours: WorkHours | null) {
+  await db().update(schema.users).set({ timezone: timeZone, workHours }).where(eq(schema.users.id, userId));
+  await expire(tag.user(userId));
 }
 
 function friendlyError(err: unknown) {

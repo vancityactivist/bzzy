@@ -12,6 +12,7 @@ import { ringFor } from "./ring";
 import { livePushes } from "./pushes";
 import { showVisible, STATUSES, type Status } from "./protocol";
 import { resolveScreen, type ScreenSource, type ScreenView, viewFor, withShow } from "./screen";
+import { isOnline } from "./poll-writes";
 import { liveSeen } from "./seen";
 import { getShow } from "./show";
 import type { TeamMemberRow } from "./teams";
@@ -21,7 +22,6 @@ import type { TeamMemberRow } from "./teams";
 // light shows. Meeting titles only appear if that person turned them on, because the
 // schedule is the one their own light gets.
 
-export const ONLINE_WINDOW_MS = 2 * 60_000; // devices poll every 20 s; the Devices page uses the same window
 
 export type MemberCard = {
   userId: string;
@@ -92,7 +92,7 @@ export async function teamDashboard(members: TeamMemberRow[], now: number): Prom
       const push = main?.pushTeamId ? pushFor(pushes.filter((p) => p.teamId === main.pushTeamId), m.userId, now) : null;
       const live = !push && show && showVisible(show, presence, now) ? show : null;
       const lastSeenAt = main?.lastSeenAt ?? null;
-      const online = lastSeenAt !== null && nowMs - lastSeenAt.getTime() < ONLINE_WINDOW_MS;
+      const online = isOnline(lastSeenAt, nowMs, main?.pollSec);
       const shown = push ?? live;
       const view = withShow(viewFor(resolved, online || !main), shown ? { text: shown.text, until: shown.until, gif: !!shown.gif } : null);
       const statusGifs = gifs

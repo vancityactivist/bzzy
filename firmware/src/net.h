@@ -26,6 +26,10 @@ uint32_t now();        // unix seconds, or 0 if the clock isn't set yet
 // nothing from the app on the screen). "Update now" from the app doesn't wait.
 void setQuiet(bool quiet);
 
+// While the light is awake outside working hours, poll every 20 s anyway, so what
+// someone does in the app shows up quickly.
+void setFastPoll(bool fast);
+
 // If a new state arrived from the app since the last call, copy it out.
 bool takeIncoming(bzzy::State& out);
 // Tell the app about a button press (retried until it succeeds).

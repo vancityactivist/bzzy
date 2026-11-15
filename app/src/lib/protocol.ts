@@ -6,6 +6,7 @@ import { z } from "zod";
 import type { FirmwareOffer } from "./firmware";
 import type { LedStyle } from "./push-rules";
 import type { LedStyles, MeetingWarn } from "./ring";
+import { POLL_SEC, type WorkWindow } from "./work-hours";
 
 export const STATUSES = ["free", "busy", "dnd", "away"] as const;
 export type Status = (typeof STATUSES)[number];
@@ -55,6 +56,11 @@ export type StateResponse = {
   push?: PushState;
   ledStyles?: LedStyles;
   meetingWarn?: MeetingWarn;
+  // Seconds until the next poll: 20, or up to 300 outside working hours.
+  poll: number;
+  // The owner's coming working windows (unix seconds), oldest first. Absent when no
+  // hours are set; firmware with the "hours" feature goes dark outside them.
+  workHours?: WorkWindow[];
 };
 
 export const overrideBody = z.object({
@@ -105,6 +111,7 @@ export function buildState(opts: {
   firmware?: FirmwareOffer | null;
   push?: PushState | null;
   leds?: { ledStyles?: LedStyles; meetingWarn?: MeetingWarn };
+  hours?: { set: boolean; windows: WorkWindow[]; poll: number };
 }): StateResponse {
   const { now, defaultStatus, presence } = opts;
 
@@ -139,7 +146,9 @@ export function buildState(opts: {
     manual,
     show,
     schedule,
+    poll: opts.hours?.poll ?? POLL_SEC,
   };
+  if (opts.hours?.set) state.workHours = opts.hours.windows;
   if (opts.gifs) state.gifs = opts.gifs;
   if (opts.firmware) state.firmware = opts.firmware;
   if (opts.push && show?.active) state.push = opts.push;

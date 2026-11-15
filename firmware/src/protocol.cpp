@@ -95,6 +95,20 @@ bool parseState(const char* json, size_t len, State& out) {
     st.push.updatedAt = p["updatedAt"] | 0u;
     st.push.leds = parseStyle(p["leds"]);
   }
+  // Working hours. Absent = always on; windows that are empty or backwards are dropped.
+  JsonArrayConst wh = doc["workHours"];
+  if (!wh.isNull()) {
+    st.hoursSet = true;
+    for (JsonObjectConst w : wh) {
+      if (st.hoursCount >= kMaxWorkWindows) break;
+      const uint32_t start = w["start"] | 0u;
+      const uint32_t end = w["end"] | 0u;
+      if (end <= start) continue;
+      st.hours[st.hoursCount++] = WorkWindow{start, end};
+    }
+  }
+  st.pollSec = doc["poll"] | 0u;
+
   // Only in the on-device cache.
   strlcpy(st.dismissedPush, doc["dismissedPush"] | "", sizeof(st.dismissedPush));
 
@@ -147,6 +161,15 @@ String serializeState(const State& st) {
     p["updatedAt"] = st.push.updatedAt;
     if (st.push.leds.set) writeStyle(p["leds"].to<JsonObject>(), st.push.leds);
   }
+  if (st.hoursSet) {
+    JsonArray wh = doc["workHours"].to<JsonArray>();
+    for (size_t i = 0; i < st.hoursCount; ++i) {
+      JsonObject w = wh.add<JsonObject>();
+      w["start"] = st.hours[i].start;
+      w["end"] = st.hours[i].end;
+    }
+  }
+  if (st.pollSec) doc["poll"] = st.pollSec;
   if (st.dismissedPush[0]) doc["dismissedPush"] = st.dismissedPush;
   String out;
   serializeJson(doc, out);

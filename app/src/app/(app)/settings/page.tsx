@@ -2,11 +2,11 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 
-import { CalendarIcon, KeyIcon, UsersIcon } from "@/components/icons";
+import { CalendarIcon, ClockIcon, KeyIcon, UsersIcon } from "@/components/icons";
 import { AddPasskey } from "@/components/passkey-buttons";
 import { SignIn } from "@/components/sign-in";
 import { Badge, Card, CardHeader, Container, PageHeader, StatusDot } from "@/components/ui";
-import { calendarsForUser, refreshStaleCalendars } from "@/lib/calendar";
+import { calendarsForUser, refreshStaleCalendars, userClock } from "@/lib/calendar";
 import { blocksForDevice } from "@/lib/ics";
 import { passkeysForUser } from "@/lib/passkeys";
 import { nowSeconds } from "@/lib/protocol";
@@ -16,6 +16,7 @@ import { teamsForUser } from "@/lib/teams";
 import { absoluteTime, relativeTime } from "../devices/relative-time";
 import { AddCalendarForm, CalendarActions } from "./calendar-forms";
 import { PasskeyActions } from "./passkey-forms";
+import { WorkHoursForm } from "./work-hours-form";
 
 export const metadata: Metadata = { title: "Settings" };
 
@@ -33,11 +34,13 @@ async function SettingsContent() {
   const user = await getCurrentUser();
   if (!user) return <SignIn />;
   await refreshStaleCalendars(user.id);
-  const [teams, calendars, passkeys] = await Promise.all([
+  const [teams, calendars, passkeys, clock] = await Promise.all([
     teamsForUser(user.id),
     calendarsForUser(user.id),
     passkeysForUser(user.id),
+    userClock(user.id),
   ]);
+  const TZ = clock.timeZone;
   const now = nowSeconds();
 
   return (
@@ -89,7 +92,7 @@ async function SettingsContent() {
                           <li key={`${b.start}-${b.status}`} className="flex items-center gap-2">
                             <StatusDot status={b.status} />
                             <span className="shrink-0 tabular-nums text-muted">
-                              {range(b.start, b.end)}
+                              {range(b.start, b.end, TZ)}
                             </span>
                             <span className="truncate">{b.text}</span>
                           </li>
@@ -110,6 +113,21 @@ async function SettingsContent() {
         <p className="mt-3 text-xs text-muted">
           The link is kept private: it&apos;s only used to read your calendar and is never shown again.
         </p>
+      </Card>
+
+      <Card>
+        <CardHeader
+          title={
+            <span className="flex items-center gap-2">
+              <ClockIcon className="size-5 text-muted" />
+              Working hours
+            </span>
+          }
+          description="Outside them your lights go dark and check in every 5 minutes instead of every 20 seconds. Press the button to wake one for a few minutes."
+        />
+        <div className="mt-5">
+          <WorkHoursForm hours={clock.workHours} timeZone={clock.timeZone} zones={timeZones(clock.timeZone)} />
+        </div>
       </Card>
 
       <Card>
@@ -191,9 +209,7 @@ async function SettingsContent() {
   );
 }
 
-const TZ = "America/Vancouver";
-
-const fmt = (sec: number, weekday: boolean) =>
+const fmt = (sec: number, weekday: boolean, TZ: string) =>
   new Date(sec * 1000).toLocaleString("en-US", {
     timeZone: TZ,
     weekday: weekday ? "short" : undefined,
@@ -202,7 +218,12 @@ const fmt = (sec: number, weekday: boolean) =>
   });
 
 // "Wed 2:00 PM – 3:00 PM"; the end's weekday only when it falls on another day.
-function range(start: number, end: number) {
+function range(start: number, end: number, TZ: string) {
   const day = (sec: number) => new Date(sec * 1000).toLocaleDateString("en-US", { timeZone: TZ });
-  return `${fmt(start, true)} – ${fmt(end, day(start) !== day(end))}`;
+  return `${fmt(start, true, TZ)} – ${fmt(end, day(start) !== day(end), TZ)}`;
+}
+
+function timeZones(current: string) {
+  const all = Intl.supportedValuesOf("timeZone");
+  return all.includes(current) ? all : [current, ...all];
 }

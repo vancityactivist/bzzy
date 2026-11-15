@@ -6,6 +6,7 @@ import { SignIn } from "@/components/sign-in";
 import { Badge, Card, Container, EmptyState, PageHeader } from "@/components/ui";
 import { devicesForUser } from "@/lib/devices";
 import { firmwareState } from "@/lib/firmware";
+import { isOnline } from "@/lib/poll-writes";
 import { releaseForPage } from "@/lib/firmware-release";
 import { BUILTIN_GIFS, DEFAULT_BUILTIN, deviceGifChoices, gifsForUser } from "@/lib/gifs";
 import { nowSeconds, STATUSES, type Status } from "@/lib/protocol";
@@ -31,10 +32,9 @@ export default function DevicesPage() {
   );
 }
 
-function SeenBadge({ lastSeenAt, now }: { lastSeenAt: Date | null; now: Date }) {
+function SeenBadge({ lastSeenAt, pollSec, now }: { lastSeenAt: Date | null; pollSec: number; now: Date }) {
   if (!lastSeenAt) return <Badge>Never connected</Badge>;
-  const mins = Math.round((now.getTime() - lastSeenAt.getTime()) / 60000);
-  if (mins < 2) return <Badge tone="free" title={absoluteTime(lastSeenAt)}>Online</Badge>;
+  if (isOnline(lastSeenAt, now.getTime(), pollSec)) return <Badge tone="free" title={absoluteTime(lastSeenAt)}>Online</Badge>;
   return <Badge title={absoluteTime(lastSeenAt)}>Last seen {relativeTime(lastSeenAt, now.getTime())}</Badge>;
 }
 
@@ -70,7 +70,7 @@ async function DevicesContent() {
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                       <h2 className="truncate font-semibold tracking-tight">{d.name}</h2>
-                      <SeenBadge lastSeenAt={d.lastSeenAt} now={now} />
+                      <SeenBadge lastSeenAt={d.lastSeenAt} pollSec={d.pollSec} now={now} />
                     </div>
                     <p className="mt-0.5 flex flex-wrap items-center gap-x-2 text-sm text-muted">
                       <span>{d.teamName}</span>
