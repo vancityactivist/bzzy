@@ -95,7 +95,7 @@ The final design is the Waveshare board inside a custom LED ring board (16 LEDs,
 
 **Wiring (touch board):** LED data to **GPIO17**, LED 5 V to the board's 5 V pin, GND to GND. The free pins on this board are 2, 3, 17 and 18. Avoid 3, which is a strapping pin. LED current is capped at 400 mA in firmware. The top button goes from **GPIO18** to GND (the firmware turns on the pull-up).
 
-On the non-touch board the LED data pin is GPIO16. On a generic ESP32 it's GPIO13.
+On the non-touch board the LED data pin is GPIO16. On a generic ESP32 it's GPIO13, and a cheap ESP32 with a 16x2 character LCD can run the whole thing for testing: see [docs/esp32-test-build.md](docs/esp32-test-build.md).
 
 ## Firmware
 
@@ -106,6 +106,7 @@ cd firmware
 pio run -e waveshare_s3_touch_lcd169 -t upload   # the real board (touch)
 pio run -e waveshare_s3_lcd169 -t upload         # non-touch version
 pio run -e esp32_generic -t upload               # a plain ESP32: LEDs, Wi-Fi and sync only
+pio run -e esp32_lcd1602 -t upload               # a plain ESP32 + 16x2 LCD (docs/esp32-test-build.md)
 pio test -e native                               # status logic unit tests, no hardware needed
 pio device monitor
 ```
