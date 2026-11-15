@@ -161,7 +161,14 @@ async function HomeContent() {
         ];
   const live = presence?.active && (presence.until === 0 || presence.until > now) ? presence : null;
   const active: ActiveStatus | null = live
-    ? { status: live.status, source: "manual" }
+    ? {
+        status: live.status,
+        source: "manual",
+        text: live.text,
+        until: live.until,
+        updatedAt: live.updatedAt,
+        untilLabel: live.until ? at(live.until) : undefined,
+      }
     : current
       ? { status: current.status, source: "calendar" }
       : null;
