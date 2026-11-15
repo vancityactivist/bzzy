@@ -4,7 +4,7 @@
 // hover, pick or type shows on the preview straight away, before it's sent; the
 // caption says whether you're looking at your screen as it is or a draft.
 
-import { createContext, useActionState, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { createContext, useActionState, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 
 import Link from "next/link";
 
@@ -44,7 +44,10 @@ export type LiveShow = {
 
 export type LibraryGif = { choice: string; name: string; src: string };
 
-type StatusDraft = { status: Status | null; text: string; minutes: number };
+// minutes: how long to set it for, or KEEP_UNTIL for "keep the end time it has now"
+// (keepUntil, 0 = no end), offered while a status you set is on.
+type StatusDraft = { status: Status | null; text: string; minutes: number; keepUntil: number };
+const KEEP_UNTIL = -1;
 type ShowDraft = {
   choice: string; // "none" | "builtin:<id>" | "asset:<id>"
   hover: LibraryGif | null; // a tile under the pointer, previewed but not picked
@@ -93,7 +96,10 @@ export function StudioProvider({ library, live, children }: { library: LibraryGi
     status: null,
     text: "",
     minutes: 0,
+    keepUntil: 0,
   });
+  // Stable, so the status form can sync the draft from an effect.
+  const setStatus = useCallback((d: Partial<StatusDraft>) => setStatusState((s) => ({ ...s, ...d })), []);
   const [show, setShowState] = useState<ShowDraft>(EMPTY_SHOW);
   const value = useMemo<Ctx>(
     () => ({
@@ -102,12 +108,12 @@ export function StudioProvider({ library, live, children }: { library: LibraryGi
       focus,
       setFocus,
       status,
-      setStatus: (d) => setStatusState((s) => ({ ...s, ...d })),
+      setStatus,
       show,
       setShow: (d) => setShowState((s) => ({ ...s, ...d })),
       resetShow: () => setShowState(EMPTY_SHOW),
     }),
-    [library, live, focus, status, show],
+    [library, live, focus, status, setStatus, show],
   );
   return <Studio.Provider value={value}>{children}</Studio.Provider>;
 }
@@ -168,7 +174,7 @@ export function StudioPreview({
     view = viewFor({
       status: s,
       text: status.text.trim(),
-      until: minutesFromNow(status.minutes),
+      until: status.minutes === KEEP_UNTIL ? status.keepUntil : minutesFromNow(status.minutes),
     });
     gif = device.gifs[s];
     ring = device.styles?.[s] ?? null;
@@ -270,7 +276,16 @@ export function StudioPreview({
 
 // ---- status ----
 
-export type ActiveStatus = { status: Status; source: "manual" | "calendar" };
+export type ActiveStatus = {
+  status: Status;
+  source: "manual" | "calendar";
+  // A status you set: its message, when it ends (0 = when you change it), when it was set
+  // and the end time as the page shows it.
+  text?: string;
+  until?: number;
+  updatedAt?: number;
+  untilLabel?: string;
+};
 
 const STATUS_DURATIONS = [
   { minutes: 0, label: "Until I change it" },
@@ -316,12 +331,35 @@ export function StatusControls({ active = null, className }: { active?: ActiveSt
   const form = useRef<HTMLFormElement>(null);
   // While a show has the screen, the status is only what the light glows.
   const covered = live !== null;
+  const manual = active?.source === "manual" ? active : null;
+  const keepsEnd = !!manual?.until;
+
+  // Whenever the status you set changes (here, from the light's button or another tab),
+  // put its message in the box and its end time on the chips, so pressing Enter or
+  // tapping another status keeps them rather than wiping them.
+  const manualKey = manual ? `${manual.updatedAt}` : "none";
+  useEffect(() => {
+    setDraft({
+      text: manual?.text ?? "",
+      minutes: manual?.until ? KEEP_UNTIL : 0,
+      keepUntil: manual?.until ?? 0,
+    });
+    // Only when the saved status changes, not on every render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [manualKey, setDraft]);
+
+  // Pressing Enter in the message box would otherwise submit with the form's first
+  // button (Free). Send it with the status that's on instead, or wait for a pick.
+  const sendWith = manual?.status ?? active?.status ?? null;
+  const durations = keepsEnd ? [{ minutes: KEEP_UNTIL, label: `Until ${manual?.untilLabel ?? "it ends"}` }, ...STATUS_DURATIONS] : STATUS_DURATIONS;
+  const changed = !!manual && (status.text.trim() !== (manual.text ?? "") || status.minutes !== (keepsEnd ? KEEP_UNTIL : 0));
+
   return (
     <form
       ref={form}
       action={async (fd) => {
         await setStatus(fd);
-        setDraft({ status: null, text: "", minutes: 0 });
+        setDraft({ status: null });
         setFocus(null);
       }}
       onFocus={() => setFocus("status")}
@@ -380,20 +418,42 @@ export function StatusControls({ active = null, className }: { active?: ActiveSt
 
       <fieldset>
         <legend className="mb-1.5 text-sm font-medium">For how long</legend>
-        <Chips name="minutes" options={STATUS_DURATIONS} value={status.minutes} onChange={(m) => setDraft({ minutes: m })} />
+        <Chips name="minutes" options={durations} value={status.minutes} onChange={(m) => setDraft({ minutes: m })} />
       </fieldset>
 
-      <Field label="Message" htmlFor="status-text" hint="Shown under the status on the screen. Optional.">
+      <Field
+        label="Message"
+        htmlFor="status-text"
+        hint={
+          sendWith
+            ? `Shown under the status on the screen. Optional. Press Enter to send it with ${STATUS_META[sendWith].label}.`
+            : "Shown under the status on the screen. Optional. Pick a status above to send it."
+        }
+      >
         <Input
           id="status-text"
           name="text"
           maxLength={TEXT_MAX}
           value={status.text}
           onChange={(e) => setDraft({ text: e.target.value })}
+          onKeyDown={(e) => {
+            if (e.key !== "Enter" || e.nativeEvent.isComposing) return;
+            e.preventDefault();
+            const button = sendWith && form.current?.querySelector<HTMLButtonElement>(`button[name="status"][value="${sendWith}"]`);
+            if (button) form.current?.requestSubmit(button);
+          }}
           placeholder="On a call, back at 3"
           autoComplete="off"
         />
       </Field>
+
+      {manual && changed && (
+        <div className="flex justify-end">
+          <Button size="sm" name="status" value={manual.status}>
+            Update {STATUS_META[manual.status].label}
+          </Button>
+        </div>
+      )}
     </form>
   );
 }

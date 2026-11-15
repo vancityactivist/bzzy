@@ -27,7 +27,7 @@ import { setSuperadmin } from "@/lib/admin";
 import { GifError } from "@/lib/gif-process";
 import { checkGifChoice, deleteGif, importGifFromLink, setDeviceGif, uploadGif } from "@/lib/gifs";
 import { PasskeyError, renamePasskey, revokePasskey } from "@/lib/passkeys";
-import { setPresence } from "@/lib/presence";
+import { getPresence, setPresence } from "@/lib/presence";
 import { clipText, nowSeconds, STATUSES } from "@/lib/protocol";
 import { pushInput, pushLeds } from "@/lib/push-rules";
 import { ringFromInput, type RingInput, ringInput } from "@/lib/ring";
@@ -53,7 +53,8 @@ export async function signOutAction() {
 
 const statusInput = z.object({
   status: z.enum(STATUSES),
-  minutes: z.coerce.number().int().min(0).max(24 * 60),
+  // -1: keep the end time the status you set has now (the form's "Until 3:15 PM" chip).
+  minutes: z.coerce.number().int().min(-1).max(24 * 60),
   text: z.string().max(200).default(""),
 });
 
@@ -65,6 +66,11 @@ export async function setStatus(formData: FormData) {
     text: formData.get("text") ?? "",
   });
   const now = nowSeconds();
+  let until = input.minutes > 0 ? now + input.minutes * 60 : 0;
+  if (input.minutes === -1) {
+    const p = await getPresence(user.id);
+    until = p?.active && p.until > now ? p.until : 0;
+  }
   // Changing the status takes down "show now", like a press on the device does.
   await Promise.all([
     setPresence(
@@ -73,7 +79,7 @@ export async function setStatus(formData: FormData) {
         active: true,
         status: input.status,
         text: clipText(input.text.trim()),
-        until: input.minutes > 0 ? now + input.minutes * 60 : 0,
+        until,
         updatedAt: now,
       },
       "web",
