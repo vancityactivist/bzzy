@@ -31,8 +31,9 @@ export function sentLeds(d: { allowFlash: boolean; ledStyles: LedStyles | null; 
   return out;
 }
 
-// The firmware's chooseLeds() (status_engine.cpp): a push's flash, then the meeting
-// warning in its window, then the status's style. null: steady status colour.
+// The firmware's chooseLeds() (status_engine.cpp): a push's flash, then the person's
+// own show now's, then the meeting warning in its window, then the status's style.
+// null: steady status colour. Pass `show` only while it's on screen (showVisible).
 export function ringFor(opts: {
   allowFlash: boolean;
   ledStyles: LedStyles | null;
@@ -41,9 +42,12 @@ export function ringFor(opts: {
   schedule: Block[];
   now: number;
   push?: { leds: LedStyle | null; updatedAt: number } | null;
+  show?: { leds: LedStyle | null; updatedAt: number } | null;
 }): LedStyle | null {
   if (!opts.allowFlash) return null;
   if (opts.push?.leds) return ringNow(opts.push.leds, opts.push.updatedAt, opts.now);
+  // While a push is up it's what's on screen, so the person's own show can't flash.
+  if (!opts.push && opts.show?.leds) return ringNow(opts.show.leds, opts.show.updatedAt, opts.now);
   const w = opts.meetingWarn;
   if (w && w.minutes > 0) {
     const window = w.minutes * 60;

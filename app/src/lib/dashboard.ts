@@ -110,7 +110,7 @@ export async function teamDashboard(members: TeamMemberRow[], now: number): Prom
         setOnLight: resolved.source === "manual" && !!source && source !== "web",
         showing: !!live,
         push: push ? { id: push.id, teamId: push.teamId, text: push.text } : null,
-        ring: main ? ringFor({ ...main, status: resolved.status, schedule, now, push }) : null,
+        ring: main ? ringFor({ ...main, status: resolved.status, schedule, now, push, show: live }) : null,
         lights: lights.map((d) => ({ name: d.name, lastSeenAt: d.lastSeenAt })),
         online,
         lastSeenAt,

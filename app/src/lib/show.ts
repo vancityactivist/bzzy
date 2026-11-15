@@ -8,9 +8,11 @@ import { expire, tag } from "./cache";
 
 import { builtinGif, type ResolvedGif } from "./gifs";
 import type { Show } from "./protocol";
+import type { LedStyle } from "./push-rules";
 
-// "Show now": what a person has put on their lights' screens, if anything.
-export type CurrentShow = Show & { gif: ResolvedGif };
+// "Show now": what a person has put on their lights' screens, if anything, and how
+// the ring moves while it's up (null: the status's own style).
+export type CurrentShow = Show & { gif: ResolvedGif; leds: LedStyle | null };
 
 export async function getShow(userId: string): Promise<CurrentShow | null> {
   const rows = await db()
@@ -33,6 +35,7 @@ export async function getShow(userId: string): Promise<CurrentShow | null> {
     until: show.until,
     updatedAt: show.updatedAt,
     gif,
+    leds: show.leds ?? null,
   };
 }
 
@@ -42,6 +45,7 @@ export async function setShow(
     assetId: string | null;
     builtin: string | null;
     text: string;
+    leds: LedStyle | null;
     until: number;
     updatedAt: number;
   },

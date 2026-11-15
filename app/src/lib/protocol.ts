@@ -36,7 +36,9 @@ export type Show = {
   until: number; // unix seconds; 0 = until cleared
   updatedAt: number;
 };
-export type ShowState = Show & { gif: GifRef | null };
+// `leds`: how the ring moves while it's on screen; left out, the status's own style.
+// Firmware from before it ignores it.
+export type ShowState = Show & { gif: GifRef | null; leds?: LedStyle };
 
 // A team push. Its GIF and message travel in `show`, so firmware from before pushes
 // still shows it; this says that `show` is a push, for firmware with the "push"

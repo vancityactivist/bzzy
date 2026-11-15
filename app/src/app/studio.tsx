@@ -14,7 +14,8 @@ import { STATUS_META } from "@/components/status-meta";
 import { Badge, Button, buttonClass, cx, Field, Input, Select, StatusDot } from "@/components/ui";
 import { parseGifLink } from "@/lib/gif-link";
 import { type Status, STATUSES, TEXT_MAX } from "@/lib/protocol";
-import type { LedStyle } from "@/lib/push-rules";
+import { type RingChoice, RingPicker } from "@/components/ring-picker";
+import { type LedStyle, PUSH_FLASHES, pushLeds } from "@/lib/push-rules";
 import { LED_RGB, screenText, type ScreenView, viewFor, withShow, wrapBar, wrapMessage } from "@/lib/screen";
 
 import { clearShowAction, setStatus, showNowAction, type ShowNowResult } from "./actions";
@@ -24,7 +25,9 @@ export type PreviewDevice = {
   name: string;
   view: ScreenView; // the status part, as it is now
   gifs: Record<Status, string | null>;
-  ring?: LedStyle | null; // what the ring is doing now (a push, a meeting warning, the status's style)
+  ring?: LedStyle | null; // what the ring is doing now (a push, a show, a meeting warning, the status's style)
+  baseRing?: LedStyle | null; // the same, leaving out their own show now's
+  allowFlash?: boolean; // "Let this light flash" on the Devices page
   styles?: Record<Status, LedStyle | null>; // each status's style, for drafts
 };
 
@@ -36,6 +39,7 @@ export type LiveShow = {
   gifName: string | null;
   // A team push, rather than the person's own show now. They dismiss it on the light.
   push?: { team: string; leds: LedStyle | null } | null;
+  leds?: LedStyle | null; // their own show's ring
 };
 
 export type LibraryGif = { choice: string; name: string; src: string };
@@ -49,6 +53,7 @@ type ShowDraft = {
   fileSrc: string | null;
   text: string;
   minutes: number;
+  ring: RingChoice;
 };
 
 const EMPTY_SHOW: ShowDraft = {
@@ -59,6 +64,8 @@ const EMPTY_SHOW: ShowDraft = {
   fileSrc: null,
   text: "",
   minutes: 60,
+  // A show is the person's own and can last hours, so a pattern plays the whole time.
+  ring: { flash: "none", color: "", speed: 2, flashFor: 0 },
 };
 
 type Ctx = {
@@ -103,6 +110,13 @@ export function StudioProvider({ library, live, children }: { library: LibraryGi
     [library, live, focus, status, show],
   );
   return <Studio.Provider value={value}>{children}</Studio.Provider>;
+}
+
+// The ring picked for a show, as the light would play it (flashing, so you can see it).
+// null: no pattern picked, or this light isn't allowed to flash.
+function draftRing(device: PreviewDevice, show: ShowDraft): LedStyle | null {
+  if (device.allowFlash === false) return null;
+  return pushLeds({ ...show.ring, flashFor: 0 });
 }
 
 const minutesFromNow = (m: number) => (m > 0 ? Math.floor(Date.now() / 1000) + m * 60 : 0);
@@ -165,9 +179,16 @@ export function StudioPreview({
     const src = draftShowGif(show, library);
     view = withShow(device.view, { text: screenText(show.text.trim()), until: minutesFromNow(show.minutes), gif: !!src });
     gif = view.layout === "show-gif" ? src : null;
+    ring = draftRing(device, show) ?? device.baseRing ?? null;
     draft = true;
   } else {
     liveView();
+    // A ring picked before anything to show: how the ring would move.
+    const picked = focus === "show" ? draftRing(device, show) : null;
+    if (picked) {
+      ring = picked;
+      draft = true;
+    }
   }
 
   const [r, g, b] = LED_RGB[view.status];
@@ -393,13 +414,14 @@ const SHOW_DURATIONS = [
 const MAX_UPLOAD = 4 * 1024 * 1024;
 const TEXT_ONLY = "none";
 
-export function ShowNowControls({ className }: { className?: string }) {
+export function ShowNowControls({ className, flashOff = false }: { className?: string; flashOff?: boolean }) {
   const { library, live, setFocus, show, setShow, resetShow } = useStudio();
   const form = useRef<HTMLFormElement>(null);
   const file = useRef<HTMLInputElement>(null);
   const message = useRef<HTMLInputElement>(null);
   const [adding, setAdding] = useState(false); // the "+" panel: link or upload
   const [writing, setWriting] = useState(false); // the message box
+  const [ringing, setRinging] = useState(false); // the ring effect
   const [textOnly, setTextOnly] = useState(false); // the "Aa" tile: a message, no GIF
   const [fileName, setFileName] = useState("");
 
@@ -411,6 +433,7 @@ export function ShowNowControls({ className }: { className?: string }) {
       setFocus(null);
       setAdding(false);
       setWriting(false);
+      setRinging(false);
       setTextOnly(false);
       setFileName("");
     }
@@ -465,6 +488,7 @@ export function ShowNowControls({ className }: { className?: string }) {
             <p className="font-medium">{live.push ? `A push from ${live.push.team} is on your screen` : "On your screen now"}</p>
             <p className="truncate text-muted">
               {[live.gifName, live.text && `“${live.text}”`].filter(Boolean).join(" with ")}
+              {live.leds ? ` · ${ringLabel(live.leds)} ring` : ""}
               {live.until ? ` · until ${clock(live.until)}` : ""}
             </p>
             {live.push && <p className="text-muted">Press the top button on your light to dismiss it.</p>}
@@ -594,11 +618,50 @@ export function ShowNowControls({ className }: { className?: string }) {
               autoComplete="off"
             />
           </Field>
-        ) : (
-          <Button type="button" variant="ghost" size="sm" onClick={() => setWriting(true)} className="-ml-2">
-            <PlusIcon />
-            Add a message
-          </Button>
+        ) : null}
+
+        {ringing && (
+          <fieldset onMouseEnter={() => setFocus("show")}>
+            <legend className="mb-1.5 text-sm font-medium">Ring</legend>
+            <RingPicker
+              value={show.ring}
+              onChange={(v) => {
+                setFocus("show");
+                setShow({ ring: { ...show.ring, ...v } });
+              }}
+              note={
+                flashOff
+                  ? "Flashing is off for your light, so its ring stays steady. Turn on Let this light flash on the Devices page."
+                  : "Never faster than 3 flashes a second. A light on older firmware keeps its usual ring until it updates."
+              }
+            />
+          </fieldset>
+        )}
+
+        {(!writing || !ringing) && (
+          <div className="-ml-2 flex flex-wrap gap-1">
+            {!writing && (
+              <Button type="button" variant="ghost" size="sm" onClick={() => setWriting(true)}>
+                <PlusIcon />
+                Add a message
+              </Button>
+            )}
+            {!ringing && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setRinging(true);
+                  setFocus("show");
+                  if (show.ring.flash === "none") setShow({ ring: { ...show.ring, flash: "pulse" } });
+                }}
+              >
+                <PlusIcon />
+                Add a ring effect
+              </Button>
+            )}
+          </div>
         )}
 
         <div className="flex flex-wrap items-center gap-2 border-t border-line pt-4">
@@ -663,6 +726,11 @@ function Tile({ name, gif, checked, onPick }: { name: string; gif?: LibraryGif; 
       )}
     </button>
   );
+}
+
+// "Spin", "Pulse": what a ring style is called in the picker.
+function ringLabel(leds: LedStyle) {
+  return PUSH_FLASHES.find((f) => f.value === leds.pattern)?.label ?? "Steady";
 }
 
 // "3:30 PM", in the light's fixed UTC-7 like untilLabel(), so the page agrees with the

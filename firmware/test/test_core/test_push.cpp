@@ -112,6 +112,47 @@ static void test_push_without_flash_keeps_the_status_style() {
   TEST_ASSERT_EQUAL(Pattern::Pulse, c.style.pattern);
 }
 
+// The person's own show now can move the ring too, while it's on screen.
+static void test_show_now_flash() {
+  State st;
+  st.lastSync = T0;
+  st.show.active = true;
+  st.show.updatedAt = T0;
+  st.show.until = T0 + 60;
+  st.show.leds.set = true;
+  st.show.leds.pattern = Pattern::Spin;
+  st.meetingWarn.minutes = 5;
+  st.meetingWarn.leds.set = true;
+  st.meetingWarn.leds.pattern = Pattern::Blink;
+  st.blocks[0].start = T0 + 120;
+  st.blocks[0].end = T0 + 600;
+  st.blockCount = 1;
+
+  LedChoice c = chooseLeds(st, Status::Free, T0 + 10);
+  TEST_ASSERT_TRUE(c.show);
+  TEST_ASSERT_FALSE(c.push);
+  TEST_ASSERT_EQUAL(Pattern::Spin, c.style.pattern);
+  TEST_ASSERT_EQUAL_UINT32(T0, c.startedAt);
+
+  // Expired: back to the meeting warning.
+  c = chooseLeds(st, Status::Free, T0 + 60);
+  TEST_ASSERT_FALSE(c.show);
+  TEST_ASSERT_TRUE(c.warning);
+
+  // A status change hides it, and its flash with it.
+  cycleLocalOverride(st, T0 + 30);
+  c = chooseLeds(st, Status::Free, T0 + 31);
+  TEST_ASSERT_FALSE(c.show);
+
+  // A team push's content replaces it, so its style doesn't play under the push.
+  State p = withPush("p1", T0);
+  p.show.leds.set = true;
+  p.show.leds.pattern = Pattern::Spin;
+  c = chooseLeds(p, Status::Free, T0 + 10);
+  TEST_ASSERT_FALSE(c.show);
+  TEST_ASSERT_FALSE(c.style.set);
+}
+
 void run_push_tests() {
   RUN_TEST(test_push_beats_a_newer_status_change);
   RUN_TEST(test_push_ends_on_time);
@@ -121,4 +162,5 @@ void run_push_tests() {
   RUN_TEST(test_without_push_show_rules_are_unchanged);
   RUN_TEST(test_push_flash_comes_first);
   RUN_TEST(test_push_without_flash_keeps_the_status_style);
+  RUN_TEST(test_show_now_flash);
 }

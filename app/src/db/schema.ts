@@ -326,6 +326,9 @@ export const showNow = pgTable("show_now", {
   }),
   builtin: text("builtin"),
   text: text("text").notNull().default(""),
+  // How the ring moves while it's up (docs/protocol.md, "LED styles"). null: the
+  // status's own style.
+  leds: jsonb("leds").$type<LedStyle>(),
   // Unix seconds, matching the device protocol. 0 = until cleared.
   until: integer("until").notNull().default(0),
   updatedAt: integer("updated_at").notNull().default(0),

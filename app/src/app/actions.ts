@@ -29,6 +29,7 @@ import { checkGifChoice, deleteGif, importGifFromLink, setDeviceGif, uploadGif }
 import { PasskeyError, renamePasskey, revokePasskey } from "@/lib/passkeys";
 import { setPresence } from "@/lib/presence";
 import { clipText, nowSeconds, STATUSES } from "@/lib/protocol";
+import { pushInput, pushLeds } from "@/lib/push-rules";
 import { ringFromInput, type RingInput, ringInput } from "@/lib/ring";
 import { requireUser } from "@/lib/session";
 import { clearShow, setShow } from "@/lib/show";
@@ -105,6 +106,8 @@ const showInput = z.object({
     .int()
     .min(0)
     .max(24 * 60),
+  // The ring, like a push's flash (pushInput).
+  ...pushInput.pick({ flash: true, color: true, speed: true, flashFor: true }).shape,
 });
 
 // Put a GIF and/or message on the screen. The GIF can be one from the library, a
@@ -116,6 +119,10 @@ export async function showNowAction(_prev: ShowNowResult, formData: FormData): P
     link: formData.get("link") ?? "",
     text: formData.get("text") ?? "",
     minutes: formData.get("minutes") ?? 60,
+    flash: formData.get("flash") ?? undefined,
+    color: formData.get("color") ?? undefined,
+    speed: formData.get("speed") ?? undefined,
+    flashFor: formData.get("flashFor") ?? undefined,
   });
   if (!input.success)
     return {
@@ -159,6 +166,7 @@ export async function showNowAction(_prev: ShowNowResult, formData: FormData): P
   await setShow(user.id, {
     ...choice,
     text,
+    leds: pushLeds(input.data),
     until: minutes > 0 ? now + minutes * 60 : 0,
     updatedAt: now,
   });
