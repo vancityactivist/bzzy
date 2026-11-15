@@ -9,6 +9,7 @@ import { getPresence } from "@/lib/presence";
 import { buildState, type GifMap, type GifRef, hasFeature, nowSeconds, readFeatures, STATUSES } from "@/lib/protocol";
 import { pushAsShow } from "@/lib/push-rules";
 import { pushForDevice } from "@/lib/pushes";
+import { shouldMarkSeen } from "@/lib/poll-writes";
 import { sentLeds } from "@/lib/ring";
 import { getShow } from "@/lib/show";
 
@@ -69,9 +70,12 @@ export async function GET(req: NextRequest, ctx: RouteContext<"/api/device/[id]/
 
   // Answer from the saved copies right away, then re-read any calendar (or the
   // firmware release) that's due.
+  // "Last seen" is only saved about once a minute unless there's firmware news to save
+  // too: a write on every 20 s poll would keep the database from ever going idle.
+  const seen = shouldMarkSeen(device.lastSeenAt, Date.now(), Object.keys(fwPatch).length > 0);
   after(async () => {
     await Promise.all([
-      markSeen(device.id, fwPatch, device.updateRequestedAt),
+      seen ? markSeen(device.id, fwPatch, device.updateRequestedAt) : null,
       ...stale.map((c) => refreshCalendar(c)),
       releaseIsStale(release) ? refreshRelease() : null,
     ]);

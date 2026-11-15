@@ -7,6 +7,7 @@ import { db, schema } from "@/db";
 
 import { blocksForDevice, type CachedEvent, eventsFromIcs, IcsError } from "./ics";
 import type { Block } from "./protocol";
+import { sameEvents } from "./poll-writes";
 import { FetchRefused, fetchPublicText, normalizeCalendarUrl } from "./safe-fetch";
 
 // Feeds are re-read when a device or page needs them and the copy is older than this.
@@ -38,9 +39,12 @@ export async function loadFeed(rawUrl: string, timeZone: string): Promise<{ url:
 export async function refreshCalendar(cal: CalendarRow): Promise<string | null> {
   try {
     const { events } = await loadFeed(cal.icsUrl, await userTimezone(cal.userId));
+    // Most refreshes find nothing new: then only note the time, instead of rewriting the
+    // whole event list every 5 minutes.
+    const unchanged = sameEvents(events, cal.events) && cal.lastError === null;
     await db()
       .update(schema.calendars)
-      .set({ events, lastFetchedAt: new Date(), lastError: null })
+      .set(unchanged ? { lastFetchedAt: new Date() } : { events, lastFetchedAt: new Date(), lastError: null })
       .where(eq(schema.calendars.id, cal.id));
     return null;
   } catch (err) {
