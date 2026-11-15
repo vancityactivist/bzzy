@@ -71,10 +71,47 @@ void show(bzzy::Status s, const bzzy::LedChoice& choice, uint32_t nowUnix) {
 static bool g_off = false;
 void setOff(bool off) { g_off = off; }
 
+static Setup g_setup = Setup::None;
+static uint32_t g_setupSinceMs = 0;
+void setSetup(Setup mode) {
+  if (mode != g_setup) g_setupSinceMs = millis();
+  g_setup = mode;
+}
+
+// Two green flashes (2.5 per second, under the 3 Hz limit in led_pattern), then
+// steady green until the card goes.
+static void renderSetup(uint32_t nowMs) {
+  const uint32_t t = nowMs - g_setupSinceMs;
+  CRGB c;
+  switch (g_setup) {
+    case Setup::Done:
+      c = (t < 800 && (t / 200) % 2 == 1) ? CRGB::Black : CRGB(0, 200, 40);
+      g_current = c;
+      break;
+    case Setup::Pairing:
+      g_current = blend(g_current, CRGB(160, 110, 70), 24);  // the bzzy bronze, warmed for LEDs
+      c = g_current;
+      c.nscale8(beatsin8(10, 60, 255));
+      break;
+    default:
+      g_current = blend(g_current, CRGB(120, 120, 140), 24);
+      c = g_current;
+      c.nscale8(beatsin8(10, 30, 200));
+      break;
+  }
+  fill_solid(g_leds, cfg::kLedCount, c);
+}
+
 void tick(uint32_t nowMs) {
   static uint32_t last = 0;
   if (nowMs - last < 20) return;  // ~50 fps is plenty
   last = nowMs;
+
+  if (g_setup != Setup::None) {
+    renderSetup(nowMs);
+    FastLED.show();
+    return;
+  }
 
   if (g_off) {
     // Fade out, then keep the ring dark (outside working hours).

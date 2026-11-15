@@ -70,7 +70,8 @@ constexpr uint32_t kStaleAfterSec = 24 * 3600;  // cached calendar older than th
 
 constexpr uint32_t kLongPressMs = 1000;  // top button: hold this long to go back to automatic
 constexpr uint32_t kSetupHoldMs = 3000;  // hold a button this long at boot for the Wi-Fi setup page
-constexpr const char* kSetupApName = "bzzy-setup";
+constexpr const char* kSetupApPrefix = "bzzy-";  // + 4 hex digits from the MAC: bzzy-3F2A
+constexpr uint32_t kSplashMs = 1500;  // the logo at power-on
 
 // BC moved to year-round UTC-7 in 2026, so no daylight-saving rule. (POSIX TZ signs are reversed.)
 constexpr const char* kTimezone = "<-07>7";  // Vancouver

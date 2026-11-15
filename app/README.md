@@ -28,5 +28,8 @@ npm run build
 
 ## Adding a device
 
-1. Devices → Add a device. Copy the device ID and token (the token is shown once).
-2. Hold BOOT while plugging the light in, join the `bzzy-setup` Wi-Fi from your phone, pick your Wi-Fi, and enter the app URL, device ID and token.
+Plug the light in and follow its screen: scan the QR code to join its `bzzy-XXXX` Wi-Fi, pick your Wi-Fi, then scan the pairing QR code (or type its code at `/pair`) and add it. The light asks `POST /api/pair` for the code and polls `GET /api/pair/{id}` until someone claims it; see [docs/protocol.md](../docs/protocol.md#pairing). Needs migration `0012_device_pairing` (`npm run db:migrate`).
+
+To pair with a local or preview copy of the app, open *Advanced* on the light's setup page and change only the app URL: leave the device ID and token empty, and it pairs with that app.
+
+By hand, as before: Devices → Add a device, copy the device ID and token (shown once), then hold the top button (or BOOT) while plugging the light in and fill them in under *Advanced* on its setup page.

@@ -5,6 +5,7 @@
 
 #include <stdint.h>
 
+#include "setup_flow.h"
 #include "status_engine.h"
 
 namespace display {
@@ -22,11 +23,26 @@ struct View {
   const char* text;  // event, custom or show-now text; may be ""
   uint32_t until;    // unix seconds; 0 = don't show a time
   bool online;
-  const char* notice;  // one-off line such as "Wi-Fi setup: join bzzy-setup"; may be nullptr
+  const char* notice;  // one-off line such as "Updating firmware 40%"; may be nullptr
+};
+
+// A setup screen (lib/core setup_flow.h): the step's QR code and a few lines of text,
+// or, when `note` is set, a "done" card with a big check.
+struct SetupView {
+  bzzy::SetupStep step;
+  bzzy::SetupNote note;
+  uint8_t number, total;  // step dots; total 0 = none
+  const char* qr;         // what the QR code says; nullptr = no QR code
+  const char* title;
+  const char* line1;      // may be "" or nullptr
+  const char* line2;
+  bool bigLine1;          // line1 in large type (the pairing code)
 };
 
 void begin();
+void splash();             // the bzzy logo, shown at power-on
 void show(const View& v);  // redraws only when something changed
+void showSetup(const SetupView& v);  // likewise
 void tick(uint32_t nowMs); // advances GIF frames
 void releaseGif();         // close the GIF file so it can be replaced
 void invalidate();         // redraw on the next show(), reopening the GIF

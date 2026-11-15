@@ -85,6 +85,13 @@
       "when": 1794708502775,
       "tag": "0011_show_now_leds",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1794710877178,
+      "tag": "0012_device_pairing",
+      "breakpoints": true
     }
   ]
 }

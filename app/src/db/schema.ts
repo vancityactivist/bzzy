@@ -219,7 +219,7 @@ export const presence = pgTable("presence", {
 export const devices = pgTable(
   "device",
   {
-    // Short public id the person types into the device's setup page.
+    // Short public id. Paired lights get it from the app; hand-set ones have it typed in.
     id: text("id").primaryKey(),
     teamId: text("team_id")
       .notNull()
@@ -251,6 +251,30 @@ export const devices = pgTable(
     createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
   },
   (t) => [index("device_team_idx").on(t.teamId), index("device_owner_idx").on(t.ownerUserId)],
+);
+
+// A light that hasn't been added yet asks for a pairing code (POST /api/pair) and
+// shows it as a QR code. Someone signed in opens /pair/<code> and claims it; the
+// device, which holds `secret`, then picks up its id. The secret becomes the device
+// token, so the token never appears in a QR code or on screen. See docs/protocol.md.
+export const devicePairings = pgTable(
+  "device_pairing",
+  {
+    id: id(),
+    // Short code from the device's screen (upper case, no 0/O/1/I/L).
+    code: text("code").notNull().unique(),
+    // SHA-256 of the secret only the device has. Copied to device.token_hash on claim.
+    secretHash: text("secret_hash").notNull(),
+    // SHA-256 of the requester's IP, to limit how many codes one network can hold.
+    ipHash: text("ip_hash").notNull(),
+    board: text("board"),
+    firmwareVersion: text("firmware_version"),
+    expiresAt: timestamp("expires_at", { mode: "date" }).notNull(),
+    // Set when someone claims it.
+    deviceId: text("device_id").references(() => devices.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
+  },
+  (t) => [index("device_pairing_ip_idx").on(t.ipHash), index("device_pairing_expires_idx").on(t.expiresAt)],
 );
 
 // ---------------------------------------------------------------------------

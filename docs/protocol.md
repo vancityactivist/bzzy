@@ -1,6 +1,46 @@
 # Device ↔ companion app protocol (v1)
 
-The device only ever makes **outbound** HTTPS requests, so it works on guest Wi-Fi that blocks devices from reaching each other. Every request carries `Authorization: Bearer <device token>`.
+The device only ever makes **outbound** HTTPS requests, so it works on guest Wi-Fi that blocks devices from reaching each other. Every request carries `Authorization: Bearer <device token>`, except the two pairing requests below, which a light makes before it has one.
+
+## Setting up a light
+
+1. **Power on.** The bzzy logo shows for 1.5 s.
+2. **Join the setup Wi-Fi.** With no Wi-Fi saved, the light opens an open network named `bzzy-XXXX` (the end of its MAC address) and shows a QR code that joins it (`WIFI:T:nopass;S:bzzy-XXXX;;`). Holding the top button (or BOOT) for 3 seconds at power-on opens it too, to change the Wi-Fi; that page closes after 5 minutes, a new light's never does.
+3. **Pick your Wi-Fi.** Once a phone joins, the screen switches to a QR code for the setup page (`http://192.168.4.1`), in case the phone didn't open it by itself. The page asks only for the Wi-Fi. The app URL, device ID and token are under *Advanced: set up by hand*; the token field is always empty (the network is open), and leaving it empty keeps the saved token.
+4. **Add it to bzzy.** On Wi-Fi without a device ID, the light asks the app for a pairing code (below) and shows a QR code for `{api}/pair/{code}` with the code under it. Someone signed in opens it, names the light, picks a team, and adds it. The light picks up its ID within a few seconds and shows "All set".
+
+Each step forward shows a short card first (a big green check, two green flashes on the ring), so moving on is obvious. While being set up the ring breathes white, or bronze while it shows its pairing code, and presses do nothing.
+
+A light whose `/state` polls get `401` three times in a row (it was deleted in the app, or given a new token) forgets its ID and shows a new pairing code. Its saved settings stay until a new pairing replaces them, so a light set up by hand can still be fixed by hand.
+
+## Pairing
+
+### `POST {api}/api/pair`
+
+No `Authorization`. The firmware headers below are sent as usual and saved with the code. The answer:
+
+```json
+{
+  "id": "0b6d…",
+  "code": "K7QF2M",
+  "secret": "…32 characters…",
+  "url": "https://bzzy.ca/pair/K7QF2M",
+  "expiresIn": 900,
+  "poll": 3
+}
+```
+
+Codes are six characters from `23456789ABCDEFGHJKMNPQRSTUVWXYZ` (shown as `K7Q-F2M`) and last 15 minutes; the light asks for a new one 10 seconds before. Only the light ever sees `secret`, and the app stores only its SHA-256. `429` means this network (IP address) already holds 10 live codes: wait and try again.
+
+### `GET {api}/api/pair/{id}`
+
+With `Authorization: Bearer <secret>`, every `poll` seconds:
+
+- `{ "state": "waiting", "expiresIn": 840 }`: nobody has claimed it yet.
+- `{ "state": "paired", "deviceId": "bz-x7k2m9", "name": "Desk light" }`: claimed. The light saves `deviceId`, and **the pairing secret becomes its device token**, so the token never appears in a QR code, on screen or in the app.
+- `404`: unknown, expired, or the wrong secret. Ask for a new code.
+
+A claimed code still answers `paired` for a day, so a light that missed the answer gets it next time. The `/pair/{code}` page needs a signed-in account; only one claim wins.
 
 ## `GET {api}/api/device/{deviceId}/state`
 

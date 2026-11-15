@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useActionState, useState, useTransition } from "react";
 
 import { CheckIcon, RefreshIcon, TrashIcon } from "@/components/icons";
@@ -35,9 +36,8 @@ function Credentials({ id, token }: { id: string; token: string }) {
         ))}
       </dl>
       <p className="mt-3 text-muted">
-        To open the setup page: hold BOOT while plugging the device in, then join the{" "}
-        <code className="rounded bg-subtle px-1 font-mono text-[13px] text-foreground">bzzy-setup</code> Wi-Fi network
-        from your phone.
+        To open the setup page: hold the top button (or BOOT) while plugging the light in, scan the Wi-Fi code on its
+        screen, then open <span className="font-medium text-foreground">Advanced: set up by hand</span>.
       </p>
     </div>
   );
@@ -47,7 +47,18 @@ export function AddDeviceForm() {
   const [state, action, pending] = useActionState<NewDeviceResult, FormData>(addDevice, null);
   return (
     <Card>
-      <CardHeader title="Add a device" description="Give it a name, then enter the details we show you on the device's setup page." />
+      <CardHeader
+        title="Add a device"
+        description={
+          <>
+            A new light shows a QR code once it&apos;s on Wi-Fi: scan it, or type its code at{" "}
+            <Link href="/pair" className="font-medium text-foreground underline underline-offset-2">
+              /pair
+            </Link>
+            . To set one up by hand instead, give it a name here and type the details into its setup page.
+          </>
+        }
+      />
       <form action={action} className="mt-4 space-y-3">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
           <Field label="Name" htmlFor="device-name" className="flex-1" error={state?.ok === false ? state.error : undefined}>

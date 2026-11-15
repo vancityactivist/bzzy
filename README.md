@@ -1,3 +1,20 @@
+<p align="center">
+  <a href="https://bzzy.ca">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="docs/brand/bzzy-lockup-dark.svg">
+      <img src="docs/brand/bzzy-lockup-light.svg" alt="bzzy" width="240">
+    </picture>
+  </a>
+</p>
+
+<p align="center">
+  <a href="https://github.com/vancityactivist/bzzy/actions/workflows/app.yml"><img src="https://github.com/vancityactivist/bzzy/actions/workflows/app.yml/badge.svg?branch=main" alt="app build"></a>
+  <a href="https://github.com/vancityactivist/bzzy/actions/workflows/firmware.yml"><img src="https://github.com/vancityactivist/bzzy/actions/workflows/firmware.yml/badge.svg?branch=main" alt="firmware build"></a>
+  <a href="https://github.com/vancityactivist/bzzy/releases"><img src="https://img.shields.io/github/v/release/vancityactivist/bzzy?filter=fw-v*&amp;include_prereleases&amp;label=firmware" alt="latest firmware"></a>
+  <a href="https://bzzy.ca"><img src="https://img.shields.io/website?url=https%3A%2F%2Fbzzy.ca&amp;label=bzzy.ca" alt="bzzy.ca"></a>
+  <a href="LICENSE.md"><img src="https://img.shields.io/badge/license-noncommercial-a08672" alt="license: noncommercial"></a>
+</p>
+
 # bzzy
 
 A homebrew desk busy light: a small screen that shows GIFs, a ring of light around it, and a status (Free, Busy, Do not disturb, Away) set from your phone, your calendar, or the button on top of the device. It clips to a monitor and is powered over USB-C.
@@ -33,7 +50,7 @@ The device never needs anything to connect *to* it, so it works on guest Wi-Fi t
 - **Show now:** put a GIF or a short message on the light straight away. It takes over the whole screen until you clear it.
 - **Calendar:** add an ICS link (Settings → Calendars). Meetings make you Busy, out of office makes you Away, and a manual status still wins.
 - **GIFs:** upload your own or paste a GIPHY or Tenor link, then pick one per status on the Devices page. Long GIFs are thinned out to fit the device.
-- **Devices:** add a light, get its ID and token, choose its GIFs, and see its firmware version and updates.
+- **Devices:** add a light by scanning the QR code on its screen (or typing its code at [bzzy.ca/pair](https://bzzy.ca/pair)), choose its GIFs, and see its firmware version and updates.
 - **Teams:** everyone gets a personal team. Devices, calendars and GIFs belong to a team.
 - **Admin:** a sign-up and usage overview for admin users.
 
@@ -48,6 +65,7 @@ Done:
 3. Calendar sync from an ICS link
 4. Custom LED ring board (rev C) and a black case with a frosted light border, button cap and bzzy wordmark ([hardware/](hardware/README.md))
 5. Signed firmware updates over Wi-Fi from GitHub Releases ([docs/ota.md](docs/ota.md))
+6. Setup on the light's own screen: QR codes for Wi-Fi, then pairing with the app
 
 Next:
 
@@ -55,7 +73,6 @@ Next:
 
 ### Later
 
-- **Logo.** Design a proper bzzy logo in the style of the current wordmark: lowercase, black, tight letter spacing (Geist semibold, `tracking-tight`, as in the app's top bar). It should work as an app icon, a favicon, and on the case.
 - **Pre-built lights.** Once the custom board is proven, offer assembled and tested bzzys for people who don't want to order and solder their own. The landing page already says they're coming.
 - **Landing page photos.** The signed-out home page (`app/src/components/landing.tsx`) uses a concept picture and illustrations. Swap them for photos of a real bzzy once one is built.
 - **v2 board.** One custom board with the ESP32-S3, the bare screen, USB-C and the LEDs (see [hardware/](hardware/README.md#v2-full-custom-board)).
@@ -93,7 +110,13 @@ pio test -e native                               # status logic unit tests, no h
 pio device monitor
 ```
 
-**First boot / changing Wi-Fi:** with nothing saved, or if you hold the BOOT button (or the top button on the final hardware) for 3 seconds while plugging in, the device opens a Wi-Fi network called `bzzy-setup`. Join it from your phone, pick your Wi-Fi, and fill in the companion app URL, device ID and token.
+**First boot:** the light shows the bzzy logo, then walks you through setup on its screen. No typing tokens:
+
+1. **Join its Wi-Fi.** Scan the QR code with your phone's camera. It joins an open network named after the light, like `bzzy-3F2A`.
+2. **Pick your Wi-Fi.** The setup page usually opens by itself; if not, the screen shows a second QR code for it. Choose your network and enter its password.
+3. **Add it to bzzy.** Once it's online, the light shows a QR code and a short code like `K7Q-F2M`. Scan it (or type the code at [bzzy.ca/pair](https://bzzy.ca/pair)), sign in, name the light and pick a team. It says "All set" a few seconds later.
+
+A green check and two green flashes on the ring mark each finished step. To change the Wi-Fi later, hold the top button (or BOOT) for 3 seconds while plugging it in; that keeps the light paired. Deleting a light in the app makes it show a new pairing code. Setting the device ID and token by hand still works, under *Advanced* on the setup page. Details in [docs/protocol.md](docs/protocol.md#setting-up-a-light).
 
 **Controls:** tap the screen (or press BOOT, or the top button on the final hardware) to step Free → Busy → Do not disturb → back to automatic. Long-press the screen or the top button for one second to go straight back to automatic (calendar or default).
 
