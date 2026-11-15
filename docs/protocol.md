@@ -33,7 +33,8 @@ Every request also says which firmware the device runs, so the app can offer upd
     "text": "Happy Friday!",
     "until": 1762894800,
     "updatedAt": 1762891150,
-    "gif": { "url": "https://bzzy.ca/api/device/bz-ab12cd/gif/9a7e…", "sha": "41d0c2e9b7a3f615" }
+    "gif": { "url": "https://bzzy.ca/api/device/bz-ab12cd/gif/9a7e…", "sha": "41d0c2e9b7a3f615" },
+    "leds": { "pattern": "spin", "color": "#d500f9", "speed": 2 }
   },
   "schedule": [
     { "start": 1762898400, "end": 1762902000, "status": "busy", "text": "Council meeting" }
@@ -55,13 +56,13 @@ Every request also says which firmware the device runs, so the app can offer upd
 - Times are unix seconds (UTC).
 - `status` is one of `free`, `busy`, `dnd`, `away`.
 - `manual` may be `null`. `until: 0` means "until cleared". Send `active: false` with an `updatedAt` when an override is cleared, so the device can tell old from new.
-- `show` is "show now": a GIF and/or message someone put on their screen from the app, on top of whatever the status is. It may be `null`. `gif` is `{ "url", "sha" }` like the entries in `gifs`, or `null` for a message on its own. `until: 0` means "until cleared". An expired or cleared one is sent as `active: false` with no GIF, so the device frees the file. The device downloads the GIF to `/gif/show.tmp` (before any status GIF, since someone just asked for it) and swaps it in as `/gif/show.gif`.
+- `show` is "show now": a GIF and/or message someone put on their screen from the app, on top of whatever the status is. It may be `null`. `gif` is `{ "url", "sha" }` like the entries in `gifs`, or `null` for a message on its own. `until: 0` means "until cleared". An expired or cleared one is sent as `active: false` with no GIF, so the device frees the file. The device downloads the GIF to `/gif/show.tmp` (before any status GIF, since someone just asked for it) and swaps it in as `/gif/show.gif`. `leds` (optional) is how the ring moves while the show is on screen, timed from its `updatedAt` (see **LED styles**); missing, the ring does what it would anyway. Firmware from before it ignores it.
 - `schedule` covers the next 24 hours, at most 32 blocks, already expanded from the ICS feeds (recurring events resolved). The device does no ICS parsing. The app's rules: cancelled and free events are ignored, out of office is `away` (all-day too), other timed events (busy, tentative) are `busy`, other all-day events are ignored. Back-to-back blocks of the same status are joined. `text` is "In a meeting" / "Out of office" unless the person turned on meeting titles for that calendar.
 - `gifs` maps each status to `{ "url": "...", "sha": "..." }`, or `null` for no GIF (the plain colour card). The device downloads a GIF only when its `sha` changes, to `/gif/<status>.tmp`, then swaps it in. URLs on the app itself need the device's bearer token; the device never sends the token anywhere else. Built-in GIFs are static files; uploaded ones come from `GET {api}/api/device/{deviceId}/gif/{assetId}`. Responses without `gifs` (older apps) leave the device's GIFs alone.
 - `firmware` is only there when the device should update: `{ "version": "0.3.0", "url": "{api}/api/device/{deviceId}/firmware/0.3.0", "size": 1234567, "sha256": "<hex>", "sig": "<base64>", "now": 0 }`. `now` is the time someone pressed "Update now" (install right away), or 0 for an automatic update. The `url` answers with a redirect to the file; the device follows it without its token. See [ota.md](ota.md).
 - `ledStyles` (optional, firmware with the `leds` feature) says how the ring moves for each status: `{ "dnd": { "pattern": "pulse", "speed": 1 } }`. A status that's missing stays solid. See **LED styles** below.
 - `meetingWarn` (optional, `leds` feature): `{ "minutes": 5, "leds": { "pattern": "pulse", "color": "#ff2000", "speed": 2 } }` flashes the ring from `minutes` before any `schedule` block starts until it starts. The device times it from the schedule it already has, so it still fires if Wi-Fi drops. `minutes: 0` or no `meetingWarn` turns it off.
-- The app sends `ledStyles`, `meetingWarn` and `push.leds` from the light's ring settings on the Devices page. With **Let this light flash** off it sends none of them, so the ring stays steady.
+- The app sends `ledStyles`, `meetingWarn`, `show.leds` and `push.leds` from the light's ring settings on the Devices page. With **Let this light flash** off it sends none of them, so the ring stays steady.
 - `push` (optional, `push` feature) says that `show` is a **team push**: `{ "id": "…", "updatedAt": 1762891150, "leds": { "pattern": "strobe", "color": "#ff2000", "speed": 2, "for": 30 } }`. See **Team pushes** below. `leds` is missing when the push doesn't flash.
 - `poll` is how many seconds to wait before the next poll: 20, or, outside working hours, up to 300 (never past the start of the next working window, so the light is quick again as the day begins). Firmware with the `hours` feature waits that long, kept between 20 s and 10 minutes; while someone has woken it, it polls every 20 s anyway.
 - `workHours` (optional, `hours` feature) lists the owner's coming working windows, oldest first: today's (if it hasn't ended) and the next week's, at most 14. It's missing when they haven't set working hours, and then the light is always on. They're set on the Settings page (days, start and end time, time zone) and worked out in the owner's time zone, daylight saving included. Outside every window the light goes dark (screen and ring off); see **Working hours** below.
@@ -69,7 +70,7 @@ Every request also says which firmware the device runs, so the app can offer upd
 
 ## LED styles
 
-One object describes everything the ring can do. It's used by `ledStyles`, `meetingWarn.leds` and `push.leds`.
+One object describes everything the ring can do. It's used by `ledStyles`, `meetingWarn.leds`, `show.leds` and `push.leds`.
 
 ```json
 { "pattern": "pulse", "color": "#ff2000", "speed": 2, "for": 30 }
@@ -89,7 +90,7 @@ One object describes everything the ring can do. It's used by `ledStyles`, `meet
 | `strobe`: 60 ms bursts | 1 / 2 / 3 Hz |
 | `spin`: a 4-LED arc with a fading tail goes round the ring (from D1 up) | 0.5 / 1 / 1.5 turns a second |
 
-The firmware never flashes faster than 3 times a second, whatever it's sent. Which style plays, highest first: a team push's flash while the push is on screen (timed from the push's `updatedAt`), a meeting warning in its window, then the shown status's style, then solid. The "no recent calendar data" breathe is unchanged. The maths is in `firmware/lib/core/src/led_pattern.cpp`, covered by `firmware/test/`.
+The firmware never flashes faster than 3 times a second, whatever it's sent. Which style plays, highest first: a team push's flash while the push is on screen (timed from the push's `updatedAt`), the person's own show now's `leds` while it's on screen (timed from its `updatedAt`; never while a push is up, since then `show` is the push), a meeting warning in its window, then the shown status's style, then solid. The "no recent calendar data" breathe is unchanged. The maths is in `firmware/lib/core/src/led_pattern.cpp`, covered by `firmware/test/`.
 
 ## Team pushes
 

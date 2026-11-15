@@ -121,6 +121,7 @@ async function HomeContent() {
           until: show.until,
           gifSrc: previewSrc(show.gif),
           gifName: show.gif?.name ?? null,
+          leds: mine.some((d) => d.ring.allowFlash) ? show.leds : null,
         }
       : null;
   const current = schedule.find((b) => b.start <= now && now < b.end);
@@ -134,12 +135,16 @@ async function HomeContent() {
             const gifs = await resolveDeviceGifs(d.id);
             const resolved = resolveScreen({ now, defaultStatus: d.defaultStatus, presence, schedule });
             const ringPush = push && d.pushTeamId === push.teamId ? push : null;
+            const ringShow = !ringPush && show && showVisible(show, presence, now) ? show : null;
             return {
               id: d.id,
               name: d.name,
               view: viewFor(resolved),
               gifs: Object.fromEntries(STATUSES.map((s) => [s, previewSrc(gifs[s])])) as PreviewDevice["gifs"],
-              ring: ringFor({ ...d.ring, status: resolved.status, schedule, now, push: ringPush }),
+              ring: ringFor({ ...d.ring, status: resolved.status, schedule, now, push: ringPush, show: ringShow }),
+              // Without their show now's: what a new show with no ring of its own gets.
+              baseRing: ringFor({ ...d.ring, status: resolved.status, schedule, now, push: ringPush }),
+              allowFlash: d.ring.allowFlash,
               styles: Object.fromEntries(
                 STATUSES.map((s) => [s, ringFor({ ...d.ring, meetingWarn: null, status: s, schedule: [], now })]),
               ) as PreviewDevice["styles"],
@@ -214,9 +219,9 @@ async function HomeContent() {
               <Card>
                 <CardHeader
                   title="Show something"
-                  description="Put a GIF or a message on your screen right now. The light keeps your status colour, and a press of its button takes it down."
+                  description="Put a GIF or a message on your screen right now. The ring keeps your status colour unless you add a ring effect, and a press of its button takes it down."
                 />
-                <ShowNowControls className="mt-5" />
+                <ShowNowControls className="mt-5" flashOff={mine.length > 0 && mine.every((d) => !d.ring.allowFlash)} />
               </Card>
             </div>
           </div>

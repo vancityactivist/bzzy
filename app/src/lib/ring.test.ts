@@ -27,8 +27,31 @@ describe("ringFor", () => {
     const push = { leds: { pattern: "strobe" as const }, updatedAt: now - 5 };
     expect(ringFor({ ...base, schedule: meeting(now + 60), push })).toEqual(push.leds);
   });
+  it("plays a show now's ring over the meeting warning, but not under a push", () => {
+    const show = { leds: { pattern: "spin" as const, color: "#d500f9" }, updatedAt: now - 5 };
+    expect(ringFor({ ...base, schedule: meeting(now + 60), show })).toEqual(show.leds);
+    expect(ringFor({ ...base, show: { leds: null, updatedAt: now } })).toEqual(pulse);
+    const push = { leds: null, updatedAt: now - 1 };
+    expect(ringFor({ ...base, push, show })).toEqual(pulse);
+    // Its "for" ends like a push's.
+    const brief = { leds: { pattern: "blink" as const, for: 10 }, updatedAt: now - 11 };
+    expect(ringFor({ ...base, show: brief })).toBeNull();
+    expect(ringFor({ ...base, allowFlash: false, show })).toBeNull();
+  });
   it("never flashes when flashing is off", () => {
     expect(ringFor({ ...base, allowFlash: false, push: { leds: { pattern: "strobe" }, updatedAt: now } })).toBeNull();
+  });
+});
+
+describe("show now's ring in the state", () => {
+  it("goes out with a live show and not with a cleared one", () => {
+    const leds = { pattern: "spin" as const, speed: 2 };
+    const show = { active: true, text: "Focus", until: now + 600, updatedAt: now - 5, gif: null, leds };
+    const live = buildState({ now, defaultStatus: "free", presence: null, schedule: [], show });
+    expect(live.show?.leds).toEqual(leds);
+    const gone = buildState({ now, defaultStatus: "free", presence: null, schedule: [], show: { ...show, until: now } });
+    expect(gone.show?.active).toBe(false);
+    expect(gone.show).not.toHaveProperty("leds");
   });
 });
 

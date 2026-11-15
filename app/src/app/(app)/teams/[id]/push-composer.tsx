@@ -3,10 +3,11 @@
 import { useActionState, useState, useTransition } from "react";
 
 import { DevicePreview } from "@/components/device-preview";
-import { CheckIcon, XIcon } from "@/components/icons";
+import { XIcon } from "@/components/icons";
+import { Chip, type RingChoice, RingPicker } from "@/components/ring-picker";
 import { Badge, Button, Card, CardHeader, cx, Field, Input, Select } from "@/components/ui";
 import { TEXT_MAX } from "@/lib/protocol";
-import { FLASH_FOR, PUSH_COLORS, PUSH_DURATIONS, PUSH_FLASHES, pushLeds, type PushInput } from "@/lib/push-rules";
+import { PUSH_DURATIONS, pushLeds } from "@/lib/push-rules";
 import { screenText, viewFor, withShow, wrapBar, wrapMessage } from "@/lib/screen";
 
 import type { LibraryGif } from "@/app/studio";
@@ -24,10 +25,7 @@ export function PushComposer({ teamId, members, library }: { teamId: string; mem
   const [minutes, setMinutes] = useState(15);
   const [target, setTarget] = useState<"all" | "users">("all");
   const [picked, setPicked] = useState<string[]>([]);
-  const [flash, setFlash] = useState<PushInput["flash"]>("pulse");
-  const [color, setColor] = useState("");
-  const [speed, setSpeed] = useState(2);
-  const [flashFor, setFlashFor] = useState(30);
+  const [ring, setRing] = useState<RingChoice>({ flash: "pulse", color: "", speed: 2, flashFor: 30 });
 
   const [result, action, pending] = useActionState<PushResult, FormData>(async (prev, fd) => {
     const r = await sendPushAction(teamId, prev, fd);
@@ -43,7 +41,7 @@ export function PushComposer({ teamId, members, library }: { teamId: string; mem
     until: 0, // the show layouts don't draw it
     gif: !!gifSrc,
   });
-  const ring = pushLeds({ flash, color, speed, flashFor: 0 });
+  const previewRing = pushLeds({ ...ring, flashFor: 0 });
   const shown = clean ? (gifSrc ? wrapBar(clean) : wrapMessage(clean).lines).join(" ") : "";
   const cut = clean && shown.replace(/ +/g, " ") !== clean.replace(/ +/g, " ");
 
@@ -55,7 +53,7 @@ export function PushComposer({ teamId, members, library }: { teamId: string; mem
       />
       <form action={action} className="mt-5 grid gap-6 md:grid-cols-[auto_1fr]">
         <div className="flex justify-center md:sticky md:top-20 md:self-start">
-          <DevicePreview view={view} gifSrc={gifSrc} ring={ring} scale={0.75} className="m-4" />
+          <DevicePreview view={view} gifSrc={gifSrc} ring={previewRing} scale={0.75} className="m-4" />
         </div>
 
         <div className="min-w-0 space-y-5">
@@ -124,72 +122,13 @@ export function PushComposer({ teamId, members, library }: { teamId: string; mem
 
           <fieldset className="space-y-3">
             <legend className="text-sm font-medium">Flash the ring</legend>
-            <div className="mt-1.5 flex flex-wrap gap-2">
-              {PUSH_FLASHES.map((f) => (
-                <Chip key={f.value} checked={flash === f.value} onClick={() => setFlash(f.value)}>
-                  {f.label}
-                </Chip>
-              ))}
+            <div className="mt-1.5">
+              <RingPicker
+                value={ring}
+                onChange={(v) => setRing((r) => ({ ...r, ...v }))}
+                note="Never faster than 3 flashes a second. Lights on older firmware show the push without flashing until they update."
+              />
             </div>
-            <input type="hidden" name="flash" value={flash} />
-            {flash !== "none" && (
-              <div className="space-y-3">
-                <div className="flex flex-wrap items-center gap-2" role="radiogroup" aria-label="Colour">
-                  {PUSH_COLORS.map((c) => (
-                    <button
-                      key={c.value}
-                      type="button"
-                      role="radio"
-                      aria-checked={color === c.value}
-                      aria-label={c.label}
-                      title={c.label}
-                      onClick={() => setColor(c.value)}
-                      className={cx(
-                        "flex size-8 items-center justify-center rounded-full ring-1 ring-line ring-inset transition-shadow",
-                        color === c.value && "ring-2 ring-foreground ring-offset-2 ring-offset-card",
-                      )}
-                      style={{
-                        background: c.value || "conic-gradient(#00c828 0 25%, #ff1400 0 50%, #a000ff 0 75%, #ff8c00 0)",
-                      }}
-                    >
-                      {color === c.value && (
-                        <CheckIcon className={cx("size-4", c.value === "#ffffff" || c.value === "#ffd400" ? "text-black" : "text-white")} strokeWidth={3} />
-                      )}
-                    </button>
-                  ))}
-                </div>
-                <input type="hidden" name="color" value={color} />
-                <div className="flex flex-wrap gap-2">
-                  <Select
-                    name="speed"
-                    aria-label="Speed"
-                    value={speed}
-                    onChange={(e) => setSpeed(Number(e.target.value))}
-                    wrapperClassName="w-36"
-                  >
-                    <option value={1}>Slow</option>
-                    <option value={2}>Normal</option>
-                    <option value={3}>Fast</option>
-                  </Select>
-                  <Select
-                    name="flashFor"
-                    aria-label="How long it flashes"
-                    value={flashFor}
-                    onChange={(e) => setFlashFor(Number(e.target.value))}
-                    wrapperClassName="w-48"
-                  >
-                    {FLASH_FOR.map((f) => (
-                      <option key={f.seconds} value={f.seconds}>
-                        Flash {f.label}
-                      </option>
-                    ))}
-                  </Select>
-                </div>
-                <p className="text-xs text-muted">
-                  Never faster than 3 flashes a second. Lights on older firmware show the push without flashing until they update.
-                </p>
-              </div>
-            )}
           </fieldset>
 
           <div className="flex flex-wrap items-center gap-2 border-t border-line pt-4">
@@ -219,23 +158,6 @@ export function PushComposer({ teamId, members, library }: { teamId: string; mem
         </div>
       </form>
     </Card>
-  );
-}
-
-function Chip({ checked, onClick, children }: { checked: boolean; onClick: () => void; children: React.ReactNode }) {
-  return (
-    <button
-      type="button"
-      aria-pressed={checked}
-      onClick={onClick}
-      className={cx(
-        "inline-flex h-8 items-center gap-1.5 rounded-full border px-3 text-sm transition-colors",
-        checked ? "border-foreground bg-foreground text-background" : "border-line bg-card hover:border-line-strong",
-      )}
-    >
-      {checked && <CheckIcon className="size-3.5" strokeWidth={3} />}
-      {children}
-    </button>
   );
 }
 

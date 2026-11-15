@@ -64,6 +64,7 @@ bool parseState(const char* json, size_t len, State& out) {
     const char* sha = sh["gif"].is<JsonObjectConst>() ? (sh["gif"]["sha"] | "") : (sh["gifSha"] | "");
     st.show.hasGif = *sha != '\0';
     strlcpy(st.show.gifSha, sha, sizeof(st.show.gifSha));
+    st.show.leds = parseStyle(sh["leds"]);
   }
 
   for (JsonObjectConst b : doc["schedule"].as<JsonArrayConst>()) {
@@ -137,6 +138,7 @@ String serializeState(const State& st) {
     s["until"] = st.show.until;
     s["updatedAt"] = st.show.updatedAt;
     if (st.show.hasGif) s["gifSha"] = st.show.gifSha;
+    if (st.show.leds.set) writeStyle(s["leds"].to<JsonObject>(), st.show.leds);
   }
   JsonArray arr = doc["schedule"].to<JsonArray>();
   for (size_t i = 0; i < st.blockCount; ++i) {

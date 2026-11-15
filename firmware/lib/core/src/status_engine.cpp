@@ -170,6 +170,13 @@ LedChoice chooseLeds(const State& st, Status shown, uint32_t now) {
     c.startedAt = st.push.updatedAt;
     return c;
   }
+  // Their own show now, while it's on screen. (While a push is up, `show` is the push.)
+  if (!st.push.active && st.show.leds.set && showVisible(st, now)) {
+    c.style = st.show.leds;
+    c.show = true;
+    c.startedAt = st.show.updatedAt;
+    return c;
+  }
   const MeetingWarn& w = st.meetingWarn;
   if (now && w.minutes && w.leds.set) {
     const uint32_t window = static_cast<uint32_t>(w.minutes) * 60u;

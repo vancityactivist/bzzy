@@ -1,0 +1,1 @@
+ALTER TABLE "show_now" ADD COLUMN "leds" jsonb;

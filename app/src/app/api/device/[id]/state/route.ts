@@ -5,8 +5,9 @@ import { unauthorized } from "@/lib/device-auth";
 import { firmwareOffer, firmwarePatch, readFirmwareHeaders } from "@/lib/firmware";
 import { refreshRelease, releaseDue } from "@/lib/firmware-release";
 import type { ResolvedGif } from "@/lib/gifs";
+import type { CurrentShow } from "@/lib/show";
 import { authenticatedBundle } from "@/lib/poll-bundle";
-import { buildState, type GifMap, type GifRef, hasFeature, nowSeconds, readFeatures, STATUSES } from "@/lib/protocol";
+import { buildState, type GifMap, type GifRef, hasFeature, nowSeconds, readFeatures, type ShowState, STATUSES } from "@/lib/protocol";
 import { pushAsShow, pushFor } from "@/lib/push-rules";
 import { sentLeds } from "@/lib/ring";
 import { noteSeen } from "@/lib/seen";
@@ -60,7 +61,8 @@ export async function GET(req: NextRequest, ctx: RouteContext<"/api/device/[id]/
     // A team push takes the place of the person's own "show now" until it ends or
     // they dismiss it. Firmware that knows about pushes also gets `push`, which says
     // so and carries the flash.
-    show: push ? { ...pushAsShow(push, presence, now), gif: ref(push.gif) } : show && { ...show, gif: ref(show.gif) },
+    // Their own show can move the ring too, if the light may flash.
+    show: push ? { ...pushAsShow(push, presence, now), gif: ref(push.gif) } : show && ownShow(show, device.allowFlash, ref),
     push:
       push && hasFeature(features, "push")
         ? { id: push.id, updatedAt: push.updatedAt, ...(push.leds && device.allowFlash ? { leds: push.leds } : {}) }
@@ -85,4 +87,9 @@ export async function GET(req: NextRequest, ctx: RouteContext<"/api/device/[id]/
     ]);
   });
   return Response.json(state, { headers: { "Cache-Control": "no-store" } });
+}
+
+function ownShow(show: CurrentShow, allowFlash: boolean, ref: (g: ResolvedGif) => GifRef | null): ShowState {
+  const { gif, leds, ...rest } = show;
+  return { ...rest, gif: ref(gif), ...(leds && allowFlash ? { leds } : {}) };
 }

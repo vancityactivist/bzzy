@@ -18,6 +18,8 @@ static bzzy::Status g_status = bzzy::Status::Unknown;
 static bzzy::LedStyle g_style;
 static bool g_warning = false;
 static bool g_push = false;
+static bool g_show = false;
+static uint32_t g_startedAt = 0;
 static uint32_t g_styleStartMs = 0;
 
 static CRGB colorFor(bzzy::Status s) {
@@ -44,12 +46,14 @@ void begin() {
 
 void show(bzzy::Status s, const bzzy::LedChoice& choice, uint32_t nowUnix) {
   const uint32_t ms = millis();
-  const bool changed = s != g_status || choice.warning != g_warning || choice.push != g_push || !sameStyle(choice.style, g_style);
+  // A new push or show now with the same style still starts its flash over.
+  const bool changed = s != g_status || choice.warning != g_warning || choice.push != g_push || choice.show != g_show ||
+                       choice.startedAt != g_startedAt || !sameStyle(choice.style, g_style);
   if (changed) {
     g_styleStartMs = ms;
-    // A push or meeting warning that began before this moment (say, after a reboot)
-    // carries on where it would have been, so its "for" still ends on time.
-    if ((choice.warning || choice.push) && choice.startedAt && nowUnix > choice.startedAt) {
+    // A push, show now or meeting warning that began before this moment (say, after a
+    // reboot) carries on where it would have been, so its "for" still ends on time.
+    if ((choice.warning || choice.push || choice.show) && choice.startedAt && nowUnix > choice.startedAt) {
       g_styleStartMs = ms - (nowUnix - choice.startedAt) * 1000u;
     }
   }
@@ -57,6 +61,8 @@ void show(bzzy::Status s, const bzzy::LedChoice& choice, uint32_t nowUnix) {
   g_style = choice.style;
   g_warning = choice.warning;
   g_push = choice.push;
+  g_show = choice.show;
+  g_startedAt = choice.startedAt;
   g_target = choice.style.set && choice.style.hasColor
                  ? CRGB((choice.style.color >> 16) & 0xFF, (choice.style.color >> 8) & 0xFF, choice.style.color & 0xFF)
                  : colorFor(s);

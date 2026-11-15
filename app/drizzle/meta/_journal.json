@@ -78,6 +78,13 @@
       "when": 1794706306183,
       "tag": "0010_work_hours",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1794708502775,
+      "tag": "0011_show_now_leds",
+      "breakpoints": true
     }
   ]
 }

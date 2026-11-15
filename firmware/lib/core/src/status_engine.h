@@ -47,6 +47,7 @@ struct Show {
   char text[kTextMax] = {0};
   uint32_t until = 0;       // unix seconds; 0 = until cleared
   uint32_t updatedAt = 0;   // unix seconds
+  LedStyle leds;            // how the ring moves while it's up; unset: the status's own
 };
 
 // A team push (docs/protocol.md): an admin's message and/or GIF. Its content arrives in
@@ -134,6 +135,7 @@ struct LedChoice {
   LedStyle style;  // style.set == false: solid status colour
   bool warning = false;
   bool push = false;
+  bool show = false;  // the person's own show now
   uint32_t startedAt = 0;
 };
 LedChoice chooseLeds(const State& st, Status shown, uint32_t now);
