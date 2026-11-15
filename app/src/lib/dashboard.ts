@@ -12,6 +12,7 @@ import { ringFor } from "./ring";
 import { livePushes } from "./pushes";
 import { showVisible, STATUSES, type Status } from "./protocol";
 import { resolveScreen, type ScreenSource, type ScreenView, viewFor, withShow } from "./screen";
+import { liveSeen } from "./seen";
 import { getShow } from "./show";
 import type { TeamMemberRow } from "./teams";
 
@@ -43,7 +44,7 @@ export type MemberCard = {
 export async function teamDashboard(members: TeamMemberRow[], now: number): Promise<MemberCard[]> {
   if (members.length === 0) return [];
   const ids = members.map((m) => m.userId);
-  const [devices, sources] = await Promise.all([
+  const [seenDevices, sources] = await Promise.all([
     db()
       .select({
         id: schema.devices.id,
@@ -64,6 +65,8 @@ export async function teamDashboard(members: TeamMemberRow[], now: number): Prom
       .from(schema.presence)
       .where(inArray(schema.presence.userId, ids)),
   ]);
+  // "Last seen" lives in the cache between the occasional database writes; newest first.
+  const devices = (await liveSeen(seenDevices)).sort((a, b) => (b.lastSeenAt?.getTime() ?? -1) - (a.lastSeenAt?.getTime() ?? -1));
   const sourceOf = new Map(sources.map((s) => [s.userId, s.source]));
   // Pushes from whichever team each person's main light follows.
   const mainOf = new Map<string, (typeof devices)[number]>();

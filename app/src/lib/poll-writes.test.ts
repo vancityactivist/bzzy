@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { CachedEvent } from "./ics";
-import { SEEN_WRITE_EVERY_MS, sameEvents, shouldMarkSeen } from "./poll-writes";
+import { SEEN_DB_EVERY_MS, SEEN_WRITE_EVERY_MS, sameEvents, sameJson, shouldMarkSeen } from "./poll-writes";
 
 const NOW = 1_762_891_200_000;
 
@@ -17,6 +17,11 @@ describe("shouldMarkSeen", () => {
 
   it("writes once the saved time is a minute old", () => {
     expect(shouldMarkSeen(new Date(NOW - SEEN_WRITE_EVERY_MS), NOW, false)).toBe(true);
+  });
+
+  it("takes a longer interval for the database copy", () => {
+    expect(shouldMarkSeen(new Date(NOW - 2 * 3600_000), NOW, false, SEEN_DB_EVERY_MS)).toBe(false);
+    expect(shouldMarkSeen(new Date(NOW - SEEN_DB_EVERY_MS), NOW, false, SEEN_DB_EVERY_MS)).toBe(true);
   });
 
   it("always writes when there's something else to save", () => {
@@ -53,5 +58,19 @@ describe("sameEvents", () => {
     expect(sameEvents([ev(1)], [ev(1, { end: 99 })])).toBe(false);
     expect(sameEvents([ev(1)], [ev(1, { status: "away" })])).toBe(false);
     expect(sameEvents([ev(1)], [ev(1, { title: "Budget review" })])).toBe(false);
+  });
+});
+
+describe("sameJson", () => {
+  it("ignores key order, as jsonb reorders keys", () => {
+    expect(sameJson({ version: "0.3.0", boards: { a: { file: "x.bin" } } }, { boards: { a: { file: "x.bin" } }, version: "0.3.0" })).toBe(true);
+  });
+
+  it("spots changed, missing and extra values", () => {
+    expect(sameJson({ a: 1 }, { a: 2 })).toBe(false);
+    expect(sameJson({ a: 1 }, { a: 1, b: 2 })).toBe(false);
+    expect(sameJson([1, 2], [2, 1])).toBe(false);
+    expect(sameJson({ a: [1] }, { a: { 0: 1 } })).toBe(false);
+    expect(sameJson(null, {})).toBe(false);
   });
 });

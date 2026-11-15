@@ -1,33 +1,31 @@
 import { after, type NextRequest } from "next/server";
 
-import { refreshCalendar, scheduleForUser } from "@/lib/calendar";
-import { authenticateDevice, markSeen, unauthorized } from "@/lib/device-auth";
+import { refreshCalendar, scheduleFromCalendars, staleCalendars } from "@/lib/calendar";
+import { unauthorized } from "@/lib/device-auth";
 import { firmwareOffer, firmwarePatch, readFirmwareHeaders } from "@/lib/firmware";
-import { refreshRelease, releaseIsStale, savedRelease } from "@/lib/firmware-release";
-import { resolveDeviceGifs, type ResolvedGif } from "@/lib/gifs";
-import { getPresence } from "@/lib/presence";
+import { refreshRelease, releaseDue } from "@/lib/firmware-release";
+import type { ResolvedGif } from "@/lib/gifs";
+import { authenticatedBundle } from "@/lib/poll-bundle";
 import { buildState, type GifMap, type GifRef, hasFeature, nowSeconds, readFeatures, STATUSES } from "@/lib/protocol";
-import { pushAsShow } from "@/lib/push-rules";
-import { pushForDevice } from "@/lib/pushes";
-import { shouldMarkSeen } from "@/lib/poll-writes";
+import { pushAsShow, pushFor } from "@/lib/push-rules";
 import { sentLeds } from "@/lib/ring";
-import { getShow } from "@/lib/show";
+import { noteSeen } from "@/lib/seen";
 
 // Polled by the device every ~20 s. See docs/protocol.md.
+//
+// Answers from a cached copy of everything it needs (lib/poll-bundle.ts), so while
+// nothing changes a poll doesn't touch the database at all and Postgres can go idle.
 export async function GET(req: NextRequest, ctx: RouteContext<"/api/device/[id]/state">) {
   const { id } = await ctx.params;
-  const device = await authenticateDevice(id, req.headers.get("authorization"));
-  if (!device) return unauthorized();
+  const bundle = await authenticatedBundle(id, req.headers.get("authorization"));
+  if (!bundle) return unauthorized();
+  const { device, presence, show, release, gifs: resolved } = bundle;
 
   const now = nowSeconds();
-  const [presence, { schedule, stale }, resolved, show, release, push] = await Promise.all([
-    getPresence(device.ownerUserId),
-    scheduleForUser(device.ownerUserId, now),
-    resolveDeviceGifs(device.id),
-    getShow(device.ownerUserId),
-    savedRelease(),
-    pushForDevice(device, now),
-  ]);
+  const nowMs = Date.now();
+  const schedule = scheduleFromCalendars(bundle.calendars, now);
+  const push = pushFor(bundle.pushes, device.ownerUserId, now);
+  const [stale, releaseStale] = await Promise.all([staleCalendars(bundle.calendars, nowMs), releaseDue(release, nowMs)]);
   const origin = req.nextUrl.origin;
   const ref = (g: ResolvedGif): GifRef | null => {
     if (!g) return null;
@@ -70,14 +68,14 @@ export async function GET(req: NextRequest, ctx: RouteContext<"/api/device/[id]/
 
   // Answer from the saved copies right away, then re-read any calendar (or the
   // firmware release) that's due.
-  // "Last seen" is only saved about once a minute unless there's firmware news to save
-  // too: a write on every 20 s poll would keep the database from ever going idle.
-  const seen = shouldMarkSeen(device.lastSeenAt, Date.now(), Object.keys(fwPatch).length > 0);
+  // "Last seen" goes to the cache (and only rarely to the database, unless there's
+  // firmware news to save); feeds and the release are re-read when due, and only written
+  // back if they changed.
   after(async () => {
     await Promise.all([
-      seen ? markSeen(device.id, fwPatch, device.updateRequestedAt) : null,
-      ...stale.map((c) => refreshCalendar(c)),
-      releaseIsStale(release) ? refreshRelease() : null,
+      noteSeen(device, nowMs, fwPatch),
+      ...stale.map((c) => refreshCalendar(c, bundle.timeZone)),
+      releaseStale ? refreshRelease(release) : null,
     ]);
   });
   return Response.json(state, { headers: { "Cache-Control": "no-store" } });

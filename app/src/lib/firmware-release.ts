@@ -5,6 +5,9 @@ import { after } from "next/server";
 
 import { db, schema } from "@/db";
 
+import { cacheGet, cacheSet, expire, tag } from "./cache";
+import { sameJson } from "./poll-writes";
+
 import { manifestSchema, type ReleaseManifest } from "./firmware";
 
 // Firmware releases live on GitHub (docs/ota.md). For a public repo the app reads
@@ -55,9 +58,25 @@ export function releaseIsStale(row: ReleaseRow | null, now = Date.now()) {
   return !row || now - row.checkedAt.getTime() > RELEASE_REFRESH_MS;
 }
 
+// A check that found the same release is noted in the runtime cache rather than the
+// database, so polls don't wake Postgres every 10 minutes. Losing it just means a re-check.
+const CHECKED_KEY = "fwchk";
+
+export async function releaseDue(row: ReleaseRow | null, now = Date.now()): Promise<boolean> {
+  if (!releaseIsStale(row, now)) return false;
+  const checked = await cacheGet<number>(CHECKED_KEY);
+  return typeof checked !== "number" || now - checked > RELEASE_REFRESH_MS;
+}
+
+function sameRelease(row: ReleaseRow, update: Partial<ReleaseRow>) {
+  if ((update.lastError ?? null) !== row.lastError) return false;
+  if (update.lastError) return true; // an unchanged error: the last good copy stays as it is
+  return update.tag === row.tag && update.version === row.version && sameJson(update.manifest, row.manifest) && sameJson(update.assets, row.assets);
+}
+
 // Read the latest release (pre-releases are skipped by GitHub's "latest") and its
 // manifest.json, and save them. A failure keeps the last good copy.
-export async function refreshRelease(): Promise<void> {
+export async function refreshRelease(saved?: ReleaseRow | null): Promise<void> {
   let update: Partial<ReleaseRow>;
   try {
     const res = await fetch(`https://api.github.com/repos/${REPO}/releases/latest`, {
@@ -91,11 +110,17 @@ export async function refreshRelease(): Promise<void> {
     update = { lastError: err instanceof Error && err.name === "TimeoutError" ? "GitHub took too long to answer." : "Couldn't reach GitHub." };
   }
   if (update.lastError) console.warn(`[firmware] ${update.lastError}`);
-  const values = { ...update, checkedAt: new Date() };
-  await db()
-    .insert(schema.firmwareRelease)
-    .values({ id: ROW_ID, ...values })
-    .onConflictDoUpdate({ target: schema.firmwareRelease.id, set: values });
+  const checkedAt = new Date();
+  const row = saved === undefined ? await savedRelease() : saved;
+  if (!row || !sameRelease(row, update)) {
+    const values = { ...update, checkedAt };
+    await db()
+      .insert(schema.firmwareRelease)
+      .values({ id: ROW_ID, ...values })
+      .onConflictDoUpdate({ target: schema.firmwareRelease.id, set: values });
+    await expire(tag.release);
+  }
+  await cacheSet(CHECKED_KEY, checkedAt.getTime(), 24 * 3600);
 }
 
 // A link the device can download its file from, for the saved release only.
@@ -109,8 +134,8 @@ export async function releaseFileUrl(row: ReleaseRow | null, version: string, bo
 // For pages: the saved release, re-read first if it's due (waiting up to `waitMs`).
 export async function releaseForPage(waitMs = 3000): Promise<ReleaseRow | null> {
   const row = await savedRelease();
-  if (!releaseIsStale(row)) return row;
-  const pending = refreshRelease();
+  if (!(await releaseDue(row))) return row;
+  const pending = refreshRelease(row);
   after(() => pending);
   const done = await Promise.race([pending.then(() => true), new Promise<false>((r) => setTimeout(() => r(false), waitMs))]);
   return done ? savedRelease() : row;

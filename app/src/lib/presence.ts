@@ -4,6 +4,8 @@ import { eq } from "drizzle-orm";
 
 import { db, schema } from "@/db";
 
+import { expire, tag } from "./cache";
+
 import type { Presence } from "./protocol";
 
 export async function getPresence(userId: string): Promise<Presence | null> {
@@ -19,4 +21,5 @@ export async function setPresence(userId: string, p: Presence, source: string) {
     .insert(schema.presence)
     .values({ userId, ...values })
     .onConflictDoUpdate({ target: schema.presence.userId, set: values });
+  await expire(tag.user(userId));
 }
