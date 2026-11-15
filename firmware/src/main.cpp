@@ -14,12 +14,15 @@
 #include "net.h"
 #include "ota.h"
 #include "protocol.h"
+#include "setup_flow.h"
 #include "status_engine.h"
 #include "touch.h"
 
 static bzzy::State g_state;
 static bzzy::Settings g_engineCfg;
 static uint32_t g_savedHash = 0;
+static uint32_t g_splashAt = 0;
+static bzzy::SetupFlow g_setupFlow;
 
 // ---- flash cache ----
 static constexpr const char* kCachePath = "/state.json";
@@ -109,6 +112,72 @@ static bool buttonPressed() {
   return false;
 }
 
+// ---- setup screens ----
+// The words and QR code for each setup step (lib/core setup_flow.h).
+static display::SetupView setupView(const bzzy::SetupScreen& sc, const net::SetupInfo& si) {
+  static char qr[128], line1[96], line2[96], host[64];
+  display::SetupView v = {sc.step, sc.note, sc.number, sc.total, nullptr, "", "", "", false};
+  bzzy::hostOf(si.apiBase, host, sizeof(host));
+  switch (sc.note) {
+    case bzzy::SetupNote::PhoneJoined:
+      v.title = "Phone connected";
+      v.line1 = "Now pick your Wi-Fi";
+      v.line2 = "on your phone";
+      return v;
+    case bzzy::SetupNote::Online:
+      v.title = "Wi-Fi connected";
+      v.line1 = si.ssid;
+      return v;
+    case bzzy::SetupNote::Paired:
+      v.title = "All set";
+      v.line1 = si.pairedName[0] ? si.pairedName : "Added to bzzy";
+      return v;
+    case bzzy::SetupNote::None:
+      break;
+  }
+  switch (sc.step) {
+    case bzzy::SetupStep::JoinAp:
+      if (bzzy::wifiQrPayload(si.apName, qr, sizeof(qr))) v.qr = qr;
+      v.title = "Join this Wi-Fi";
+      snprintf(line1, sizeof(line1), "Wi-Fi: %s", si.apName);
+      v.line1 = line1;
+      v.line2 = "Scan with your phone's camera";
+      break;
+    case bzzy::SetupStep::ChooseWifi:
+      v.qr = "http://192.168.4.1";
+      v.title = "Pick your Wi-Fi";
+      v.line1 = "on the page that opened";
+      v.line2 = "No page? Scan, or go to 192.168.4.1";
+      break;
+    case bzzy::SetupStep::Connecting:
+      v.title = "Connecting";
+      v.line1 = "Joining your Wi-Fi...";
+      break;
+    case bzzy::SetupStep::GetCode:
+      v.title = "Add to bzzy";
+      v.line1 = "Getting a code from";
+      v.line2 = host;
+      break;
+    case bzzy::SetupStep::ShowCode:
+      if (si.pairUrl[0]) {
+        v.qr = si.pairUrl;
+      } else {
+        snprintf(qr, sizeof(qr), "%s/pair/%s", si.apiBase, si.code);
+        v.qr = qr;
+      }
+      v.title = "Add to bzzy";
+      bzzy::formatPairCode(si.code, line1, sizeof(line1));
+      v.line1 = line1;
+      v.bigLine1 = true;
+      snprintf(line2, sizeof(line2), "or type it at %s/pair", host);
+      v.line2 = line2;
+      break;
+    case bzzy::SetupStep::None:
+      break;
+  }
+  return v;
+}
+
 // ---- main ----
 void setup() {
   Serial.begin(115200);
@@ -121,6 +190,8 @@ void setup() {
 
   leds::begin();
   display::begin();
+  display::splash();  // every power-on
+  g_splashAt = millis();
   touch::begin();
   if (!LittleFS.begin(true)) Serial.println("[fs] LittleFS mount failed");
   loadCache();
@@ -147,6 +218,32 @@ void loop() {
     net::installGifs();
     display::invalidate();
   }
+
+  const bool splashing = ms - g_splashAt < cfg::kSplashMs;
+
+  // Being set up (Wi-Fi, then pairing): the setup screens and ring take over, and
+  // presses do nothing. Checked a few times a second; the answer changes slowly.
+  static net::SetupInfo si;
+  static bzzy::SetupScreen setupScreen = {bzzy::SetupStep::None, bzzy::SetupNote::None, 0, 0};
+  static uint32_t setupCheckedMs = 0;
+  if (setupCheckedMs == 0 || ms - setupCheckedMs >= 200) {
+    setupCheckedMs = ms | 1;
+    net::setupInfo(si);
+    setupScreen = g_setupFlow.update({si.portalOpen, si.apStations, si.wifiUp, si.paired, si.code[0] != '\0'}, ms);
+  }
+  if ((setupScreen.step != bzzy::SetupStep::None || setupScreen.note != bzzy::SetupNote::None) && ota::progress() < 0) {
+    touch::poll();
+    topButtonPoll();
+    buttonPressed();
+    leds::setSetup(setupScreen.note != bzzy::SetupNote::None    ? leds::Setup::Done
+                   : setupScreen.step == bzzy::SetupStep::ShowCode ? leds::Setup::Pairing
+                                                                  : leds::Setup::Waiting);
+    if (!splashing) display::showSetup(setupView(setupScreen, si));
+    leds::tick(ms);
+    delay(1);
+    return;
+  }
+  leds::setSetup(leds::Setup::None);
 
   // Outside working hours the light is dark. Any press wakes it for a few minutes
   // (and does nothing else); presses while it's awake work as usual and keep it awake.
@@ -195,8 +292,6 @@ void loop() {
   if (ota::progress() >= 0) {
     snprintf(updating, sizeof(updating), "Updating firmware %d%%", ota::progress());
     notice = updating;
-  } else if (net::setupPortalOpen()) {
-    notice = "Wi-Fi setup: join bzzy-setup";
   } else if (r.source == bzzy::Source::Fallback) {
     notice = net::now() ? "No recent calendar data" : "Waiting for the clock";
   }
@@ -222,7 +317,7 @@ void loop() {
   if (dark) view = {display::Layout::Off, r.status, "", 0, true, nullptr};
   leds::setOff(dark);
   leds::show(r.status, bzzy::chooseLeds(g_state, r.status, net::now()), net::now());
-  display::show(view);
+  if (!splashing) display::show(view);
 
   leds::tick(ms);
   display::tick(ms);

@@ -1,5 +1,6 @@
 #include "net.h"
 
+#include <ArduinoJson.h>
 #include <HTTPClient.h>
 #include <LittleFS.h>
 #include <Preferences.h>
@@ -17,9 +18,17 @@ namespace net {
 
 static Settings g_settings;
 static WiFiManager g_wm;
+// Most people only pick their Wi-Fi: the light then shows a QR code that adds it to
+// the app (pairing). Typing the device ID and token by hand is tucked under Advanced.
+static WiFiManagerParameter g_pAdvOpen(
+    "<details style='margin-top:12px'><summary>Advanced: set up by hand</summary>"
+    "<p style='font-size:13px'>Leave these empty to add the light by scanning the code it shows next. "
+    "Leave the token empty to keep the one it has.</p>");
 static WiFiManagerParameter g_pApi("api", "Companion app URL", "", sizeof(Settings::apiBase) - 1);
 static WiFiManagerParameter g_pId("device", "Device ID", "", sizeof(Settings::deviceId) - 1);
 static WiFiManagerParameter g_pToken("token", "Device token", "", sizeof(Settings::token) - 1);
+static WiFiManagerParameter g_pAdvClose("</details>");
+static char g_apName[16] = "";  // bzzy-XXXX, from the end of the MAC address
 
 static SemaphoreHandle_t g_mx;
 static bzzy::State g_incoming;  // guarded by g_mx
@@ -35,6 +44,17 @@ static volatile bool g_quiet = false;     // set by the main loop: a good moment
 static volatile bool g_fastPoll = false;  // set by the main loop: awake outside working hours
 static volatile uint32_t g_pollMs = cfg::kPollIntervalMs;  // what the app asked for last
 static uint32_t g_nextUpdateTryMs = 0;    // after a failed update, wait before trying again
+static uint8_t g_unauthorized = 0;        // 401s in a row from the app: the light was removed
+
+// Pairing (docs/protocol.md, "Pairing"). The network task owns these; the code, link
+// and paired name are copied out for the screen under g_mx.
+static char g_pairId[40] = "";
+static char g_pairSecret[sizeof(Settings::token)] = "";
+static uint32_t g_pairExpiresMs = 0;
+static uint32_t g_pairPollMs = 3000;
+static char g_pairCode[8] = "";       // guarded by g_mx
+static char g_pairUrl[96] = "";       // guarded by g_mx
+static char g_pairedName[61] = "";    // guarded by g_mx
 
 // GIFs. g_wanted is only touched by the network task. g_installed (the hash of the
 // GIF on flash for each status) and the swap queue are shared, guarded by g_mx.
@@ -65,13 +85,7 @@ static void loadSettings() {
   }
 }
 
-static void saveParams() {
-  strlcpy(g_settings.apiBase, g_pApi.getValue(), sizeof(g_settings.apiBase));
-  strlcpy(g_settings.deviceId, g_pId.getValue(), sizeof(g_settings.deviceId));
-  strlcpy(g_settings.token, g_pToken.getValue(), sizeof(g_settings.token));
-  // Drop a trailing slash so URL joins are predictable.
-  size_t n = strlen(g_settings.apiBase);
-  if (n && g_settings.apiBase[n - 1] == '/') g_settings.apiBase[n - 1] = '\0';
+static void saveSettings() {
   Preferences p;
   p.begin("bzzy", false);
   p.putString("api", g_settings.apiBase);
@@ -80,7 +94,21 @@ static void saveParams() {
   p.end();
 }
 
-static bool configured() { return g_settings.apiBase[0] && g_settings.deviceId[0]; }
+static void saveParams() {
+  // The setup Wi-Fi is open, so the page never shows the saved token. An empty token
+  // field keeps it, unless the device ID changed too.
+  const bool sameDevice = strcmp(g_pId.getValue(), g_settings.deviceId) == 0;
+  if (g_pApi.getValue()[0]) strlcpy(g_settings.apiBase, g_pApi.getValue(), sizeof(g_settings.apiBase));
+  strlcpy(g_settings.deviceId, g_pId.getValue(), sizeof(g_settings.deviceId));
+  if (g_pToken.getValue()[0] || !sameDevice) strlcpy(g_settings.token, g_pToken.getValue(), sizeof(g_settings.token));
+  // Drop a trailing slash so URL joins are predictable.
+  size_t n = strlen(g_settings.apiBase);
+  if (n && g_settings.apiBase[n - 1] == '/') g_settings.apiBase[n - 1] = '\0';
+  g_unauthorized = 0;
+  saveSettings();
+}
+
+static bool configured() { return g_settings.apiBase[0] && g_settings.deviceId[0] && g_settings.token[0]; }
 
 // ---- clock ----
 uint32_t now() {
@@ -100,7 +128,10 @@ static String url(const char* path) {
   return String(g_settings.apiBase) + "/api/device/" + g_settings.deviceId + path;
 }
 
-static bool httpRequest(const char* method, const String& u, const String& body, String* resp) {
+// `bearer`: the token to send, or nullptr for the device token. `status` gets the HTTP
+// status (or a negative HTTPClient error).
+static bool httpRequest(const char* method, const String& u, const String& body, String* resp, int* status = nullptr,
+                        const char* bearer = nullptr) {
   // TODO(step 2): pin the companion app's certificate instead of skipping
   // verification. Fine for a prototype on test data; not for real calendars.
   WiFiClientSecure client;
@@ -109,7 +140,8 @@ static bool httpRequest(const char* method, const String& u, const String& body,
   http.setTimeout(cfg::kHttpTimeoutMs);
   http.setConnectTimeout(cfg::kHttpTimeoutMs);
   if (!http.begin(client, u)) return false;
-  if (g_settings.token[0]) http.addHeader("Authorization", String("Bearer ") + g_settings.token);
+  const char* tok = bearer ? bearer : g_settings.token;
+  if (tok[0]) http.addHeader("Authorization", String("Bearer ") + tok);
   // So the app knows which firmware to offer (docs/ota.md).
   http.addHeader("X-Bzzy-Firmware", ota::version());
   http.addHeader("X-Bzzy-Board", ota::board());
@@ -125,6 +157,7 @@ static bool httpRequest(const char* method, const String& u, const String& body,
   } else {
     code = http.GET();
   }
+  if (status) *status = code;
   bool ok = code >= 200 && code < 300;
   if (ok && resp) *resp = http.getString();
   if (!ok) Serial.printf("[net] %s %s -> %d\n", method, u.c_str(), code);
@@ -263,7 +296,19 @@ static bool syncOnce() {
 
   // 2) Pull the current state.
   String resp;
-  if (!httpRequest("GET", url("/state"), "", &resp)) return false;
+  int status = 0;
+  if (!httpRequest("GET", url("/state"), "", &resp, &status)) {
+    // Someone deleted this light in the app (or made it a new token). After a few in a
+    // row, forget the id and show a pairing code. The saved settings stay until a new
+    // pairing replaces them, so a light set up by hand can still be fixed by hand.
+    if (status == 401 && ++g_unauthorized >= 3) {
+      Serial.println("[net] the app doesn't know this light any more: pairing again");
+      g_settings.deviceId[0] = '\0';
+      g_settings.token[0] = '\0';
+    }
+    return false;
+  }
+  g_unauthorized = 0;
   static bzzy::State parsed;  // big-ish: keep it off the task stack
   if (!bzzy::parseState(resp.c_str(), resp.length(), parsed)) {
     Serial.println("[net] couldn't parse state response");
@@ -295,9 +340,85 @@ static bool syncOnce() {
   return true;
 }
 
+// ---- pairing (network task) ----
+static void clearPairing() {
+  g_pairId[0] = '\0';
+  g_pairSecret[0] = '\0';
+  xSemaphoreTake(g_mx, portMAX_DELAY);
+  g_pairCode[0] = '\0';
+  g_pairUrl[0] = '\0';
+  xSemaphoreGive(g_mx);
+}
+
+// One step of pairing: ask for a code if there isn't a live one, otherwise ask whether
+// it's been claimed. Returns how long to wait before the next step.
+static uint32_t pairOnce() {
+  if (!g_pairId[0] || (int32_t)(millis() - g_pairExpiresMs) >= 0) {
+    clearPairing();
+    String resp;
+    int status = 0;
+    if (!httpRequest("POST", String(g_settings.apiBase) + "/api/pair", "{}", &resp, &status, "")) {
+      return status == 429 ? 60 * 1000 : 10 * 1000;
+    }
+    JsonDocument doc;
+    if (deserializeJson(doc, resp)) return 10 * 1000;
+    const char* id = doc["id"] | "";
+    const char* secret = doc["secret"] | "";
+    const char* code = doc["code"] | "";
+    const char* link = doc["url"] | "";
+    const uint32_t expiresIn = doc["expiresIn"] | 900;
+    const uint32_t poll = doc["poll"] | 3;
+    if (!id[0] || !secret[0] || !code[0] || strlen(secret) >= sizeof(g_pairSecret)) return 10 * 1000;
+    strlcpy(g_pairId, id, sizeof(g_pairId));
+    strlcpy(g_pairSecret, secret, sizeof(g_pairSecret));
+    // Ask for a new code a little before this one runs out, so the screen never shows a dead one.
+    g_pairExpiresMs = millis() + (expiresIn > 20 ? expiresIn - 10 : expiresIn) * 1000;
+    g_pairPollMs = constrain(poll, 2u, 30u) * 1000;
+    xSemaphoreTake(g_mx, portMAX_DELAY);
+    strlcpy(g_pairCode, code, sizeof(g_pairCode));
+    strlcpy(g_pairUrl, link, sizeof(g_pairUrl));
+    xSemaphoreGive(g_mx);
+    Serial.printf("[pair] code %s\n", code);
+    return g_pairPollMs;
+  }
+
+  String resp;
+  int status = 0;
+  if (!httpRequest("GET", String(g_settings.apiBase) + "/api/pair/" + g_pairId, "", &resp, &status, g_pairSecret)) {
+    if (status == 404) {
+      g_pairExpiresMs = millis();  // gone or expired: get a new code straight away
+      return 500;
+    }
+    return 5 * 1000;
+  }
+  JsonDocument doc;
+  if (deserializeJson(doc, resp)) return g_pairPollMs;
+  const char* state = doc["state"] | "";
+  const char* deviceId = doc["deviceId"] | "";
+  if (strcmp(state, "paired") != 0 || !deviceId[0] || strlen(deviceId) >= sizeof(g_settings.deviceId)) return g_pairPollMs;
+
+  // Claimed. The pairing secret is this light's token from now on.
+  strlcpy(g_settings.deviceId, deviceId, sizeof(g_settings.deviceId));
+  strlcpy(g_settings.token, g_pairSecret, sizeof(g_settings.token));
+  saveSettings();
+  g_unauthorized = 0;
+  xSemaphoreTake(g_mx, portMAX_DELAY);
+  strlcpy(g_pairedName, doc["name"] | "", sizeof(g_pairedName));
+  xSemaphoreGive(g_mx);
+  clearPairing();
+  Serial.printf("[pair] paired as %s\n", deviceId);
+  return 0;
+}
+
 static void networkTask(void*) {
   uint32_t backoff = cfg::kPollIntervalMs;
   for (;;) {
+    if (WiFi.status() == WL_CONNECTED && !configured() && g_settings.apiBase[0] && !g_portalOpen) {
+      g_lastSyncOk = false;
+      vTaskDelay(pdMS_TO_TICKS(pairOnce()));
+      backoff = cfg::kPollIntervalMs;
+      continue;
+    }
     if (WiFi.status() == WL_CONNECTED && configured()) {
       bool ok = syncOnce();
       g_lastSyncOk = ok;
@@ -337,23 +458,35 @@ void begin(bool openSetupPortal) {
   restoreClockFromRtc();
   configTzTime(cfg::kTimezone, cfg::kNtpServer);
 
+  // The token field starts empty on purpose: see saveParams.
   g_pApi.setValue(g_settings.apiBase, sizeof(Settings::apiBase) - 1);
   g_pId.setValue(g_settings.deviceId, sizeof(Settings::deviceId) - 1);
-  g_pToken.setValue(g_settings.token, sizeof(Settings::token) - 1);
+  g_wm.addParameter(&g_pAdvOpen);
   g_wm.addParameter(&g_pApi);
   g_wm.addParameter(&g_pId);
   g_wm.addParameter(&g_pToken);
+  g_wm.addParameter(&g_pAdvClose);
   g_wm.setSaveParamsCallback(saveParams);
   g_wm.setSaveConfigCallback(saveParams);
   g_wm.setConfigPortalBlocking(false);
-  g_wm.setConfigPortalTimeout(300);
+  g_wm.setTitle("bzzy");
+
+  // A name of its own, so two new lights in one office don't share a setup network.
+  const uint64_t mac = ESP.getEfuseMac();
+  snprintf(g_apName, sizeof(g_apName), "%s%02X%02X", cfg::kSetupApPrefix, (unsigned)((mac >> 32) & 0xFF),
+           (unsigned)((mac >> 40) & 0xFF));
 
   WiFi.mode(WIFI_STA);
   WiFi.setAutoReconnect(true);
-  if (openSetupPortal || !g_wm.getWiFiIsSaved() || !configured()) {
-    // Only open the setup page when asked or when there's nothing saved. If the
-    // office Wi-Fi is just down, keep retrying quietly instead.
-    g_wm.startConfigPortal(cfg::kSetupApName);
+  const bool wifiSaved = g_wm.getWiFiIsSaved();
+  if (openSetupPortal || !wifiSaved) {
+    // Only open the setup page when asked or when there's no Wi-Fi saved. If the
+    // office Wi-Fi is just down, keep retrying quietly instead. A light with Wi-Fi
+    // but no device id goes straight to pairing.
+    // A new light waits on its setup page for as long as it takes; one opened with
+    // the button gives up after 5 minutes and goes back to the Wi-Fi it had.
+    g_wm.setConfigPortalTimeout(wifiSaved ? 300 : 0);
+    g_wm.startConfigPortal(g_apName);
     g_portalOpen = true;
   } else {
     WiFi.begin();
@@ -382,6 +515,21 @@ void loop() {
 
 bool online() { return WiFi.status() == WL_CONNECTED && g_lastSyncOk; }
 bool setupPortalOpen() { return g_portalOpen; }
+
+void setupInfo(SetupInfo& out) {
+  out.portalOpen = g_portalOpen;
+  out.apStations = g_portalOpen ? WiFi.softAPgetStationNum() : 0;
+  out.wifiUp = WiFi.status() == WL_CONNECTED;
+  out.paired = configured();
+  strlcpy(out.apName, g_apName, sizeof(out.apName));
+  strlcpy(out.ssid, out.wifiUp ? WiFi.SSID().c_str() : "", sizeof(out.ssid));
+  strlcpy(out.apiBase, g_settings.apiBase, sizeof(out.apiBase));
+  xSemaphoreTake(g_mx, portMAX_DELAY);
+  strlcpy(out.code, g_pairCode, sizeof(out.code));
+  strlcpy(out.pairUrl, g_pairUrl, sizeof(out.pairUrl));
+  strlcpy(out.pairedName, g_pairedName, sizeof(out.pairedName));
+  xSemaphoreGive(g_mx);
+}
 void setQuiet(bool quiet) { g_quiet = quiet; }
 void setFastPoll(bool fast) { g_fastPoll = fast; }
 

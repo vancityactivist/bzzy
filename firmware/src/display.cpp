@@ -3,6 +3,8 @@
 #include "config.h"
 #include "text_wrap.h"
 
+#include "logo_wordmark.h"
+
 #if BZZY_HAS_DISPLAY
 
 #define LGFX_USE_V1
@@ -295,7 +297,122 @@ void begin() {
   g_gif.begin(LITTLE_ENDIAN_PIXELS);
 }
 
+// ---- the logo ----
+// The tile and dots follow docs/brand (a 64-unit grid); the letters are a bitmap.
+void splash() {
+  closeGif();
+  g_lcd.fillScreen(TFT_BLACK);
+  const float u = 96.0f / 64.0f;  // tile 96 px
+  const int tx = (kW - 96) / 2, ty = 52;
+  g_lcd.fillSmoothRoundRect(tx, ty, 96, 96, (int)(15 * u), g_lcd.color888(0x17, 0x17, 0x17));
+  g_lcd.drawRoundRect(tx, ty, 96, 96, (int)(15 * u), g_lcd.color888(0x3a, 0x3a, 0x3a));
+  const uint32_t dots[4] = {0x16a34a, 0xdc2626, 0x7c3aed, 0xea580c};  // free, busy, dnd, away
+  for (int i = 0; i < 4; ++i) {
+    const float cx = tx + (i % 2 ? 43.5f : 20.5f) * u;
+    const float cy = ty + (i / 2 ? 43.5f : 20.5f) * u;
+    g_lcd.fillSmoothCircle((int)cx, (int)cy, (int)(6.75f * u + 0.5f),
+                          g_lcd.color888(dots[i] >> 16, (dots[i] >> 8) & 0xff, dots[i] & 0xff));
+  }
+  g_lcd.pushGrayscaleImage((kW - kWordmarkW) / 2, ty + 96 + 28, kWordmarkW, kWordmarkH, kWordmark,
+                           lgfx::grayscale_4bit, g_lcd.color888(0xfa, 0xfa, 0xfa), g_lcd.color888(0, 0, 0));
+  g_drawn = false;
+}
+
+// ---- setup screens ----
+static uint32_t g_setupHash = 0;
+static bool g_inSetup = false;
+
+static uint32_t hashStr(uint32_t h, const char* s) {
+  if (!s) s = "";
+  for (; *s; ++s) h = (h ^ (uint8_t)*s) * 16777619u;
+  return (h ^ 0xff) * 16777619u;
+}
+
+static void drawStepDots(uint8_t number, uint8_t total) {
+  if (!total) return;
+  const int gap = 18, y = 18;
+  const int x0 = kW / 2 - (total - 1) * gap / 2;
+  for (int i = 1; i <= total; ++i) {
+    const int x = x0 + (i - 1) * gap;
+    if (i == number) {
+      g_lcd.fillSmoothCircle(x, y, 5, TFT_WHITE);
+    } else if (i < number) {
+      g_lcd.fillSmoothCircle(x, y, 3, g_lcd.color888(0x16, 0xa3, 0x4a));
+    } else {
+      g_lcd.drawCircle(x, y, 3, g_lcd.color888(0x70, 0x70, 0x70));
+    }
+  }
+}
+
+static void drawCentred(const char* text, int y, const lgfx::IFont* font, uint32_t color) {
+  if (!text || !*text) return;
+  g_lcd.setFont(font);
+  g_lcd.setTextDatum(lgfx::top_center);
+  g_lcd.setTextColor(color, TFT_BLACK);
+  g_lcd.drawString(text, kW / 2, y);
+}
+
+// The "done" card between steps: a big green check, so moving on is unmistakable.
+static void drawNote(const SetupView& v) {
+  const int cx = kW / 2, cy = 104;
+  g_lcd.fillSmoothCircle(cx, cy, 46, g_lcd.color888(0x16, 0xa3, 0x4a));
+  g_lcd.drawWideLine(cx - 20, cy + 1, cx - 6, cy + 16, 5, TFT_WHITE);
+  g_lcd.drawWideLine(cx - 6, cy + 16, cx + 22, cy - 14, 5, TFT_WHITE);
+  drawCentred(v.title, 172, &fonts::FreeSansBold12pt7b, TFT_WHITE);
+  drawCentred(v.line1, 208, &fonts::FreeSans9pt7b, g_lcd.color888(0xb0, 0xb0, 0xb0));
+  drawCentred(v.line2, 232, &fonts::FreeSans9pt7b, g_lcd.color888(0xb0, 0xb0, 0xb0));
+}
+
+static void drawStep(const SetupView& v) {
+  drawStepDots(v.number, v.total);
+  drawCentred(v.title, 34, &fonts::FreeSansBold12pt7b, TFT_WHITE);
+  const uint32_t muted = g_lcd.color888(0xb0, 0xb0, 0xb0);
+  if (v.qr && *v.qr) {
+    // A white square behind the code gives it the quiet border phone cameras look for.
+    constexpr int kBox = 160, kQr = 148;
+    const int bx = (kW - kBox) / 2, by = 66;
+    g_lcd.fillRoundRect(bx, by, kBox, kBox, 8, TFT_WHITE);
+    g_lcd.qrcode(v.qr, bx + (kBox - kQr) / 2, by + (kBox - kQr) / 2, kQr, 1);
+    if (v.bigLine1) {
+      drawCentred(v.line1, 232, &fonts::FreeSansBold12pt7b, TFT_WHITE);
+      drawCentred(v.line2, 260, &fonts::Font2, muted);
+    } else {
+      drawCentred(v.line1, 234, &fonts::FreeSans9pt7b, TFT_WHITE);
+      drawCentred(v.line2, 256, &fonts::Font2, muted);
+    }
+  } else {
+    // No code yet (connecting, asking for a code): just words, in the middle.
+    drawCentred(v.line1, 132, &fonts::FreeSans9pt7b, muted);
+    drawCentred(v.line2, 156, &fonts::FreeSans9pt7b, muted);
+  }
+}
+
+void showSetup(const SetupView& v) {
+  uint32_t h = 2166136261u;
+  h = hashStr(h, v.qr);
+  h = hashStr(h, v.title);
+  h = hashStr(h, v.line1);
+  h = hashStr(h, v.line2);
+  h = (h ^ ((uint32_t)v.step << 24 | (uint32_t)v.note << 16 | v.number << 8 | v.total | v.bigLine1 << 7)) * 16777619u;
+  if (g_inSetup && h == g_setupHash) return;
+  g_setupHash = h;
+  g_inSetup = true;
+  closeGif();
+  if (g_dark) {
+    g_lcd.setBrightness(kBrightness);
+    g_dark = false;
+  }
+  g_lcd.fillScreen(TFT_BLACK);
+  if (v.note != bzzy::SetupNote::None) {
+    drawNote(v);
+  } else {
+    drawStep(v);
+  }
+  g_drawn = false;  // the status screen redraws in full afterwards
+}
+
 void show(const View& v) {
+  g_inSetup = false;
   const char* text = v.text ? v.text : "";
   const char* notice = v.notice ? v.notice : "";
   if (g_drawn && v.layout == g_last.layout && v.status == g_last.status && v.until == g_last.until &&
@@ -333,7 +450,9 @@ void invalidate() { g_drawn = false; }
 
 namespace display {
 void begin() {}
+void splash() {}
 void show(const View&) {}
+void showSetup(const SetupView&) {}
 void tick(uint32_t) {}
 void releaseGif() {}
 void invalidate() {}

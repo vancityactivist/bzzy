@@ -124,8 +124,8 @@ async function DevicesContent() {
 function EmptyDevices() {
   return (
     <EmptyState icon={<DeviceIcon />} title="No devices yet">
-      A device is a bzzy light that sits on your desk and glows with your status. Add one below to get the details its
-      setup page asks for.
+      A device is a bzzy light that sits on your desk and glows with your status. Plug a new one in and follow its
+      screen: it walks you through Wi-Fi, then shows a QR code that adds it here.
     </EmptyState>
   );
 }

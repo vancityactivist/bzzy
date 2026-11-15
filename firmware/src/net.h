@@ -20,6 +20,21 @@ void loop();  // call from the main loop
 
 bool online();         // Wi-Fi up AND the last sync worked
 bool setupPortalOpen();
+
+// What the setup screens need (lib/core setup_flow.h). Safe to call from the main loop.
+struct SetupInfo {
+  bool portalOpen;
+  uint8_t apStations;   // phones on the setup Wi-Fi
+  bool wifiUp;
+  bool paired;          // has a device id and token
+  char apName[16];      // the setup Wi-Fi, bzzy-XXXX
+  char ssid[33];        // the Wi-Fi it's on, when wifiUp
+  char apiBase[96];
+  char code[8];         // pairing code; "" until the app gives one
+  char pairUrl[96];     // where its QR code goes
+  char pairedName[61];  // the name it was given in the app, once paired
+};
+void setupInfo(SetupInfo& out);
 uint32_t now();        // unix seconds, or 0 if the clock isn't set yet
 
 // Whether now is a good moment for an automatic firmware update (free or away, and
