@@ -96,11 +96,15 @@ These stay clear of the flash pins (6 to 11), the strapping pins (0, 2, 5, 12, 1
 
 ## Flashing (Windows, PowerShell)
 
-1. Install Python from [python.org](https://www.python.org/downloads/) if you don't have it, then PlatformIO:
+1. Install Python if you don't have it (`py` not recognised means you don't), then **close and reopen PowerShell**, then install PlatformIO:
 
    ```powershell
+   winget install -e --id Python.Python.3.12
+   # reopen PowerShell here
    py -m pip install --user platformio
    ```
+
+   If `py` still isn't found, use `python` in its place.
 
    (Or install VS Code with the PlatformIO extension and use its terminal.)
 
