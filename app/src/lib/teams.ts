@@ -4,6 +4,8 @@ import { and, desc, eq, gt, inArray, isNotNull, isNull, lt, or, sql } from "driz
 
 import { db, schema } from "@/db";
 
+import { expire, tag } from "./cache";
+
 import { hashToken, newDeviceToken } from "./device-token";
 import {
   type AssignableRole,
@@ -149,6 +151,7 @@ export async function renameTeam(userId: string, teamId: string, rawName: string
 export async function deleteTeam(userId: string, teamId: string) {
   await requireTeam(userId, teamId, "owner");
   await db().delete(schema.teams).where(and(eq(schema.teams.id, teamId), eq(schema.teams.personal, false)));
+  await expire(tag.team(teamId));
 }
 
 // ---- members ----
@@ -196,6 +199,7 @@ export async function removeMember(userId: string, teamId: string, targetUserId:
       .where(and(eq(schema.devices.ownerUserId, targetUserId), eq(schema.devices.pushTeamId, teamId))),
     audit(teamId, userId, self ? "left" : "removed", { userId: targetUserId }, t.asSuperadmin),
   ]);
+  await expire(tag.team(teamId), tag.user(targetUserId));
 }
 
 export async function setMemberRole(userId: string, teamId: string, targetUserId: string, role: AssignableRole) {
@@ -358,6 +362,7 @@ export async function acceptInvite(userId: string, token: string): Promise<strin
     db().insert(schema.teamMembers).values({ teamId: found.teamId, userId, role: invite.role }).onConflictDoNothing(),
     audit(found.teamId, userId, "joined", { inviteId: invite.id, role: invite.role }),
   ]);
+  await expire(tag.team(found.teamId));
   await adoptPushTeam(userId, found.teamId);
   return found.teamId;
 }
@@ -369,6 +374,7 @@ async function adoptPushTeam(userId: string, teamId: string) {
     .update(schema.devices)
     .set({ pushTeamId: teamId })
     .where(and(eq(schema.devices.ownerUserId, userId), isNull(schema.devices.pushTeamId)));
+  await expire(tag.user(userId));
 }
 
 // The Devices page picker. Only the light's owner, and only teams they're in.
@@ -381,6 +387,7 @@ export async function setDevicePushTeam(userId: string, deviceId: string, teamId
     .update(schema.devices)
     .set({ pushTeamId: teamId })
     .where(and(eq(schema.devices.id, deviceId), eq(schema.devices.ownerUserId, userId)));
+  await expire(tag.device(deviceId));
 }
 
 // ---- audit log ----

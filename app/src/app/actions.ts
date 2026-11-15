@@ -236,7 +236,7 @@ export async function setCalendarTitlesAction(id: string, showTitles: boolean) {
   const user = await requireUser();
   const cal = await ownCalendar(user.id, id);
   if (!cal) return;
-  await setShowTitles(cal.id, showTitles);
+  await setShowTitles(cal, showTitles);
   refresh();
 }
 
@@ -244,7 +244,7 @@ export async function removeCalendarAction(id: string) {
   const user = await requireUser();
   const cal = await ownCalendar(user.id, id);
   if (!cal) return;
-  await deleteCalendar(cal.id);
+  await deleteCalendar(cal);
   refresh();
 }
 

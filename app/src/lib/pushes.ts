@@ -4,6 +4,8 @@ import { and, desc, eq, gt, inArray, isNotNull, isNull, or } from "drizzle-orm";
 
 import { db, schema } from "@/db";
 
+import { expire, tag } from "./cache";
+
 import { builtinGif, type ResolvedGif } from "./gifs";
 import { clipText, nowSeconds } from "./protocol";
 import { type LedStyle, pushFor, type PushWho } from "./push-rules";
@@ -116,6 +118,7 @@ export async function createPush(
     ...(users.length ? [d.insert(schema.teamPushTargets).values(users.map((u) => ({ pushId: id, userId: u })))] : []),
     audit(teamId, userId, "push", { target: input.target, people: users.length, text, minutes: input.minutes, flash: input.leds?.pattern ?? null }, t.asSuperadmin),
   ]);
+  await expire(tag.team(teamId));
   return id;
 }
 
@@ -129,7 +132,10 @@ export async function endPush(userId: string, teamId: string, pushId: string) {
     .set({ endedAt: now, updatedAt: now })
     .where(and(eq(p.id, pushId), eq(p.teamId, teamId), isNull(p.endedAt)))
     .returning({ text: p.text });
-  if (ended[0]) await audit(teamId, userId, "push-ended", { text: ended[0].text }, t.asSuperadmin);
+  if (ended[0]) {
+    await audit(teamId, userId, "push-ended", { text: ended[0].text }, t.asSuperadmin);
+    await expire(tag.team(teamId));
+  }
 }
 
 type PushDevice = { id: string; ownerUserId: string; pushTeamId: string | null };
@@ -143,6 +149,13 @@ async function following(device: PushDevice): Promise<string | null> {
     .where(and(eq(schema.teamMembers.teamId, device.pushTeamId), eq(schema.teamMembers.userId, device.ownerUserId)))
     .limit(1);
   return rows[0]?.teamId ?? null;
+}
+
+// The live pushes of the team this light follows (none if its owner has left that team),
+// for the poll's cached copy. Which one shows is picked per poll with `pushFor`.
+export async function followedPushes(device: PushDevice, now: number): Promise<Push[]> {
+  const teamId = await following(device);
+  return teamId ? loadPushes([teamId], now) : [];
 }
 
 // The push this light shows now, if any.
@@ -167,6 +180,7 @@ export async function ackPush(device: PushDevice, pushId: string, at: number) {
     .insert(schema.teamPushAcks)
     .values({ pushId, userId: device.ownerUserId, at, deviceId: device.id })
     .onConflictDoNothing();
+  await expire(tag.team(teamId));
   return true;
 }
 

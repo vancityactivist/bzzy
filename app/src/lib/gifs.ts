@@ -5,6 +5,8 @@ import { and, desc, eq, inArray } from "drizzle-orm";
 
 import { db, schema } from "@/db";
 
+import { expire, tag } from "./cache";
+
 import builtinList from "./builtin-gifs.json";
 import { type GifLink, GifLinkError, isGifHost, mediaFromPage, parseGifLink } from "./gif-link";
 import { GifError, MAX_LINK_BYTES, processUpload } from "./gif-process";
@@ -148,6 +150,7 @@ export async function deleteGif(userId: string, assetId: string): Promise<boolea
   const team = teams.find((t) => t.id === asset.teamId);
   if (!team || (asset.uploadedBy !== userId && team.role === "member")) return false;
   await db().delete(schema.assets).where(eq(schema.assets.id, assetId));
+  await expire(tag.asset(assetId), tag.team(asset.teamId));
   await del(asset.blobUrl).catch(() => {}); // the row is what matters; a stray blob is harmless
   return true;
 }
@@ -179,6 +182,7 @@ export async function setDeviceGif(deviceId: string, deviceTeamId: string, statu
   const where = and(eq(schema.deviceAssets.deviceId, deviceId), eq(schema.deviceAssets.status, status));
   if (choice === "default") {
     await db().delete(schema.deviceAssets).where(where);
+    await expire(tag.device(deviceId));
     return true;
   }
   let assetId: string | null = null;
@@ -202,6 +206,7 @@ export async function setDeviceGif(deviceId: string, deviceTeamId: string, statu
     .insert(schema.deviceAssets)
     .values({ deviceId, status, assetId, builtin })
     .onConflictDoUpdate({ target: [schema.deviceAssets.deviceId, schema.deviceAssets.status], set: { assetId, builtin } });
+  await expire(tag.device(deviceId));
   return true;
 }
 

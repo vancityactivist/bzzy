@@ -4,6 +4,8 @@ import { and, eq, lte } from "drizzle-orm";
 
 import { db, schema } from "@/db";
 
+import { expire, tag } from "./cache";
+
 import { builtinGif, type ResolvedGif } from "./gifs";
 import type { Show } from "./protocol";
 
@@ -49,6 +51,7 @@ export async function setShow(
     .insert(schema.showNow)
     .values({ userId, ...row })
     .onConflictDoUpdate({ target: schema.showNow.userId, set: row });
+  await expire(tag.user(userId));
 }
 
 // Take it down, unless it was put up after `updatedAt` (a late button press from a
@@ -59,6 +62,7 @@ export async function clearShow(userId: string, updatedAt: number) {
     .update(schema.showNow)
     .set({ active: false, updatedAt })
     .where(and(eq(schema.showNow.userId, userId), eq(schema.showNow.active, true), lte(schema.showNow.updatedAt, updatedAt)));
+  await expire(tag.user(userId));
 }
 
 // Whether a device may download this upload because its owner is showing it now.

@@ -7,6 +7,7 @@ import { cache } from "react";
 import { db, schema } from "@/db";
 
 import { lastActiveFromExpiry } from "./admin-stats";
+import { liveSeen } from "./seen";
 import { getCurrentUser } from "./session";
 
 // Checked against the database on every request, so removing someone's admin role
@@ -97,7 +98,7 @@ export async function adminOverview() {
 
   return {
     users: userRows,
-    devices,
+    devices: await liveSeen(devices),
     sharedTeams: teams.filter((t) => !t.personal).length,
   };
 }
