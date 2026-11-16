@@ -77,6 +77,24 @@ Next:
 - **Landing page photos.** The signed-out home page (`app/src/components/landing.tsx`) uses a concept picture and illustrations. Swap them for photos of a real bzzy once one is built.
 - **v2 board.** One custom board with the ESP32-S3, the bare screen, USB-C and the LEDs (see [hardware/](hardware/README.md#v2-full-custom-board)).
 
+## Build log
+
+### 2026-11-15: proof of life
+
+<p align="center">
+  <img src="docs/images/proof-of-life-2026-11-15.gif" alt="The breadboard test build: a 16x2 LCD reading &quot;Hello, World! til 6:12pm&quot; and a 12-LED ring chasing red" width="480">
+</p>
+
+The first bzzy to run on real hardware. It's the cheap test build, not the real thing yet: a classic ESP32 (an Adafruit HUZZAH32 Feather) on a breadboard with a 16x2 character LCD and a 12-LED WS2812 ring ([docs/esp32-test-build.md](docs/esp32-test-build.md)).
+
+It joined Wi-Fi, paired with the live app at bzzy.ca, and then did what it was told: a *Show now* message sent from the app came up on the LCD as "Hello, World! / til 6:12pm", with the ring chasing red. Everything between the phone and the light (sign-in, pairing, the device API, polling over HTTPS, show now and its ring effect) worked end to end.
+
+<p align="center">
+  <a href="docs/images/proof-of-life-2026-11-15.jpg"><img src="docs/images/proof-of-life-2026-11-15.jpg" alt="The test build on a countertop: ESP32 Feather, breadboard, 16x2 LCD and a 12-LED ring lit red" width="640"></a>
+</p>
+
+Next up is the same firmware on the Waveshare touch board inside the custom ring and case.
+
 ## Hardware
 
 The target board is the **touch** version. The non-touch board and a plain ESP32 still build, for testing.
