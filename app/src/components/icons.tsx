@@ -225,6 +225,16 @@ export function WifiOffIcon(props: IconProps) {
   );
 }
 
+/** Code: angle brackets, for the API. */
+export function CodeIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="m8.5 7.5-4.5 4.5 4.5 4.5" />
+      <path d="m15.5 7.5 4.5 4.5-4.5 4.5" />
+    </Icon>
+  );
+}
+
 export function ClockIcon(props: IconProps) {
   return (
     <Icon {...props}>

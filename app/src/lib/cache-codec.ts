@@ -35,5 +35,7 @@ export const tag = {
   user: (id: string) => `u-${id}`,
   team: (id: string) => `t-${id}`,
   asset: (id: string) => `a-${id}`,
+  // An API token (lib/api-tokens.ts): revoking it expires this.
+  apiToken: (id: string) => `k-${id}`,
   release: "fw",
 } as const;

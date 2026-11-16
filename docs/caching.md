@@ -12,6 +12,10 @@ So the poll answers from Vercel's runtime cache, and while nothing changes it do
 | `seen:{deviceId}` | when the light last polled, and the `poll` interval it was told | about once a minute (`app/src/lib/seen.ts`) |
 | `calchk:{calendarId}` | when a feed was last read and found unchanged | each refresh (`app/src/lib/calendar.ts`) |
 | `fwchk` | when the firmware release was last checked and found unchanged | each check (`app/src/lib/firmware-release.ts`) |
+| `api:v1:{userId}` | what the public API's reads need about a person: presence, show now, calendars, their lights, pushes of the teams those follow (`app/src/lib/api-snapshot.ts`) | on a miss, 3 h TTL |
+| `pat:v1:{tokenHash}` | an API token's owner, scopes and expiry (`app/src/lib/api-tokens.ts`) | on a miss, 1 h TTL |
+| `patused:{tokenId}` | when an API token was last used | about once a minute; the database copy once a day, or with a write |
+| `rl:{kind}:{who}:{minute}` | API request counts for rate limits (`app/src/lib/api-limits.ts`) | each request |
 
 The database is still the source of truth. Every cache read falls back to it, and a cache failure is treated as a miss.
 
@@ -21,7 +25,7 @@ The database is still the source of truth. Every cache read falls back to it, an
 
 ## Checking it
 
-Every time a poll touches the database it logs a line starting `[db]`: a cache miss, a "last seen" save, a calendar or firmware release change. Search the runtime logs for `[db]` (Vercel → Logs, or the last hour on Hobby): an idle light should show a miss about every 3 hours and little else. Whether Neon actually suspends is on the Neon console: Monitoring, or Branches → main → Computes.
+Every time a poll or an API call touches the database it logs a line starting `[db]` (`[db] api` for the API): a cache miss, a "last seen" save, a calendar or firmware release change. Search the runtime logs for `[db]` (Vercel → Logs, or the last hour on Hobby): an idle light should show a miss about every 3 hours and little else. Whether Neon actually suspends is on the Neon console: Monitoring, or Branches → main → Computes.
 
 ## The rule for new code
 
@@ -30,10 +34,11 @@ Every time a poll touches the database it logs a line starting `[db]`: a cache m
 | Tag | Expire it when |
 |---|---|
 | `d-{deviceId}` | the device row or its GIF choices change (settings, ring, token, update now, push team, delete) |
-| `u-{userId}` | a person's presence, show now, calendars, time zone or working hours, or their lights' push team change |
+| `u-{userId}` | a person's presence, show now, calendars, time zone or working hours, or their lights' push team change, or they get a new light |
 | `t-{teamId}` | a team's pushes, acks or members change, or the team is deleted |
 | `a-{assetId}` | an uploaded GIF is deleted |
 | `fw` | the saved firmware release changes |
+| `k-{tokenId}` | an API token is revoked |
 
 A change that forgets to expire its tag still reaches the light when the entry runs out (3 hours). That's a safety net, not a design. The TTL is long on purpose, because each reload wakes the database for 5 minutes.
 

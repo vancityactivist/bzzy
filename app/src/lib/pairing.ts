@@ -6,6 +6,8 @@ import { and, eq, gt, isNotNull, isNull, lt, or, sql } from "drizzle-orm";
 
 import { db, schema } from "@/db";
 
+import { expire, tag } from "./cache";
+
 import { hashToken, newDeviceId, newDeviceToken, tokenMatches } from "./device-token";
 import {
   newPairCode,
@@ -140,6 +142,8 @@ export async function claimPairing(
     await db().delete(schema.devices).where(eq(schema.devices.id, id));
     throw new PairingError("Someone else just added this light.");
   }
+  // The API lists a person's lights from a copy saved under their tag.
+  await expire(tag.user(user.id));
   return id;
 }
 

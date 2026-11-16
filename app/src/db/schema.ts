@@ -50,6 +50,8 @@ export const users = pgTable("user", {
   // Working hours (lib/work-hours.ts); null = always on.
   workHours: jsonb("work_hours").$type<WorkHours>(),
   role: userRole("role").notNull().default("user"),
+  // A superadmin turned off this person's API tokens (all revoked, no new ones).
+  apiBlocked: boolean("api_blocked").notNull().default(false),
   createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
 });
 
@@ -417,6 +419,35 @@ export const teamPushAcks = pgTable(
     deviceId: text("device_id"),
   },
   (t) => [primaryKey({ columns: [t.pushId, t.userId] })],
+);
+
+// ---------------------------------------------------------------------------
+// Public API (docs/api.md)
+// ---------------------------------------------------------------------------
+
+// Personal access tokens for /api/v1. Like device tokens, only the SHA-256 is stored and
+// the token is shown once. `prefix` is its first characters, so people can tell tokens
+// apart in Settings. Revoked rows are kept, so a lost token's "last used" stays visible.
+export const apiTokens = pgTable(
+  "api_token",
+  {
+    id: id(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    tokenHash: text("token_hash").notNull().unique(),
+    prefix: text("prefix").notNull(),
+    // Sorted, comma-separated ("read,show,status"); see lib/api-rules.ts SCOPES.
+    scopes: text("scopes").notNull(),
+    // Null = never.
+    expiresAt: timestamp("expires_at", { mode: "date" }),
+    // Written rarely (lib/api-tokens.ts); the cache holds a newer one between writes.
+    lastUsedAt: timestamp("last_used_at", { mode: "date" }),
+    revokedAt: timestamp("revoked_at", { mode: "date" }),
+    createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
+  },
+  (t) => [index("api_token_user_idx").on(t.userId)],
 );
 
 // ---------------------------------------------------------------------------
