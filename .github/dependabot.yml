@@ -29,3 +29,8 @@ updates:
       # next-auth release accepts a newer SimpleWebAuthn.
       - dependency-name: "@simplewebauthn/*"
         update-types: ["version-update:semver-major"]
+      # eslint-config-next bundles typescript-eslint, which refuses
+      # TypeScript 7 (see PR #58). Drop this once Next's lint config
+      # supports it.
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
