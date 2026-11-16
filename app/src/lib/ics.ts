@@ -4,7 +4,7 @@
 import ical, { type VEvent } from "node-ical";
 
 import { type Block, clipText, MAX_BLOCKS, type Status } from "./protocol";
-import { zonedMidnight } from "./zoned";
+import { tzOffset, zonedMidnight } from "./zoned";
 
 export { zonedMidnight };
 
@@ -57,13 +57,25 @@ function dateOnlyToZoned(d: Date, timeZone: string): number {
 
 export class IcsError extends Error {}
 
+// The span of events kept from a feed: from the person's midnight (of the day an hour
+// ago) for FETCH_WINDOW_DAYS + 1 days, so it always covers the next week. It moves once a
+// day rather than with the clock: a sliding window would change the saved events every
+// time a meeting aged out or a new one crossed the 7-day edge, and each of those saves
+// wakes the database even though the feed itself didn't change (docs/caching.md).
+export function fetchWindow(now: Date, timeZone: string): { from: Date; to: Date } {
+  const anchor = now.getTime() - 3600_000;
+  const local = new Date(anchor + tzOffset(anchor, timeZone));
+  const midnight = zonedMidnight(local.getUTCFullYear(), local.getUTCMonth() + 1, local.getUTCDate(), timeZone);
+  const from = new Date(midnight * 1000);
+  return { from, to: new Date(from.getTime() + (FETCH_WINDOW_DAYS + 1) * 86_400_000) };
+}
+
 export function eventsFromIcs(body: string, now: Date, timeZone: string): CachedEvent[] {
   if (!/BEGIN:VCALENDAR/i.test(body.slice(0, 2048))) {
     throw new IcsError("That link didn't return a calendar (ICS) file.");
   }
   const parsed = ical.sync.parseICS(body);
-  const from = new Date(now.getTime() - 3600_000);
-  const to = new Date(now.getTime() + FETCH_WINDOW_DAYS * 86_400_000);
+  const { from, to } = fetchWindow(now, timeZone);
   // Pad the expansion window by a day so all-day events in far-off time zones are caught.
   const padFrom = new Date(from.getTime() - 86_400_000);
   const padTo = new Date(to.getTime() + 86_400_000);

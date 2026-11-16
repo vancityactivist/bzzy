@@ -113,6 +113,7 @@ export async function refreshRelease(saved?: ReleaseRow | null): Promise<void> {
   const checkedAt = new Date();
   const row = saved === undefined ? await savedRelease() : saved;
   if (!row || !sameRelease(row, update)) {
+    console.info("[db] firmware release: saved a change");
     const values = { ...update, checkedAt };
     await db()
       .insert(schema.firmwareRelease)

@@ -3,7 +3,7 @@ import { join } from "node:path";
 
 import { describe, expect, it } from "vitest";
 
-import { blocksForDevice, type CachedEvent, eventsFromIcs, zonedMidnight } from "./ics";
+import { blocksForDevice, type CachedEvent, eventsFromIcs, fetchWindow, zonedMidnight } from "./ics";
 
 const outlook = readFileSync(join(__dirname, "fixtures/outlook.ics"), "utf8");
 const TZ = "America/Vancouver";
@@ -112,5 +112,29 @@ describe("zonedMidnight", () => {
 
   it("follows BC's switch to year-round UTC-7", () => {
     expect(new Date(zonedMidnight(2026, 12, 1, TZ) * 1000).toISOString()).toBe("2026-12-01T07:00:00.000Z");
+  });
+});
+
+describe("fetchWindow", () => {
+  const tz = "America/Vancouver";
+  it("starts at the person's midnight and covers the next week", () => {
+    // 10:00 on 2026-11-16, Vancouver time
+    const now = new Date(zonedMidnight(2026, 11, 16, tz) * 1000 + 10 * 3600_000);
+    const { from, to } = fetchWindow(now, tz);
+    expect(from.getTime()).toBe(zonedMidnight(2026, 11, 16, tz) * 1000);
+    expect(to.getTime()).toBe(zonedMidnight(2026, 11, 24, tz) * 1000);
+    expect(to.getTime()).toBeGreaterThanOrEqual(now.getTime() + 7 * 86_400_000);
+  });
+
+  it("stays put through the day, so re-reading an unchanged feed saves nothing", () => {
+    const day = zonedMidnight(2026, 11, 16, tz) * 1000;
+    const a = fetchWindow(new Date(day + 2 * 3600_000), tz);
+    const b = fetchWindow(new Date(day + 23 * 3600_000), tz);
+    expect(b).toEqual(a);
+  });
+
+  it("keeps yesterday until an hour past midnight", () => {
+    const day = zonedMidnight(2026, 11, 16, tz) * 1000;
+    expect(fetchWindow(new Date(day + 30 * 60_000), tz).from.getTime()).toBe(zonedMidnight(2026, 11, 15, tz) * 1000);
   });
 });

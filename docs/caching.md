@@ -16,7 +16,12 @@ So the poll answers from Vercel's runtime cache, and while nothing changes it do
 The database is still the source of truth. Every cache read falls back to it, and a cache failure is treated as a miss.
 
 - `lastSeenAt` in the database is only written every 6 hours, or when the light reports new firmware. Pages read the cached value through `liveSeen()` and take the newer one.
-- A calendar or release re-read only writes to the database when something changed.
+- When a poll does have to read the database (its cached copy ran out or was expired), it also saves `lastSeenAt` if that's more than 30 minutes old, so the 6-hour write rarely needs a wake of its own.
+- A calendar or release re-read only writes to the database when something changed. A feed is kept from the person's midnight for 8 days, a window that moves once a day, so an unchanged feed reads back the same events all day (a window sliding with the clock would change them whenever a meeting aged out).
+
+## Checking it
+
+Every time a poll touches the database it logs a line starting `[db]`: a cache miss, a "last seen" save, a calendar or firmware release change. Search the runtime logs for `[db]` (Vercel → Logs, or the last hour on Hobby): an idle light should show a miss about every 3 hours and little else. Whether Neon actually suspends is on the Neon console: Monitoring, or Branches → main → Computes.
 
 ## The rule for new code
 
