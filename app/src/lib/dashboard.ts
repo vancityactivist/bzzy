@@ -12,6 +12,7 @@ import { ringFor } from "./ring";
 import { livePushes } from "./pushes";
 import { showVisible, STATUSES, type Status } from "./protocol";
 import { resolveScreen, type ScreenSource, type ScreenView, viewFor, withShow } from "./screen";
+import { describeSource } from "./api-rules";
 import { isOnline } from "./poll-writes";
 import { liveSeen } from "./seen";
 import { getShow } from "./show";
@@ -107,7 +108,7 @@ export async function teamDashboard(members: TeamMemberRow[], now: number): Prom
         gifSrc: shown?.gif ? previewSrc(shown.gif) : statusGifs[resolved.status],
         status: resolved.status,
         source: resolved.source,
-        setOnLight: resolved.source === "manual" && !!source && source !== "web",
+        setOnLight: resolved.source === "manual" && describeSource(source) === "light",
         showing: !!live,
         push: push ? { id: push.id, teamId: push.teamId, text: push.text } : null,
         ring: main ? ringFor({ ...main, status: resolved.status, schedule, now, push, show: live }) : null,

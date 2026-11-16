@@ -2,18 +2,22 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 
-import { CalendarIcon, ClockIcon, KeyIcon, UsersIcon } from "@/components/icons";
+import { CalendarIcon, ClockIcon, CodeIcon, KeyIcon, UsersIcon } from "@/components/icons";
 import { AddPasskey } from "@/components/passkey-buttons";
 import { SignIn } from "@/components/sign-in";
 import { Badge, Card, CardHeader, Container, PageHeader, StatusDot } from "@/components/ui";
 import { calendarsForUser, refreshStaleCalendars, userClock } from "@/lib/calendar";
+import { EXPIRY_WARNING_DAYS, SCOPE_INFO } from "@/lib/api-rules";
+import { tokensForUser } from "@/lib/api-tokens";
 import { blocksForDevice } from "@/lib/ics";
 import { passkeysForUser } from "@/lib/passkeys";
 import { nowSeconds } from "@/lib/protocol";
 import { getCurrentUser } from "@/lib/session";
+import { REPO_URL } from "@/lib/site";
 import { teamsForUser } from "@/lib/teams";
 
 import { absoluteTime, relativeTime } from "../devices/relative-time";
+import { NewApiTokenForm, RevokeApiToken } from "./api-token-forms";
 import { AddCalendarForm, CalendarActions } from "./calendar-forms";
 import { PasskeyActions } from "./passkey-forms";
 import { WorkHoursForm } from "./work-hours-form";
@@ -34,11 +38,12 @@ async function SettingsContent() {
   const user = await getCurrentUser();
   if (!user) return <SignIn />;
   await refreshStaleCalendars(user.id);
-  const [teams, calendars, passkeys, clock] = await Promise.all([
+  const [teams, calendars, passkeys, clock, tokens] = await Promise.all([
     teamsForUser(user.id),
     calendarsForUser(user.id),
     passkeysForUser(user.id),
     userClock(user.id),
+    tokensForUser(user.id),
   ]);
   const TZ = clock.timeZone;
   const now = nowSeconds();
@@ -181,6 +186,59 @@ async function SettingsContent() {
         <CardHeader
           title={
             <span className="flex items-center gap-2">
+              <CodeIcon className="size-5 text-muted" />
+              API tokens
+            </span>
+          }
+          description={
+            <>
+              Let a script, Stream Deck, Home Assistant or another app set your status and Show now.{" "}
+              <a href={`${REPO_URL}/blob/main/docs/api.md`} className="font-medium text-foreground underline underline-offset-2">
+                How the API works
+              </a>
+            </>
+          }
+        />
+        {tokens.length > 0 && (
+          <ul className="mt-5 divide-y divide-line rounded-xl border border-line">
+            {tokens.map((t) => {
+              const soon = t.live && t.expiresAt && t.expiresAt.getTime() - now * 1000 < EXPIRY_WARNING_DAYS * 86_400_000;
+              return (
+                <li key={t.id} className="flex flex-wrap items-start justify-between gap-3 p-4">
+                  <div className="min-w-0">
+                    <p className="flex flex-wrap items-center gap-2 font-medium">
+                      <span className="truncate">{t.name}</span>
+                      <span className="font-mono text-xs text-muted">{t.prefix}…</span>
+                      {t.revokedAt ? <Badge>revoked</Badge> : !t.live ? <Badge>expired</Badge> : soon && <Badge tone="away">expires soon</Badge>}
+                    </p>
+                    <p className="mt-0.5 text-sm text-muted">{t.scopes.map((s) => SCOPE_INFO[s].label).join(", ")}</p>
+                    <p className="mt-0.5 text-sm text-muted">
+                      <span title={absoluteTime(t.createdAt)}>made {relativeTime(t.createdAt)}</span>
+                      {" · "}
+                      {t.lastUsedAt ? <span title={absoluteTime(t.lastUsedAt)}>last used {relativeTime(t.lastUsedAt)}</span> : "not used yet"}
+                      {t.live && (
+                        <>
+                          {" · "}
+                          {t.expiresAt ? <span title={absoluteTime(t.expiresAt)}>expires {shortDay(t.expiresAt, TZ)}</span> : "never expires"}
+                        </>
+                      )}
+                    </p>
+                  </div>
+                  {t.live && <RevokeApiToken id={t.id} name={t.name} />}
+                </li>
+              );
+            })}
+          </ul>
+        )}
+        <div className="mt-5">
+          <NewApiTokenForm first={tokens.length === 0} />
+        </div>
+      </Card>
+
+      <Card>
+        <CardHeader
+          title={
+            <span className="flex items-center gap-2">
               <UsersIcon className="size-5 text-muted" />
               Teams
             </span>
@@ -218,6 +276,8 @@ const fmt = (sec: number, weekday: boolean, TZ: string) =>
   });
 
 // "Wed 2:00 PM – 3:00 PM"; the end's weekday only when it falls on another day.
+const shortDay = (d: Date, TZ: string) => d.toLocaleDateString("en-CA", { month: "short", day: "numeric", year: "numeric", timeZone: TZ });
+
 function range(start: number, end: number, TZ: string) {
   const day = (sec: number) => new Date(sec * 1000).toLocaleDateString("en-US", { timeZone: TZ });
   return `${fmt(start, true, TZ)} – ${fmt(end, day(start) !== day(end), TZ)}`;

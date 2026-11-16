@@ -8,7 +8,7 @@ import { allSharedTeams } from "@/lib/teams";
 import { countSince, signupsByDay } from "@/lib/admin-stats";
 
 import { absoluteTime, relativeTime, shortDate } from "../devices/relative-time";
-import { SuperadminToggle } from "./superadmin-toggle";
+import { ApiBlockToggle, SuperadminToggle } from "./superadmin-toggle";
 
 export const metadata: Metadata = { title: "Admin", robots: { index: false } };
 
@@ -104,13 +104,14 @@ async function AdminContent() {
       <Card padding="none" className="overflow-hidden">
         <CardHeader title="Users" description={`${users.length} in total`} className="p-5 pb-3 sm:p-6 sm:pb-3" />
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[44rem] text-left text-sm">
+          <table className="w-full min-w-[50rem] text-left text-sm">
             <thead>
               <tr className="border-y border-line bg-subtle/60">
                 <th className={TH}>Person</th>
                 <th className={TH}>Role</th>
                 <th className={TH}>Signs in with</th>
                 <th className={TH}>Devices</th>
+                <th className={TH}>API</th>
                 <th className={TH}>Signed up</th>
                 <th className={TH}>Last active</th>
               </tr>
@@ -143,6 +144,16 @@ async function AdminContent() {
                     {u.passkeys > 0 && <span className="text-muted">{` + ${u.passkeys} passkey${u.passkeys > 1 ? "s" : ""}`}</span>}
                   </td>
                   <td className={`${TD} tabular-nums`}>{u.devices}</td>
+                  <td className={TD}>
+                    <div className="flex items-center gap-2 whitespace-nowrap">
+                      {u.apiBlocked ? (
+                        <Badge tone="busy">Off</Badge>
+                      ) : (
+                        <span className="tabular-nums">{`${u.apiTokens} token${u.apiTokens === 1 ? "" : "s"}`}</span>
+                      )}
+                      <ApiBlockToggle userId={u.id} name={u.name ?? u.email ?? "this person"} blocked={u.apiBlocked} />
+                    </div>
+                  </td>
                   <td className={`${TD} whitespace-nowrap`} title={absoluteTime(u.createdAt)}>
                     {shortDate(u.createdAt)}
                   </td>

@@ -82,6 +82,8 @@ export async function createDevice(userId: string, displayName: string, name: st
   const id = newDeviceId();
   const token = newDeviceToken();
   await db().insert(schema.devices).values({ id, teamId, ownerUserId: userId, name, tokenHash: hashToken(token), autoUpdate });
+  // The API lists a person's lights from a copy saved under their tag.
+  await expire(tag.user(userId));
   return { id, token };
 }
 

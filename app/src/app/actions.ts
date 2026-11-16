@@ -23,7 +23,9 @@ import {
   setAutoUpdate,
   setDeviceRing,
 } from "@/lib/devices";
-import { setSuperadmin } from "@/lib/admin";
+import { isAdmin, setSuperadmin } from "@/lib/admin";
+import { newTokenInput } from "@/lib/api-rules";
+import { createApiToken, revokeApiToken, setApiBlocked, TokenError } from "@/lib/api-tokens";
 import { GifError } from "@/lib/gif-process";
 import { checkGifChoice, deleteGif, importGifFromLink, setDeviceGif, uploadGif } from "@/lib/gifs";
 import { PasskeyError, renamePasskey, revokePasskey } from "@/lib/passkeys";
@@ -317,6 +319,34 @@ export async function renamePasskeyAction(credentialID: string, name: string) {
   refresh();
 }
 
+// ---- API tokens (docs/api.md) ----
+
+export type NewTokenResult = { ok: true; token: string; name: string } | { ok: false; error: string } | null;
+
+export async function createApiTokenAction(_prev: NewTokenResult, formData: FormData): Promise<NewTokenResult> {
+  const user = await requireUser();
+  const input = newTokenInput.safeParse({
+    name: formData.get("name") ?? "",
+    scopes: formData.getAll("scopes"),
+    expiryDays: formData.get("expiryDays") ?? "",
+  });
+  if (!input.success) return { ok: false, error: input.error.issues[0]?.message ?? "Something in the form didn't look right." };
+  try {
+    const { token } = await createApiToken(user.id, input.data);
+    refresh();
+    return { ok: true, token, name: input.data.name };
+  } catch (err) {
+    if (err instanceof TokenError) return { ok: false, error: err.message };
+    throw err;
+  }
+}
+
+export async function revokeApiTokenAction(tokenId: string) {
+  const user = await requireUser();
+  await revokeApiToken(user.id, tokenId);
+  refresh();
+}
+
 // ---- GIFs ----
 
 export type GifUploadResult = { ok: true } | { ok: false; error: string } | null;
@@ -384,5 +414,13 @@ export async function setDeviceRingAction(deviceId: string, raw: RingInput): Pro
 export async function setSuperadminAction(userId: string, on: boolean) {
   const user = await requireUser();
   await setSuperadmin(user.id, userId, on);
+  refresh();
+}
+
+// Turns a person's API tokens off (revoking them all) or lets them make tokens again.
+export async function setApiBlockedAction(userId: string, blocked: boolean) {
+  const user = await requireUser();
+  if (!(await isAdmin(user.id))) throw new Error("Not a superadmin");
+  await setApiBlocked(userId, blocked);
   refresh();
 }
