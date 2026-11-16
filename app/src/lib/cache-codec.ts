@@ -37,5 +37,7 @@ export const tag = {
   asset: (id: string) => `a-${id}`,
   // An API token (lib/api-tokens.ts): revoking it expires this.
   apiToken: (id: string) => `k-${id}`,
+  // A person's webhooks (lib/webhooks.ts): adding, changing or removing one expires this.
+  webhooks: (userId: string) => `w-${userId}`,
   release: "fw",
 } as const;

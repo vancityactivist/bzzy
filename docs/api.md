@@ -13,6 +13,7 @@ Make a token in **Settings → API tokens**. Give it a name (what it's for), pic
 | `read` | see your status, Show now, your lights and the GIFs you can use |
 | `status` | set and clear your status |
 | `show` | put up and take down Show now |
+| `webhooks` | add, change and remove your webhooks |
 
 Send it in the `Authorization` header, never in the URL:
 
@@ -60,6 +61,12 @@ curl -X DELETE https://bzzy.ca/api/v1/status -H "Authorization: Bearer $BZZY_TOK
 | `DELETE /show` | `show` | take it down |
 | `GET /lights` | `read` | your lights and what each one shows right now |
 | `GET /gifs` | `read` | GIFs `PUT /show` can use |
+| `GET /webhooks` | `webhooks` | your webhooks |
+| `POST /webhooks` | `webhooks` | add one; the answer has its signing secret, shown once |
+| `GET /webhooks/{id}` | `webhooks` | one webhook, with its last 20 deliveries |
+| `PATCH /webhooks/{id}` | `webhooks` | change its URL, events or name, or turn it off or on |
+| `DELETE /webhooks/{id}` | `webhooks` | remove it |
+| `POST /webhooks/{id}/test` | `webhooks` | send it a `ping` and say how it went (5 a minute) |
 
 JSON in and out. Times are ISO 8601 in UTC (`"2026-11-16T03:12:42.000Z"`).
 
@@ -113,6 +120,26 @@ Each light: `id`, `name`, `online`, `lastSeenAt`, `firmwareVersion`, `dark` (off
 
 If a `PUT` or `DELETE` wouldn't change anything (Busy is already set, there's no Show now to take down), it saves nothing and answers `200` with `"changed": false`. Integrations can resend the same state as often as the rate limit allows.
 
+## Webhooks
+
+A webhook is a URL bzzy `POST`s to when something happens. Add one in **Settings → Webhooks** (or `POST /webhooks`), pick the events and give the receiver the `whsec_` signing secret, which is shown once. Up to 10 per person.
+
+| Event | Sent when | `data` |
+| --- | --- | --- |
+| `status.changed` | the status your lights show changes: from the app, a light, the API, a meeting starting or ending, a status running out, or working hours starting or ending | `status` (as `GET /status`) and `previous` |
+| `show.changed` | Show now goes up, changes or comes down | `show` (as `GET /show`) and `previous` |
+| `button.pressed` | a press on one of your lights changes the status | `light` (`id`, `name`), `status` (`null`: back to the calendar), `pressedAt` |
+| `ping` | **Send test** | `webhook`, `message` |
+
+```json
+{ "type": "status.changed", "timestamp": "2026-11-16T17:00:04.000Z", "version": "1", "data": { "status": { … }, "previous": { … } } }
+```
+
+- **Signed like [Standard Webhooks](https://www.standardwebhooks.com/)**: `webhook-id`, `webhook-timestamp` (unix seconds) and `webhook-signature` headers. The signature is `v1,` and the base64 HMAC-SHA256 of `id.timestamp.body`, keyed with the secret after `whsec_` (base64-decoded). Their libraries check it; the docs page has Node, Python and PowerShell. Refuse anything more than 5 minutes old.
+- **Timing**: changes from the app, the API or a press go out straight away. Changes nothing saves (a meeting starting, a status running out, working hours) are noticed when a light checks in, within about 20 s in working hours and 5 minutes outside them, and only while a light is online.
+- **Delivery**: 5 s per try, any `2xx` counts, otherwise tried again 2 s and then 10 s later. Redirects aren't followed. At least once: each event keeps one `webhook-id` for all its tries, so drop repeats. After 20 failures in a row the webhook turns itself off; Settings shows the last 20 deliveries.
+- **Safety**: `https://` only, public addresses only (checked when it's saved and on every send, `app/src/lib/safe-fetch.ts`). The secret is stored encrypted with a key derived from `AUTH_SECRET` (`WEBHOOK_SEAL_KEY` overrides it, so `AUTH_SECRET` can be rotated without breaking webhooks).
+
 ## Errors
 
 Every error has the same shape:
@@ -126,7 +153,7 @@ Every error has the same shape:
 | 400 | `invalid_json`, `invalid_request` | the body isn't JSON, or a field is wrong (`field` names it) |
 | 401 | `unauthorized` | no token, or it was revoked or has expired |
 | 403 | `missing_scope` | the token can't do this |
-| 404 | `unknown_gif` | no such GIF, or not one you can use |
+| 404 | `unknown_gif`, `not_found` | no such GIF (or not one you can use), or no such webhook |
 | 415 | `unsupported_media_type` | send `Content-Type: application/json` |
 | 429 | `rate_limited` | too many requests; wait `Retry-After` seconds |
 | 500 | `server_error` | our fault; quote the `X-Request-Id` header |
@@ -150,3 +177,4 @@ bzzy is source-available under the PolyForm Noncommercial license, and the hoste
 - `app/src/lib/api-snapshot.ts`: what the reads need about a person, cached under their `u-`, `d-` and `t-` tags like a light's poll (see [caching.md](caching.md)). An integration polling `GET /status` doesn't wake the database.
 - `app/src/lib/api-actions.ts`: the writes, using the same functions as the web app.
 - `app/src/lib/api-rules.ts`: the pure parts, with tests.
+- `app/src/lib/webhooks.ts`: webhooks (table `webhook`, migration 0014). There's no queue on Vercel Hobby, so events are sent from `after()` of the request that noticed them: a write, or a light's poll (`noticeChanges`), which compares with what was last sent (cached under `whseen:v1:{userId}`). `app/src/lib/webhook-rules.ts` holds the pure parts: signing, what counts as a change, delivery results.

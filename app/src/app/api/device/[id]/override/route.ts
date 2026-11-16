@@ -5,6 +5,7 @@ import { getPresence, setPresence } from "@/lib/presence";
 import { hasFeature, nowSeconds, overrideBody, presenceFromDevice, shouldApplyDeviceOverride } from "@/lib/protocol";
 import { ackPush, pushForDevice } from "@/lib/pushes";
 import { clearShow } from "@/lib/show";
+import { buttonPressed, noticeChanges } from "@/lib/webhooks";
 
 // Sent when someone presses the button or taps the screen on the device.
 export async function POST(req: NextRequest, ctx: RouteContext<"/api/device/[id]/override">) {
@@ -34,7 +35,13 @@ export async function POST(req: NextRequest, ctx: RouteContext<"/api/device/[id]
     if (push && parsed.data.updatedAt >= push.updatedAt) await ackPush(device, push.id, parsed.data.updatedAt);
   }
 
-  after(() => markSeen(device.id));
+  after(() =>
+    Promise.all([
+      markSeen(device.id),
+      applied && buttonPressed(device, parsed.data),
+      applied && noticeChanges(device.ownerUserId, { status: true, show: true }),
+    ]),
+  );
   // 200 either way: an ignored (older) press is not an error, and the device
   // will pick up the newer state on its next poll.
   return Response.json({ applied }, { headers: { "Cache-Control": "no-store" } });

@@ -26,6 +26,7 @@ import type { ReleaseManifest } from "../lib/firmware";
 import type { LedStyle } from "../lib/push-rules";
 import type { LedStyles, MeetingWarn } from "../lib/ring";
 import type { CachedEvent } from "../lib/ics";
+import type { Delivery } from "../lib/webhook-rules";
 import type { WorkHours } from "../lib/work-hours";
 
 const id = () =>
@@ -448,6 +449,30 @@ export const apiTokens = pgTable(
     createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
   },
   (t) => [index("api_token_user_idx").on(t.userId)],
+);
+
+// Where a person's events are sent (lib/webhooks.ts, docs/api.md).
+export const webhooks = pgTable(
+  "webhook",
+  {
+    id: id(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    url: text("url").notNull(),
+    description: text("description").notNull().default(""),
+    // Sorted, comma-separated ("button.pressed,status.changed"); see lib/webhook-rules.ts.
+    events: text("events").notNull(),
+    // The whsec_ signing secret, encrypted (lib/seal.ts). Shown once, when it's made.
+    secret: text("secret").notNull(),
+    enabled: boolean("enabled").notNull().default(true),
+    // Failed deliveries in a row; at 20 it turns itself off.
+    failures: integer("failures").notNull().default(0),
+    // The last 20 deliveries, newest first (lib/webhook-rules.ts Delivery).
+    recent: jsonb("recent").$type<Delivery[]>().notNull().default([]),
+    createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
+  },
+  (t) => [index("webhook_user_idx").on(t.userId)],
 );
 
 // ---------------------------------------------------------------------------

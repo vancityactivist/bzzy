@@ -11,6 +11,7 @@ import { buildState, type GifMap, type GifRef, hasFeature, nowSeconds, readFeatu
 import { pushAsShow, pushFor } from "@/lib/push-rules";
 import { sentLeds } from "@/lib/ring";
 import { noteSeen } from "@/lib/seen";
+import { noticeChanges } from "@/lib/webhooks";
 import { pollSeconds, workWindows } from "@/lib/work-hours";
 
 // Polled by the device every ~20 s. See docs/protocol.md.
@@ -85,6 +86,9 @@ export async function GET(req: NextRequest, ctx: RouteContext<"/api/device/[id]/
       noteSeen(device, nowMs, fwPatch, hasFeature(features, "hours") ? hours.poll : 20, loaded),
       ...stale.map((c) => refreshCalendar(c, bundle.timeZone)),
       releaseStale ? refreshRelease(release) : null,
+      // A meeting starting or ending, or a status running out, changes nothing in the
+      // database, so the poll is where it's noticed and sent (lib/webhooks.ts).
+      bundle.webhooks ? noticeChanges(device.ownerUserId, "poll") : null,
     ]);
   });
   return Response.json(state, { headers: { "Cache-Control": "no-store" } });

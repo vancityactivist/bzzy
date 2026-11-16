@@ -14,6 +14,7 @@ import { getPresence } from "./presence";
 import { nowSeconds, type Presence, type Status } from "./protocol";
 import { followedPushes, type Push } from "./pushes";
 import { type CurrentShow, getShow } from "./show";
+import { hasLiveWebhooks } from "./webhooks";
 import type { WorkHours } from "./work-hours";
 
 // Everything a light's poll reads from the database, kept in the runtime cache so that a
@@ -33,6 +34,8 @@ export type PollBundle = {
   release: ReleaseRow | null;
   // Live pushes of the team the light follows; empty if it follows none.
   pushes: Push[];
+  // Whether the owner has a webhook on, so the poll checks for changes to send.
+  webhooks: boolean;
 };
 
 // A safety net in case a change ever forgets to expire its tag. Long on purpose: each
@@ -40,7 +43,7 @@ export type PollBundle = {
 export const POLL_BUNDLE_TTL_SEC = 3 * 3600;
 
 // Bump the version when PollBundle changes shape: cache entries outlive deployments.
-const key = (deviceId: string) => `poll:v2:${deviceId}`;
+const key = (deviceId: string) => `poll:v3:${deviceId}`;
 
 const assetTags = (...gifs: (ResolvedGif | undefined)[]) =>
   gifs.flatMap((g) => (g?.kind === "asset" ? [tag.asset(g.id)] : []));
@@ -50,7 +53,7 @@ async function loadBundle(deviceId: string) {
   const device = rows[0];
   if (!device) return null;
   const owner = device.ownerUserId;
-  const [{ timeZone, workHours }, presence, calendars, gifs, show, release, pushes] = await Promise.all([
+  const [{ timeZone, workHours }, presence, calendars, gifs, show, release, pushes, webhooks] = await Promise.all([
     userClock(owner),
     getPresence(owner),
     calendarsForUser(owner),
@@ -58,8 +61,9 @@ async function loadBundle(deviceId: string) {
     getShow(owner),
     savedRelease(),
     followedPushes(device, nowSeconds()),
+    hasLiveWebhooks(owner),
   ]);
-  const value: PollBundle = { device, timeZone, workHours, presence, calendars, gifs, show, release, pushes };
+  const value: PollBundle = { device, timeZone, workHours, presence, calendars, gifs, show, release, pushes, webhooks };
   const tags = [
     tag.device(device.id),
     tag.user(owner),

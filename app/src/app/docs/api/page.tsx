@@ -4,10 +4,11 @@ import type { ReactNode } from "react";
 
 import { BzzyMark } from "@/components/brand";
 import { cx } from "@/components/ui";
-import { API_EXAMPLES } from "@/lib/api-examples";
+import { API_EXAMPLES, WEBHOOK_EXAMPLES } from "@/lib/api-examples";
 import { openApiDocument } from "@/lib/api-openapi";
 import { LIMITS, MAX_LIVE_TOKENS, SCOPE_INFO, SCOPES } from "@/lib/api-rules";
 import { REPO_URL, SITE_URL } from "@/lib/site";
+import { DELIVERY_TIMEOUT_MS, EVENT_INFO, FAILURES_TO_DISABLE, MAX_WEBHOOKS, RETRY_DELAYS_MS, WEBHOOK_EVENTS } from "@/lib/webhook-rules";
 
 import { CopyButton } from "../../(app)/devices/copy-button";
 
@@ -20,7 +21,8 @@ const OPENAPI = `${BASE}/openapi.json`;
 
 export const metadata: Metadata = {
   title: "API docs",
-  description: "Set your bzzy status and Show now from scripts, Stream Deck, Home Assistant or Power Automate with a personal token.",
+  description:
+    "Set your bzzy status and Show now from scripts, Stream Deck, Home Assistant or Power Automate with a personal token, and get webhooks when it changes.",
   alternates: { canonical: "/docs/api" },
   openGraph: { url: "/docs/api", title: "bzzy API docs" },
 };
@@ -29,6 +31,7 @@ const TOC = [
   { id: "start", label: "Quick start" },
   { id: "tokens", label: "Tokens and scopes" },
   { id: "reference", label: "Endpoints" },
+  { id: "webhooks", label: "Webhooks" },
   { id: "recipes", label: "Recipes" },
   { id: "errors", label: "Errors" },
   { id: "limits", label: "Rate limits" },
@@ -84,7 +87,7 @@ export default function ApiDocsPage() {
             <h1 className="text-3xl font-semibold tracking-tight text-balance sm:text-4xl">The bzzy API</h1>
             <p className="max-w-2xl text-lg text-muted text-pretty">
               Set your status and Show now from anything that can make a web request: a script, a Stream Deck button, Home Assistant, Power Automate,
-              or your own app. Read what your lights are showing, too.
+              or your own app. Read what your lights are showing, and get a webhook the moment it changes.
             </p>
             <dl className="grid max-w-2xl gap-3 text-sm sm:grid-cols-2">
               <Fact label="Base URL" value={BASE} copy />
@@ -179,6 +182,118 @@ requests.put(
             </div>
           </Section>
 
+          <Section id="webhooks" title="Webhooks">
+            <p>
+              A webhook is a URL bzzy sends a <C>POST</C> to when something happens, so an integration doesn&apos;t have to keep asking. Add one in{" "}
+              <Link href="/settings" className="font-medium underline underline-offset-2">
+                Settings → Webhooks
+              </Link>{" "}
+              (or with <C>POST /webhooks</C> and a token with the <C>webhooks</C> scope), pick the events, and give the signing secret it shows you to
+              the receiver. You can have {MAX_WEBHOOKS}.
+            </p>
+            <Table
+              head={["Event", "Sent when"]}
+              rows={WEBHOOK_EVENTS.map((e) => [<C key="e">{e}</C>, EVENT_INFO[e].detail])}
+            />
+            <p>
+              Each body has the same envelope. <C>status.changed</C> carries the same status <C>GET /status</C> answers, and the one before it:
+            </p>
+            <Code label="status.changed">{JSON.stringify(WEBHOOK_EXAMPLES["status.changed"], null, 2)}</Code>
+            <Code label="show.changed">{JSON.stringify(WEBHOOK_EXAMPLES["show.changed"], null, 2)}</Code>
+            <Code label="button.pressed">{JSON.stringify(WEBHOOK_EXAMPLES["button.pressed"], null, 2)}</Code>
+            <p>
+              <C>button.pressed</C> says which light, and the status the press chose (<C>null</C> when it went back to the calendar). Today&apos;s
+              firmware only reports presses that change the status. <C>ping</C> is what <strong>Send test</strong> sends.
+            </p>
+
+            <h3 className="pt-2 text-lg font-semibold tracking-tight">When they arrive</h3>
+            <ul className="list-disc space-y-1.5 pl-5">
+              <li>Changes from the app, the API or a press on a light are sent straight away.</li>
+              <li>
+                Changes nothing saves, such as a meeting starting or ending, a status running out, or working hours, are noticed when one of your
+                lights checks in: within about 20 seconds during working hours, and within 5 minutes outside them. With no light online, only the
+                first kind are sent.
+              </li>
+              <li>
+                Each try waits {DELIVERY_TIMEOUT_MS / 1000} seconds for an answer. Any <C>2xx</C> counts as delivered; anything else is tried again
+                {RETRY_DELAYS_MS[1] / 1000} seconds later and then {RETRY_DELAYS_MS[2] / 1000} seconds after that, {RETRY_DELAYS_MS.length} tries in
+                all. Redirects aren&apos;t followed.
+              </li>
+              <li>
+                After {FAILURES_TO_DISABLE} failed deliveries in a row a webhook turns itself off. Settings shows the last 20 deliveries and why
+                they failed, and turning it back on starts the count again.
+              </li>
+              <li>
+                Delivery is at least once, so the same event can now and then arrive twice. Each event has one <C>webhook-id</C> for all its tries:
+                drop ids you&apos;ve seen. Ignore event types you don&apos;t know; more will be added.
+              </li>
+            </ul>
+
+            <h3 className="pt-2 text-lg font-semibold tracking-tight">Checking the signature</h3>
+            <p>
+              bzzy signs every request the{" "}
+              <a href="https://www.standardwebhooks.com/" className="font-medium underline underline-offset-2">
+                Standard Webhooks
+              </a>{" "}
+              way, so their libraries for most languages check it for you. Each request carries <C>webhook-id</C>, <C>webhook-timestamp</C> (unix
+              seconds) and <C>webhook-signature</C>, which is <C>v1,</C> followed by the base64 HMAC-SHA256 of <C>id.timestamp.body</C>, keyed with
+              your secret after <C>whsec_</C> is decoded from base64. Check it against the raw body before parsing it, and refuse anything more than
+              5 minutes old.
+            </p>
+            <Code label="JavaScript">{`// npm install standardwebhooks
+import { Webhook } from "standardwebhooks";
+
+const wh = new Webhook(process.env.BZZY_WEBHOOK_SECRET); // "whsec_…"
+// rawBody: the request body as a string; headers: the request's headers.
+const event = wh.verify(rawBody, headers); // throws if it isn't from bzzy
+if (event.type === "status.changed") console.log(event.data.status.status);`}</Code>
+            <Code label="Python">{`import base64, hashlib, hmac, time
+
+def from_bzzy(secret: str, headers, body: bytes) -> bool:
+    msg_id, ts = headers["webhook-id"], headers["webhook-timestamp"]
+    if abs(time.time() - int(ts)) > 300:
+        return False
+    key = base64.b64decode(secret.removeprefix("whsec_"))
+    mac = hmac.new(key, f"{msg_id}.{ts}.".encode() + body, hashlib.sha256).digest()
+    expected = base64.b64encode(mac).decode()
+    return any(hmac.compare_digest(s.removeprefix("v1,"), expected)
+               for s in headers["webhook-signature"].split())`}</Code>
+            <Code label="PowerShell">{`function Test-FromBzzy($Secret, $Headers, [string]$Body) {
+  $id = $Headers["webhook-id"]; $ts = $Headers["webhook-timestamp"]
+  if ([math]::Abs([DateTimeOffset]::UtcNow.ToUnixTimeSeconds() - [long]$ts) -gt 300) { return $false }
+  $key = [Convert]::FromBase64String($Secret -replace '^whsec_', '')
+  $hmac = [System.Security.Cryptography.HMACSHA256]::new($key)
+  $mac = $hmac.ComputeHash([Text.Encoding]::UTF8.GetBytes("$id.$ts.$Body"))
+  $expected = [Convert]::ToBase64String($mac)
+  # -ccontains: base64 is case-sensitive
+  return ($Headers["webhook-signature"] -split ' ' | ForEach-Object { $_ -replace '^v1,', '' }) -ccontains $expected
+}`}</Code>
+
+            <h3 className="pt-2 text-lg font-semibold tracking-tight">Home Assistant</h3>
+            <p>
+              Home Assistant&apos;s webhook trigger gives you a URL to paste into Settings. It can&apos;t check signatures, so the webhook id in the URL
+              is the secret: make it long and random. This turns a lamp red while you&apos;re busy:
+            </p>
+            <Code label="automations.yaml">{`- alias: "Lamp shows my bzzy status"
+  triggers:
+    - trigger: webhook
+      webhook_id: bzzy-change-this-to-something-long-and-random
+      allowed_methods: [POST]
+      local_only: false # bzzy calls from the internet
+  conditions:
+    - condition: template
+      value_template: "{{ trigger.json.type == 'status.changed' }}"
+  actions:
+    - action: light.turn_on
+      target: { entity_id: light.desk_lamp }
+      data:
+        color_name: "{{ 'red' if trigger.json.data.status.status in ['busy', 'dnd'] else 'green' }}"`}</Code>
+            <p>
+              The URL is <C>https://&lt;your Home Assistant&gt;/api/webhook/&lt;webhook_id&gt;</C>, reachable from the internet (Home Assistant Cloud
+              gives you one). Power Automate&apos;s &ldquo;When an HTTP request is received&rdquo; trigger, Zapier, Make and n8n work the same way.
+            </p>
+          </Section>
+
           <Section id="recipes" title="Recipes">
             <h3 className="text-lg font-semibold">Home Assistant</h3>
             <p>
@@ -245,7 +360,7 @@ if ($Status -eq "clear") {
                 ["400", "invalid_json, invalid_request", "The body isn't JSON, or a field is wrong (field names it)"],
                 ["401", "unauthorized", "No token, or it was revoked or has expired"],
                 ["403", "missing_scope", "The token can't do this"],
-                ["404", "unknown_gif", "No such GIF, or not one you can use"],
+                ["404", "unknown_gif, not_found", "No such GIF (or not one you can use), or no such webhook"],
                 ["415", "unsupported_media_type", "Send Content-Type: application/json"],
                 ["429", "rate_limited", "Too many requests: wait Retry-After seconds"],
                 ["500", "server_error", "Our fault. Quote the X-Request-Id header"],
@@ -282,7 +397,13 @@ if ($Status -eq "clear") {
           </Section>
 
           <Section id="changelog" title="Changelog">
-            <Table head={["Date", "Change"]} rows={[["2026-11-15", "v1: tokens, status, Show now, lights and GIFs."]]} />
+            <Table
+              head={["Date", "Change"]}
+              rows={[
+                ["2026-11-16", "Webhooks: status.changed, show.changed, button.pressed and ping, the webhooks scope and /webhooks."],
+                ["2026-11-15", "v1: tokens, status, Show now, lights and GIFs."],
+              ]}
+            />
           </Section>
         </main>
       </div>
@@ -393,7 +514,9 @@ type Operation = {
 
 const METHOD_TONE: Record<string, string> = {
   GET: "bg-free/15 text-free",
+  POST: "bg-dnd/15 text-dnd",
   PUT: "bg-away/15 text-away",
+  PATCH: "bg-away/15 text-away",
   DELETE: "bg-busy/15 text-busy",
 };
 
@@ -411,7 +534,7 @@ function Endpoint({ method, path, op, schemas }: { method: string; path: string;
   const ref = op.requestBody?.content["application/json"].schema.$ref;
   const body = ref ? schemas[ref.split("/").pop()!] : null;
   const example = API_EXAMPLES[`${method} ${path}`];
-  const id = `${method}-${path.slice(1)}`.toLowerCase();
+  const id = `${method}-${path.slice(1)}`.toLowerCase().replace(/[^a-z0-9]+/g, "-");
   return (
     <article id={id} className="scroll-mt-20 space-y-3">
       <h3 className="flex flex-wrap items-center gap-2 font-mono text-[15px] font-medium">
