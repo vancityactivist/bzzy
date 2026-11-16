@@ -35,6 +35,21 @@ const webhook = {
   lastDelivery: delivery,
 };
 
+const push = {
+  id: "c41e…",
+  teamId: "7d2a…",
+  text: "Fire drill at 2",
+  gif: null,
+  ring: { pattern: "strobe", color: "#ff2000", speed: 3, for: 30 },
+  until: "2026-11-16T22:15:00.000Z",
+  sentAt: "2026-11-16T21:45:00.000Z",
+  sentBy: { id: "8c1d…", name: "Adam" },
+  to: "everyone",
+  people: [],
+  dismissedBy: [],
+  live: true,
+};
+
 export type ApiExample = { request?: unknown; response: unknown };
 
 export const API_EXAMPLES: Record<string, ApiExample> = {
@@ -92,6 +107,22 @@ export const API_EXAMPLES: Record<string, ApiExample> = {
       ],
     },
   },
+  "GET /teams": { response: { teams: [{ id: "7d2a…", name: "Front office", role: "admin", members: 6, canPush: true }] } },
+  "GET /teams/{id}": {
+    response: {
+      team: { id: "7d2a…", name: "Front office", role: "admin", canPush: true },
+      members: [
+        { id: "8c1d…", name: "Adam", role: "admin" },
+        { id: "e90b…", name: "Sam", role: "member" },
+      ],
+      pushes: [push],
+    },
+  },
+  "POST /teams/{id}/pushes": {
+    request: { text: "Fire drill at 2", ring: { pattern: "strobe", color: "#ff2000", speed: 3, for: 30 }, minutes: 30 },
+    response: { push },
+  },
+  "DELETE /teams/{id}/pushes/{pushId}": { response: { ended: true } },
   "GET /webhooks": { response: { webhooks: [webhook] } },
   "POST /webhooks": {
     request: { url: webhook.url, events: ["status.changed", "show.changed", "button.pressed"], description: "Home Assistant" },
@@ -120,6 +151,12 @@ export const WEBHOOK_EXAMPLES: Record<string, unknown> = {
     timestamp: "2026-11-16T18:10:00.000Z",
     version: "1",
     data: { light: { id: "bz-k7qf2m", name: "Desk" }, status: "dnd", pressedAt: "2026-11-16T18:09:59.000Z" },
+  },
+  "push.received": {
+    type: "push.received",
+    timestamp: "2026-11-16T21:45:00.000Z",
+    version: "1",
+    data: { team: { id: "7d2a…", name: "Front office" }, push },
   },
   ping: {
     type: "ping",

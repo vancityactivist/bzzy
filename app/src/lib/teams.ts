@@ -144,6 +144,7 @@ export async function renameTeam(userId: string, teamId: string, rawName: string
     db().update(schema.teams).set({ name }).where(eq(schema.teams.id, teamId)),
     audit(teamId, userId, "renamed", { from: team.name, to: name }, asSuperadmin),
   ]);
+  await expire(tag.team(teamId));
 }
 
 // Cascades to memberships, invites and the audit log; lights that followed its
@@ -215,6 +216,7 @@ export async function setMemberRole(userId: string, teamId: string, targetUserId
       .where(and(eq(schema.teamMembers.teamId, teamId), eq(schema.teamMembers.userId, targetUserId))),
     audit(teamId, userId, "role", { userId: targetUserId, from: current, to: role }, t.asSuperadmin),
   ]);
+  await expire(tag.team(teamId));
 }
 
 // The old owner becomes an admin.
@@ -229,6 +231,7 @@ export async function transferOwnership(userId: string, teamId: string, newOwner
     db().update(m).set({ role: "owner" }).where(and(eq(m.teamId, teamId), eq(m.userId, newOwnerId))),
     audit(teamId, userId, "transferred", { to: newOwnerId }, t.asSuperadmin),
   ]);
+  await expire(tag.team(teamId));
 }
 
 // ---- invites ----

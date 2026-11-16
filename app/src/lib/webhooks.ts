@@ -7,6 +7,9 @@ import { and, asc, eq, sql } from "drizzle-orm";
 import { db, schema } from "@/db";
 
 import { apiSnapshot, showFrom, statusFrom } from "./api-snapshot";
+import { pushOut } from "./api-teams";
+import { livePushes } from "./pushes";
+import { teamMembers } from "./teams";
 import { cacheGet, cachedRead, cacheSet, expire, tag } from "./cache";
 import type { AuthedDevice } from "./device-auth";
 import { iso } from "./api-rules";
@@ -37,8 +40,8 @@ import {
   type WebhookPatch,
 } from "./webhook-rules";
 
-// Webhooks (docs/api.md): when a person's status, Show now or a button press changes,
-// bzzy POSTs a signed JSON body to the URLs they've added.
+// Webhooks (docs/api.md): when a person's status, Show now or a button press changes, or a
+// team push reaches them, bzzy POSTs a signed JSON body to the URLs they've added.
 //
 // There's no queue on Vercel Hobby, so each change is sent from after() of the request
 // that noticed it: a write (app, API, a press on a light) or a light's poll (a meeting
@@ -249,6 +252,20 @@ export async function buttonPressed(device: AuthedDevice, press: OverrideBody) {
     });
   } catch (err) {
     console.error(`[webhooks] sending a press from ${device.id} failed`, err);
+  }
+}
+
+// A team push was just sent: tell each person it's for. Never throws.
+export async function pushReceived(teamId: string, pushId: string) {
+  try {
+    const [push] = (await livePushes([teamId])).filter((p) => p.id === pushId);
+    if (!push) return;
+    const [team] = await db().select({ id: schema.teams.id, name: schema.teams.name }).from(schema.teams).where(eq(schema.teams.id, teamId)).limit(1);
+    const to = push.target === "all" ? (await teamMembers(teamId)).map((m) => m.userId) : push.targets;
+    const data = { team, push: pushOut(push, nowSeconds()) };
+    await Promise.all(to.map(async (userId) => send(await liveHooks(userId), "push.received", data)));
+  } catch (err) {
+    console.error(`[webhooks] sending push ${pushId} failed`, err);
   }
 }
 

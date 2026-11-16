@@ -201,9 +201,11 @@ requests.put(
             <Code label="status.changed">{JSON.stringify(WEBHOOK_EXAMPLES["status.changed"], null, 2)}</Code>
             <Code label="show.changed">{JSON.stringify(WEBHOOK_EXAMPLES["show.changed"], null, 2)}</Code>
             <Code label="button.pressed">{JSON.stringify(WEBHOOK_EXAMPLES["button.pressed"], null, 2)}</Code>
+            <Code label="push.received">{JSON.stringify(WEBHOOK_EXAMPLES["push.received"], null, 2)}</Code>
             <p>
               <C>button.pressed</C> says which light, and the status the press chose (<C>null</C> when it went back to the calendar). Today&apos;s
-              firmware only reports presses that change the status. <C>ping</C> is what <strong>Send test</strong> sends.
+              firmware only reports presses that change the status. <C>push.received</C> goes to each person a team push is for, the sender
+              too, as it&apos;s sent. <C>ping</C> is what <strong>Send test</strong> sends.
             </p>
 
             <h3 className="pt-2 text-lg font-semibold tracking-tight">When they arrive</h3>
@@ -295,6 +297,21 @@ def from_bzzy(secret: str, headers, body: bytes) -> bool:
           </Section>
 
           <Section id="recipes" title="Recipes">
+            <h3 className="text-lg font-semibold">Team pushes</h3>
+            <p>
+              If you&apos;re a team&apos;s owner or admin, a token with the <C>push</C> scope can put a message on everyone&apos;s lights, the way
+              the team page does. Find the team id with <C>GET /teams</C>, then:
+            </p>
+            <Code label="curl">{`curl -X POST ${BASE}/teams/$TEAM_ID/pushes \\
+  -H "Authorization: Bearer $BZZY_TOKEN" \\
+  -H "Content-Type: application/json" \\
+  -d '{"text":"Fire drill at 2","ring":{"pattern":"strobe","color":"#ff2000","for":30},"minutes":30}'`}</Code>
+            <p>
+              Add <C>&quot;people&quot;: [ids]</C> (from <C>GET /teams/&#123;id&#125;</C>) to send it to just those people. It stays up until it
+              runs out, someone ends it (<C>DELETE /teams/&#123;id&#125;/pushes/&#123;pushId&#125;</C>), or each person dismisses it with their
+              light&apos;s button. Lights only show pushes from the team they follow, which each person picks on their Devices page.
+            </p>
+
             <h3 className="text-lg font-semibold">Home Assistant</h3>
             <p>
               Commands to set and clear your status, and a sensor that reads it. Put <C>bzzy_token: &quot;Bearer bzzy_pat_…&quot;</C> in{" "}
@@ -400,6 +417,7 @@ if ($Status -eq "clear") {
             <Table
               head={["Date", "Change"]}
               rows={[
+                ["2026-11-16", "Team pushes: the push scope, /teams and /teams/{id}/pushes, and the push.received webhook event."],
                 ["2026-11-16", "Webhooks: status.changed, show.changed, button.pressed and ping, the webhooks scope and /webhooks."],
                 ["2026-11-15", "v1: tokens, status, Show now, lights and GIFs."],
               ]}

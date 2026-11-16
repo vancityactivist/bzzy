@@ -68,7 +68,7 @@ describe("webhook input", () => {
   it("needs a URL and at least one event", () => {
     expect(webhookInput.safeParse({ url: "https://example.com", events: ["status.changed"] }).success).toBe(true);
     expect(webhookInput.safeParse({ url: "https://example.com", events: [] }).success).toBe(false);
-    expect(webhookInput.safeParse({ url: "https://example.com", events: ["push.received"] }).success).toBe(false);
+    expect(webhookInput.safeParse({ url: "https://example.com", events: ["nope"] }).success).toBe(false);
     expect(webhookInput.safeParse({ url: "http://example.com", events: ["status.changed"] }).success).toBe(false);
     expect(webhookPatch.safeParse({ enabled: true }).success).toBe(true);
     expect(webhookPatch.safeParse({ secret: "x" }).success).toBe(false);

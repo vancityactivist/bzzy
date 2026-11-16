@@ -85,7 +85,7 @@ export async function putShow(snap: ApiSnapshot, token: AuthedToken, body: ShowB
 }
 
 // "builtin:<id>" or "asset:<id>" (one of the person's teams' uploads), or null for none.
-async function pickGif(userId: string, id: string | null): Promise<ResolvedGif> {
+export async function pickGif(userId: string, id: string | null): Promise<ResolvedGif> {
   if (!id) return null;
   let gif: ResolvedGif = null;
   if (id.startsWith("builtin:")) gif = builtinGif(id.slice(8));

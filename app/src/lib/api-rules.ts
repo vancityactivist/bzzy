@@ -43,8 +43,8 @@ export function looksLikeApiToken(token: string): boolean {
 
 // ---- scopes ----
 
-// What a token may do. A later phase adds "push" (docs/api.md).
-export const SCOPES = ["read", "status", "show", "webhooks"] as const;
+// What a token may do (docs/api.md).
+export const SCOPES = ["read", "status", "show", "webhooks", "push"] as const;
 export type Scope = (typeof SCOPES)[number];
 
 export const SCOPE_INFO: Record<Scope, { label: string; detail: string }> = {
@@ -52,6 +52,7 @@ export const SCOPE_INFO: Record<Scope, { label: string; detail: string }> = {
   status: { label: "Status", detail: "Set and clear your status" },
   show: { label: "Show now", detail: "Put a message or GIF on your lights and take it down" },
   webhooks: { label: "Webhooks", detail: "Add, change and remove your webhooks" },
+  push: { label: "Team pushes", detail: "Send and end pushes in teams where you're an owner or admin" },
 };
 
 export const DEFAULT_SCOPES: Scope[] = ["read", "status", "show"];
@@ -126,37 +127,44 @@ export function rateWindow(nowMs: number): { id: number; resetSec: number } {
 // ---- times ----
 
 // Status and Show now can't be set further ahead than this, so a forgotten script can't
-// leave someone on Do not disturb for a month.
+// leave someone on Do not disturb for a month. A team push, like the composer, a day.
 export const MAX_AHEAD_SEC = 7 * 86_400;
+export const PUSH_MAX_AHEAD_SEC = 86_400;
 
 export const iso = (sec: number): string | null => (sec > 0 ? new Date(sec * 1000).toISOString() : null);
 
 // `minutes` or `until` (ISO 8601, with an offset), or neither for "until cleared".
-const endFields = {
+const ahead = (sec: number) => (sec >= 86_400 * 2 ? `${sec / 86_400} days` : `${sec / 3600} hours`);
+const endFieldsUpTo = (maxSec: number, cleared = "until it's cleared") => ({
   minutes: z
     .number()
     .int()
     .min(1)
-    .max(MAX_AHEAD_SEC / 60)
+    .max(maxSec / 60)
     .optional()
-    .describe("Minutes from now until it ends, up to 7 days. Send this or until, not both. Neither: until it's cleared."),
+    .describe(`Minutes from now until it ends, up to ${ahead(maxSec)}. Send this or until, not both. Neither: ${cleared}.`),
   until: z.iso
     .datetime({ offset: true })
     .optional()
-    .describe("When it ends, as an ISO 8601 time with an offset, up to 7 days ahead."),
-};
+    .describe(`When it ends, as an ISO 8601 time with an offset, up to ${ahead(maxSec)} ahead.`),
+});
+const endFields = endFieldsUpTo(MAX_AHEAD_SEC);
 
 type EndInput = { minutes?: number; until?: string };
 
 // Unix seconds, 0 for "until cleared", or an error message.
-export function endTime(input: EndInput, now: number): { ok: true; until: number } | { ok: false; field: string; message: string } {
+export function endTime(
+  input: EndInput,
+  now: number,
+  maxAheadSec = MAX_AHEAD_SEC,
+): { ok: true; until: number } | { ok: false; field: string; message: string } {
   if (input.minutes !== undefined && input.until !== undefined)
     return { ok: false, field: "until", message: "Send minutes or until, not both." };
   if (input.minutes !== undefined) return { ok: true, until: now + input.minutes * 60 };
   if (input.until !== undefined) {
     const until = Math.floor(Date.parse(input.until) / 1000);
     if (!(until > now)) return { ok: false, field: "until", message: "until must be in the future." };
-    if (until - now > MAX_AHEAD_SEC) return { ok: false, field: "until", message: "until can be at most 7 days ahead." };
+    if (until - now > maxAheadSec) return { ok: false, field: "until", message: `until can be at most ${ahead(maxAheadSec)} ahead.` };
     return { ok: true, until };
   }
   return { ok: true, until: 0 };
@@ -192,6 +200,23 @@ export const showBody = z.strictObject({
   ...endFields,
 });
 export type ShowBody = z.infer<typeof showBody>;
+
+// A team push: like Show now, for everyone in the team or the people picked.
+export const pushBody = z.strictObject({
+  text: text("The message. Send a GIF, text or both."),
+  gif: showBody.shape.gif,
+  ring: ledStyle
+    .nullable()
+    .default(null)
+    .describe("How the ring flashes on lights that allow it: pattern (solid, pulse, blink, strobe, spin), color, speed (1 to 3), for (seconds). Left out: no flash."),
+  people: z
+    .array(z.string().min(1).max(64))
+    .max(500)
+    .default([])
+    .describe("User ids (from GET /teams/{id}) to send it to. Left out or empty: everyone in the team."),
+  ...endFieldsUpTo(PUSH_MAX_AHEAD_SEC, "until someone ends it"),
+});
+export type PushBody = z.infer<typeof pushBody>;
 
 export const cleanText = (t: string) => clipText(t.trim());
 
