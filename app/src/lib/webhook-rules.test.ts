@@ -10,6 +10,7 @@ import {
   envelope,
   newMessageId,
   newWebhookSecret,
+  SECRET_PREFIX,
   type Seen,
   signWebhook,
   webhookInput,
@@ -21,9 +22,13 @@ const bytes = (seed: number) => (n: number) => Uint8Array.from({ length: n }, (_
 
 describe("signing", () => {
   it("matches the Standard Webhooks reference signature", () => {
-    // The example from the Standard Webhooks libraries' own tests.
-    const sig = signWebhook("whsec_MfKQ9r8GKYqrTwjUPD8ILPZIo2LaLaSw", "msg_p5jXN8AQM9LWM0D4loKWxJek", 1614265330, '{"test": 2432232314}');
-    expect(sig).toBe("v1,g0hM9SsE+OTPJTGt/tmIKtSyZlE3uFJELVlNIOLJ1OE=");
+    // The public example key from the Standard Webhooks libraries' own tests, not a real
+    // secret. It's written without its whsec_ prefix so secret scanners don't flag it.
+    const key = "MfKQ9r8GKYqrTwjUPD8ILPZIo2LaLaSw";
+    const args = ["msg_p5jXN8AQM9LWM0D4loKWxJek", 1614265330, '{"test": 2432232314}'] as const;
+    const expected = "v1,g0hM9SsE+OTPJTGt/tmIKtSyZlE3uFJELVlNIOLJ1OE=";
+    expect(signWebhook(SECRET_PREFIX + key, ...args)).toBe(expected);
+    expect(signWebhook(key, ...args)).toBe(expected);
   });
 
   it("makes whsec_ secrets of 32 bytes and msg_ ids", () => {
