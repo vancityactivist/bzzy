@@ -8,7 +8,7 @@ So the poll answers from Vercel's runtime cache, and while nothing changes it do
 
 | Key | Holds | Written |
 |---|---|---|
-| `poll:v2:{deviceId}` | everything the poll reads: the device row, owner's time zone and working hours, presence, calendars (with cached events), GIFs, show now, firmware release, live pushes of the team it follows (`app/src/lib/poll-bundle.ts`) | on a miss, 3 h TTL |
+| `poll:v3:{deviceId}` | everything the poll reads: the device row, owner's time zone and working hours, presence, calendars (with cached events), GIFs, show now, firmware release, live pushes of the team it follows, whether the owner has a webhook on (`app/src/lib/poll-bundle.ts`) | on a miss, 3 h TTL |
 | `seen:{deviceId}` | when the light last polled, and the `poll` interval it was told | about once a minute (`app/src/lib/seen.ts`) |
 | `calchk:{calendarId}` | when a feed was last read and found unchanged | each refresh (`app/src/lib/calendar.ts`) |
 | `fwchk` | when the firmware release was last checked and found unchanged | each check (`app/src/lib/firmware-release.ts`) |
@@ -16,6 +16,8 @@ So the poll answers from Vercel's runtime cache, and while nothing changes it do
 | `pat:v1:{tokenHash}` | an API token's owner, scopes and expiry (`app/src/lib/api-tokens.ts`) | on a miss, 1 h TTL |
 | `patused:{tokenId}` | when an API token was last used | about once a minute; the database copy once a day, or with a write |
 | `rl:{kind}:{who}:{minute}` | API request counts for rate limits (`app/src/lib/api-limits.ts`) | each request |
+| `hooks:v1:{userId}` | a person's webhooks that are on, with their sealed secrets (`app/src/lib/webhooks.ts`) | on a miss, 3 h TTL |
+| `whseen:v1:{userId}` | the status and Show now last sent to a person's webhooks, to compare the next check with. No tags, so writes don't wipe it | when either changes, 7 d TTL |
 
 The database is still the source of truth. Every cache read falls back to it, and a cache failure is treated as a miss.
 
@@ -25,7 +27,7 @@ The database is still the source of truth. Every cache read falls back to it, an
 
 ## Checking it
 
-Every time a poll or an API call touches the database it logs a line starting `[db]` (`[db] api` for the API): a cache miss, a "last seen" save, a calendar or firmware release change. Search the runtime logs for `[db]` (Vercel → Logs, or the last hour on Hobby): an idle light should show a miss about every 3 hours and little else. Whether Neon actually suspends is on the Neon console: Monitoring, or Branches → main → Computes.
+Every time a poll or an API call touches the database it logs a line starting `[db]` (`[db] api` for the API, `[db] webhooks` for webhooks): a cache miss, a "last seen" save, a calendar or firmware release change. Search the runtime logs for `[db]` (Vercel → Logs, or the last hour on Hobby): an idle light should show a miss about every 3 hours and little else. Webhooks only add database work when something is sent: each delivery saves its result (one update), and a poll for someone with webhooks reads their cached status, which the poll's own writes keep fresh. A person without webhooks costs a poll nothing extra: the poll bundle already says so. Whether Neon actually suspends is on the Neon console: Monitoring, or Branches → main → Computes.
 
 ## The rule for new code
 
@@ -39,6 +41,7 @@ Every time a poll or an API call touches the database it logs a line starting `[
 | `a-{assetId}` | an uploaded GIF is deleted |
 | `fw` | the saved firmware release changes |
 | `k-{tokenId}` | an API token is revoked |
+| `w-{userId}` | a person's webhooks are added, changed or removed, one turns itself off, or the superadmin switch changes (also expire `u-`, which the poll bundle's "has webhooks" sits under) |
 
 A change that forgets to expire its tag still reaches the light when the entry runs out (3 hours). That's a safety net, not a design. The TTL is long on purpose, because each reload wakes the database for 5 minutes.
 

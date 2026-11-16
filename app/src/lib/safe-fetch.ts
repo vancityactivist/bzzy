@@ -137,3 +137,27 @@ export async function fetchPublicBytes(
     return { bytes: new Uint8Array(Buffer.concat(chunks)), contentType: res.headers.get("content-type") ?? "", url };
   }
 }
+
+// Whether a link someone gave points somewhere on the public internet. Errors are
+// FetchRefused with a message fit to show.
+export async function checkPublicUrl(url: URL) {
+  await assertPublicHost(url);
+}
+
+// Sending a webhook: one POST, no redirects followed (a 3xx counts as a failure, so a
+// receiver can't bounce bzzy at an internal address), and only the status kept. Throws
+// FetchRefused if the host isn't public, or the fetch error if it never answered.
+export async function postPublic(url: URL, body: string, headers: Record<string, string>, timeoutMs: number): Promise<number> {
+  if (url.protocol !== "https:") throw new FetchRefused("Webhooks need an https:// link.");
+  await assertPublicHost(url);
+  const res = await fetch(url, {
+    method: "POST",
+    body,
+    headers,
+    redirect: "manual",
+    signal: AbortSignal.timeout(timeoutMs),
+    cache: "no-store",
+  });
+  await res.body?.cancel().catch(() => {});
+  return res.status;
+}

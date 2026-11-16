@@ -1,5 +1,7 @@
 import "server-only";
 
+import { after } from "next/server";
+
 import { cleanText, endTime, sameStatus, type ShowBody, type StatusBody } from "./api-rules";
 import { ApiError } from "./api-http";
 import type { ApiSnapshot } from "./api-snapshot";
@@ -8,6 +10,10 @@ import { builtinGif, canSeeAsset, type ResolvedGif } from "./gifs";
 import { setPresence } from "./presence";
 import { type Presence, showVisible } from "./protocol";
 import { clearShow, setShow } from "./show";
+import { noticeChanges } from "./webhooks";
+
+// Webhooks hear about every change, once the response has gone.
+const notice = (token: AuthedToken, what: { status: boolean; show: boolean }) => after(() => noticeChanges(token.userId, what));
 
 // What the API's writes do. They call the same functions as the web app, so the rules
 // match: changing the status takes down Show now (as a press on the light does), and a
@@ -33,6 +39,7 @@ export async function putStatus(snap: ApiSnapshot, token: AuthedToken, body: Sta
   const presence: Presence = { active: true, ...next, updatedAt: now };
   const source = apiSource(token);
   await Promise.all([setPresence(token.userId, presence, source), clearShow(token.userId, now)]);
+  notice(token, { status: true, show: true });
   const show = snap.show && showUp ? { ...snap.show, active: false, updatedAt: now } : snap.show;
   return { snap: { ...snap, presence, presenceSource: source, show }, changed: true };
 }
@@ -45,6 +52,7 @@ export async function deleteStatus(snap: ApiSnapshot, token: AuthedToken, now: n
   const presence: Presence = { active: false, status: "free", text: "", until: 0, updatedAt: now };
   const source = apiSource(token);
   await Promise.all([setPresence(token.userId, presence, source), clearShow(token.userId, now)]);
+  notice(token, { status: true, show: true });
   const show = snap.show && showUp ? { ...snap.show, active: false, updatedAt: now } : snap.show;
   return { snap: { ...snap, presence, presenceSource: source, show }, changed: true };
 }
@@ -69,6 +77,7 @@ export async function putShow(snap: ApiSnapshot, token: AuthedToken, body: ShowB
     return { snap, changed: false };
 
   await setShow(token.userId, { ...choice, text, leds: body.ring, until, updatedAt: now });
+  notice(token, { status: false, show: true });
   return {
     snap: { ...snap, show: { active: true, text, until, updatedAt: now, gif, leds: body.ring } },
     changed: true,
@@ -91,5 +100,6 @@ async function pickGif(userId: string, id: string | null): Promise<ResolvedGif> 
 export async function deleteShow(snap: ApiSnapshot, token: AuthedToken, now: number): Promise<Applied> {
   if (!showVisible(snap.show, snap.presence, now)) return { snap, changed: false };
   await clearShow(token.userId, now);
+  notice(token, { status: false, show: true });
   return { snap: { ...snap, show: snap.show ? { ...snap.show, active: false, updatedAt: now } : null }, changed: true };
 }

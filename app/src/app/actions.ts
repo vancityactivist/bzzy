@@ -1,6 +1,7 @@
 "use server";
 
 import { refresh } from "next/cache";
+import { after } from "next/server";
 import { z } from "zod";
 
 import { signIn, signOut } from "@/auth";
@@ -25,6 +26,7 @@ import {
 } from "@/lib/devices";
 import { isAdmin, setSuperadmin } from "@/lib/admin";
 import { newTokenInput } from "@/lib/api-rules";
+import { takeLimit } from "@/lib/api-limits";
 import { createApiToken, revokeApiToken, setApiBlocked, TokenError } from "@/lib/api-tokens";
 import { GifError } from "@/lib/gif-process";
 import { checkGifChoice, deleteGif, importGifFromLink, setDeviceGif, uploadGif } from "@/lib/gifs";
@@ -35,6 +37,8 @@ import { pushInput, pushLeds } from "@/lib/push-rules";
 import { ringFromInput, type RingInput, ringInput } from "@/lib/ring";
 import { requireUser } from "@/lib/session";
 import { clearShow, setShow } from "@/lib/show";
+import { webhookInput } from "@/lib/webhook-rules";
+import { createWebhook, deleteWebhook, noticeChanges, sendTest, updateWebhook, WebhookError } from "@/lib/webhooks";
 import { parseClock, parseWorkHours } from "@/lib/work-hours";
 
 export async function signInWithGitHub() {
@@ -88,6 +92,7 @@ export async function setStatus(formData: FormData) {
     ),
     clearShow(user.id, now),
   ]);
+  after(() => noticeChanges(user.id, { status: true, show: true }));
   refresh();
 }
 
@@ -98,6 +103,7 @@ export async function clearStatus() {
     setPresence(user.id, { active: false, status: "free", text: "", until: 0, updatedAt: now }, "web"),
     clearShow(user.id, now),
   ]);
+  after(() => noticeChanges(user.id, { status: true, show: true }));
   refresh();
 }
 
@@ -178,6 +184,7 @@ export async function showNowAction(_prev: ShowNowResult, formData: FormData): P
     until: minutes > 0 ? now + minutes * 60 : 0,
     updatedAt: now,
   });
+  after(() => noticeChanges(user.id, { status: false, show: true }));
   refresh();
   return { ok: true, at: now };
 }
@@ -185,6 +192,7 @@ export async function showNowAction(_prev: ShowNowResult, formData: FormData): P
 export async function clearShowAction() {
   const user = await requireUser();
   await clearShow(user.id, nowSeconds());
+  after(() => noticeChanges(user.id, { status: false, show: true }));
   refresh();
 }
 
@@ -345,6 +353,52 @@ export async function revokeApiTokenAction(tokenId: string) {
   const user = await requireUser();
   await revokeApiToken(user.id, tokenId);
   refresh();
+}
+
+// ---- webhooks ----
+
+export type NewWebhookResult = { ok: true; secret: string; url: string } | { ok: false; error: string } | null;
+
+export async function createWebhookAction(_prev: NewWebhookResult, formData: FormData): Promise<NewWebhookResult> {
+  const user = await requireUser();
+  const input = webhookInput.safeParse({
+    url: formData.get("url") ?? "",
+    events: formData.getAll("events"),
+    description: formData.get("description") ?? "",
+  });
+  if (!input.success) return { ok: false, error: input.error.issues[0]?.message ?? "Something in the form didn't look right." };
+  try {
+    const { webhook, secret } = await createWebhook(user.id, input.data);
+    refresh();
+    return { ok: true, secret, url: webhook.url };
+  } catch (err) {
+    if (err instanceof WebhookError) return { ok: false, error: err.message };
+    throw err;
+  }
+}
+
+export async function setWebhookEnabledAction(id: string, enabled: boolean) {
+  const user = await requireUser();
+  await updateWebhook(user.id, id, { enabled });
+  refresh();
+}
+
+export async function deleteWebhookAction(id: string) {
+  const user = await requireUser();
+  await deleteWebhook(user.id, id);
+  refresh();
+}
+
+export type WebhookTestResult = { ok: boolean; message: string } | null;
+
+export async function testWebhookAction(id: string): Promise<WebhookTestResult> {
+  const user = await requireUser();
+  const limit = await takeLimit("webhookTest", user.id);
+  if (!limit.ok) return { ok: false, message: `That's a lot of tests. Try again in ${limit.resetSec} s.` };
+  const d = await sendTest(user.id, id);
+  refresh();
+  if (!d) return { ok: false, message: "That webhook is gone." };
+  return d.ok ? { ok: true, message: `Delivered: answered ${d.code} in ${d.ms} ms.` } : { ok: false, message: d.error ?? "It didn't arrive." };
 }
 
 // ---- GIFs ----

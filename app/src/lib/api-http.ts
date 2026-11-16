@@ -29,7 +29,7 @@ export class ApiError extends Error {
 const CORS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "Authorization, Content-Type",
-  "Access-Control-Allow-Methods": "GET, PUT, DELETE, OPTIONS",
+  "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
   "Access-Control-Expose-Headers": "RateLimit-Limit, RateLimit-Remaining, RateLimit-Reset, Retry-After, X-Request-Id",
   "Access-Control-Max-Age": "86400",
 };
@@ -62,14 +62,15 @@ function clientAddress(req: NextRequest): string {
   return hashToken(fwd || req.headers.get("x-real-ip") || "unknown").slice(0, 16);
 }
 
-export type ApiContext = { req: NextRequest; token: AuthedToken; now: number; requestId: string };
+// `params`: the route's path parameters ({ id } for /webhooks/{id}).
+export type ApiContext = { req: NextRequest; token: AuthedToken; now: number; requestId: string; params: Record<string, string> };
 
 export type ApiHandler = (ctx: ApiContext) => Promise<{ data: unknown; status?: number }>;
 
 // Wraps a route handler. `scope`: what the token must allow (null: any live token).
 // `kind`: which rate limit it counts against.
 export function apiRoute(opts: { scope: Scope | null; kind: "read" | "write" }, handler: ApiHandler) {
-  return async (req: NextRequest): Promise<Response> => {
+  return async (req: NextRequest, route?: { params: Promise<Record<string, string>> }): Promise<Response> => {
     const requestId = req.headers.get("x-vercel-id")?.split("::").pop()?.slice(0, 32) || newRequestId();
     try {
       const raw = bearerToken(req.headers.get("authorization"));
@@ -96,7 +97,8 @@ export function apiRoute(opts: { scope: Scope | null; kind: "read" | "write" }, 
       const nowMs = Date.now();
       // A write wakes the database anyway, so "last used" can be saved with it.
       after(() => noteTokenUsed(token.id, nowMs, loaded || opts.kind === "write"));
-      const { data, status = 200 } = await handler({ req, token, now: Math.floor(nowMs / 1000), requestId });
+      const params = (await route?.params) ?? {};
+      const { data, status = 200 } = await handler({ req, token, now: Math.floor(nowMs / 1000), requestId, params });
       return apiJson(data, status, limitHeaders(limit), requestId);
     } catch (err) {
       if (err instanceof ApiError) return errorResponse(err, requestId);

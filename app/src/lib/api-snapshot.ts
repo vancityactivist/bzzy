@@ -4,7 +4,7 @@ import { eq } from "drizzle-orm";
 
 import { db, schema } from "@/db";
 
-import { apiStatus, type ApiStatus, iso } from "./api-rules";
+import { type ApiShow, apiStatus, type ApiStatus, iso } from "./api-rules";
 import { cachedRead, tag } from "./cache";
 import { calendarsForUser, type CalendarRow, refreshCalendar, scheduleFromCalendars, staleCalendars, userClock } from "./calendar";
 import type { ResolvedGif } from "./gifs";
@@ -131,16 +131,6 @@ export function statusFrom(snap: ApiSnapshot, now: number): ApiStatus {
 
 export const gifId = (g: ResolvedGif) => (g ? `${g.kind}:${g.id}` : null);
 const gifOut = (g: ResolvedGif) => (g ? { id: gifId(g)!, name: g.name } : null);
-
-export type ApiShow = {
-  text: string;
-  gif: { id: string; name: string } | null;
-  ring: LedStyle | null;
-  until: string | null;
-  setAt: string | null;
-  // A team push is on the lights in its place for now.
-  hiddenByPush: boolean;
-};
 
 export function showFrom(snap: ApiSnapshot, now: number): ApiShow | null {
   const s = snap.show;

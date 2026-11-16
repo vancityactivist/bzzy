@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 
-import { CalendarIcon, ClockIcon, CodeIcon, KeyIcon, UsersIcon } from "@/components/icons";
+import { CalendarIcon, ClockIcon, CodeIcon, KeyIcon, UsersIcon, WebhookIcon } from "@/components/icons";
 import { AddPasskey } from "@/components/passkey-buttons";
 import { SignIn } from "@/components/sign-in";
 import { Badge, Card, CardHeader, Container, PageHeader, StatusDot } from "@/components/ui";
@@ -14,11 +14,14 @@ import { passkeysForUser } from "@/lib/passkeys";
 import { nowSeconds } from "@/lib/protocol";
 import { getCurrentUser } from "@/lib/session";
 import { teamsForUser } from "@/lib/teams";
+import { EVENT_INFO, FAILURES_TO_DISABLE, MAX_WEBHOOKS } from "@/lib/webhook-rules";
+import { webhooksForUser } from "@/lib/webhooks";
 
 import { absoluteTime, relativeTime } from "../devices/relative-time";
 import { NewApiTokenForm, RevokeApiToken } from "./api-token-forms";
 import { AddCalendarForm, CalendarActions } from "./calendar-forms";
 import { PasskeyActions } from "./passkey-forms";
+import { NewWebhookForm, WebhookActions } from "./webhook-forms";
 import { WorkHoursForm } from "./work-hours-form";
 
 export const metadata: Metadata = { title: "Settings" };
@@ -37,12 +40,13 @@ async function SettingsContent() {
   const user = await getCurrentUser();
   if (!user) return <SignIn />;
   await refreshStaleCalendars(user.id);
-  const [teams, calendars, passkeys, clock, tokens] = await Promise.all([
+  const [teams, calendars, passkeys, clock, tokens, webhooks] = await Promise.all([
     teamsForUser(user.id),
     calendarsForUser(user.id),
     passkeysForUser(user.id),
     userClock(user.id),
     tokensForUser(user.id),
+    webhooksForUser(user.id),
   ]);
   const TZ = clock.timeZone;
   const now = nowSeconds();
@@ -231,6 +235,92 @@ async function SettingsContent() {
         )}
         <div className="mt-5">
           <NewApiTokenForm first={tokens.length === 0} />
+        </div>
+      </Card>
+
+      <Card>
+        <CardHeader
+          title={
+            <span className="flex items-center gap-2">
+              <WebhookIcon className="size-5 text-muted" />
+              Webhooks
+            </span>
+          }
+          description={
+            <>
+              Tell another app the moment your status, Show now or a button press changes.{" "}
+              <Link href="/docs/api#webhooks" className="font-medium text-foreground underline underline-offset-2">
+                How webhooks work
+              </Link>
+            </>
+          }
+        />
+        {webhooks.length > 0 && (
+          <ul className="mt-5 divide-y divide-line rounded-xl border border-line">
+            {webhooks.map((w) => {
+              const last = w.recent[0];
+              return (
+                <li key={w.id} className="space-y-3 p-4">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <p className="flex flex-wrap items-center gap-2 font-medium">
+                        {w.description && <span>{w.description}</span>}
+                        {!w.enabled && (
+                          <Badge tone={w.failures >= FAILURES_TO_DISABLE ? "busy" : "neutral"}>
+                            {w.failures >= FAILURES_TO_DISABLE ? `off after ${FAILURES_TO_DISABLE} failures` : "off"}
+                          </Badge>
+                        )}
+                      </p>
+                      <p className="mt-0.5 truncate font-mono text-[13px] text-muted" title={w.url}>
+                        {w.url}
+                      </p>
+                      <p className="mt-0.5 text-sm text-muted">{w.events.map((e) => EVENT_INFO[e].label).join(", ")}</p>
+                      <p className="mt-0.5 text-sm text-muted">
+                        {last ? (
+                          <>
+                            <span title={absoluteTime(new Date(last.at))}>last sent {relativeTime(new Date(last.at))}</span>
+                            {" · "}
+                            {last.ok ? <span className="text-free">delivered</span> : <span className="text-danger">failed: {last.error}</span>}
+                            {w.failures > 1 && ` (${w.failures} in a row)`}
+                          </>
+                        ) : (
+                          "nothing sent yet"
+                        )}
+                      </p>
+                    </div>
+                    <WebhookActions id={w.id} url={w.url} enabled={w.enabled} />
+                  </div>
+                  {w.recent.length > 0 && (
+                    <details className="group text-sm">
+                      <summary className="cursor-pointer text-muted select-none hover:text-foreground">Recent deliveries ({w.recent.length})</summary>
+                      <ul className="mt-2 space-y-1">
+                        {w.recent.map((d) => (
+                          <li key={`${d.id}-${d.at}`} className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                            <StatusDot status={d.ok ? "free" : "busy"} />
+                            <span className="font-mono text-[13px]">{d.type}</span>
+                            <span className="text-muted" title={absoluteTime(new Date(d.at))}>
+                              {relativeTime(new Date(d.at))}
+                            </span>
+                            <span className="text-muted">
+                              {d.ok ? `${d.code} in ${d.ms} ms` : d.error}
+                              {d.tries > 1 && ` · ${d.tries} tries`}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    </details>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        )}
+        <div className="mt-5">
+          {webhooks.length < MAX_WEBHOOKS ? (
+            <NewWebhookForm first={webhooks.length === 0} />
+          ) : (
+            <p className="text-sm text-muted">That&apos;s {MAX_WEBHOOKS}, the most you can have. Remove one to add another.</p>
+          )}
         </div>
       </Card>
 

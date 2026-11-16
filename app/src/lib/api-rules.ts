@@ -5,7 +5,7 @@
 
 import { z } from "zod";
 
-import { ledStyle } from "./push-rules";
+import { ledStyle, type LedStyle } from "./push-rules";
 import { type Block, clipText, type Presence, STATUSES, type Status } from "./protocol";
 import { resolveScreen } from "./screen";
 
@@ -21,17 +21,19 @@ export const MAX_LIVE_TOKENS = 20;
 
 // `random(n)` gives n random bytes (crypto.randomBytes in the app). Bytes of 248 and up
 // are skipped so every symbol is equally likely (248 = 4 × 62).
-export function newApiToken(random: (n: number) => Uint8Array): string {
-  let body = "";
-  while (body.length < TOKEN_BODY_LEN) {
+export function randomBase62(length: number, random: (n: number) => Uint8Array): string {
+  let out = "";
+  while (out.length < length) {
     for (const b of random(64)) {
       if (b >= 248) continue;
-      body += BASE62[b % 62];
-      if (body.length === TOKEN_BODY_LEN) break;
+      out += BASE62[b % 62];
+      if (out.length === length) break;
     }
   }
-  return TOKEN_PREFIX + body;
+  return out;
 }
+
+export const newApiToken = (random: (n: number) => Uint8Array) => TOKEN_PREFIX + randomBase62(TOKEN_BODY_LEN, random);
 
 // Whether a string could be one of our tokens at all, so junk never reaches the cache
 // or the database.
@@ -41,14 +43,15 @@ export function looksLikeApiToken(token: string): boolean {
 
 // ---- scopes ----
 
-// What a token may do. Later phases add "webhooks" and "push" (docs/api.md).
-export const SCOPES = ["read", "status", "show"] as const;
+// What a token may do. A later phase adds "push" (docs/api.md).
+export const SCOPES = ["read", "status", "show", "webhooks"] as const;
 export type Scope = (typeof SCOPES)[number];
 
 export const SCOPE_INFO: Record<Scope, { label: string; detail: string }> = {
   read: { label: "Read", detail: "See your status, Show now and what your lights are showing" },
   status: { label: "Status", detail: "Set and clear your status" },
   show: { label: "Show now", detail: "Put a message or GIF on your lights and take it down" },
+  webhooks: { label: "Webhooks", detail: "Add, change and remove your webhooks" },
 };
 
 export const DEFAULT_SCOPES: Scope[] = ["read", "status", "show"];
@@ -108,10 +111,11 @@ export function shouldSaveUsed(saved: number | null, nowMs: number, everyMs: num
 
 // ---- rate limits ----
 
-export type LimitKind = "read" | "write" | "badAuth";
+export type LimitKind = "read" | "write" | "badAuth" | "webhookTest";
 
-// Requests per minute. Reads and writes count per token; failed sign-ins per address.
-export const LIMITS: Record<LimitKind, number> = { read: 60, write: 20, badAuth: 30 };
+// Requests per minute. Reads and writes count per token; failed sign-ins per address;
+// webhook test sends per person.
+export const LIMITS: Record<LimitKind, number> = { read: 60, write: 20, badAuth: 30, webhookTest: 5 };
 export const WINDOW_MS = 60_000;
 
 export function rateWindow(nowMs: number): { id: number; resetSec: number } {
@@ -198,6 +202,18 @@ export function sameStatus(current: Presence | null, next: { status: Status; tex
   if (current.until !== 0 && current.until <= now) return false;
   return current.status === next.status && current.text === next.text && current.until === next.until;
 }
+
+// ---- how Show now is described ----
+
+export type ApiShow = {
+  text: string;
+  gif: { id: string; name: string } | null;
+  ring: LedStyle | null;
+  until: string | null;
+  setAt: string | null;
+  // A team push is on the lights in its place for now.
+  hiddenByPush: boolean;
+};
 
 // ---- how the status is described ----
 

@@ -116,10 +116,12 @@ export async function revokeApiToken(userId: string, tokenId: string): Promise<b
   return !!rows[0];
 }
 
-// The superadmin switch: revokes every token the person has and stops new ones, or lets
-// them make tokens again (old ones stay revoked).
+// The superadmin switch: revokes every token the person has, stops new ones and stops
+// their webhooks sending, or lets them make tokens again (old ones stay revoked; their
+// webhooks start sending again).
 export async function setApiBlocked(userId: string, blocked: boolean) {
   await db().update(schema.users).set({ apiBlocked: blocked }).where(eq(schema.users.id, userId));
+  await expire(tag.webhooks(userId), tag.user(userId));
   if (!blocked) return;
   const revoked = await db()
     .update(schema.apiTokens)
