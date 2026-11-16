@@ -45,7 +45,7 @@ describe("API tokens", () => {
 
   it("stores scopes sorted and drops unknown ones", () => {
     expect(encodeScopes(["status", "read", "status"])).toBe("read,status");
-    expect(decodeScopes("status,read,push,nonsense")).toEqual(["read", "status"]);
+    expect(decodeScopes("status,read,push,nonsense")).toEqual(["push", "read", "status"]);
   });
 
   it("checks the new-token form", () => {

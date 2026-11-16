@@ -4,7 +4,7 @@
 
 import { z } from "zod";
 
-import { LIMITS, SCOPES, showBody, statusBody } from "./api-rules";
+import { LIMITS, pushBody, SCOPES, showBody, statusBody } from "./api-rules";
 import { EVENT_INFO, FAILURES_TO_DISABLE, WEBHOOK_EVENTS, webhookInput, webhookPatch } from "./webhook-rules";
 import { PATTERNS } from "./push-rules";
 import { STATUSES } from "./protocol";
@@ -146,10 +146,40 @@ const schemas = {
     },
     required: ["id", "url", "description", "events", "enabled", "failures", "createdAt", "lastDelivery"],
   },
+  Team: {
+    type: "object",
+    properties: {
+      id: { type: "string" },
+      name: { type: "string" },
+      role: { type: "string", enum: ["owner", "admin", "member"] },
+      members: { type: "integer" },
+      canPush: { type: "boolean", description: "Owners and admins can send and end pushes." },
+    },
+    required: ["id", "name", "role", "members", "canPush"],
+  },
+  Push: {
+    type: "object",
+    properties: {
+      id: { type: "string" },
+      teamId: { type: "string" },
+      text: { type: "string" },
+      gif: gifRef,
+      ring,
+      until: { ...time, description: "When it ends. null: until someone ends it." },
+      sentAt: time,
+      sentBy: { type: "object", properties: { id: { type: ["string", "null"] }, name: { type: ["string", "null"] } } },
+      to: { type: "string", enum: ["everyone", "people"] },
+      people: { type: "array", items: { type: "string" }, description: 'User ids, when `to` is "people".' },
+      dismissedBy: { type: "array", items: { type: "string" }, description: "User ids who dismissed it on their light." },
+      live: { type: "boolean" },
+    },
+    required: ["id", "teamId", "text", "gif", "ring", "until", "sentAt", "sentBy", "to", "people", "dismissedBy", "live"],
+  },
   StatusInput: body(statusBody),
   ShowInput: body(showBody),
   WebhookInput: body(webhookInput),
   WebhookPatch: body(webhookPatch),
+  PushInput: body(pushBody),
 };
 
 const ref = (name: keyof typeof schemas) => ({ $ref: `#/components/schemas/${name}` });
@@ -158,12 +188,11 @@ const ok = (description: string, schema: object) => ({ description, content: jso
 const errors = {
   "400": { description: "A field is missing or wrong (`field` names it).", content: json(ref("Error")) },
   "401": { description: "No token, or it was revoked or has expired.", content: json(ref("Error")) },
-  "403": { description: "The token doesn't have the scope this needs.", content: json(ref("Error")) },
+  "403": { description: "The token doesn't have the scope this needs (`missing_scope`), or you can't do this in that team (`not_allowed`).", content: json(ref("Error")) },
   "429": { description: "Rate limited. Wait `Retry-After` seconds.", content: json(ref("Error")) },
 };
 const changed = { changed: { type: "boolean", description: "false: it was already like this, so nothing was saved." } };
-const idParam = { name: "id", in: "path", required: true, description: "The webhook's id.", schema: { type: "string" } };
-const notFound = { description: "No such webhook.", content: json(ref("Error")) };
+const notFound = { description: "Not found (`not_found`).", content: json(ref("Error")) };
 const op = (o: {
   summary: string;
   scope: string;
@@ -172,16 +201,19 @@ const op = (o: {
   request?: keyof typeof schemas;
   response: object;
   created?: boolean;
-  byId?: boolean;
+  // Path parameters: name → description.
+  params?: Record<string, string>;
 }) => ({
   summary: o.summary,
   ...(o.description ? { description: o.description } : {}),
   tags: [o.tag],
   security: [{ token: [] }],
   "x-bzzy-scope": o.scope,
-  ...(o.byId ? { parameters: [idParam] } : {}),
+  ...(o.params
+    ? { parameters: Object.entries(o.params).map(([name, description]) => ({ name, in: "path", required: true, description, schema: { type: "string" } })) }
+    : {}),
   ...(o.request ? { requestBody: { required: true, content: json(ref(o.request)) } } : {}),
-  responses: { [o.created ? "201" : "200"]: o.response, ...errors, ...(o.byId ? { "404": notFound } : {}) },
+  responses: { [o.created ? "201" : "200"]: o.response, ...errors, ...(o.params ? { "404": notFound } : {}) },
 });
 
 // An event bzzy sends, for the document's `webhooks` section.
@@ -208,6 +240,8 @@ const event = (type: string, summary: string, data: object) => ({
     responses: { "2XX": { description: "Received. Anything else counts as a failure and is tried again (3 tries in all)." } },
   },
 });
+const hookId = { id: "The webhook's id." };
+const teamId = { id: "The team's id, from GET /teams." };
 const webhook = (extra: object = {}) => ({ type: "object", properties: { webhook: ref("Webhook"), ...extra } });
 
 export function openApiDocument(serverUrl: string) {
@@ -320,7 +354,7 @@ export function openApiDocument(serverUrl: string) {
           summary: "One webhook, with its recent deliveries",
           scope: "webhooks",
           tag: "Webhooks",
-          byId: true,
+          params: hookId,
           response: ok("The webhook.", {
             type: "object",
             properties: { webhook: { allOf: [ref("Webhook"), { type: "object", properties: { recentDeliveries: { type: "array", items: ref("Delivery") } } }] } },
@@ -331,15 +365,68 @@ export function openApiDocument(serverUrl: string) {
           scope: "webhooks",
           tag: "Webhooks",
           request: "WebhookPatch",
-          byId: true,
+          params: hookId,
           response: ok("The webhook after the change.", webhook()),
         }),
         delete: op({
           summary: "Remove a webhook",
           scope: "webhooks",
           tag: "Webhooks",
-          byId: true,
+          params: hookId,
           response: ok("It's gone.", { type: "object", properties: { deleted: { type: "boolean" } } }),
+        }),
+      },
+      "/teams": {
+        get: op({
+          summary: "Your teams",
+          description: "Shared teams you're in, with your role. Personal teams aren't listed.",
+          scope: "read or push",
+          tag: "Teams",
+          response: ok("The teams.", { type: "object", properties: { teams: { type: "array", items: ref("Team") } } }),
+        }),
+      },
+      "/teams/{id}": {
+        get: op({
+          summary: "One team: its people and live pushes",
+          scope: "read or push",
+          tag: "Teams",
+          params: teamId,
+          response: ok("The team.", {
+            type: "object",
+            properties: {
+              team: ref("Team"),
+              members: {
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: { id: { type: "string" }, name: { type: ["string", "null"] }, role: { type: "string", enum: ["owner", "admin", "member"] } },
+                },
+              },
+              pushes: { type: "array", items: ref("Push") },
+            },
+          }),
+        }),
+      },
+      "/teams/{id}/pushes": {
+        post: op({
+          summary: "Send a team push",
+          description:
+            "Puts a message and/or GIF on the lights of everyone in the team, or of the `people` picked, until it ends, someone ends it, or each person dismisses it with their light's button. A newer push replaces an older one. Owners and admins only.",
+          scope: "push",
+          tag: "Teams",
+          request: "PushInput",
+          created: true,
+          params: teamId,
+          response: ok("The push.", { type: "object", properties: { push: ref("Push") } }),
+        }),
+      },
+      "/teams/{id}/pushes/{pushId}": {
+        delete: op({
+          summary: "End a team push for everyone",
+          scope: "push",
+          tag: "Teams",
+          params: { ...teamId, pushId: "The push's id." },
+          response: ok("It's ended.", { type: "object", properties: { ended: { type: "boolean" } } }),
         }),
       },
       "/webhooks/{id}/test": {
@@ -348,12 +435,17 @@ export function openApiDocument(serverUrl: string) {
           description: "Sends a ping event once and says how it went. Works on a webhook that's off, too. 5 a minute.",
           scope: "webhooks",
           tag: "Webhooks",
-          byId: true,
+          params: hookId,
           response: ok("How the delivery went.", { type: "object", properties: { delivery: ref("Delivery") } }),
         }),
       },
     },
     webhooks: {
+      "push.received": event("push.received", EVENT_INFO["push.received"].label, {
+        type: "object",
+        properties: { team: { type: "object", properties: { id: { type: "string" }, name: { type: "string" } } }, push: ref("Push") },
+        required: ["team", "push"],
+      }),
       "status.changed": event("status.changed", EVENT_INFO["status.changed"].label, {
         type: "object",
         properties: { status: ref("Status"), previous: { anyOf: [ref("Status"), { type: "null" }] } },

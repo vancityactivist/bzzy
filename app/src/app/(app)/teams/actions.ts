@@ -1,6 +1,7 @@
 "use server";
 
 import { refresh } from "next/cache";
+import { after } from "next/server";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 
@@ -8,6 +9,7 @@ import { checkGifChoice } from "@/lib/gifs";
 import { nowSeconds } from "@/lib/protocol";
 import { pushInput, pushLeds } from "@/lib/push-rules";
 import { createPush, endPush } from "@/lib/pushes";
+import { pushReceived } from "@/lib/webhooks";
 import { requireUser } from "@/lib/session";
 import { ASSIGNABLE_ROLES, INVITE_DAYS } from "@/lib/team-rules";
 import {
@@ -192,7 +194,15 @@ export async function sendPushAction(teamId: string, _prev: PushResult, formData
     choice = checked;
   }
   try {
-    await createPush(user.id, teamId, { ...choice, text, minutes, target, users, leds: pushLeds(input.data) });
+    const pushId = await createPush(user.id, teamId, {
+      ...choice,
+      text,
+      until: minutes > 0 ? nowSeconds() + minutes * 60 : 0,
+      target,
+      users,
+      leds: pushLeds(input.data),
+    });
+    after(() => pushReceived(teamId, pushId));
   } catch (e) {
     return failed(e);
   }

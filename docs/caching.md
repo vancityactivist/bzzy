@@ -16,6 +16,7 @@ So the poll answers from Vercel's runtime cache, and while nothing changes it do
 | `pat:v1:{tokenHash}` | an API token's owner, scopes and expiry (`app/src/lib/api-tokens.ts`) | on a miss, 1 h TTL |
 | `patused:{tokenId}` | when an API token was last used | about once a minute; the database copy once a day, or with a write |
 | `rl:{kind}:{who}:{minute}` | API request counts for rate limits (`app/src/lib/api-limits.ts`) | each request |
+| `apiteam:v1:{teamId}` | a team's name, members and live pushes, for the API's `GET /teams/{id}` (`app/src/lib/api-teams.ts`) | on a miss, 3 h TTL |
 | `hooks:v1:{userId}` | a person's webhooks that are on, with their sealed secrets (`app/src/lib/webhooks.ts`) | on a miss, 3 h TTL |
 | `whseen:v1:{userId}` | the status and Show now last sent to a person's webhooks, to compare the next check with. No tags, so writes don't wipe it | when either changes, 7 d TTL |
 
@@ -37,7 +38,7 @@ Every time a poll or an API call touches the database it logs a line starting `[
 |---|---|
 | `d-{deviceId}` | the device row or its GIF choices change (settings, ring, token, update now, push team, delete) |
 | `u-{userId}` | a person's presence, show now, calendars, time zone or working hours, or their lights' push team change, or they get a new light |
-| `t-{teamId}` | a team's pushes, acks or members change, or the team is deleted |
+| `t-{teamId}` | a team's pushes, acks, members or their roles change, it's renamed, or it's deleted |
 | `a-{assetId}` | an uploaded GIF is deleted |
 | `fw` | the saved firmware release changes |
 | `k-{tokenId}` | an API token is revoked |

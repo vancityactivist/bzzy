@@ -85,7 +85,8 @@ export async function createPush(
     assetId: string | null;
     builtin: string | null;
     leds: LedStyle | null;
-    minutes: number;
+    // Unix seconds; 0 = until someone ends it.
+    until: number;
     target: "all" | "users";
     users: string[];
   },
@@ -100,6 +101,7 @@ export async function createPush(
     if (users.length === 0) throw new TeamError("Pick at least one person.");
   }
   const now = nowSeconds();
+  const minutes = input.until > 0 ? Math.round((input.until - now) / 60) : 0;
   const id = crypto.randomUUID();
   const d = db();
   await d.batch([
@@ -112,18 +114,19 @@ export async function createPush(
       assetId: input.assetId,
       builtin: input.builtin,
       leds: input.leds,
-      until: input.minutes > 0 ? now + input.minutes * 60 : 0,
+      until: input.until,
       updatedAt: now,
     }),
     ...(users.length ? [d.insert(schema.teamPushTargets).values(users.map((u) => ({ pushId: id, userId: u })))] : []),
-    audit(teamId, userId, "push", { target: input.target, people: users.length, text, minutes: input.minutes, flash: input.leds?.pattern ?? null }, t.asSuperadmin),
+    audit(teamId, userId, "push", { target: input.target, people: users.length, text, minutes, flash: input.leds?.pattern ?? null }, t.asSuperadmin),
   ]);
   await expire(tag.team(teamId));
   return id;
 }
 
-// Take it down for everyone, now. Lights drop it on their next poll.
-export async function endPush(userId: string, teamId: string, pushId: string) {
+// Take it down for everyone, now. Lights drop it on their next poll. False if it had
+// already ended (or isn't this team's).
+export async function endPush(userId: string, teamId: string, pushId: string): Promise<boolean> {
   const t = await requireTeam(userId, teamId, "manage");
   const now = nowSeconds();
   const p = schema.teamPushes;
@@ -136,6 +139,7 @@ export async function endPush(userId: string, teamId: string, pushId: string) {
     await audit(teamId, userId, "push-ended", { text: ended[0].text }, t.asSuperadmin);
     await expire(tag.team(teamId));
   }
+  return !!ended[0];
 }
 
 type PushDevice = { id: string; ownerUserId: string; pushTeamId: string | null };

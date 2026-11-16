@@ -14,6 +14,7 @@ Make a token in **Settings → API tokens**. Give it a name (what it's for), pic
 | `status` | set and clear your status |
 | `show` | put up and take down Show now |
 | `webhooks` | add, change and remove your webhooks |
+| `push` | send and end team pushes, in teams where you're an owner or admin |
 
 Send it in the `Authorization` header, never in the URL:
 
@@ -61,6 +62,10 @@ curl -X DELETE https://bzzy.ca/api/v1/status -H "Authorization: Bearer $BZZY_TOK
 | `DELETE /show` | `show` | take it down |
 | `GET /lights` | `read` | your lights and what each one shows right now |
 | `GET /gifs` | `read` | GIFs `PUT /show` can use |
+| `GET /teams` | `read` or `push` | the shared teams you're in, your role, and whether you can push |
+| `GET /teams/{id}` | `read` or `push` | one team: its people (id, name, role) and live pushes |
+| `POST /teams/{id}/pushes` | `push` | send a push to everyone, or to `people` (owners and admins only) |
+| `DELETE /teams/{id}/pushes/{pushId}` | `push` | end a push for everyone |
 | `GET /webhooks` | `webhooks` | your webhooks |
 | `POST /webhooks` | `webhooks` | add one; the answer has its signing secret, shown once |
 | `GET /webhooks/{id}` | `webhooks` | one webhook, with its last 20 deliveries |
@@ -116,6 +121,14 @@ A team push from an admin beats your own Show now while it's up (`hiddenByPush` 
 
 Each light: `id`, `name`, `online`, `lastSeenAt`, `firmwareVersion`, `dark` (off outside working hours), `screen` (`layout`, `status`, `text`, `until`), `ring` (what the ring is doing, or `null` for steady), and `push` (a team push on it, if any). It's the same thing the Status page preview shows.
 
+### `POST /teams/{id}/pushes`
+
+```json
+{ "text": "Fire drill at 2", "ring": { "pattern": "strobe", "color": "#ff2000", "for": 30 }, "minutes": 30, "people": [] }
+```
+
+Like `PUT /show` (`text`, `gif`, `ring`), plus `people`: user ids from `GET /teams/{id}`, or empty for everyone. `minutes` or `until` up to 24 hours, or neither to keep it up until someone ends it. The role is checked on every call, as on the team page, and the push is in the team's log. A newer push replaces an older one on each light; each person can dismiss it with their light's button. Lights show pushes from the team they follow (Devices page).
+
 ### Writes that change nothing
 
 If a `PUT` or `DELETE` wouldn't change anything (Busy is already set, there's no Show now to take down), it saves nothing and answers `200` with `"changed": false`. Integrations can resend the same state as often as the rate limit allows.
@@ -129,6 +142,7 @@ A webhook is a URL bzzy `POST`s to when something happens. Add one in **Settings
 | `status.changed` | the status your lights show changes: from the app, a light, the API, a meeting starting or ending, a status running out, or working hours starting or ending | `status` (as `GET /status`) and `previous` |
 | `show.changed` | Show now goes up, changes or comes down | `show` (as `GET /show`) and `previous` |
 | `button.pressed` | a press on one of your lights changes the status | `light` (`id`, `name`), `status` (`null`: back to the calendar), `pressedAt` |
+| `push.received` | a team push is sent to you (or everyone in your team, you included) | `team` (`id`, `name`), `push` (as in `GET /teams/{id}`) |
 | `ping` | **Send test** | `webhook`, `message` |
 
 ```json
@@ -152,8 +166,8 @@ Every error has the same shape:
 | --- | --- | --- |
 | 400 | `invalid_json`, `invalid_request` | the body isn't JSON, or a field is wrong (`field` names it) |
 | 401 | `unauthorized` | no token, or it was revoked or has expired |
-| 403 | `missing_scope` | the token can't do this |
-| 404 | `unknown_gif`, `not_found` | no such GIF (or not one you can use), or no such webhook |
+| 403 | `missing_scope`, `not_allowed` | the token can't do this, or you can't in that team (only owners and admins push) |
+| 404 | `unknown_gif`, `not_found` | no such GIF (or not one you can use), or no such webhook, team or live push |
 | 415 | `unsupported_media_type` | send `Content-Type: application/json` |
 | 429 | `rate_limited` | too many requests; wait `Retry-After` seconds |
 | 500 | `server_error` | our fault; quote the `X-Request-Id` header |
@@ -177,4 +191,5 @@ bzzy is source-available under the PolyForm Noncommercial license, and the hoste
 - `app/src/lib/api-snapshot.ts`: what the reads need about a person, cached under their `u-`, `d-` and `t-` tags like a light's poll (see [caching.md](caching.md)). An integration polling `GET /status` doesn't wake the database.
 - `app/src/lib/api-actions.ts`: the writes, using the same functions as the web app.
 - `app/src/lib/api-rules.ts`: the pure parts, with tests.
+- `app/src/lib/api-teams.ts`: teams and pushes. `GET /teams/{id}` is cached under the team's `t-` tag (`apiteam:v1:{teamId}`), so watching for pushes doesn't wake the database; sending and ending go through `app/src/lib/pushes.ts` like the team page.
 - `app/src/lib/webhooks.ts`: webhooks (table `webhook`, migration 0014). There's no queue on Vercel Hobby, so events are sent from `after()` of the request that noticed them: a write, or a light's poll (`noticeChanges`), which compares with what was last sent (cached under `whseen:v1:{userId}`). `app/src/lib/webhook-rules.ts` holds the pure parts: signing, what counts as a change, delivery results.

@@ -67,9 +67,10 @@ export type ApiContext = { req: NextRequest; token: AuthedToken; now: number; re
 
 export type ApiHandler = (ctx: ApiContext) => Promise<{ data: unknown; status?: number }>;
 
-// Wraps a route handler. `scope`: what the token must allow (null: any live token).
-// `kind`: which rate limit it counts against.
-export function apiRoute(opts: { scope: Scope | null; kind: "read" | "write" }, handler: ApiHandler) {
+// Wraps a route handler. `scope`: what the token must allow (a list: any one of them;
+// null: any live token). `kind`: which rate limit it counts against.
+export function apiRoute(opts: { scope: Scope | Scope[] | null; kind: "read" | "write" }, handler: ApiHandler) {
+  const scopes = opts.scope === null ? null : ([] as Scope[]).concat(opts.scope);
   return async (req: NextRequest, route?: { params: Promise<Record<string, string>> }): Promise<Response> => {
     const requestId = req.headers.get("x-vercel-id")?.split("::").pop()?.slice(0, 32) || newRequestId();
     try {
@@ -88,8 +89,12 @@ export function apiRoute(opts: { scope: Scope | null; kind: "read" | "write" }, 
         );
       }
       const { token, loaded } = authed;
-      if (opts.scope && !token.scopes.includes(opts.scope))
-        throw new ApiError(403, "missing_scope", `This token can't do that. Make a token with the "${opts.scope}" scope in Settings.`);
+      if (scopes && !scopes.some((sc) => token.scopes.includes(sc)))
+        throw new ApiError(
+          403,
+          "missing_scope",
+          `This token can't do that. Make a token with the ${scopes.map((sc) => `"${sc}"`).join(" or ")} scope in Settings.`,
+        );
 
       const limit = await takeLimit(opts.kind, token.id);
       if (!limit.ok) throw tooMany(limit);
