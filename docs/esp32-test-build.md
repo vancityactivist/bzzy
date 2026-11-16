@@ -67,7 +67,7 @@ Some newer LCDs are 3.3 V-only (the back says so, or the backlight is very dim a
 
 Put the 470 µF capacitor across 5V and GND at the strip (the stripe on the can is minus).
 
-The firmware drives **16 LEDs** and caps their current at 400 mA, which is safe on a laptop USB port. If your strip has a different count, change `-DBZZY_LED_COUNT=16` in `firmware/platformio.ini` (env `esp32_lcd1602`) before flashing. Extra LEDs past that number just stay dark. Over-the-air updates are built with 16, so a custom count goes back to 16 after an update.
+The firmware drives **12 LEDs** (a common prototype ring) and caps their current at 400 mA, which is safe on a laptop USB port. If your strip has a different count, change `-DBZZY_LED_COUNT=12` in `firmware/platformio.ini` (env `esp32_lcd1602`) before flashing. Extra LEDs past that number just stay dark. Over-the-air updates are built with 12, so a custom count goes back to 12 after an update.
 
 WS2812B at 5 V officially wants a 3.5 V data signal and the ESP32 gives 3.3 V. It almost always works with short wires. If the first LED flickers or shows the wrong colours, any one of these fixes it:
 
