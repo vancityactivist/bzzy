@@ -12,6 +12,11 @@ export const SEEN_WRITE_EVERY_MS = 60_000;
 // cache forgets), so it's written every few hours instead of waking Postgres every minute.
 export const SEEN_DB_EVERY_MS = 6 * 3600_000;
 
+// When a poll has already woken the database (its cached copy ran out, every few hours),
+// the saved "last seen" is brought up to date in the same wake if it's older than this.
+// So the 6-hour write above rarely needs a wake of its own.
+export const SEEN_DB_WHILE_AWAKE_MS = 30 * 60_000;
+
 // A light counts as online if it was seen within 2 minutes, or within a minute past its
 // next poll when it was told to wait longer (outside working hours, every 5 minutes).
 export const ONLINE_WINDOW_MS = 2 * 60_000;

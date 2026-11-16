@@ -54,12 +54,22 @@ export async function cached<T>(
   ttlSeconds: number,
   load: () => Promise<{ value: T; tags: string[] } | null>,
 ): Promise<T | null> {
+  return (await cachedRead(key, ttlSeconds, load)).value;
+}
+
+// The same, also saying whether it had to go to the database (`loaded`), so the caller
+// can do other database work in the same wake instead of starting another one.
+export async function cachedRead<T>(
+  key: string,
+  ttlSeconds: number,
+  load: () => Promise<{ value: T; tags: string[] } | null>,
+): Promise<{ value: T | null; loaded: boolean }> {
   const hit = await cacheGet<T>(key);
-  if (hit !== null) return hit;
+  if (hit !== null) return { value: hit, loaded: false };
   const loaded = await load();
-  if (!loaded) return null;
+  if (!loaded) return { value: null, loaded: true };
   await cacheSet(key, loaded.value, ttlSeconds, loaded.tags);
-  return loaded.value;
+  return { value: loaded.value, loaded: true };
 }
 
 // Call after any write that changes what a cached entry holds. Tried twice; if both fail

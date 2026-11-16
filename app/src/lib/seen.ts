@@ -2,7 +2,7 @@ import "server-only";
 
 import { cacheGet, cacheSet, expire, tag } from "./cache";
 import { type AuthedDevice, markSeen } from "./device-auth";
-import { SEEN_DB_EVERY_MS, SEEN_WRITE_EVERY_MS, shouldMarkSeen } from "./poll-writes";
+import { SEEN_DB_EVERY_MS, SEEN_DB_WHILE_AWAKE_MS, SEEN_WRITE_EVERY_MS, shouldMarkSeen } from "./poll-writes";
 
 // When each light last polled. The live value is in the runtime cache (refreshed about
 // once a minute); the database copy is only brought up to date every few hours, so a
@@ -20,12 +20,20 @@ export async function noteSeen(
   nowMs: number,
   firmware: FirmwareReport,
   pollSec = 20,
+  // This poll already read the database (a cache miss), so it's awake anyway: bring the
+  // saved "last seen" up to date now rather than waking it for that later.
+  dbAwake = false,
 ) {
   const saved = await cacheGet<Seen>(key(device.id));
   const dbAt = Math.max(saved?.db ?? 0, device.lastSeenAt?.getTime() ?? 0);
   const hasFirmwareNews = !!firmware && Object.keys(firmware).length > 0;
-  const writeDb = hasFirmwareNews || shouldMarkSeen(dbAt ? new Date(dbAt) : null, nowMs, false, SEEN_DB_EVERY_MS);
+  const dbSeen = dbAt ? new Date(dbAt) : null;
+  const writeDb =
+    hasFirmwareNews ||
+    shouldMarkSeen(dbSeen, nowMs, false, SEEN_DB_EVERY_MS) ||
+    (dbAwake && shouldMarkSeen(dbSeen, nowMs, false, SEEN_DB_WHILE_AWAKE_MS));
   if (writeDb) {
+    if (!dbAwake) console.info(`[db] poll ${device.id}: saved last seen${hasFirmwareNews ? " and firmware" : ""}`);
     await markSeen(device.id, firmware, device.updateRequestedAt);
     // The cached copy of the device holds the firmware fields it just reported.
     if (hasFirmwareNews) await expire(tag.device(device.id));

@@ -100,6 +100,7 @@ export async function refreshCalendar(cal: CalendarRow, timeZone?: string): Prom
     patch = message === cal.lastError ? null : { lastError: message };
   }
   if (patch) {
+    console.info(`[db] calendar ${cal.id}: saved ${"events" in patch ? "new events" : "an error change"}`);
     await db()
       .update(schema.calendars)
       .set({ ...patch, lastFetchedAt: now })

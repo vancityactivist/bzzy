@@ -19,8 +19,9 @@ import { pollSeconds, workWindows } from "@/lib/work-hours";
 // nothing changes a poll doesn't touch the database at all and Postgres can go idle.
 export async function GET(req: NextRequest, ctx: RouteContext<"/api/device/[id]/state">) {
   const { id } = await ctx.params;
-  const bundle = await authenticatedBundle(id, req.headers.get("authorization"));
-  if (!bundle) return unauthorized();
+  const authed = await authenticatedBundle(id, req.headers.get("authorization"));
+  if (!authed) return unauthorized();
+  const { bundle, loaded } = authed;
   const { device, presence, show, release, gifs: resolved } = bundle;
 
   const now = nowSeconds();
@@ -76,12 +77,12 @@ export async function GET(req: NextRequest, ctx: RouteContext<"/api/device/[id]/
   // Answer from the saved copies right away, then re-read any calendar (or the
   // firmware release) that's due.
   // "Last seen" goes to the cache (and only rarely to the database, unless there's
-  // firmware news to save); feeds and the release are re-read when due, and only written
+  // firmware news to save or this poll already woke it); feeds and the release are re-read when due, and only written
   // back if they changed.
   after(async () => {
     await Promise.all([
       // Only firmware that knows about working hours actually waits longer.
-      noteSeen(device, nowMs, fwPatch, hasFeature(features, "hours") ? hours.poll : 20),
+      noteSeen(device, nowMs, fwPatch, hasFeature(features, "hours") ? hours.poll : 20, loaded),
       ...stale.map((c) => refreshCalendar(c, bundle.timeZone)),
       releaseStale ? refreshRelease(release) : null,
     ]);
