@@ -1,0 +1,31 @@
+# Dependabot version updates. Security updates are on separately (repo
+# Settings > Code security) and arrive whenever an advisory lands.
+#
+# Kept deliberately quiet: one grouped PR per ecosystem per month.
+# The firmware (PlatformIO) isn't something Dependabot can update.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    groups:
+      actions:
+        patterns: ["*"]
+
+  - package-ecosystem: npm
+    directory: /app
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 5
+    groups:
+      # Minor and patch bumps land together in one PR. Major bumps get
+      # their own PRs, because they're the ones that can break things.
+      minor-and-patch:
+        update-types: [minor, patch]
+    ignore:
+      # next-auth 5 beta pins @simplewebauthn to v9 as a peer dependency,
+      # so newer majors can't install (see PR #4). Drop this once a
+      # next-auth release accepts a newer SimpleWebAuthn.
+      - dependency-name: "@simplewebauthn/*"
+        update-types: ["version-update:semver-major"]

@@ -20,11 +20,11 @@ jobs:
       run:
         working-directory: firmware
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
-      - uses: actions/cache@v4
+      - uses: actions/cache@v6
         with:
           path: ~/.platformio
           key: pio-${{ matrix.env }}-${{ hashFiles('firmware/platformio.ini') }}
@@ -37,7 +37,7 @@ jobs:
           pio run -e ${{ matrix.env }}
           mkdir -p ../bins
           cp .pio/build/${{ matrix.env }}/firmware.bin ../bins/${{ matrix.env }}.bin
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: bin-${{ matrix.env }}
           path: bins/${{ matrix.env }}.bin
@@ -46,8 +46,8 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
         with:
           pattern: bin-*
           path: bins
