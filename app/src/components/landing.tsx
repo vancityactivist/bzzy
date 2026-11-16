@@ -489,6 +489,7 @@ export function Landing() {
                 <h3>App</h3>
                 <ul>
                   <li><a href="/sign-in">Sign in</a></li>
+                  <li><a href="/docs/api">API</a></li>
                   <li><a href={REPO}>GitHub</a></li>
                 </ul>
               </div>

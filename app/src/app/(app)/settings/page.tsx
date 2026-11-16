@@ -13,7 +13,6 @@ import { blocksForDevice } from "@/lib/ics";
 import { passkeysForUser } from "@/lib/passkeys";
 import { nowSeconds } from "@/lib/protocol";
 import { getCurrentUser } from "@/lib/session";
-import { REPO_URL } from "@/lib/site";
 import { teamsForUser } from "@/lib/teams";
 
 import { absoluteTime, relativeTime } from "../devices/relative-time";
@@ -193,9 +192,9 @@ async function SettingsContent() {
           description={
             <>
               Let a script, Stream Deck, Home Assistant or another app set your status and Show now.{" "}
-              <a href={`${REPO_URL}/blob/main/docs/api.md`} className="font-medium text-foreground underline underline-offset-2">
+              <Link href="/docs/api" className="font-medium text-foreground underline underline-offset-2">
                 How the API works
-              </a>
+              </Link>
             </>
           }
         />

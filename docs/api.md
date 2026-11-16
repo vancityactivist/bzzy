@@ -2,7 +2,7 @@
 
 Other apps and scripts can set your status and Show now, and see what your lights show, through `https://bzzy.ca/api/v1`. A Stream Deck button, a Home Assistant automation, a Power Automate flow or a few lines of PowerShell all work the same way.
 
-The machine-readable description is at [`/api/v1/openapi.json`](https://bzzy.ca/api/v1/openapi.json): import it into Postman or a client generator.
+The full docs, with examples and recipes, are at [bzzy.ca/docs/api](https://bzzy.ca/docs/api). The machine-readable description is at [`/api/v1/openapi.json`](https://bzzy.ca/api/v1/openapi.json): import it into Postman or a client generator.
 
 ## Tokens
 
