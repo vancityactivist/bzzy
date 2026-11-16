@@ -134,8 +134,12 @@ const endFields = {
     .int()
     .min(1)
     .max(MAX_AHEAD_SEC / 60)
-    .optional(),
-  until: z.iso.datetime({ offset: true }).optional(),
+    .optional()
+    .describe("Minutes from now until it ends, up to 7 days. Send this or until, not both. Neither: until it's cleared."),
+  until: z.iso
+    .datetime({ offset: true })
+    .optional()
+    .describe("When it ends, as an ISO 8601 time with an offset, up to 7 days ahead."),
 };
 
 type EndInput = { minutes?: number; until?: string };
@@ -158,21 +162,29 @@ export function endTime(input: EndInput, now: number): { ok: true; until: number
 
 // Text is cut to what the light's screen holds (47 bytes), and the response says what
 // was kept.
-const text = z.string().max(200).default("");
+const text = (what: string) =>
+  z
+    .string()
+    .max(200)
+    .default("")
+    .describe(`${what} Cut to what the screen holds (47 bytes); plain ASCII draws best.`);
 
 export const statusBody = z.strictObject({
-  status: z.enum(STATUSES),
-  text,
+  status: z.enum(STATUSES).describe("The status to show."),
+  text: text("Shown under the status."),
   ...endFields,
 });
 export type StatusBody = z.infer<typeof statusBody>;
 
 export const showBody = z.strictObject({
-  text,
+  text: text("The message. Send a GIF, text or both."),
   // "builtin:<id>" or "asset:<id>", as GET /v1/gifs lists them. null or left out: no GIF.
-  gif: z.string().max(100).nullable().default(null),
+  gif: z.string().max(100).nullable().default(null).describe("A GIF id from GET /gifs. Left out: no GIF."),
   // How the ring moves while it's up. null or left out: the status's own style.
-  ring: ledStyle.nullable().default(null),
+  ring: ledStyle
+    .nullable()
+    .default(null)
+    .describe("How the ring moves while it's up: pattern (solid, pulse, blink, strobe, spin), color (#rrggbb), speed (1 to 3), for (seconds of flashing). Left out: the status's own style."),
   ...endFields,
 });
 export type ShowBody = z.infer<typeof showBody>;
