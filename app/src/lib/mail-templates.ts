@@ -1,6 +1,7 @@
 // Email bodies. Pure, so they're unit-tested; lib/mail.ts sends them. Each one has a
-// plain-text part (what many people actually read) and a small inline-styled HTML
-// part, since mail clients ignore stylesheets.
+// plain-text part and an HTML part. The HTML is tables and inline styles, because
+// that's what Gmail and Outlook render; the <style> block only adds dark mode and
+// small-screen tweaks for the clients that read it.
 
 export type Mail = { subject: string; text: string; html: string };
 
@@ -14,21 +15,82 @@ function oneLine(s: string, max = 80): string {
   return t.length > max ? `${t.slice(0, max - 1)}…` : t;
 }
 
-function layout(title: string, paragraphs: string[], button: { label: string; url: string }, footer: string): string {
-  const p = (html: string) => `<p style="margin:0 0 16px;font-size:15px;line-height:1.5;color:#18181b">${html}</p>`;
+// Logos are PNGs on the public site: Gmail and Outlook don't show SVG in email.
+// Rendered at 3x from docs/brand (288x84), shown at 96x28.
+const LOGO_BASE = "https://bzzy.ca/email";
+
+const FONT = "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif";
+
+// Dark mode: Apple Mail, iOS Mail and some others honour prefers-color-scheme, so the
+// colours flip and the logo swaps. Gmail and Outlook recolour by themselves instead,
+// which these neutral colours survive. Narrow screens lose the outer padding so the
+// card uses the whole width.
+const HEAD = `<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="supported-color-schemes" content="light dark">
+<style>
+  :root { color-scheme: light dark; supported-color-schemes: light dark; }
+  .logo-dark { display: none; }
+  @media (prefers-color-scheme: dark) {
+    .bg { background: #111111 !important; }
+    .card { background: #1c1c1c !important; border-color: #2a2a2a !important; }
+    .ink { color: #f2f2f2 !important; }
+    .muted, .muted a { color: #a1a1aa !important; }
+    .btn { background: #f2f2f2 !important; color: #111111 !important; }
+    .quote { border-color: #a08672 !important; }
+    .logo-light { display: none !important; }
+    .logo-dark { display: block !important; }
+  }
+  @media (max-width: 520px) {
+    .outer { padding: 16px 8px !important; }
+    .card-pad { padding: 28px 22px !important; }
+    .btn { display: block !important; text-align: center !important; }
+  }
+</style>`;
+
+type Layout = {
+  preheader: string; // the grey preview line in the inbox, already escaped
+  title: string;
+  paragraphs: string[];
+  button?: { label: string; url: string };
+  quote?: string; // a block of someone's own words, shown as typed
+  footer: string;
+};
+
+function layout({ preheader, title, paragraphs, button, quote, footer }: Layout): string {
+  const p = (html: string) => `<p class="ink" style="margin:0 0 16px;font-size:16px;line-height:1.55;color:#18181b">${html}</p>`;
+  const url = button ? escapeHtml(button.url) : "";
   return `<!doctype html>
-<html><body style="margin:0;padding:0;background:#f4f4f5">
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f5;padding:32px 16px">
-<tr><td align="center">
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:480px;background:#ffffff;border-radius:12px;padding:32px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif">
-<tr><td>
-<p style="margin:0 0 24px;font-size:20px;font-weight:700;letter-spacing:-0.04em;color:#000">bzzy</p>
-<h1 style="margin:0 0 16px;font-size:20px;line-height:1.3;color:#000">${title}</h1>
+<html lang="en"><head>${HEAD}<title>${title}</title></head>
+<body class="bg" style="margin:0;padding:0;background:#f4f4f5;-webkit-text-size-adjust:100%">
+<div style="display:none;max-height:0;overflow:hidden;mso-hide:all">${preheader}&#8199;&#847;&#8199;&#847;&#8199;&#847;&#8199;&#847;</div>
+<table role="presentation" class="bg" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f4f4f5">
+<tr><td class="outer" align="center" style="padding:40px 16px">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:520px">
+<tr><td style="padding:0 4px 20px">
+<a href="https://bzzy.ca" style="text-decoration:none">
+<img class="logo-light" src="${LOGO_BASE}/bzzy-lockup-light.png" width="96" height="28" alt="bzzy" style="display:block;border:0;width:96px;height:28px">
+<!--[if !mso]><!--><img class="logo-dark" src="${LOGO_BASE}/bzzy-lockup-dark.png" width="96" height="28" alt="bzzy" style="display:none;border:0;width:96px;height:28px;mso-hide:all"><!--<![endif]-->
+</a>
+</td></tr>
+<tr><td class="card card-pad" style="background:#ffffff;border:1px solid #e4e4e7;border-radius:16px;padding:36px 32px;font-family:${FONT}">
+<h1 class="ink" style="margin:0 0 16px;font-size:22px;line-height:1.3;font-weight:700;letter-spacing:-0.01em;color:#0a0a0a">${title}</h1>
 ${paragraphs.map(p).join("\n")}
-<p style="margin:24px 0"><a href="${escapeHtml(button.url)}" style="display:inline-block;background:#000;color:#fff;text-decoration:none;font-weight:600;font-size:15px;padding:12px 20px;border-radius:8px">${escapeHtml(button.label)}</a></p>
-<p style="margin:0 0 8px;font-size:13px;line-height:1.5;color:#71717a">Or paste this link into your browser:<br><a href="${escapeHtml(button.url)}" style="color:#71717a;word-break:break-all">${escapeHtml(button.url)}</a></p>
-<p style="margin:24px 0 0;font-size:13px;line-height:1.5;color:#71717a">${footer}</p>
+${quote ? `<div class="quote ink" style="margin:4px 0 16px;padding:4px 0 4px 14px;border-left:3px solid #a08672;font-size:16px;line-height:1.55;color:#18181b;white-space:pre-wrap">${quote}</div>` : ""}
+${
+  button
+    ? `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:28px 0 24px"><tr><td>
+<a class="btn" href="${url}" style="display:inline-block;background:#0a0a0a;color:#ffffff;text-decoration:none;font-weight:600;font-size:16px;line-height:20px;padding:14px 24px;border-radius:10px">${escapeHtml(button.label)}</a>
 </td></tr></table>
+<p class="muted" style="margin:0;font-size:13px;line-height:1.5;color:#71717a">Or paste this link into your browser:<br><a href="${url}" style="color:#71717a;word-break:break-all">${url}</a></p>`
+    : ""
+}
+</td></tr>
+<tr><td class="muted" style="padding:20px 8px 0;font-family:${FONT};font-size:12px;line-height:1.5;color:#71717a">
+${footer}<br><a href="https://bzzy.ca" style="color:#71717a">bzzy.ca</a> &middot; a desk status light
+</td></tr>
+</table>
 </td></tr></table>
 </body></html>`;
 }
@@ -45,7 +107,13 @@ export function inviteEmail(input: { teamName: string; inviterName: string; role
   return {
     subject,
     text: `${intro}\n\n${how}\n\nJoin the team: ${input.url}\n\n${footer}\n`,
-    html: layout(`Join ${escapeHtml(team)}`, [escapeHtml(intro), escapeHtml(how)], { label: "Join the team", url: input.url }, escapeHtml(footer)),
+    html: layout({
+      preheader: escapeHtml(`${who} invited you to join ${team}.`),
+      title: `Join ${escapeHtml(team)}`,
+      paragraphs: [escapeHtml(intro), escapeHtml(how)],
+      button: { label: "Join the team", url: input.url },
+      footer: escapeHtml(footer),
+    }),
   };
 }
 
@@ -62,7 +130,13 @@ export function welcomeEmail(input: { teamName: string; name: string | null; rol
   return {
     subject: `Welcome to ${team} on bzzy`,
     text: `${hi}\n\n${lines.join("\n\n")}\n\nOpen bzzy: ${input.url}\n\n${footer}\n`,
-    html: layout(`Welcome to ${escapeHtml(team)}`, [escapeHtml(hi), ...lines.map(escapeHtml)], { label: "Open bzzy", url: input.url }, escapeHtml(footer)),
+    html: layout({
+      preheader: escapeHtml(`You're in ${team}. Next: pair your light.`),
+      title: `Welcome to ${escapeHtml(team)}`,
+      paragraphs: [escapeHtml(hi), ...lines.map(escapeHtml)],
+      button: { label: "Open bzzy", url: input.url },
+      footer: escapeHtml(footer),
+    }),
   };
 }
 
@@ -76,7 +150,13 @@ export function memberJoinedEmail(input: { teamName: string; who: string; role: 
   return {
     subject: `${who} joined ${team}`,
     text: `${line}\n\nSee the team: ${input.url}\n\n${footer}\n`,
-    html: layout(`${escapeHtml(who)} joined ${escapeHtml(team)}`, [escapeHtml(line)], { label: "See the team", url: input.url }, escapeHtml(footer)),
+    html: layout({
+      preheader: escapeHtml(line),
+      title: `${escapeHtml(who)} joined ${escapeHtml(team)}`,
+      paragraphs: [escapeHtml(line)],
+      button: { label: "See the team", url: input.url },
+      footer: escapeHtml(footer),
+    }),
   };
 }
 
@@ -87,9 +167,12 @@ export function contactEmail(input: { name: string; email: string; message: stri
   return {
     subject: `bzzy contact form: ${name}`,
     text: `${intro}\n\n---\n\n${input.message}\n`,
-    html: `<!doctype html><html><body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;font-size:15px;line-height:1.5;color:#18181b">
-<p style="color:#71717a">${escapeHtml(intro)}</p>
-<div style="white-space:pre-wrap;border-left:3px solid #a08672;padding-left:12px">${escapeHtml(input.message)}</div>
-</body></html>`,
+    html: layout({
+      preheader: escapeHtml(oneLine(input.message, 120)),
+      title: `Message from ${escapeHtml(name)}`,
+      paragraphs: [`${escapeHtml(name)} &lt;<a href="mailto:${escapeHtml(input.email)}" style="color:inherit">${escapeHtml(input.email)}</a>&gt; wrote through the contact form on bzzy.ca. Reply to this email to answer them.`],
+      quote: escapeHtml(input.message),
+      footer: "Sent by the contact form on bzzy.ca.",
+    }),
   };
 }
