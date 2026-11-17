@@ -37,3 +37,7 @@ Added for Resend on 2026-11-17. They sit on `send.` and `resend._domainkey`, so 
 - Resend's plan allows a set number of emails a day site-wide, so each team can email at most 20 invites a day (`EMAIL_INVITES_PER_DAY` in `lib/teams.ts`).
 - The contact form takes 3 messages a minute per address, has a hidden honeypot field, and caps messages at 4,000 characters.
 - An emailed invite works for whoever clicks it, like a copied link. The address is only recorded so admins can see who it went to.
+
+## Design
+
+`layout()` in `lib/mail-templates.ts`: the bzzy lockup (PNGs in `app/public/email/`, made from `docs/brand/bzzy-lockup-*.svg` at 3x because Gmail and Outlook don't show SVG), a white card, a black button, and a small footer. It's tables and inline styles. A `<style>` block adds dark mode (colours flip and the logo swaps, in Apple Mail and other clients that support it) and a full-width layout under 520 px. Gmail and Outlook apply their own dark mode, which these neutral colours survive. Every email also has a hidden preview line and a plain-text part.
