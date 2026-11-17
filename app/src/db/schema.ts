@@ -161,7 +161,7 @@ export const teamInvites = pgTable(
     tokenHash: text("token_hash").notNull().unique(),
     kind: inviteKind("kind").notNull(),
     role: teamRole("role").notNull().default("member"),
-    // Set once email invites (Resend) exist; the accepting account must match it.
+    // Who a one-person link was emailed to (docs/email.md). Shown to admins, not enforced.
     email: text("email"),
     // Null = unlimited (team links). 1 for single-use links.
     maxUses: integer("max_uses"),

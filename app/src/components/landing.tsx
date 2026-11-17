@@ -12,6 +12,7 @@ import { viewFor, withShow } from "@/lib/screen";
 
 import { BzzyMark } from "./brand";
 import { DevicePreview } from "./device-preview";
+import { LandingContact } from "./landing-contact";
 import { LandingHeroDevice } from "./landing-hero";
 import { CalendarSketch, StatusPickerSketch, TapSketch } from "./landing-illustrations";
 import { LANDING_BOOT } from "./landing-boot";
@@ -436,6 +437,21 @@ export function Landing() {
             </div>
           </div>
         </section>
+
+        {/* Say hello: the contact form, which emails hello@bzzy.ca. */}
+        <section className="section" id="hello" aria-labelledby="hello-h">
+          <div className="wrap grid">
+            <div className="span-5">
+              <div className="section-head">
+                <h2 id="hello-h">Say hello</h2>
+                <p className="t-lead muted">Questions about building one, using it at work, or anything else. Messages go to hello@bzzy.ca.</p>
+              </div>
+            </div>
+            <div className="span-6 start-7">
+              <LandingContact />
+            </div>
+          </div>
+        </section>
       </main>
 
       <footer className="footer closing footer--dark ground-inverse" id="contact" aria-labelledby="close-h">
@@ -490,6 +506,7 @@ export function Landing() {
                 <ul>
                   <li><a href="/sign-in">Sign in</a></li>
                   <li><a href="/docs/api">API</a></li>
+                  <li><a href="#hello">Contact</a></li>
                   <li><a href={REPO}>GitHub</a></li>
                 </ul>
               </div>
