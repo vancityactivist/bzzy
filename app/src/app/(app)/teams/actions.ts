@@ -6,6 +6,10 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { checkGifChoice } from "@/lib/gifs";
+import { mailConfigured, sendMail } from "@/lib/mail";
+import { inviteEmail } from "@/lib/mail-templates";
+import { appOrigin } from "@/lib/origin";
+import { sendJoinEmails } from "@/lib/team-mail";
 import { nowSeconds } from "@/lib/protocol";
 import { pushInput, pushLeds } from "@/lib/push-rules";
 import { createPush, endPush } from "@/lib/pushes";
@@ -24,10 +28,22 @@ import {
   setMemberRole,
   TeamError,
   transferOwnership,
+  userContact,
 } from "@/lib/teams";
 
 export type TeamResult = { ok: true } | { ok: false; error: string } | null;
-export type InviteResult = { ok: true; path: string; kind: "team" | "single"; role: string; days: number } | { ok: false; error: string } | null;
+export type InviteResult =
+  | {
+      ok: true;
+      path: string;
+      kind: "team" | "single";
+      role: string;
+      days: number;
+      // Set when an address was given: whether the email went, and why not if it didn't.
+      emailed?: { to: string; ok: true } | { to: string; ok: false; error: string };
+    }
+  | { ok: false; error: string }
+  | null;
 
 // TeamError messages are written for people; anything else is a bug, so say less.
 function failed(e: unknown): { ok: false; error: string } {
@@ -72,19 +88,53 @@ const inviteInput = z.object({
   kind: z.enum(["team", "single"]),
   role: z.enum(ASSIGNABLE_ROLES),
   days: z.coerce.number().refine((d) => (INVITE_DAYS as readonly number[]).includes(d)),
+  email: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .transform((e) => e || null)
+    .pipe(z.email().max(254).nullable()),
 });
 
 export async function createInviteAction(teamId: string, _prev: InviteResult, formData: FormData): Promise<InviteResult> {
   const user = await requireUser();
-  const parsed = inviteInput.safeParse({ kind: formData.get("kind"), role: formData.get("role"), days: formData.get("days") });
-  if (!parsed.success) return { ok: false, error: "Pick a link type, role and expiry." };
+  const parsed = inviteInput.safeParse({
+    kind: formData.get("kind"),
+    role: formData.get("role"),
+    days: formData.get("days"),
+    email: formData.get("kind") === "single" && mailConfigured() ? (formData.get("email") ?? "") : "",
+  });
+  if (!parsed.success) {
+    const badEmail = parsed.error.issues.some((i) => i.path[0] === "email");
+    return { ok: false, error: badEmail ? "That email address doesn't look right." : "Pick a link type, role and expiry." };
+  }
+  const { email, ...invite } = parsed.data;
+  let made: Awaited<ReturnType<typeof createInvite>>;
   try {
-    const token = await createInvite(user.id, teamId, parsed.data);
-    refresh();
-    return { ok: true, path: `/join/${token}`, ...parsed.data };
+    made = await createInvite(user.id, teamId, parsed.data);
   } catch (e) {
     return failed(e);
   }
+  const path = `/join/${made.token}`;
+  let emailed: NonNullable<Extract<InviteResult, { ok: true }>["emailed"]> | undefined;
+  if (email) {
+    // The link is made either way; if the email fails the admin still sees it to copy.
+    const inviter = await userContact(user.id);
+    const sent = await sendMail(
+      email,
+      inviteEmail({
+        teamName: made.team.name,
+        inviterName: inviter.name ?? user.name,
+        role: invite.role,
+        url: `${await appOrigin()}${path}`,
+        expiresAt: made.expiresAt,
+      }),
+      { replyTo: inviter.email, idempotencyKey: `invite-${made.token.slice(0, 16)}` },
+    );
+    emailed = sent.ok ? { to: email, ok: true } : { to: email, ok: false, error: sent.error };
+  }
+  refresh();
+  return { ok: true, path, ...invite, ...(emailed ? { emailed } : {}) };
 }
 
 export async function revokeInviteAction(teamId: string, inviteId: string): Promise<TeamResult> {
@@ -138,7 +188,12 @@ export async function acceptInviteAction(token: string): Promise<TeamResult> {
   const user = await requireUser();
   let teamId: string;
   try {
-    teamId = await acceptInvite(user.id, token);
+    const joined = await acceptInvite(user.id, token);
+    teamId = joined.teamId;
+    if (joined.joinedAs) {
+      const origin = await appOrigin();
+      after(() => sendJoinEmails(teamId, user.id, joined.joinedAs!, origin));
+    }
   } catch (e) {
     return failed(e);
   }
@@ -150,7 +205,12 @@ export async function acceptInviteAction(token: string): Promise<TeamResult> {
 export async function joinAfterSignUpAction(token: string): Promise<{ ok: true; teamId: string } | { ok: false; error: string }> {
   const user = await requireUser();
   try {
-    return { ok: true, teamId: await acceptInvite(user.id, token) };
+    const joined = await acceptInvite(user.id, token);
+    if (joined.joinedAs) {
+      const origin = await appOrigin();
+      after(() => sendJoinEmails(joined.teamId, user.id, joined.joinedAs!, origin));
+    }
+    return { ok: true, teamId: joined.teamId };
   } catch (e) {
     return failed(e);
   }

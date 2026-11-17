@@ -1,0 +1,39 @@
+# Email
+
+The app sends a few emails through [Resend](https://resend.com), from `bzzy <noreply@bzzy.ca>`:
+
+| Email | To | When | Reply-To |
+| --- | --- | --- | --- |
+| Team invite | the address typed on the invite form | an admin makes a one-person link and fills in "Email it to" | the admin who sent it |
+| Welcome | the person who joined | someone joins a team through an invite link | |
+| "Sam joined" | the team's owner and admins | the same | the person who joined |
+| Contact form | `hello@bzzy.ca` (Cloudflare Email Routing forwards it on) | someone sends the form on the landing page | the sender |
+
+Code: `app/src/lib/mail.ts` sends (plain `fetch` to Resend's API, no SDK), `app/src/lib/mail-templates.ts` has the bodies (unit-tested), `app/src/lib/team-mail.ts` the join emails, `app/src/app/contact-action.ts` the form.
+
+## Settings
+
+Vercel environment variables:
+
+- `RESEND_API_KEY`: a **sending access** key restricted to the bzzy.ca domain. Without it nothing is sent: the invite form hides the email field and still shows the link, and the contact form says to email hello@ instead.
+- `MAIL_FROM` (optional): defaults to `bzzy <noreply@bzzy.ca>`.
+- `CONTACT_TO` (optional): defaults to `hello@bzzy.ca`.
+
+Links in emails use `https://bzzy.ca` in production (never bzzy.vercel.app) and the request's own host on previews.
+
+## DNS (Cloudflare, bzzy.ca zone, all DNS only)
+
+Added for Resend on 2026-11-17. They sit on `send.` and `resend._domainkey`, so they don't touch the apex MX records Email Routing uses for hello@.
+
+| Type | Name | Value |
+| --- | --- | --- |
+| TXT | `resend._domainkey` | DKIM key from Resend |
+| MX | `send` | `feedback-smtp.us-east-1.amazonses.com` (priority 10) |
+| TXT | `send` | `v=spf1 include:amazonses.com ~all` |
+| CNAME | `rsend` | `send.forge.rmta.net` |
+
+## Limits
+
+- Resend's plan allows a set number of emails a day site-wide, so each team can email at most 20 invites a day (`EMAIL_INVITES_PER_DAY` in `lib/teams.ts`).
+- The contact form takes 3 messages a minute per address, has a hidden honeypot field, and caps messages at 4,000 characters.
+- An emailed invite works for whoever clicks it, like a copied link. The address is only recorded so admins can see who it went to.

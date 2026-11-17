@@ -112,11 +112,11 @@ export function shouldSaveUsed(saved: number | null, nowMs: number, everyMs: num
 
 // ---- rate limits ----
 
-export type LimitKind = "read" | "write" | "badAuth" | "webhookTest";
+export type LimitKind = "read" | "write" | "badAuth" | "webhookTest" | "contact";
 
 // Requests per minute. Reads and writes count per token; failed sign-ins per address;
-// webhook test sends per person.
-export const LIMITS: Record<LimitKind, number> = { read: 60, write: 20, badAuth: 30, webhookTest: 5 };
+// webhook test sends per person; contact form messages per address.
+export const LIMITS: Record<LimitKind, number> = { read: 60, write: 20, badAuth: 30, webhookTest: 5, contact: 3 };
 export const WINDOW_MS = 60_000;
 
 export function rateWindow(nowMs: number): { id: number; resetSec: number } {

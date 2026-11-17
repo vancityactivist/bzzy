@@ -8,6 +8,7 @@ import { SignIn } from "@/components/sign-in";
 import { Badge, Card, CardHeader, Container, PageHeader } from "@/components/ui";
 import { teamDashboard } from "@/lib/dashboard";
 import { BUILTIN_GIFS, gifsForUser, previewSrc } from "@/lib/gifs";
+import { mailConfigured } from "@/lib/mail";
 import { nowSeconds } from "@/lib/protocol";
 import { ackCount, PUSH_FLASHES, pushLive } from "@/lib/push-rules";
 import { teamPushes } from "@/lib/pushes";
@@ -188,7 +189,7 @@ async function TeamContent({ params, searchParams }: PageProps<"/teams/[id]">) {
               description="Anyone with a link can join, even without GitHub: they make an account with a passkey. Links are shown once."
             />
             <div className="mt-4">
-              <InviteForm teamId={team.id} canInviteAdmins={can(access, "setRoles")} />
+              <InviteForm teamId={team.id} canInviteAdmins={can(access, "setRoles")} canEmail={mailConfigured()} />
             </div>
             {invites.length > 0 && (
               <ul className="mt-5 divide-y divide-line border-t border-line">
@@ -205,6 +206,7 @@ async function TeamContent({ params, searchParams }: PageProps<"/teams/[id]">) {
                         ) : (
                           INVITE_STATE_LABEL[inv.state].toLowerCase()
                         )}
+                        {inv.email && ` · emailed to ${inv.email}`}
                         {inv.createdByName && ` · made by ${inv.createdByName}`}
                       </p>
                     </div>
@@ -284,7 +286,7 @@ function describe(e: LogEntry, names: Map<string, string>): string {
     case "transferred":
       return `${who} made ${them(d.to)} the owner`;
     case "invite":
-      return `${who} made a ${d.kind === "team" ? "team" : "one-person"} invite link (${d.role}, ${d.days} days)`;
+      return `${who} ${d.emailed ? "emailed" : "made"} a ${d.kind === "team" ? "team" : "one-person"} invite link (${d.role}, ${d.days} days)`;
     case "revoked":
       return `${who} revoked an invite link`;
     case "push":

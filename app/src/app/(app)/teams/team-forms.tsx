@@ -59,7 +59,7 @@ function inviteUrl(path: string) {
 
 const DAYS_LABEL: Record<number, string> = { 1: "1 day", 7: "7 days", 30: "30 days" };
 
-export function InviteForm({ teamId, canInviteAdmins }: { teamId: string; canInviteAdmins: boolean }) {
+export function InviteForm({ teamId, canInviteAdmins, canEmail }: { teamId: string; canInviteAdmins: boolean; canEmail: boolean }) {
   const [kind, setKind] = useState<"team" | "single">("team");
   const [role, setRole] = useState<"member" | "admin">("member");
   const [state, action, pending] = useActionState<InviteResult, FormData>(createInviteAction.bind(null, teamId), null);
@@ -105,6 +105,11 @@ export function InviteForm({ teamId, canInviteAdmins }: { teamId: string; canInv
           <LinkIcon />
           {pending ? "Making…" : "Make link"}
         </Button>
+        {canEmail && kind === "single" && (
+          <Field label="Email it to (optional)" htmlFor="invite-email" className="sm:col-span-3">
+            <Input id="invite-email" name="email" type="email" autoComplete="off" maxLength={254} placeholder="sam@example.com" />
+          </Field>
+        )}
       </form>
       <ErrorLine result={state} />
       {state?.ok && (
@@ -112,10 +117,16 @@ export function InviteForm({ teamId, canInviteAdmins }: { teamId: string; canInv
           <p className="flex items-start gap-2 font-medium">
             <CheckIcon className="mt-0.5 size-4 shrink-0 text-free" />
             <span>
-              {state.kind === "team" ? "Share this link with your team." : "Send this link to one person."} It works for{" "}
-              {DAYS_LABEL[state.days]} and is only shown once, so copy it now.
+              {state.emailed?.ok
+                ? `Emailed to ${state.emailed.to}. The link works for ${DAYS_LABEL[state.days]}; here it is in case it doesn't arrive.`
+                : `${state.kind === "team" ? "Share this link with your team." : "Send this link to one person."} It works for ${DAYS_LABEL[state.days]} and is only shown once, so copy it now.`}
             </span>
           </p>
+          {state.emailed && !state.emailed.ok && (
+            <p className="mt-2 text-danger" role="alert">
+              Couldn&apos;t email {state.emailed.to}: {state.emailed.error} Copy the link and send it yourself.
+            </p>
+          )}
           <div className="mt-3 flex items-center justify-between gap-2 rounded-lg border border-line bg-card px-3 py-2">
             <span className="min-w-0 font-mono text-[13px] break-all">{inviteUrl(state.path)}</span>
             <CopyButton value={inviteUrl(state.path)} label="Invite link" />

@@ -244,6 +244,8 @@ export type InviteSummary = {
   expiresAt: Date;
   createdAt: Date;
   createdByName: string | null;
+  // Who it was emailed to, if anyone.
+  email: string | null;
   state: InviteState;
 };
 
@@ -266,29 +268,45 @@ export async function teamInvites(teamId: string, now = new Date()): Promise<Inv
       expiresAt: invite.expiresAt,
       createdAt: invite.createdAt,
       createdByName,
+      email: invite.email,
       state: inviteState(invite, now),
     }))
     .sort((a, b) => Number(b.state === "live") - Number(a.state === "live"));
 }
 
-// Returns the token, which is shown once.
+// Emailed invites a team can send in a day. Resend's free plan allows 100 a day for
+// the whole site, so one busy team shouldn't be able to use them all up.
+export const EMAIL_INVITES_PER_DAY = 20;
+
+// Returns the token, which is shown once, and the team (for the email).
 export async function createInvite(
   userId: string,
   teamId: string,
-  { kind, role, days }: { kind: "team" | "single"; role: AssignableRole; days: number },
+  { kind, role, days, email = null }: { kind: "team" | "single"; role: AssignableRole; days: number; email?: string | null },
 ) {
   const t = await requireTeam(userId, teamId, "manage");
   if (role === "admin" && !can(t.access, "setRoles")) throw new TeamError("Only the owner can invite admins.");
   if (!inviteAllowed(kind, role)) throw new TeamError("Admin invites have to be single-use links.");
+  if (email && kind !== "single") throw new TeamError("Only one-person links can be emailed.");
+  if (email) {
+    const i = schema.teamInvites;
+    const [sent] = await db()
+      .select({ n: sql<number>`count(*)::int` })
+      .from(i)
+      .where(and(eq(i.teamId, teamId), isNotNull(i.email), gt(i.createdAt, new Date(Date.now() - 86_400_000))));
+    if ((sent?.n ?? 0) >= EMAIL_INVITES_PER_DAY) {
+      throw new TeamError(`This team has emailed ${EMAIL_INVITES_PER_DAY} invites today. Make a link and send it yourself, or try tomorrow.`);
+    }
+  }
   const token = newDeviceToken();
   const expiresAt = new Date(Date.now() + days * 86_400_000);
   await db().batch([
     db()
       .insert(schema.teamInvites)
-      .values({ teamId, tokenHash: hashToken(token), kind, role, maxUses: kind === "single" ? 1 : null, expiresAt, createdBy: userId }),
-    audit(teamId, userId, "invite", { kind, role, days }, t.asSuperadmin),
+      .values({ teamId, tokenHash: hashToken(token), kind, role, email, maxUses: kind === "single" ? 1 : null, expiresAt, createdBy: userId }),
+    audit(teamId, userId, "invite", { kind, role, days, ...(email ? { emailed: true } : {}) }, t.asSuperadmin),
   ]);
-  return token;
+  return { token, team: t.team, expiresAt };
 }
 
 export async function revokeInvite(userId: string, teamId: string, inviteId: string) {
@@ -337,11 +355,11 @@ export async function lookupInvite(token: string, now = new Date()): Promise<Inv
 }
 
 // Joins the team the link is for. Already a member: nothing changes, and the link
-// isn't used up. Returns the team id.
-export async function acceptInvite(userId: string, token: string): Promise<string> {
+// isn't used up. Returns the team id, and the role when they actually joined just now.
+export async function acceptInvite(userId: string, token: string): Promise<{ teamId: string; joinedAs: AssignableRole | null }> {
   const found = await lookupInvite(token);
   if (!found) throw new TeamError("That invite link doesn't exist.");
-  if (await roleInTeam(userId, found.teamId)) return found.teamId;
+  if (await roleInTeam(userId, found.teamId)) return { teamId: found.teamId, joinedAs: null };
   if (found.state !== "live") throw new TeamError("That invite link has ended. Ask your admin for a new one.");
 
   // Counted with a guarded update so two people can't both use a single-use link.
@@ -367,7 +385,7 @@ export async function acceptInvite(userId: string, token: string): Promise<strin
   ]);
   await expire(tag.team(found.teamId));
   await adoptPushTeam(userId, found.teamId);
-  return found.teamId;
+  return { teamId: found.teamId, joinedAs: invite.role === "admin" ? "admin" : "member" };
 }
 
 // On joining (or creating) a first shared team, the person's lights start following
@@ -425,4 +443,14 @@ export async function allSharedTeams() {
   const m = new Map(members.map((r) => [r.teamId, r.n]));
   const dv = new Map(devices.map((r) => [r.teamId, r.n]));
   return teams.map((t) => ({ id: t.id, name: t.name, createdAt: t.createdAt, members: m.get(t.id) ?? 0, devices: dv.get(t.id) ?? 0 }));
+}
+
+// For emails sent on someone's behalf: their name, and their address for Reply-To.
+export async function userContact(userId: string): Promise<{ name: string | null; email: string | null }> {
+  const rows = await db()
+    .select({ name: schema.users.name, email: schema.users.email })
+    .from(schema.users)
+    .where(eq(schema.users.id, userId))
+    .limit(1);
+  return rows[0] ?? { name: null, email: null };
 }
