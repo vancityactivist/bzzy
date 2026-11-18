@@ -214,7 +214,7 @@ bool install(const Offer& o, const char* appBase, const char* token) {
   mbedtls_sha256_init(&sha);
   SHA256_START(&sha);
 
-  WiFiClient* stream = http.getStreamPtr();
+  auto* stream = http.getStreamPtr();  // WiFiClient on core 2.x, NetworkClient on 3.x
   uint32_t got = 0;
   uint32_t lastData = millis();
   bool writeOk = true;
