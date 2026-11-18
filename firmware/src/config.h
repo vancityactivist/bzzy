@@ -49,6 +49,9 @@
 #define BZZY_BOOT_AS_TOP_BUTTON 1  // the only button: short press steps, hold = automatic
 #define PIN_LED_DATA 8   // the onboard RGB LED (also a strapping pin; the LED is wired there)
 #define BZZY_LED_ORDER RGB  // unlike the ring: with GRB, red and green came out swapped
+// At full Wi-Fi power (20 dBm) the board browned out and reset while joining a network
+// with its setup network up, even on a Mac's USB port. 15 dBm is plenty for an office.
+#define BZZY_WIFI_TX_POWER WIFI_POWER_15dBm
 #define BZZY_HAS_RTC 0
 // Screen geometry for display.cpp: 172 wide, centred in the ST7789's 240 columns.
 #define BZZY_LCD_W 172
