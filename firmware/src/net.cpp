@@ -63,6 +63,12 @@ static bool g_haveWanted = false;
 static char g_installed[bzzy::kGifSlots][17];
 static uint8_t g_swapMask = 0;  // bit i: slot i has a new file (or a removal) waiting
 static char g_swapSha[bzzy::kGifSlots][17];
+static uint8_t g_loadingMask = 0;  // bit i: slot i's GIF is on its way (see gifLoading)
+// Network task only: a GIF that fails kGifTries times in a row is given up on until
+// the app sends a different one, so it can't hold up the others or load forever.
+static constexpr uint8_t kGifTries = 3;
+static char g_failSha[bzzy::kGifSlots][17];
+static uint8_t g_failCount[bzzy::kGifSlots];
 
 // ---- settings ----
 static void loadSettings() {
@@ -173,6 +179,9 @@ static void gifPath(char* out, size_t n, size_t slot, const char* ext) {
 }
 
 #if BZZY_HAS_DISPLAY
+static constexpr size_t kGifMargin = 32 * 1024;  // LittleFS needs some room to work
+static size_t gifFreeBytes() { return LittleFS.totalBytes() - LittleFS.usedBytes(); }
+
 static bool downloadTo(const char* u, const char* path) {
   WiFiClientSecure client;
   client.setInsecure();  // see the TODO in httpRequest
@@ -192,8 +201,8 @@ static bool downloadTo(const char* u, const char* path) {
     return false;
   }
   int len = http.getSize();  // -1 when the server doesn't say
-  size_t free = LittleFS.totalBytes() - LittleFS.usedBytes();
-  if (len > (int)cfg::kMaxGifBytes || (len > 0 && (size_t)len + 32 * 1024 > free)) {
+  size_t free = gifFreeBytes();
+  if (len > (int)cfg::kMaxGifBytes || (len > 0 && (size_t)len + kGifMargin > free)) {
     Serial.printf("[gif] %d bytes won't fit (%u free)\n", len, (unsigned)free);
     http.end();
     return false;
@@ -217,39 +226,88 @@ static bool downloadTo(const char* u, const char* path) {
 
 // At most one download per sync, so a status change is never stuck behind four GIFs.
 // The "show now" GIF goes first: someone just asked for it.
+#if BZZY_HAS_DISPLAY
+static bool gaveUp(size_t i) {
+  return g_failCount[i] >= kGifTries && strcmp(g_failSha[i], g_wanted[i].sha) == 0;
+}
+
+// Hand the main loop a new file for slot i (sha "" removes the slot's GIF).
+static void queueSwap(size_t i, const char* sha) {
+  xSemaphoreTake(g_mx, portMAX_DELAY);
+  strlcpy(g_swapSha[i], sha, sizeof(g_swapSha[i]));
+  g_swapMask |= 1u << i;
+  xSemaphoreGive(g_mx);
+}
+
+// The main loop checks for swaps every pass, so this is quick unless it's stuck.
+static bool waitSwapped(size_t i, uint32_t timeoutMs) {
+  const uint32_t t0 = millis();
+  for (;;) {
+    xSemaphoreTake(g_mx, portMAX_DELAY);
+    const bool queued = g_swapMask & (1u << i);
+    xSemaphoreGive(g_mx);
+    if (!queued) return true;
+    if (millis() - t0 > timeoutMs) return false;
+    vTaskDelay(pdMS_TO_TICKS(20));
+  }
+}
+#endif
+
 static void syncGifs() {
 #if BZZY_HAS_DISPLAY
   if (!g_haveWanted) return;
+  char installed[bzzy::kGifSlots][17];
+  uint8_t queued;
+  xSemaphoreTake(g_mx, portMAX_DELAY);
+  memcpy(installed, g_installed, sizeof(installed));
+  queued = g_swapMask;
+  xSemaphoreGive(g_mx);
+
+  uint8_t loading = 0;
+  for (size_t i = 0; i < bzzy::kGifSlots; ++i) {
+    const bzzy::GifRef& want = g_wanted[i];
+    if (want.present && strcmp(want.sha, installed[i]) != 0 && !gaveUp(i)) loading |= 1u << i;
+  }
+  xSemaphoreTake(g_mx, portMAX_DELAY);
+  g_loadingMask = loading;
+  xSemaphoreGive(g_mx);
+
   for (size_t n = 0; n < bzzy::kGifSlots; ++n) {
     const size_t i = (bzzy::kShowSlot + n) % bzzy::kGifSlots;
-    char installed[17];
-    bool queued;
-    xSemaphoreTake(g_mx, portMAX_DELAY);
-    strlcpy(installed, g_installed[i], sizeof(installed));
-    queued = g_swapMask & (1u << i);
-    xSemaphoreGive(g_mx);
-    if (queued) continue;
+    if (queued & (1u << i)) continue;
 
     const bzzy::GifRef& want = g_wanted[i];
     if (!want.present) {
-      if (installed[0]) {
-        xSemaphoreTake(g_mx, portMAX_DELAY);
-        g_swapSha[i][0] = '\0';
-        g_swapMask |= 1u << i;
-        xSemaphoreGive(g_mx);
-      }
+      if (installed[i][0]) queueSwap(i, "");
       continue;
     }
-    if (strcmp(want.sha, installed) == 0) continue;
+    if (strcmp(want.sha, installed[i]) == 0 || gaveUp(i)) continue;
+
+    // Not enough room for the new GIF beside the old one (the C6 board has 640 KB):
+    // drop the old one first. The screen shows the logo until the new one is in.
+    if (installed[i][0] && gifFreeBytes() < cfg::kMaxGifBytes + kGifMargin) {
+      Serial.printf("[gif] removing old %s to make room\n", slotName(i));
+      queueSwap(i, "");
+      if (!waitSwapped(i, 2000)) return;  // try again next sync
+    }
 
     char tmp[32];
     gifPath(tmp, sizeof(tmp), i, "tmp");
     if (downloadTo(want.url, tmp)) {
-      xSemaphoreTake(g_mx, portMAX_DELAY);
-      strlcpy(g_swapSha[i], want.sha, sizeof(g_swapSha[i]));
-      g_swapMask |= 1u << i;
-      xSemaphoreGive(g_mx);
+      queueSwap(i, want.sha);
+      g_failCount[i] = 0;
       Serial.printf("[gif] downloaded %s\n", slotName(i));
+    } else {
+      if (strcmp(g_failSha[i], want.sha) != 0) {
+        strlcpy(g_failSha[i], want.sha, sizeof(g_failSha[i]));
+        g_failCount[i] = 0;
+      }
+      if (++g_failCount[i] >= kGifTries) {
+        Serial.printf("[gif] giving up on %s after %u tries\n", slotName(i), (unsigned)kGifTries);
+        xSemaphoreTake(g_mx, portMAX_DELAY);
+        g_loadingMask &= ~(1u << i);
+        xSemaphoreGive(g_mx);
+      }
     }
     return;
   }
@@ -446,6 +504,10 @@ static void loadInstalledGifs() {
   for (size_t i = 0; i < bzzy::kGifSlots; ++i) {
     g_installed[i][0] = '\0';
     p.getString(slotName(i), g_installed[i], sizeof(g_installed[i]));
+    // A download cut off by a restart leaves its .tmp behind, taking up room.
+    char tmp[32];
+    gifPath(tmp, sizeof(tmp), i, "tmp");
+    if (LittleFS.exists(tmp)) LittleFS.remove(tmp);
   }
   p.end();
 }
@@ -569,6 +631,22 @@ bool gifInstalled(size_t slot, const char* sha) {
   bool same = strcmp(g_installed[slot], sha) == 0;
   xSemaphoreGive(g_mx);
   return same;
+}
+
+bool gifLoading(size_t slot) {
+  if (slot >= bzzy::kGifSlots) return false;
+  xSemaphoreTake(g_mx, portMAX_DELAY);
+  bool loading = g_loadingMask & (1u << slot);
+  xSemaphoreGive(g_mx);
+  return loading;
+}
+
+bool gifOnFlash(size_t slot) {
+  if (slot >= bzzy::kGifSlots) return false;
+  xSemaphoreTake(g_mx, portMAX_DELAY);
+  bool any = g_installed[slot][0] != '\0';
+  xSemaphoreGive(g_mx);
+  return any;
 }
 
 bool gifsReady() {

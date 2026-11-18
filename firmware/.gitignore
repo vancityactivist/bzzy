@@ -3,3 +3,5 @@
 .vscode/c_cpp_properties.json
 .vscode/launch.json
 .vscode/ipch
+# pioarduino (the C6 env) generates this on every build
+src/idf_component.yml

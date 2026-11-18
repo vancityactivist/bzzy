@@ -14,6 +14,7 @@ enum class Layout : uint8_t {
   Status,    // the status's GIF and label (or its colour card)
   ShowGif,   // the "show now" GIF on black, full screen (or above its message)
   ShowText,  // the "show now" message, big, on black
+  Loading,   // the bzzy logo while the GIF it needs downloads
   Off,       // outside working hours: backlight off
 };
 

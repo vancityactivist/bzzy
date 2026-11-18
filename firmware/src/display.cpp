@@ -166,12 +166,30 @@ static void gifDraw(GIFDRAW* d) {
   int w = d->iWidth - skip;
   if (x0 + w > kW) w = kW - x0;
   if (w <= 0) return;
-  uint16_t bg = d->pPalette[d->ucBackground];
-  for (int x = 0; x < w; ++x) {
-    uint8_t idx = d->pPixels[x + skip];
-    line[x] = (d->ucHasTransparency && idx == d->ucTransparent) ? bg : d->pPalette[idx];
+  const uint8_t* px = d->pPixels + skip;
+  // Palette entries are byte-swapped RGB565 (BIG_ENDIAN_PIXELS), which is what
+  // LovyanGFX's pushImage expects from a uint16_t buffer.
+  if (!d->ucHasTransparency || d->ucDisposalMethod == 2) {
+    // No transparency, or the frame is disposed to background: fill every pixel.
+    const uint16_t bg = d->pPalette[d->ucBackground];
+    for (int x = 0; x < w; ++x) {
+      line[x] = (d->ucHasTransparency && px[x] == d->ucTransparent) ? bg : d->pPalette[px[x]];
+    }
+    g_lcd.pushImage(x0, y, w, 1, line);
+    return;
   }
-  g_lcd.pushImage(x0, y, w, 1, line);
+  // A transparent pixel keeps what the last frame drew there, so push only the runs of
+  // opaque pixels. (Painting them with the background smears blotches over animations.)
+  int x = 0;
+  while (x < w) {
+    while (x < w && px[x] == d->ucTransparent) ++x;
+    const int start = x;
+    while (x < w && px[x] != d->ucTransparent) {
+      line[x - start] = d->pPalette[px[x]];
+      ++x;
+    }
+    if (x > start) g_lcd.pushImage(x0 + start, y, x - start, 1, line);
+  }
 }
 
 static void closeGif() {
@@ -258,6 +276,8 @@ static void drawShowText(const View& v) {
 
 static bool g_dark = false;
 
+static void drawLogo();
+
 static void redraw(const View& v) {
   if (v.layout == Layout::Off) {
     closeGif();
@@ -269,6 +289,10 @@ static void redraw(const View& v) {
   if (g_dark) {
     g_lcd.setBrightness(kBrightness);
     g_dark = false;
+  }
+  if (v.layout == Layout::Loading) {
+    drawLogo();  // not splash(): that would make show() redraw it every pass
+    return;
   }
   const uint16_t bg = bgFor(v.status);
   const bool showMessage = v.text && *v.text;
@@ -331,12 +355,12 @@ void begin() {
   g_lcd.setRotation(0);
   g_lcd.setBrightness(kBrightness);
   g_lcd.fillScreen(TFT_BLACK);
-  g_gif.begin(LITTLE_ENDIAN_PIXELS);
+  g_gif.begin(BIG_ENDIAN_PIXELS);  // byte-swapped RGB565: see gifDraw
 }
 
 // ---- the logo ----
 // The tile and dots follow docs/brand (a 64-unit grid); the letters are a bitmap.
-void splash() {
+static void drawLogo() {
   closeGif();
   g_lcd.fillScreen(TFT_BLACK);
   const float u = 96.0f / 64.0f;  // tile 96 px
@@ -352,7 +376,11 @@ void splash() {
   }
   g_lcd.pushGrayscaleImage((kW - kWordmarkW) / 2, ty + 96 + 28, kWordmarkW, kWordmarkH, kWordmark,
                            lgfx::grayscale_4bit, g_lcd.color888(0xfa, 0xfa, 0xfa), g_lcd.color888(0, 0, 0));
-  g_drawn = false;
+}
+
+void splash() {
+  drawLogo();
+  g_drawn = false;  // whatever comes next draws in full
 }
 
 // ---- setup screens ----
