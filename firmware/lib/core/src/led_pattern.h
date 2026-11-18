@@ -43,9 +43,12 @@ bool parseColor(const char* hex, uint32_t& out);
 // How long one cycle takes, in ms. For Spin, one turn of the ring.
 uint32_t patternPeriodMs(Pattern p, uint8_t speed);
 
+// A ring with fewer LEDs than this pulses where it would spin.
+constexpr size_t kMinSpinLeds = 8;
+
 // Brightness 0..255 for each of `n` LEDs, `elapsedMs` after the style started. LED 0 is
-// the first one on the ring (D1); Spin goes up the indexes. After `forSec`, every LED
-// is 255 (steady).
+// the first one on the ring (D1); Spin goes up the indexes (or pulses, on fewer than
+// kMinSpinLeds). After `forSec`, every LED is 255 (steady).
 void renderPattern(const LedStyle& style, uint32_t elapsedMs, uint8_t* out, size_t n);
 
 // "Flash my light N minutes before a meeting".

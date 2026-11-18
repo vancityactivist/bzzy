@@ -271,6 +271,19 @@ void test_wrap_breaks_long_words() {
   TEST_ASSERT_EQUAL(strlen(t), total);
 }
 
+void test_wrap_narrow_screen() {
+  // The 172 px ESP32-C6 test board wraps to 152 px.
+  const char* t = "Back in 10 minutes, grab a coffee";
+  Wrapped wide = wrapMessage(t);
+  Wrapped narrow = wrapMessage(t, 152);
+  TEST_ASSERT_TRUE(narrow.count >= wide.count);
+  for (size_t i = 0; i < narrow.count; ++i) {
+    TEST_ASSERT_TRUE(textWidth(t + narrow.lines[i].start, narrow.lines[i].len, narrow.font) <= 152);
+  }
+  Wrapped bar = wrapBar("DO NOT DISTURB", 152);
+  TEST_ASSERT_EQUAL(2, bar.count);
+}
+
 // ---- over-the-air updates ----
 
 void test_release_versions() {
@@ -420,6 +433,7 @@ int main(int, char**) {
   RUN_TEST(test_wrap_breaks_at_spaces);
   RUN_TEST(test_wrap_falls_back_to_small_font);
   RUN_TEST(test_wrap_breaks_long_words);
+  RUN_TEST(test_wrap_narrow_screen);
   RUN_TEST(test_release_versions);
   RUN_TEST(test_version_order);
   RUN_TEST(test_signed_message);

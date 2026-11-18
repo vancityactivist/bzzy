@@ -35,6 +35,29 @@
 #define PIN_BUTTON 0     // BOOT button: safe to read after boot
 #define PIN_LED_DATA 16  // header pin. Any free GPIO works; update if you wire elsewhere.
 #define BZZY_HAS_RTC 1
+#elif defined(BZZY_BOARD_WAVESHARE_C6_LCD147)
+// Waveshare ESP32-C6-LCD-1.47: ESP32-C6FH4 (4 MB flash, no PSRAM), ST7789 172x320, one
+// WS2812 RGB LED on board. A test board: docs/esp32-c6-test-build.md. Pins from
+// Waveshare's wiki. The TF card slot shares SCLK/MOSI (its CS is GPIO4); we don't use it.
+#define PIN_LCD_SCLK 7
+#define PIN_LCD_MOSI 6
+#define PIN_LCD_CS 14
+#define PIN_LCD_DC 15
+#define PIN_LCD_RST 21
+#define PIN_LCD_BL 22
+#define PIN_BUTTON 9     // BOOT button (a strapping pin, fine to read after boot)
+#define BZZY_BOOT_AS_TOP_BUTTON 1  // the only button: short press steps, hold = automatic
+#define PIN_LED_DATA 8   // the onboard RGB LED (also a strapping pin; the LED is wired there)
+#define BZZY_HAS_RTC 0
+// Screen geometry for display.cpp: 172 wide, centred in the ST7789's 240 columns.
+#define BZZY_LCD_W 172
+#define BZZY_LCD_H 320
+#define BZZY_LCD_OFFSET_X 34
+#define BZZY_LCD_OFFSET_Y 0
+#define BZZY_LCD_PWM_CHANNEL 1  // the C6 has LEDC channels 0-5 only
+#ifndef BZZY_LED_COUNT
+#define BZZY_LED_COUNT 1
+#endif
 #elif defined(BZZY_BOARD_GENERIC)
 // Any classic ESP32 dev board (ESP32-WROOM-32D/E). Wiring: docs/esp32-test-build.md.
 // Kept clear of the flash pins (6-11), the strapping pins (0, 2, 5, 12, 15) and the
@@ -58,6 +81,10 @@
 
 #ifndef BZZY_HAS_TOUCH
 #define BZZY_HAS_TOUCH 0
+#endif
+
+#ifndef BZZY_BOOT_AS_TOP_BUTTON
+#define BZZY_BOOT_AS_TOP_BUTTON 0
 #endif
 
 // BZZY_HAS_DISPLAY is the full colour screen (GIFs, QR codes). BZZY_HAS_TEXT_LCD is a

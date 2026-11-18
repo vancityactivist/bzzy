@@ -13,6 +13,24 @@
 #include <LovyanGFX.hpp>
 #include <time.h>
 
+// Screen geometry. The defaults are the Waveshare 1.69" (240x280, centred in the
+// ST7789's 320 lines); config.h overrides them for other boards.
+#ifndef BZZY_LCD_W
+#define BZZY_LCD_W 240
+#endif
+#ifndef BZZY_LCD_H
+#define BZZY_LCD_H 280
+#endif
+#ifndef BZZY_LCD_OFFSET_X
+#define BZZY_LCD_OFFSET_X 0
+#endif
+#ifndef BZZY_LCD_OFFSET_Y
+#define BZZY_LCD_OFFSET_Y 20
+#endif
+#ifndef BZZY_LCD_PWM_CHANNEL
+#define BZZY_LCD_PWM_CHANNEL 7
+#endif
+
 namespace display {
 
 class Panel : public lgfx::LGFX_Device {
@@ -44,9 +62,10 @@ class Panel : public lgfx::LGFX_Device {
       c.pin_busy = -1;
       c.memory_width = 240;
       c.memory_height = 320;
-      c.panel_width = 240;
-      c.panel_height = 280;
-      c.offset_y = 20;  // the 280-line glass sits in the middle of the ST7789's 320 lines
+      c.panel_width = BZZY_LCD_W;
+      c.panel_height = BZZY_LCD_H;
+      c.offset_x = BZZY_LCD_OFFSET_X;  // where the glass sits in the ST7789's 240x320
+      c.offset_y = BZZY_LCD_OFFSET_Y;
       c.readable = false;
       c.invert = true;
       c.bus_shared = false;
@@ -56,7 +75,7 @@ class Panel : public lgfx::LGFX_Device {
       auto c = light_.config();
       c.pin_bl = PIN_LCD_BL;
       c.freq = 44100;
-      c.pwm_channel = 7;
+      c.pwm_channel = BZZY_LCD_PWM_CHANNEL;
       light_.config(c);
       panel_.setLight(&light_);
     }
@@ -74,9 +93,14 @@ static char g_lastText[bzzy::kTextMax] = "";
 static char g_lastNotice[64] = "";
 static bool g_drawn = false;
 
-static constexpr int kW = 240;
-static constexpr int kH = 280;
+static constexpr int kW = BZZY_LCD_W;
+static constexpr int kH = BZZY_LCD_H;
 static constexpr int kGifH = 200;  // GIF area; the bar below holds text
+// The layout is drawn for 240x280. A taller screen (the C6 test board's 320) moves it
+// down by kDy so it sits in the middle, and a narrower one wraps text to kTextW.
+static constexpr int kDy = (kH - 280) / 2;
+static constexpr int kTextW = kW < 240 ? kW - 20 : bzzy::kMessageWidth;
+static constexpr bool kNarrow = kW < 240;
 
 static uint16_t bgFor(bzzy::Status s) {
   switch (s) {
@@ -134,12 +158,17 @@ static void gifDraw(GIFDRAW* d) {
   int y = g_gifY + d->iY + d->y;
   if (y >= g_gifBottom) return;
   int x0 = g_gifX + d->iX;
-  int w = d->iWidth;
+  int skip = 0;  // a GIF wider than the screen is cropped on both sides
+  if (x0 < 0) {
+    skip = -x0;
+    x0 = 0;
+  }
+  int w = d->iWidth - skip;
   if (x0 + w > kW) w = kW - x0;
   if (w <= 0) return;
   uint16_t bg = d->pPalette[d->ucBackground];
   for (int x = 0; x < w; ++x) {
-    uint8_t idx = d->pPixels[x];
+    uint8_t idx = d->pPixels[x + skip];
     line[x] = (d->ucHasTransparency && idx == d->ucTransparent) ? bg : d->pPalette[idx];
   }
   g_lcd.pushImage(x0, y, w, 1, line);
@@ -159,7 +188,7 @@ static bool openGif(const char* slot, int areaH = kGifH) {
   g_nextFrameMs = 0;
   if (g_gifOpen) {
     const int cw = g_gif.getCanvasWidth(), ch = g_gif.getCanvasHeight();
-    g_gifX = cw < kW ? (kW - cw) / 2 : 0;
+    g_gifX = (kW - cw) / 2;  // negative when the GIF is wider: gifDraw crops its sides
     g_gifY = ch < areaH ? (areaH - ch) / 2 : 0;
     g_gifBottom = areaH;
   }
@@ -197,6 +226,13 @@ static const lgfx::IFont* fontFor(bzzy::Font f) {
   return f == bzzy::Font::Bold18 ? &fonts::FreeSansBold18pt7b : &fonts::FreeSansBold12pt7b;
 }
 
+// On a narrow screen, text too wide for `font` gets `smaller`. The 240 px screen always
+// uses `font`, so it matches the app's preview.
+static void setFittingFont(const char* text, const lgfx::IFont* font, const lgfx::IFont* smaller) {
+  g_lcd.setFont(font);
+  if (kNarrow && g_lcd.textWidth(text) > kW - 8) g_lcd.setFont(smaller);
+}
+
 // Wrapped lines, centred, the first one's top at y.
 static void drawLines(const char* text, const bzzy::Wrapped& w, int y, uint16_t bg) {
   g_lcd.setTextDatum(lgfx::top_center);
@@ -215,7 +251,7 @@ static void drawLines(const char* text, const bzzy::Wrapped& w, int y, uint16_t 
 // LEDs still show the status.
 static void drawShowText(const View& v) {
   g_lcd.fillScreen(TFT_BLACK);
-  const bzzy::Wrapped w = bzzy::wrapMessage(v.text);
+  const bzzy::Wrapped w = bzzy::wrapMessage(v.text, kTextW);
   const int block = (int)w.count * bzzy::lineHeight(w.font);
   drawLines(v.text, w, (kH - block) / 2, TFT_BLACK);
 }
@@ -243,7 +279,7 @@ static void redraw(const View& v) {
     g_lcd.fillScreen(TFT_BLACK);
     if (showMessage) {
       // The message under the GIF, centred in the bar.
-      const bzzy::Wrapped w = bzzy::wrapBar(v.text);
+      const bzzy::Wrapped w = bzzy::wrapBar(v.text, kTextW);
       const int block = (int)w.count * bzzy::lineHeight(w.font);
       drawLines(v.text, w, kGifH + (kH - kGifH - block) / 2, TFT_BLACK);
     }
@@ -252,12 +288,13 @@ static void redraw(const View& v) {
     g_lcd.fillRect(0, 0, kW, kGifH, TFT_BLACK);
     g_lcd.fillRect(0, kGifH, kW, kH - kGifH, bg);
     g_lcd.setTextDatum(lgfx::top_center);
-    g_lcd.setFont(&fonts::FreeSansBold12pt7b);
     g_lcd.setTextColor(TFT_WHITE, bg);
     // One line in the bar; drawString would drop the '\n' and run "DO NOTDISTURB" together.
     const char* label = v.status == bzzy::Status::Dnd ? "DO NOT DISTURB" : labelFor(v.status);
-    g_lcd.drawString(v.text && *v.text ? v.text : label, kW / 2, kGifH + 12);
-    drawUntil(v.until, kGifH + 46, bg);
+    const char* line = v.text && *v.text ? v.text : label;
+    setFittingFont(line, &fonts::FreeSansBold12pt7b, &fonts::FreeSansBold9pt7b);
+    g_lcd.drawString(line, kW / 2, kGifH + kDy + 12);
+    drawUntil(v.until, kGifH + kDy + 46, bg);
   } else {
     g_lcd.fillScreen(bg);
     g_lcd.setTextColor(TFT_WHITE, bg);
@@ -266,17 +303,17 @@ static void redraw(const View& v) {
     const char* label = labelFor(v.status);
     if (strchr(label, '\n')) {
       g_lcd.setFont(&fonts::FreeSansBold18pt7b);
-      g_lcd.drawString("DO NOT", kW / 2, 100);
-      g_lcd.drawString("DISTURB", kW / 2, 140);
+      g_lcd.drawString("DO NOT", kW / 2, kDy + 100);
+      g_lcd.drawString("DISTURB", kW / 2, kDy + 140);
     } else {
-      g_lcd.drawString(label, kW / 2, 120);
+      g_lcd.drawString(label, kW / 2, kDy + 120);
     }
     if (v.text && *v.text) {
-      g_lcd.setFont(&fonts::FreeSans12pt7b);
+      setFittingFont(v.text, &fonts::FreeSans12pt7b, &fonts::FreeSans9pt7b);
       g_lcd.setTextDatum(lgfx::top_center);
-      g_lcd.drawString(v.text, kW / 2, 180);
+      g_lcd.drawString(v.text, kW / 2, kDy + 180);
     }
-    drawUntil(v.until, 220, bg);
+    drawUntil(v.until, kDy + 220, bg);
   }
 
   if (v.notice && *v.notice) {
@@ -303,7 +340,7 @@ void splash() {
   closeGif();
   g_lcd.fillScreen(TFT_BLACK);
   const float u = 96.0f / 64.0f;  // tile 96 px
-  const int tx = (kW - 96) / 2, ty = 52;
+  const int tx = (kW - 96) / 2, ty = kDy + 52;
   g_lcd.fillSmoothRoundRect(tx, ty, 96, 96, (int)(15 * u), g_lcd.color888(0x17, 0x17, 0x17));
   g_lcd.drawRoundRect(tx, ty, 96, 96, (int)(15 * u), g_lcd.color888(0x3a, 0x3a, 0x3a));
   const uint32_t dots[4] = {0x16a34a, 0xdc2626, 0x7c3aed, 0xea580c};  // free, busy, dnd, away
@@ -330,7 +367,7 @@ static uint32_t hashStr(uint32_t h, const char* s) {
 
 static void drawStepDots(uint8_t number, uint8_t total) {
   if (!total) return;
-  const int gap = 18, y = 18;
+  const int gap = 18, y = kDy + 18;
   const int x0 = kW / 2 - (total - 1) * gap / 2;
   for (int i = 1; i <= total; ++i) {
     const int x = x0 + (i - 1) * gap;
@@ -354,36 +391,36 @@ static void drawCentred(const char* text, int y, const lgfx::IFont* font, uint32
 
 // The "done" card between steps: a big green check, so moving on is unmistakable.
 static void drawNote(const SetupView& v) {
-  const int cx = kW / 2, cy = 104;
+  const int cx = kW / 2, cy = kDy + 104;
   g_lcd.fillSmoothCircle(cx, cy, 46, g_lcd.color888(0x16, 0xa3, 0x4a));
   g_lcd.drawWideLine(cx - 20, cy + 1, cx - 6, cy + 16, 5, TFT_WHITE);
   g_lcd.drawWideLine(cx - 6, cy + 16, cx + 22, cy - 14, 5, TFT_WHITE);
-  drawCentred(v.title, 172, &fonts::FreeSansBold12pt7b, TFT_WHITE);
-  drawCentred(v.line1, 208, &fonts::FreeSans9pt7b, g_lcd.color888(0xb0, 0xb0, 0xb0));
-  drawCentred(v.line2, 232, &fonts::FreeSans9pt7b, g_lcd.color888(0xb0, 0xb0, 0xb0));
+  drawCentred(v.title, kDy + 172, &fonts::FreeSansBold12pt7b, TFT_WHITE);
+  drawCentred(v.line1, kDy + 208, &fonts::FreeSans9pt7b, g_lcd.color888(0xb0, 0xb0, 0xb0));
+  drawCentred(v.line2, kDy + 232, &fonts::FreeSans9pt7b, g_lcd.color888(0xb0, 0xb0, 0xb0));
 }
 
 static void drawStep(const SetupView& v) {
   drawStepDots(v.number, v.total);
-  drawCentred(v.title, 34, &fonts::FreeSansBold12pt7b, TFT_WHITE);
+  drawCentred(v.title, kDy + 34, &fonts::FreeSansBold12pt7b, TFT_WHITE);
   const uint32_t muted = g_lcd.color888(0xb0, 0xb0, 0xb0);
   if (v.qr && *v.qr) {
     // A white square behind the code gives it the quiet border phone cameras look for.
     constexpr int kBox = 160, kQr = 148;
-    const int bx = (kW - kBox) / 2, by = 66;
+    const int bx = (kW - kBox) / 2, by = kDy + 66;
     g_lcd.fillRoundRect(bx, by, kBox, kBox, 8, TFT_WHITE);
     g_lcd.qrcode(v.qr, bx + (kBox - kQr) / 2, by + (kBox - kQr) / 2, kQr, 1);
     if (v.bigLine1) {
-      drawCentred(v.line1, 232, &fonts::FreeSansBold12pt7b, TFT_WHITE);
-      drawCentred(v.line2, 260, &fonts::Font2, muted);
+      drawCentred(v.line1, kDy + 232, &fonts::FreeSansBold12pt7b, TFT_WHITE);
+      drawCentred(v.line2, kDy + 260, &fonts::Font2, muted);
     } else {
-      drawCentred(v.line1, 234, &fonts::FreeSans9pt7b, TFT_WHITE);
-      drawCentred(v.line2, 256, &fonts::Font2, muted);
+      drawCentred(v.line1, kDy + 234, &fonts::FreeSans9pt7b, TFT_WHITE);
+      drawCentred(v.line2, kDy + 256, &fonts::Font2, muted);
     }
   } else {
     // No code yet (connecting, asking for a code): just words, in the middle.
-    drawCentred(v.line1, 132, &fonts::FreeSans9pt7b, muted);
-    drawCentred(v.line2, 156, &fonts::FreeSans9pt7b, muted);
+    drawCentred(v.line1, kDy + 132, &fonts::FreeSans9pt7b, muted);
+    drawCentred(v.line2, kDy + 156, &fonts::FreeSans9pt7b, muted);
   }
 }
 

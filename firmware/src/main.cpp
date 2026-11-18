@@ -60,6 +60,10 @@ static bool buttonDown() { return digitalRead(PIN_BUTTON) == LOW; }
 
 #ifdef PIN_TOP_BUTTON
 static bool topButtonDown() { return digitalRead(PIN_TOP_BUTTON) == LOW; }
+#elif BZZY_BOOT_AS_TOP_BUTTON
+// A board whose only button is BOOT (the ESP32-C6 test board): it works like the top
+// button, so a hold goes back to automatic.
+static bool topButtonDown() { return buttonDown(); }
 #else
 static bool topButtonDown() { return false; }
 #endif
@@ -92,6 +96,12 @@ static Press topButtonPoll() {
 
 // Either button held while powering up opens the Wi-Fi setup page.
 static bool heldAtBoot() {
+#if BZZY_BOOT_AS_TOP_BUTTON
+  // BOOT held while plugging in starts the chip's flasher instead, so on a board with
+  // only BOOT you press it once the logo is up: wait the splash out for a press.
+  const uint32_t waitFrom = millis();
+  while (!buttonDown() && millis() - waitFrom < cfg::kSplashMs) delay(10);
+#endif
   uint32_t start = millis();
   while (buttonDown() || topButtonDown()) {
     if (millis() - start >= cfg::kSetupHoldMs) return true;
@@ -101,6 +111,9 @@ static bool heldAtBoot() {
 }
 
 static bool buttonPressed() {
+#if BZZY_BOOT_AS_TOP_BUTTON
+  return false;  // BOOT is read as the top button (topButtonPoll)
+#endif
   static bool last = false;
   static uint32_t changedAt = 0;
   bool now = buttonDown();

@@ -71,6 +71,13 @@ void renderPattern(const LedStyle& style, uint32_t elapsedMs, uint8_t* out, size
     memset(out, 255, n);
     return;
   }
+  if (style.pattern == Pattern::Spin && n < kMinSpinLeds) {
+    // Too few LEDs to spin (the ESP32-C6 test board has just one): pulse instead.
+    LedStyle pulse = style;
+    pulse.pattern = Pattern::Pulse;
+    renderPattern(pulse, elapsedMs, out, n);
+    return;
+  }
   const uint32_t period = patternPeriodMs(style.pattern, style.speed);
   const uint32_t t = elapsedMs % period;
 

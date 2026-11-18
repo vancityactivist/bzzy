@@ -34,10 +34,10 @@ int textWidth(const char* s, size_t n, Font f);
 size_t wrapText(const char* s, Font f, int maxWidth, size_t maxLines, Line* out, bool* cut);
 
 // A message on its own card: big (18 pt, up to 4 lines) if it fits, else 12 pt
-// (up to 6 lines).
-Wrapped wrapMessage(const char* text);
+// (up to 6 lines). maxWidth is for narrower screens (the 172 px ESP32-C6 test board).
+Wrapped wrapMessage(const char* text, int maxWidth = kMessageWidth);
 
 // A message in the bar under a GIF: 12 pt, up to 2 lines.
-Wrapped wrapBar(const char* text);
+Wrapped wrapBar(const char* text, int maxWidth = kMessageWidth);
 
 }  // namespace bzzy
