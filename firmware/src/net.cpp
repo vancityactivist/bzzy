@@ -179,7 +179,9 @@ static void gifPath(char* out, size_t n, size_t slot, const char* ext) {
 }
 
 #if BZZY_HAS_DISPLAY
-static constexpr size_t kGifMargin = 32 * 1024;  // LittleFS needs some room to work
+static constexpr size_t kGifMargin = 32 * 1024;
+static constexpr uint32_t kGifStallMs = 15000;  // no data for this long: give up
+static constexpr uint32_t kGifMaxMs = 90000;    // a whole download, at most  // LittleFS needs some room to work
 static size_t gifFreeBytes() { return LittleFS.totalBytes() - LittleFS.usedBytes(); }
 
 static bool downloadTo(const char* u, const char* path) {
@@ -189,6 +191,8 @@ static bool downloadTo(const char* u, const char* path) {
   http.setTimeout(cfg::kHttpTimeoutMs * 2);
   http.setConnectTimeout(cfg::kHttpTimeoutMs);
   http.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
+  // HTTP/1.0, so the body isn't chunked (Vercel streams it): the loop below copies it raw.
+  http.useHTTP10(true);
   if (!http.begin(client, u)) return false;
   // Only hand our token to our own app, never to another host.
   if (g_settings.token[0] && strncmp(u, g_settings.apiBase, strlen(g_settings.apiBase)) == 0) {
@@ -213,13 +217,62 @@ static bool downloadTo(const char* u, const char* path) {
     http.end();
     return false;
   }
-  int written = http.writeToStream(&f);
+  // Not http.writeToStream(): if the connection stalls without closing (a weak
+  // signal), it loops forever, and the network task (syncs and all) with it.
+  static uint8_t buf[2048];  // network task only
+  auto* stream = http.getStreamPtr();
+  const uint32_t startMs = millis();
+  uint32_t lastDataMs = startMs;
+  int written = 0;
+  uint8_t lastByte = 0;
+  const char* why = nullptr;
+  while (len < 0 || written < len) {
+    const uint32_t nowMs = millis();
+    if (nowMs - startMs > kGifMaxMs) {
+      why = "took too long";
+      break;
+    }
+    const int avail = stream->available();
+    if (avail <= 0) {
+      if (!stream->connected()) {
+        if (len > 0) why = "connection closed early";
+        break;  // with no length, the server closing is the end
+      }
+      if (nowMs - lastDataMs > kGifStallMs) {
+        why = "stalled";
+        break;
+      }
+      vTaskDelay(pdMS_TO_TICKS(10));
+      continue;
+    }
+    size_t want = min((size_t)avail, sizeof(buf));
+    if (len > 0) want = min(want, (size_t)(len - written));
+    const int n = stream->read(buf, want);
+    if (n <= 0) continue;
+    if (f.write(buf, n) != (size_t)n) {
+      why = "flash write failed";
+      break;
+    }
+    written += n;
+    lastByte = buf[n - 1];
+    lastDataMs = millis();
+    if (written > (int)cfg::kMaxGifBytes) {
+      why = "too big";
+      break;
+    }
+  }
   f.close();
   http.end();
-  if (written <= 0 || (len > 0 && written != len) || written > (int)cfg::kMaxGifBytes) {
+  const unsigned ms = (unsigned)(millis() - startMs);
+  if (!why && written <= 0) why = "empty";
+  // Without a length, a dropped connection looks like the end: a whole GIF ends in 0x3B.
+  if (!why && lastByte != 0x3B) why = "cut off";
+  if (why) {
+    Serial.printf("[gif] download failed: %s (%d of %d bytes, %u ms)\n", why, written, len, ms);
     LittleFS.remove(path);
     return false;
   }
+  Serial.printf("[gif] %d bytes in %u ms\n", written, ms);
   return true;
 }
 #endif
@@ -515,9 +568,12 @@ static void loadInstalledGifs() {
 // Some boards brown out (and reset) at full Wi-Fi power: see BZZY_WIFI_TX_POWER.
 static void capTxPower() {
 #ifdef BZZY_WIFI_TX_POWER
-  if (WiFi.getMode() == WIFI_OFF || WiFi.getTxPower() == BZZY_WIFI_TX_POWER) return;
+  // Only while the setup page is up: running it and joining a network at once is what
+  // browned out. At full power otherwise, or a weak signal makes downloads crawl.
+  const wifi_power_t want = g_portalOpen ? BZZY_WIFI_TX_POWER : WIFI_POWER_20dBm;
+  if (WiFi.getMode() == WIFI_OFF || WiFi.getTxPower() == want) return;
   const int was = WiFi.getTxPower();
-  WiFi.setTxPower(BZZY_WIFI_TX_POWER);
+  WiFi.setTxPower(want);
   Serial.printf("[wifi] tx power %d -> %d (quarter dBm)\n", was, (int)WiFi.getTxPower());
 #endif
 }
