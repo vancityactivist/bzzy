@@ -512,6 +512,16 @@ static void loadInstalledGifs() {
   p.end();
 }
 
+// Some boards brown out (and reset) at full Wi-Fi power: see BZZY_WIFI_TX_POWER.
+static void capTxPower() {
+#ifdef BZZY_WIFI_TX_POWER
+  if (WiFi.getMode() == WIFI_OFF || WiFi.getTxPower() == BZZY_WIFI_TX_POWER) return;
+  const int was = WiFi.getTxPower();
+  WiFi.setTxPower(BZZY_WIFI_TX_POWER);
+  Serial.printf("[wifi] tx power %d -> %d (quarter dBm)\n", was, (int)WiFi.getTxPower());
+#endif
+}
+
 void begin(bool openSetupPortal) {
   g_mx = xSemaphoreCreateMutex();
   loadSettings();
@@ -553,11 +563,18 @@ void begin(bool openSetupPortal) {
   } else {
     WiFi.begin();
   }
+  capTxPower();
 
   xTaskCreatePinnedToCore(networkTask, "bzzy-net", 12288, nullptr, 1, nullptr, 0);
 }
 
 void loop() {
+  // WiFiManager switches modes as it goes, which can put the power back up.
+  static uint32_t txCheckedMs = 0;
+  if (millis() - txCheckedMs >= 1000) {
+    txCheckedMs = millis();
+    capTxPower();
+  }
   if (g_portalOpen) {
     g_wm.process();
     if (!g_wm.getConfigPortalActive()) {
