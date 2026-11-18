@@ -524,6 +524,16 @@ static void capTxPower() {
 
 void begin(bool openSetupPortal) {
   g_mx = xSemaphoreCreateMutex();
+  // Why Wi-Fi drops or won't join (the reason codes are wifi_err_reason_t).
+  WiFi.onEvent([](WiFiEvent_t, WiFiEventInfo_t info) {
+    Serial.printf("[wifi] disconnected from \"%.32s\", reason %u, rssi %d\n",
+                  (const char*)info.wifi_sta_disconnected.ssid, info.wifi_sta_disconnected.reason,
+                  (int)info.wifi_sta_disconnected.rssi);
+  }, ARDUINO_EVENT_WIFI_STA_DISCONNECTED);
+  WiFi.onEvent([](WiFiEvent_t, WiFiEventInfo_t info) {
+    Serial.printf("[wifi] connected, ip %s, rssi %d\n", IPAddress(info.got_ip.ip_info.ip.addr).toString().c_str(),
+                  (int)WiFi.RSSI());
+  }, ARDUINO_EVENT_WIFI_STA_GOT_IP);
   loadSettings();
   loadInstalledGifs();
   rtc::begin();
@@ -542,6 +552,9 @@ void begin(bool openSetupPortal) {
   g_wm.setSaveConfigCallback(saveParams);
   g_wm.setConfigPortalBlocking(false);
   g_wm.setTitle("bzzy");
+  // WiFiManager joins the new network while blocking the main loop (the screen and
+  // button freeze), for up to 60 s if this isn't set.
+  g_wm.setConnectTimeout(20);
 
   // A name of its own, so two new lights in one office don't share a setup network.
   const uint64_t mac = ESP.getEfuseMac();
@@ -558,7 +571,12 @@ void begin(bool openSetupPortal) {
     // A new light waits on its setup page for as long as it takes; one opened with
     // the button gives up after 5 minutes and goes back to the Wi-Fi it had.
     g_wm.setConfigPortalTimeout(wifiSaved ? 300 : 0);
+    // Stop retrying the saved network while the page is open: a join in progress
+    // makes the radio refuse scans (an empty network list) and new settings (the
+    // network you pick is never tried). loop() turns it back on when the page closes.
+    WiFi.setAutoReconnect(false);
     g_wm.startConfigPortal(g_apName);
+    WiFi.disconnect(false, false);  // stop the station's join; keeps the setup network and saved network
     g_portalOpen = true;
   } else {
     WiFi.begin();
@@ -579,7 +597,10 @@ void loop() {
     g_wm.process();
     if (!g_wm.getConfigPortalActive()) {
       g_portalOpen = false;
+      WiFi.setAutoReconnect(true);
+      WiFi.mode(WIFI_STA);
       WiFi.begin();
+      capTxPower();
     }
   }
   // Once NTP has set the clock, copy it to the battery-backed RTC.
