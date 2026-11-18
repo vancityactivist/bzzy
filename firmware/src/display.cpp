@@ -276,6 +276,8 @@ static void drawShowText(const View& v) {
 
 static bool g_dark = false;
 
+static void drawLogo();
+
 static void redraw(const View& v) {
   if (v.layout == Layout::Off) {
     closeGif();
@@ -287,6 +289,10 @@ static void redraw(const View& v) {
   if (g_dark) {
     g_lcd.setBrightness(kBrightness);
     g_dark = false;
+  }
+  if (v.layout == Layout::Loading) {
+    drawLogo();  // not splash(): that would make show() redraw it every pass
+    return;
   }
   const uint16_t bg = bgFor(v.status);
   const bool showMessage = v.text && *v.text;
@@ -354,7 +360,7 @@ void begin() {
 
 // ---- the logo ----
 // The tile and dots follow docs/brand (a 64-unit grid); the letters are a bitmap.
-void splash() {
+static void drawLogo() {
   closeGif();
   g_lcd.fillScreen(TFT_BLACK);
   const float u = 96.0f / 64.0f;  // tile 96 px
@@ -370,7 +376,11 @@ void splash() {
   }
   g_lcd.pushGrayscaleImage((kW - kWordmarkW) / 2, ty + 96 + 28, kWordmarkW, kWordmarkH, kWordmark,
                            lgfx::grayscale_4bit, g_lcd.color888(0xfa, 0xfa, 0xfa), g_lcd.color888(0, 0, 0));
-  g_drawn = false;
+}
+
+void splash() {
+  drawLogo();
+  g_drawn = false;  // whatever comes next draws in full
 }
 
 // ---- setup screens ----

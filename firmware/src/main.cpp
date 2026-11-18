@@ -315,9 +315,11 @@ void loop() {
                         r.source == bzzy::Source::Fallback ? 0 : r.until, net::online(), notice};
   const bzzy::Show& show = g_state.show;
   if (bzzy::showVisible(g_state, net::now())) {
-    // Until its GIF has downloaded, a show with a message shows just the message.
+    // While its GIF downloads, the logo; if the light gives up on it, just the message.
     if (show.hasGif && net::gifInstalled(bzzy::kShowSlot, show.gifSha)) {
       view.layout = display::Layout::ShowGif;
+    } else if (show.hasGif && net::gifLoading(bzzy::kShowSlot)) {
+      view.layout = display::Layout::Loading;
     } else if (show.text[0]) {
       view.layout = display::Layout::ShowText;
     }
@@ -325,6 +327,12 @@ void loop() {
       view.text = show.text;
       view.until = show.until;
     }
+  }
+  // A status whose new GIF is downloading, with no old one to show meanwhile: the logo.
+  const size_t slot = static_cast<size_t>(r.status);
+  if (view.layout == display::Layout::Status && slot < bzzy::kShowSlot && net::gifLoading(slot) &&
+      !net::gifOnFlash(slot)) {
+    view.layout = display::Layout::Loading;
   }
 
   if (dark) view = {display::Layout::Off, r.status, "", 0, true, nullptr};

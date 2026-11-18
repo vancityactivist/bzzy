@@ -11,7 +11,7 @@ The PlatformIO env is `waveshare_c6_lcd147`. It's built on every pull request an
 | Logo at power-on, Wi-Fi QR code setup, pairing at `/pair` | Yes, on the screen, moved down to sit in the middle of the taller screen |
 | Syncing with the app every 20 s, calendar, statuses | Yes |
 | Status screens and "Show now" messages | Yes. Messages wrap to the narrower width; a label too wide for the screen ("DO NOT DISTURB" under a GIF) drops to a smaller font |
-| GIFs | Yes, but the app makes them 240 px wide, so 34 px are cropped off each side. There's about 640 KB for GIFs (the real light has 9 MB), so a big one may not download while others are stored |
+| GIFs | Yes, but the app makes them 240 px wide, so 34 px are cropped off each side. There's about 640 KB for GIFs (the real light has 9 MB), so a new GIF replaces the old one rather than downloading beside it: the bzzy logo shows for up to a sync (20 s) while it downloads. A GIF that still won't fit is given up on after 3 tries, and the light shows the colour card (or just the message) |
 | Ring effects, meeting warning, team pushes | Yes, on the one onboard LED: colours, pulse, blink and strobe. A "spin" pulses instead |
 | Working hours (dark off-hours, a press wakes it) | Yes. The backlight turns off too |
 | Button | The BOOT button works like the real light's top button: a short press steps Free → Busy → Do not disturb → automatic, and holding it for a second goes back to automatic. For the Wi-Fi setup page, press RESET, then press and hold BOOT once the logo appears, for 3 seconds. (Holding BOOT *while* plugging in or pressing RESET starts the chip's flasher instead, which is how you flash it by hand.) |
@@ -75,7 +75,9 @@ The 4 MB of flash is split into two 1.625 MB app slots (so over-the-air updates 
    pio device monitor -p /dev/cu.usbmodem101
    ```
 
-3. Same as Windows if it can't connect: hold **BOOT**, tap **RESET**, let go of BOOT, then flash again.
+3. If you've also built an `espressif32` env (the S3 or classic ESP32), the C6 build can fail with a `TypeError` in `arduino.py`: both platforms use the package name `framework-arduinoespressif32`, and the other build left core 2.x there. Delete `~/.platformio/packages/framework-arduinoespressif32` and build again (the same applies on Windows).
+
+4. Same as Windows if it can't connect: hold **BOOT**, tap **RESET**, let go of BOOT, then flash again.
 
 ## Setting it up
 

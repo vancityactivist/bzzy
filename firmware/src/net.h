@@ -57,6 +57,11 @@ void reportPushAck(const char* id, uint32_t at);
 bool gifsReady();
 // Whether the GIF with this sha is the one on flash for a slot (see protocol.h).
 bool gifInstalled(size_t slot, const char* sha);
+// Whether a slot has any GIF on flash.
+bool gifOnFlash(size_t slot);
+// Whether the app wants a GIF for this slot that's still downloading (false once it
+// arrives, or once the light gives up on it).
+bool gifLoading(size_t slot);
 void installGifs();
 
 }  // namespace net
