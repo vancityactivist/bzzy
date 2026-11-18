@@ -48,6 +48,7 @@
 #define PIN_BUTTON 9     // BOOT button (a strapping pin, fine to read after boot)
 #define BZZY_BOOT_AS_TOP_BUTTON 1  // the only button: short press steps, hold = automatic
 #define PIN_LED_DATA 8   // the onboard RGB LED (also a strapping pin; the LED is wired there)
+#define BZZY_LED_ORDER RGB  // unlike the ring: with GRB, red and green came out swapped
 #define BZZY_HAS_RTC 0
 // Screen geometry for display.cpp: 172 wide, centred in the ST7789's 240 columns.
 #define BZZY_LCD_W 172
@@ -85,6 +86,12 @@
 
 #ifndef BZZY_BOOT_AS_TOP_BUTTON
 #define BZZY_BOOT_AS_TOP_BUTTON 0
+#endif
+
+// FastLED colour order of the LEDs. The ring's WS2812Bs are GRB; a board's onboard LED
+// may not be.
+#ifndef BZZY_LED_ORDER
+#define BZZY_LED_ORDER GRB
 #endif
 
 // BZZY_HAS_DISPLAY is the full colour screen (GIFs, QR codes). BZZY_HAS_TEXT_LCD is a

@@ -38,7 +38,7 @@ static bool sameStyle(const bzzy::LedStyle& a, const bzzy::LedStyle& b) {
 }
 
 void begin() {
-  FastLED.addLeds<WS2812B, PIN_LED_DATA, GRB>(g_leds, cfg::kLedCount);
+  FastLED.addLeds<WS2812B, PIN_LED_DATA, BZZY_LED_ORDER>(g_leds, cfg::kLedCount);
   FastLED.setMaxPowerInVoltsAndMilliamps(5, cfg::kLedMaxMilliamps);
   FastLED.setBrightness(cfg::kLedBrightness);
   FastLED.clear(true);
