@@ -153,6 +153,21 @@ static void test_meeting_warning_off_by_default() {
   TEST_ASSERT_FALSE(chooseLeds(st, Status::Free, T0).warning);
 }
 
+static void test_spin_on_one_led_pulses() {
+  LedStyle spin{};
+  spin.set = true;
+  spin.pattern = Pattern::Spin;
+  spin.speed = 1;
+  LedStyle pulse = spin;
+  pulse.pattern = Pattern::Pulse;
+  uint8_t a[1], b[1];
+  for (uint32_t t = 0; t < 4000; t += 250) {
+    renderPattern(spin, t, a, 1);
+    renderPattern(pulse, t, b, 1);
+    TEST_ASSERT_EQUAL(b[0], a[0]);
+  }
+}
+
 void run_led_pattern_tests() {
   RUN_TEST(test_unset_and_solid_are_steady);
   RUN_TEST(test_blink_halves);
@@ -160,6 +175,7 @@ void run_led_pattern_tests() {
   RUN_TEST(test_strobe_is_a_short_burst);
   RUN_TEST(test_pulse_stays_between_25_and_100_percent);
   RUN_TEST(test_spin_moves_round_the_ring);
+  RUN_TEST(test_spin_on_one_led_pulses);
   RUN_TEST(test_for_goes_steady_afterwards);
   RUN_TEST(test_parse_names_and_colours);
   RUN_TEST(test_status_style_applies);

@@ -75,22 +75,22 @@ size_t wrapText(const char* s, Font f, int maxWidth, size_t maxLines, Line* out,
   return count;
 }
 
-Wrapped wrapMessage(const char* text) {
+Wrapped wrapMessage(const char* text, int maxWidth) {
   Wrapped w;
   bool cut = false;
   w.font = Font::Bold18;
-  w.count = wrapText(text, w.font, kMessageWidth, 4, w.lines, &cut);
+  w.count = wrapText(text, w.font, maxWidth, 4, w.lines, &cut);
   if (cut) {
     w.font = Font::Bold12;
-    w.count = wrapText(text, w.font, kMessageWidth, kMaxLines, w.lines, &cut);
+    w.count = wrapText(text, w.font, maxWidth, kMaxLines, w.lines, &cut);
   }
   return w;
 }
 
-Wrapped wrapBar(const char* text) {
+Wrapped wrapBar(const char* text, int maxWidth) {
   Wrapped w;
   w.font = Font::Bold12;
-  w.count = wrapText(text, w.font, kMessageWidth, 2, w.lines, nullptr);
+  w.count = wrapText(text, w.font, maxWidth, 2, w.lines, nullptr);
   return w;
 }
 
