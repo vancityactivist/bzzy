@@ -121,15 +121,30 @@ Two ways to buy it:
 
 ### 5.1 Panel pick (2026-11-19)
 
-**Candidate: East Rising / BuyDisplay ER-TFT1.69-4** (1.69" 240 × 280 IPS, ST7789 family, CST816 capacitive touch, 4-wire SPI + I2C).
+**East Rising / BuyDisplay ER-TFT1.69-4**, with its capacitive touch panel **ER-TPC1.69-4** (separate order number; order the panel with touch fitted). From the datasheet (rev 1.0, 2025-08-21, provided by Adam):
 
-- Sold in single units and small quantities with a published datasheet, mechanical drawing, and ST7789VW and CST816 datasheets on the product page. That's the main reason over anonymous AliExpress panels.
-- Listed at about **US$3.74 each** (quote above 500). Whether the touch layer is included in that price or an option isn't clear from the listing **(verify at checkout)**.
-- **18-pin, 0.5 mm pitch FPC** for a ZIF connector, per the listing's document list **(verify pinout in the datasheet)**. J3 in the placement becomes an 18-pin 0.5 mm ZIF connector.
-- The sibling non-touch panel (ER-TFT1.69-3) has a 30.07 × 37.43 × 1.6 mm outline, which matches the placement drawing. Confirm the -4's outline (touch adds thickness).
-- Same resolution and driver family as the Waveshare board, so firmware, the app's live preview and every GIF stay as they are.
+| | |
+|---|---|
+| Display | 1.69" IPS, 240 × 280, ST7789 (ST7789VW per the product page), 4-wire SPI, 500 cd/m², 1000:1 |
+| Outline, LCD only | 30.07 × 37.45 × 1.6 mm (FPC folded); active area 27.97 × 32.63 mm |
+| **Outline with touch** | **33.13 × 41.13 mm cover glass, 3.85 mm thick** |
+| FPC | **one tail, 18 pins at 0.5 mm pitch**, 8.5 mm wide, **24.54 mm** from the glass edge to the tail end, leaving the LCD's short (bottom) edge. The touch flex joins it, so one connector carries display and touch |
+| Power | VCC 2.5 to 3.3 V (logic **and backlight anode**), IOVCC 1.8 to 3.3 V: both from the 3.3 V rail |
+| Backlight | 3 white LEDs in parallel, common anode on VCC, cathode on pin 2 (K). Vf 3.0 V typ / 3.2 V max, 45 mA typ, 60 mA max |
+| Touch | CST816-family controller on the touch flex: I2C SCL/SDA, RST (active low), INT, own VCC |
 
-Before layout: order 3 to 5, check the CST816 variant (S, T or D; the I2C address and gestures differ slightly), and caliper them.
+Pinout (pin 1 to 18): GND, K, VCC, IOVCC, GND, GND, DC, CS, SCL, SDA, RESET, GND, CTP_SCL, CTP_SDA, CTP_RST, CTP_INT, CTP_VCC, GND.
+
+What that means for the board:
+
+- **J3 = 18-pin 0.5 mm ZIF/FPC connector.** Contact side (top or bottom) depends on how the tail folds; settle it on the samples.
+- **The long tail is by design.** It's meant to fold back behind the screen. With the panel on the front, the tail goes through a slot just below the screen, then runs about 21 mm up the back, so **J3 sits behind the middle of the screen** (updated in the placement drawing).
+- **Backlight:** N-MOSFET low-side switch on K with a ~3.3 to 4.7 Ω series resistor, PWM-dimmed from GPIO15. The 3.3 V rail only leaves 0.1 to 0.3 V of headroom over the LED Vf, so full brightness is roughly the typical 45 mA rather than the 60 mA maximum. That's plenty indoors.
+- **Thickness:** 3.85 mm with touch (the Waveshare's glass sat at 3.6 mm). The case's `GLASS_Z` changes slightly.
+- The cover glass is 33.1 × 41.1 mm, inside the ring of LEDs with 5 mm or more to spare on each side.
+- **J4 (Waveshare-module fallback) is dropped**, now that the panel has a full datasheet.
+
+Before layout: order samples and bench-test one on Adam's Feather through an 18-pin 0.5 mm FPC breakout, to confirm the pinout, the touch chip variant (CST816S, T or D) and the display offsets.
 
 Smaller screens considered (Adam is open to a smaller device):
 
@@ -256,7 +271,7 @@ Drawn by `hardware/main-board/placement.py` (edit the script, then run it to reg
 | SW1 | Alps SKRTLAE010 | front | top edge centre, plunger up |
 | U1 | ESP32-S3-WROOM-1U-N16R8 | back | top centre, behind the panel's top half |
 | J2 | u.FL (on the module) | back | top of the module, short cable up to the case-top antenna |
-| J3 | panel FPC connector | back | panel tail goes through a slot just below the panel and folds up into it |
+| J3 | 18-pin 0.5 mm FPC/ZIF | back | behind the screen's middle; the panel tail goes through a slot below the screen and runs ~21 mm up the back |
 | J1 | USB-C 16-pin, mid-mount | back | bottom edge centre, same place as the Waveshare socket |
 | U3, D1, F1, FB1 | ESD, TVS, polyfuse, ferrite (DNP) | back | next to J1, before anything else |
 | U2, C2, C3 | 3.3 V LDO 1 A + 22 µF in/out | back | bottom left (seen from behind), between USB and the module |
@@ -265,7 +280,6 @@ Drawn by `hardware/main-board/placement.py` (edit the script, then run it to reg
 | Q1 | backlight MOSFET | back | near J3 |
 | U4, Y1, C1, D2 | PCF85063, 32.768 kHz crystal, 0.22 F supercap, Schottky | back | lower right (seen from behind) |
 | SW2, SW3 | BOOT, RESET | back | either side, behind pinholes in the back plate |
-| J4 | GH1.25 12-pin (DNP) | back | fallback for Waveshare's touch module |
 | BZ1 | buzzer (DNP) | back | upper right (seen from behind), for "knock" later |
 | C5 | 2 × 10 µF LED bulk | back | plus 100 nF per LED on the front, as rev C |
 
@@ -313,7 +327,7 @@ Estimates in **US dollars**, per board, at 25 units. Part prices are LCSC/AliExp
 |---|---|---|---|
 | ESP32-S3-WROOM-1U-N16R8 module | 1 | 5 to 7 | 6.00 |
 | 2.4 GHz FPC monopole antenna, u.FL, ≤ 2.33 dBi | 1 | 0.80 to 2.50 | 1.50 |
-| 1.69" ST7789V2 + CST816T panel (bare, FPC) | 1 | 5 to 10 | 8.00 |
+| ER-TFT1.69-4 + ER-TPC1.69-4 touch | 1 | 4 to 9 | 7.00 |
 | WS2812B-2020 LED | 16 | 0.08 to 0.15 | 1.80 |
 | 74AHCT1G125 shifter | 1 | 0.10 | 0.10 |
 | USB-C 16-pin receptacle | 1 | 0.15 to 0.40 | 0.30 |
@@ -322,7 +336,7 @@ Estimates in **US dollars**, per board, at 25 units. Part prices are LCSC/AliExp
 | 3.3 V LDO, 1 A | 1 | 0.10 to 0.30 | 0.20 |
 | PCF85063 + crystal | 1 + 1 | 0.30 + 0.15 | 0.45 |
 | 0.22 F supercap + diode | 1 + 1 | 0.40 to 0.80 | 0.70 |
-| FPC connector for the panel | 1 | 0.10 to 0.30 | 0.20 |
+| 18-pin 0.5 mm FPC connector (J3) | 1 | 0.10 to 0.30 | 0.20 |
 | Backlight MOSFET | 1 | 0.03 | 0.03 |
 | Alps SKRT top button | 1 | 0.30 | 0.30 |
 | BOOT + RESET switches | 2 | 0.05 | 0.10 |
@@ -423,7 +437,7 @@ Defaults are what this spec assumes until Adam says otherwise.
 | Q8 | Antenna position in the case: inside the top wall, or the back plate? | Top wall; compare range on prototypes |
 | Q9 | Screen sourcing: bare panel from a panel maker, or Waveshare's touch module? | Bare panel, Waveshare footprint as fallback |
 | Q10 | Module: N16R8 (drop-in firmware) over the slightly cheaper MINI-1-N8? | N16R8 |
-| Q11 | Device size: keep 52 × 61 mm, or shrink to about 40 × 47 mm with a thinner glow border (7.3)? | Prototype at 52 × 61, decide after |
+| Q11 | Device size: keep 52 × 61 mm, or shrink to about 40 × 47 mm with a thinner glow border (7.3)? | **Decided 2026-11-19: prototype at 52 × 61 mm**, decide final size after |
 | Q12 | Screen: ER-TFT1.69-4 (same 1.69" 240 × 280), or a smaller panel (5.1)? | ER-TFT1.69-4 |
 
 ## 15. Sources

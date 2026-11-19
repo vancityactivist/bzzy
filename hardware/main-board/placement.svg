@@ -26,13 +26,13 @@
 <circle cx="502.0" cy="639.5" r="9.9" fill="#f4f1ea"/>
 <circle cx="106.0" cy="639.5" r="24.3" fill="#2e6a51" stroke="#c9b37a" stroke-dasharray="3 3"/>
 <circle cx="106.0" cy="639.5" r="9.9" fill="#f4f1ea"/>
-<rect x="168.7" y="246.1" width="270.6" height="336.9" fill="#111" stroke="#888" stroke-width="1"/>
+<rect x="154.9" y="229.4" width="298.2" height="370.2" fill="#111" stroke="#888" stroke-width="1"/>
 <rect x="175.3" y="265.1" width="257.4" height="298.8" fill="#1d2833" stroke="none"/>
 <text x="304.0" y="396.5" class="big">1.69" panel</text>
-<text x="304.0" y="428.0" class="sub">240 x 280, ST7789V2 + CST816T</text>
-<text x="304.0" y="455.0" class="sub">on foam pad, ~30 x 37 mm</text>
-<rect x="241.0" y="588.2" width="126.0" height="10.8" fill="#0b0b0b" stroke="#444"/>
-<text x="304.0" y="616.1" class="tiny">FPC slot</text>
+<text x="304.0" y="428.0" class="sub">ER-TFT1.69-4 + touch, 240 x 280</text>
+<text x="304.0" y="455.0" class="sub">touch glass 33.1 x 41.1 mm, 3.85 mm thick</text>
+<rect x="254.5" y="603.5" width="99.0" height="10.8" fill="#0b0b0b" stroke="#444"/>
+<text x="304.0" y="630.5" class="tiny">FPC slot</text>
 <rect x="172.6" y="648.5" width="18.0" height="18.0" fill="#d9a400" stroke="#7a5c00"/>
 <text x="181.6" y="689.3" class="tiny">D1</text>
 <rect x="140.2" y="648.5" width="18.0" height="18.0" fill="#d9a400" stroke="#7a5c00"/>
@@ -77,17 +77,17 @@
 <circle cx="724.0" cy="639.5" r="9.9" fill="#f4f1ea"/>
 <circle cx="1120.0" cy="639.5" r="24.3" fill="#2e6a51" stroke="#c9b37a" stroke-dasharray="3 3"/>
 <circle cx="1120.0" cy="639.5" r="9.9" fill="#f4f1ea"/>
-<rect x="786.7" y="246.1" width="270.6" height="336.9" fill="none" stroke="#8fb3a2" stroke-width="1" stroke-dasharray="6 4"/>
-<text x="922.0" y="572.9" class="ghost">panel outline (front)</text>
-<rect x="859.0" y="588.2" width="126.0" height="10.8" fill="#0b0b0b" stroke="#444"/>
+<rect x="772.9" y="229.4" width="298.2" height="370.2" fill="none" stroke="#8fb3a2" stroke-width="1" stroke-dasharray="6 4"/>
+<text x="922.0" y="589.1" class="ghost">touch glass outline (front)</text>
+<rect x="872.5" y="603.5" width="99.0" height="10.8" fill="#0b0b0b" stroke="#444"/>
 <rect x="841.0" y="151.7" width="162.0" height="172.8" rx="2" fill="#4f6d8f" fill-opacity="0.92" stroke="#4f6d8f" stroke-width="1.5" />
 <text x="922.0" y="236.1" class="ref">U1</text>
 <text x="922.0" y="250.1" class="lbl">ESP32-S3-WROOM-1U-N16R8</text>
 <rect x="847.3" y="152.6" width="27.0" height="27.0" rx="2" fill="#c0563b" fill-opacity="0.92" stroke="#c0563b" stroke-width="1.5" />
 <text x="860.8" y="170.1" class="refs">J2</text>
-<rect x="863.5" y="506.3" width="117.0" height="32.4" rx="2" fill="#8a6d3b" fill-opacity="0.92" stroke="#8a6d3b" stroke-width="1.5" />
-<text x="922.0" y="520.5" class="ref">J3</text>
-<text x="922.0" y="534.5" class="lbl">panel FPC conn</text>
+<rect x="863.5" y="387.5" width="117.0" height="36.0" rx="2" fill="#8a6d3b" fill-opacity="0.92" stroke="#8a6d3b" stroke-width="1.5" />
+<text x="922.0" y="403.5" class="ref">J3</text>
+<text x="922.0" y="417.5" class="lbl">18p 0.5mm ZIF</text>
 <rect x="881.8" y="623.3" width="80.5" height="65.7" rx="2" fill="#8a6d3b" fill-opacity="0.92" stroke="#8a6d3b" stroke-width="1.5" />
 <text x="922.0" y="654.1" class="ref">J1</text>
 <text x="922.0" y="668.1" class="lbl">USB-C 16p</text>
@@ -119,9 +119,6 @@
 <text x="1057.0" y="364.5" class="refs">SW2</text>
 <rect x="773.5" y="419.0" width="27.0" height="18.0" rx="2" fill="#555555" fill-opacity="0.92" stroke="#555555" stroke-width="1.5" />
 <text x="787.0" y="432.0" class="refs">SW3</text>
-<rect x="847.8" y="426.6" width="148.5" height="38.7" rx="2" fill="none" fill-opacity="0.92" stroke="#9a9a9a" stroke-width="1.5" stroke-dasharray="4 3"/>
-<text x="922.0" y="444.0" class="ref">J4</text>
-<text x="922.0" y="458.0" class="lbl">GH1.25 12p (DNP)</text>
 <rect x="1039.0" y="261.5" width="45.0" height="45.0" rx="2" fill="none" fill-opacity="0.92" stroke="#9a9a9a" stroke-width="1.5" stroke-dasharray="4 3"/>
 <text x="1061.5" y="288.0" class="refs">BZ1</text>
 <rect x="835.6" y="539.4" width="18.0" height="11.2" rx="2" fill="#5f8a5a" fill-opacity="0.92" stroke="#5f8a5a" stroke-width="1.5" />

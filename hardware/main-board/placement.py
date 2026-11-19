@@ -17,7 +17,7 @@ HOLE_KEEPOUT_R = 2.7
 LEDS = [(-13.6, 27.0), (-17.2, 27.0), (-23.0, 18.0), (-23.0, 6.0), (-23.0, -6.0), (-23.0, -18.0),
         (-15.0, -27.0), (-5.0, -27.0), (5.0, -27.0), (15.0, -27.0), (23.0, -18.0), (23.0, -6.0),
         (23.0, 6.0), (23.0, 18.0), (16.6, 27.0), (13.0, 27.0)]
-PANEL_W, PANEL_H = 30.07, 37.43   # typical 1.69" 240x280 panel outline (verify with chosen panel)
+PANEL_W, PANEL_H = 33.13, 41.13   # ER-TFT1.69-4 with touch: cover glass outline (LCD itself 30.07 x 37.45)
 WINDOW_W, WINDOW_H = 28.6, 33.2   # case's visible window
 
 # (ref, label, x, y, w, h, side, colour key, note)  x/y = body centre, front-view coordinates
@@ -27,7 +27,7 @@ PARTS = [
     # back
     ("U1", "ESP32-S3-WROOM-1U-N16R8", 0.0, -19.6, 18.0, 19.2, "B", "mcu", "u.FL at top"),
     ("J2", "u.FL", 6.8, -27.6, 3.0, 3.0, "B", "rf", "antenna cable to case top"),
-    ("J3", "panel FPC conn", 0.0, 12.0, 13.0, 3.6, "B", "conn", "tail through slot, folds up"),
+    ("J3", "18p 0.5mm ZIF", 0.0, -1.0, 13.0, 4.0, "B", "conn", "tail through slot, folds up ~21 mm"),
     ("J1", "USB-C 16p", 0.0, 26.85, 8.94, 7.3, "B", "conn", "mid-mount, bottom edge"),
     ("U2", "3V3 LDO 1A", 13.5, 17.0, 6.5, 7.0, "B", "power", "AMS1117-3.3 (SOT-223)"),
     ("U3", "USB ESD", 8.0, 23.8, 3.0, 3.0, "B", "power", "USBLC6-2SC6"),
@@ -42,14 +42,13 @@ PARTS = [
     ("Q1", "BL MOSFET", 11.0, 6.0, 2.9, 2.4, "B", "logic", "SOT-23, backlight PWM"),
     ("SW2", "BOOT", -15.0, -6.0, 3.0, 2.0, "B", "mech", "behind pinhole"),
     ("SW3", "RESET", 15.0, 1.5, 3.0, 2.0, "B", "mech", "behind pinhole"),
-    ("J4", "GH1.25 12p (DNP)", 0.0, 3.5, 16.5, 4.3, "B", "dnp", "Waveshare module fallback"),
     ("BZ1", "buzzer (DNP)", -15.5, -14.5, 5.0, 5.0, "B", "dnp", "for 'knock' later"),
     ("C2", "22u", 8.6, 14.5, 2.0, 1.25, "B", "power", "LDO in"),
     ("C3", "22u", 13.5, 9.0, 2.0, 1.25, "B", "power", "LDO out"),
     ("C4", "10u", 10.2, -8.0, 2.0, 1.25, "B", "power", "module 3V3"),
     ("C5", "10u x2", -19.0, 13.0, 2.0, 1.25, "B", "power", "LED bulk 5 V"),
 ]
-SLOT = (0.0, 19.9, 14.0, 1.2)  # FPC slot below the panel (cx, cy, w, h)
+SLOT = (0.0, 21.6, 11.0, 1.2)  # FPC slot below the panel (cx, cy, w, h)
 LED_SIZE = 2.0
 
 COL = {
@@ -91,15 +90,15 @@ def view(ox, oy, side):
         out.append(rect(0, 0, PANEL_W, PANEL_H, fill="#111", stroke="#888", stroke_width=1))
         out.append(rect(0, 0, WINDOW_W, WINDOW_H, fill="#1d2833", stroke="none"))
         out.append(f'<text x="{X(0):.1f}" y="{Y(-2):.1f}" class="big">1.69" panel</text>')
-        out.append(f'<text x="{X(0):.1f}" y="{Y(1.5):.1f}" class="sub">240 x 280, ST7789V2 + CST816T</text>')
-        out.append(f'<text x="{X(0):.1f}" y="{Y(4.5):.1f}" class="sub">on foam pad, ~30 x 37 mm</text>')
+        out.append(f'<text x="{X(0):.1f}" y="{Y(1.5):.1f}" class="sub">ER-TFT1.69-4 + touch, 240 x 280</text>')
+        out.append(f'<text x="{X(0):.1f}" y="{Y(4.5):.1f}" class="sub">touch glass 33.1 x 41.1 mm, 3.85 mm thick</text>')
     else:
         out.append(rect(0, 0, PANEL_W, PANEL_H, fill="none", stroke="#8fb3a2", stroke_width=1, stroke_dasharray="6 4"))
-        out.append(f'<text x="{X(0):.1f}" y="{Y(17.6):.1f}" class="ghost">panel outline (front)</text>')
+        out.append(f'<text x="{X(0):.1f}" y="{Y(19.4):.1f}" class="ghost">touch glass outline (front)</text>')
     # FPC slot (through board, both sides)
     out.append(rect(*SLOT, fill="#0b0b0b", stroke="#444"))
     if side == "F":
-        out.append(f'<text x="{X(0):.1f}" y="{Y(22.4):.1f}" class="tiny">FPC slot</text>')
+        out.append(f'<text x="{X(0):.1f}" y="{Y(24.0):.1f}" class="tiny">FPC slot</text>')
     # LEDs (front only)
     if side == "F":
         for i, (lx, ly) in enumerate(LEDS, 1):
