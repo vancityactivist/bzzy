@@ -3,7 +3,7 @@
 import { useActionState, useEffect, useId, useRef, useState, useTransition } from "react";
 
 import { CheckIcon, PlusIcon, TrashIcon, WebhookIcon } from "@/components/icons";
-import { Button, Field, Input } from "@/components/ui";
+import { Button, cx, Field, Input } from "@/components/ui";
 import { EVENT_INFO, WEBHOOK_EVENTS } from "@/lib/webhook-rules";
 
 import {
@@ -88,8 +88,8 @@ export function WebhookActions({ id, url, enabled }: { id: string; url: string; 
   const [pending, start] = useTransition();
   const [result, setResult] = useState<WebhookTestResult>(null);
   return (
-    <div className="flex flex-col items-end gap-2">
-      <div className="flex flex-wrap justify-end gap-2">
+    <div className="flex flex-col gap-2 sm:items-end">
+      <div className="flex flex-wrap gap-2 sm:justify-end">
         <Button size="sm" disabled={pending} onClick={() => start(async () => setResult(await testWebhookAction(id)))}>
           <WebhookIcon />
           {pending ? "Working…" : "Send test"}
@@ -107,11 +107,12 @@ export function WebhookActions({ id, url, enabled }: { id: string; url: string; 
           }}
         >
           <TrashIcon />
-          Remove
+          {/* Just the bin on a phone, so all three fit on one line. */}
+          <span className="max-sm:sr-only">Remove</span>
         </Button>
       </div>
       {result && (
-        <p role="status" className={result.ok ? "text-sm text-free" : "text-sm text-danger"}>
+        <p role="status" className={cx("text-sm [overflow-wrap:anywhere] sm:max-w-64 sm:text-right", result.ok ? "text-free" : "text-danger")}>
           {result.message}
         </p>
       )}

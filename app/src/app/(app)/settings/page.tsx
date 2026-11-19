@@ -301,11 +301,11 @@ async function SettingsContent() {
             {webhooks.map((w) => {
               const last = w.recent[0];
               return (
-                <li key={w.id} className="space-y-3 p-4">
-                  <div className="flex flex-wrap items-start justify-between gap-3">
+                <li key={w.id} className="space-y-3 p-3 sm:p-4">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                     <div className="min-w-0 flex-1">
                       <p className="flex flex-wrap items-center gap-2 font-medium">
-                        {w.description && <span>{w.description}</span>}
+                        {w.description && <span className="min-w-0 break-words">{w.description}</span>}
                         {!w.enabled && (
                           <Badge tone={w.failures >= FAILURES_TO_DISABLE ? "busy" : "neutral"}>
                             {w.failures >= FAILURES_TO_DISABLE ? `off after ${FAILURES_TO_DISABLE} failures` : "off"}
@@ -316,13 +316,17 @@ async function SettingsContent() {
                         {w.url}
                       </p>
                       <p className="mt-0.5 text-sm text-muted">{w.events.map((e) => EVENT_INFO[e].label).join(", ")}</p>
+                      {/* Just whether the last one got there; the reason is under Recent deliveries. */}
                       <p className="mt-0.5 text-sm text-muted">
                         {last ? (
                           <>
                             <span title={absoluteTime(new Date(last.at))}>last sent {relativeTime(new Date(last.at))}</span>
                             {" · "}
-                            {last.ok ? <span className="text-free">delivered</span> : <span className="text-danger">failed: {last.error}</span>}
-                            {w.failures > 1 && ` (${w.failures} in a row)`}
+                            {last.ok ? (
+                              <span className="text-free">delivered</span>
+                            ) : (
+                              <span className="text-danger">failed{w.failures > 1 && `, ${w.failures} in a row`}</span>
+                            )}
                           </>
                         ) : (
                           "nothing sent yet"
@@ -336,13 +340,17 @@ async function SettingsContent() {
                       <summary className="cursor-pointer text-muted select-none hover:text-foreground">Recent deliveries ({w.recent.length})</summary>
                       <ul className="mt-2 space-y-1">
                         {w.recent.map((d) => (
-                          <li key={`${d.id}-${d.at}`} className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
-                            <StatusDot status={d.ok ? "free" : "busy"} />
-                            <span className="font-mono text-[13px]">{d.type}</span>
-                            <span className="text-muted" title={absoluteTime(new Date(d.at))}>
-                              {relativeTime(new Date(d.at))}
+                          <li key={`${d.id}-${d.at}`} className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-2">
+                            <span className="flex h-5 items-center">
+                              <StatusDot status={d.ok ? "free" : "busy"} />
                             </span>
-                            <span className="text-muted">
+                            <span className="flex flex-wrap gap-x-2">
+                              <span className="font-mono text-[13px]">{d.type}</span>
+                              <span className="text-muted" title={absoluteTime(new Date(d.at))}>
+                                {relativeTime(new Date(d.at))}
+                              </span>
+                            </span>
+                            <span className="col-start-2 text-muted [overflow-wrap:anywhere]">
                               {d.ok ? `${d.code} in ${d.ms} ms` : d.error}
                               {d.tries > 1 && ` · ${d.tries} tries`}
                             </span>

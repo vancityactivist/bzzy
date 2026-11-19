@@ -24,7 +24,7 @@ export const EVENT_INFO: Record<WebhookEvent, { label: string; detail: string }>
   "status.changed": { label: "Status changed", detail: "From the app, a light, the API, a meeting starting or ending, or working hours" },
   "show.changed": { label: "Show now changed", detail: "Show now goes up, changes or comes down" },
   "button.pressed": { label: "Button pressed", detail: "Someone pressed the button on one of your lights" },
-  "push.received": { label: "Team push", detail: "A team admin sent a push to you (or to everyone in your team)" },
+  "push.received": { label: "Team announcement", detail: "A team admin sent an announcement to you (or to everyone in your team)" },
 };
 
 export function encodeEvents(events: readonly WebhookEvent[]): string {
