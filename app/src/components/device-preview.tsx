@@ -54,6 +54,7 @@ export function DevicePreview({
   className = "",
   ring,
   lazy = false,
+  dark = false,
 }: {
   view: ScreenView;
   gifSrc: string | null; // the status's GIF, or the show-now GIF for "show-gif"; null: no GIF
@@ -64,6 +65,8 @@ export function DevicePreview({
   ring?: LedStyle | null;
   // Below the fold (the landing page): load the GIF lazily, with its box's size up front.
   lazy?: boolean;
+  // Outside working hours: backlight off and ring faded out (main.cpp), the screen kept underneath.
+  dark?: boolean;
 }) {
   const bg = SCREEN_BG[view.status];
   const label = SCREEN_LABEL[view.status];
@@ -87,6 +90,7 @@ export function DevicePreview({
     until,
     view.notice,
     view.online ? null : "offline",
+    dark ? "dark (off hours)" : null,
     flash ? `ring ${PATTERN_WORD[flash.pattern]}` : null,
   ]
     .filter(Boolean)
@@ -95,7 +99,7 @@ export function DevicePreview({
   return (
     <div className={`relative inline-block h-max ${className}`} role="img" aria-label={`Screen preview: ${summary}`}>
       {/* LED glow through the translucent frame. "unknown" breathes, like leds.cpp. */}
-      {flash?.pattern === "spin" ? (
+      {dark ? null : flash?.pattern === "spin" ? (
         // An arc going round: a turning cone of light behind the frame.
         <div aria-hidden className="absolute -inset-[6%] overflow-hidden rounded-[32%/28%]" style={{ filter: `blur(${10 * scale}px)` }}>
           <div
@@ -237,6 +241,8 @@ export function DevicePreview({
               )}
             </svg>
           </div>
+          {/* The backlight off: what's drawn is still there, just barely visible. */}
+          {dark && <div aria-hidden className="absolute inset-0 bg-black/90" />}
         </div>
       </div>
     </div>

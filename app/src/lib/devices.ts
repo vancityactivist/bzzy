@@ -26,6 +26,8 @@ export type DeviceSummary = {
   pollSec: number;
   canManage: boolean;
   firmware: DeviceFirmware;
+  // What its firmware says it understands ("hours,leds,push"); null before it has said.
+  features: string | null;
   ring: DeviceRing;
 };
 
@@ -62,6 +64,7 @@ export async function devicesForUser(userId: string): Promise<DeviceSummary[]> {
         firmwareFailed: d.firmwareFailed,
         updateRequestedAt: d.updateRequestedAt,
       },
+      features: d.features,
       ring: { allowFlash: d.allowFlash, ledStyles: d.ledStyles, meetingWarn: d.meetingWarn },
     };
   });
