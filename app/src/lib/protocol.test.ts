@@ -106,6 +106,14 @@ describe("device overrides", () => {
     expect(shouldApplyDeviceOverride(null, { active: true, status: "dnd", updatedAt: NOW }, NOW)).toBe(true);
   });
 
+  it("lets a light's second press in the same second replace its first", () => {
+    const current = presence({ updatedAt: NOW });
+    const second = { active: true, status: "dnd" as const, updatedAt: NOW };
+    expect(shouldApplyDeviceOverride(current, second, NOW, true)).toBe(true);
+    expect(shouldApplyDeviceOverride(current, second, NOW, false)).toBe(false);
+    expect(shouldApplyDeviceOverride(current, { ...second, updatedAt: NOW - 1 }, NOW, true)).toBe(false);
+  });
+
   it("rejects presses from a device clock far in the future", () => {
     expect(shouldApplyDeviceOverride(null, { active: true, status: "dnd", updatedAt: NOW + 3600 }, NOW)).toBe(false);
   });

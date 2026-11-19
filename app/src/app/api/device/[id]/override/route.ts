@@ -1,7 +1,7 @@
 import { after, type NextRequest } from "next/server";
 
 import { authenticateDevice, markSeen, unauthorized } from "@/lib/device-auth";
-import { getPresence, setPresence } from "@/lib/presence";
+import { getPresenceAndSource, setPresence } from "@/lib/presence";
 import { hasFeature, nowSeconds, overrideBody, presenceFromDevice, shouldApplyDeviceOverride } from "@/lib/protocol";
 import { ackPush, pushForDevice } from "@/lib/pushes";
 import { clearShow } from "@/lib/show";
@@ -18,8 +18,8 @@ export async function POST(req: NextRequest, ctx: RouteContext<"/api/device/[id]
     return Response.json({ error: "bad request" }, { status: 400, headers: { "Cache-Control": "no-store" } });
   }
 
-  const current = await getPresence(device.ownerUserId);
-  const applied = shouldApplyDeviceOverride(current, parsed.data, nowSeconds());
+  const { presence: current, source } = await getPresenceAndSource(device.ownerUserId);
+  const applied = shouldApplyDeviceOverride(current, parsed.data, nowSeconds(), source === device.id);
   if (applied) {
     // A press on the device also takes down "show now" (the device already has).
     await Promise.all([

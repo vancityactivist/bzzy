@@ -157,7 +157,7 @@ Sent when someone presses the button on the device. Retried until it succeeds.
 { "active": true, "status": "dnd", "updatedAt": 1762891300 }
 ```
 
-The app should store it as the current manual override, keeping `updatedAt` as sent. When the device and the app disagree, the newer `updatedAt` wins, and a tie goes to the app. An applied press also clears "show now" if it's older than the press.
+The app should store it as the current manual override, keeping `updatedAt` as sent. When the device and the app disagree, the newer `updatedAt` wins, and a tie goes to the app, except that a press tied with the last press from the same light replaces it (it's that light's latest). Each press is sent strictly newer than the one before it, so two presses in the same second get one second apart. An applied press also clears "show now" if it's older than the press.
 
 ## How the device decides what to show
 

@@ -112,6 +112,29 @@ void test_button_cycles_and_returns_to_auto() {
   TEST_ASSERT_EQUAL(Source::Calendar, r.source);
 }
 
+void test_quick_presses_get_increasing_times() {
+  State st = freshState();
+  cycleLocalOverride(st, T0);  // Free
+  cycleLocalOverride(st, T0);  // Busy, same second
+  TEST_ASSERT_EQUAL(Status::Busy, st.manual.status);
+  TEST_ASSERT_EQUAL_UINT32(T0 + 1, st.manual.updatedAt);
+  clearLocalOverride(st, T0);
+  TEST_ASSERT_EQUAL_UINT32(T0 + 2, st.manual.updatedAt);
+  cycleLocalOverride(st, T0);  // starts again from Free, still newer than the clear
+  TEST_ASSERT_EQUAL(Status::Free, st.manual.status);
+  TEST_ASSERT_EQUAL_UINT32(T0 + 3, st.manual.updatedAt);
+
+  // The app answers with the second press: the light keeps it, not the first.
+  State cached = freshState();
+  cycleLocalOverride(cached, T0);
+  cycleLocalOverride(cached, T0);
+  State server = freshState();
+  server.manual = cached.manual;
+  server.manual.local = false;
+  mergeFromServer(cached, server, T0 + 1);
+  TEST_ASSERT_EQUAL(Status::Busy, cached.manual.status);
+}
+
 void test_long_press_clears_to_auto() {
   State st = freshState();
   addBlock(st, T0, T0 + 3600, Status::Busy, "");
@@ -423,6 +446,7 @@ int main(int, char**) {
   RUN_TEST(test_never_synced_uses_fallback);
   RUN_TEST(test_no_clock_keeps_manual_but_not_calendar);
   RUN_TEST(test_button_cycles_and_returns_to_auto);
+  RUN_TEST(test_quick_presses_get_increasing_times);
   RUN_TEST(test_long_press_clears_to_auto);
   RUN_TEST(test_merge_keeps_newer_local_press);
   RUN_TEST(test_merge_takes_newer_server_override);
