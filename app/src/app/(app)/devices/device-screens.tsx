@@ -36,7 +36,7 @@ export function DeviceScreens({
 
   return (
     <details className="group w-full border-t border-line pt-3">
-      <summary className="-mx-2 flex h-8 w-fit cursor-pointer list-none items-center gap-1.5 rounded-lg px-2 text-sm font-medium text-muted transition-colors select-none hover:bg-subtle hover:text-foreground [&::-webkit-details-marker]:hidden">
+      <summary className="-mx-2 flex h-8 w-fit cursor-pointer list-none items-center gap-1.5 rounded-lg px-2 text-sm font-medium text-muted-foreground transition-colors select-none hover:bg-subtle hover:text-foreground [&::-webkit-details-marker]:hidden">
         <ChevronRightIcon className="size-4 transition-transform duration-150 group-open:rotate-90" />
         Screen and GIFs
       </summary>
@@ -175,7 +175,7 @@ function ScreenSimulator({ defaultStatus, srcFor }: { defaultStatus: Status; src
             Can&apos;t reach the app
           </label>
         </div>
-        <p className="text-xs text-muted">
+        <p className="text-xs text-muted-foreground">
           Long messages run off the edges, and the screen&apos;s font has no accents or emoji, so those are left out.
         </p>
       </div>

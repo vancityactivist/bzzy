@@ -25,7 +25,7 @@ export const metadata: Metadata = { title: "Devices" };
 export default function DevicesPage() {
   return (
     <Container size="narrow">
-      <Suspense fallback={<p className="text-muted">Loading…</p>}>
+      <Suspense fallback={<p className="text-muted-foreground">Loading…</p>}>
         <DevicesContent />
       </Suspense>
     </Container>
@@ -68,7 +68,7 @@ async function DevicesContent() {
       <li key={d.id}>
         <Card className="flex flex-wrap items-center gap-x-4 gap-y-4">
           <div className="flex min-w-0 flex-1 basis-60 items-center gap-3">
-            <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-subtle text-muted">
+            <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-subtle text-muted-foreground">
               <DeviceIcon />
             </div>
             <div className="min-w-0">
@@ -76,7 +76,7 @@ async function DevicesContent() {
                 <h2 className="truncate font-semibold tracking-tight">{d.name}</h2>
                 <SeenBadge lastSeenAt={d.lastSeenAt} pollSec={d.pollSec} now={now} />
               </div>
-              <p className="mt-0.5 flex flex-wrap items-center gap-x-2 text-sm text-muted">
+              <p className="mt-0.5 flex flex-wrap items-center gap-x-2 text-sm text-muted-foreground">
                 <span>{d.teamName}</span>
                 <span aria-hidden="true">·</span>
                 <code className="font-mono text-xs">{d.id}</code>
@@ -95,9 +95,9 @@ async function DevicesContent() {
           {settingsFor(d, i).length > 0 && (
             <details className="group/settings w-full border-t border-line pt-3">
               <summary className="-mx-2 flex h-9 cursor-pointer list-none items-center gap-1.5 rounded-lg px-2 text-sm font-medium transition-colors select-none hover:bg-subtle [&::-webkit-details-marker]:hidden">
-                <ChevronRightIcon className="size-4 shrink-0 text-muted transition-transform duration-150 group-open/settings:rotate-90" />
+                <ChevronRightIcon className="size-4 shrink-0 text-muted-foreground transition-transform duration-150 group-open/settings:rotate-90" />
                 Settings
-                <span className="min-w-0 truncate font-normal text-muted">· {settingsFor(d, i).join(", ")}</span>
+                <span className="min-w-0 truncate font-normal text-muted-foreground">· {settingsFor(d, i).join(", ")}</span>
               </summary>
               <div className="mt-3 space-y-4">
                 {d.ownerUserId === user.id && sharedTeams.length > 0 && (
@@ -160,7 +160,7 @@ async function DevicesContent() {
         groups.map((g) => (
           <section key={g.key} aria-labelledby={groups.length > 1 ? `lights-${g.key}` : undefined} className="space-y-3">
             {groups.length > 1 && (
-              <h2 id={`lights-${g.key}`} className="text-sm font-medium text-muted">
+              <h2 id={`lights-${g.key}`} className="text-sm font-medium text-muted-foreground">
                 {g.title}
               </h2>
             )}

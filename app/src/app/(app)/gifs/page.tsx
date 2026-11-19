@@ -19,7 +19,7 @@ export const metadata: Metadata = { title: "GIFs" };
 export default function GifsPage() {
   return (
     <Container>
-      <Suspense fallback={<p className="text-muted">Loading…</p>}>
+      <Suspense fallback={<p className="text-muted-foreground">Loading…</p>}>
         <GifsContent />
       </Suspense>
     </Container>

@@ -34,7 +34,7 @@ export function NavLinks({ className }: { className?: string }) {
             aria-current={active ? "page" : undefined}
             className={cx(
               "flex h-8 items-center rounded-full px-3 text-sm font-medium transition-colors duration-150",
-              active ? "bg-subtle text-foreground" : "text-muted hover:text-foreground",
+              active ? "bg-subtle text-foreground" : "text-muted-foreground hover:text-foreground",
             )}
           >
             {label}
@@ -65,7 +65,7 @@ export function TabBar() {
                   aria-current={active ? "page" : undefined}
                   className={cx(
                     "flex h-full flex-col items-center justify-center gap-1 text-[11px] font-medium transition-colors duration-150",
-                    active ? "text-foreground" : "text-muted hover:text-foreground",
+                    active ? "text-foreground" : "text-muted-foreground hover:text-foreground",
                   )}
                 >
                   <span

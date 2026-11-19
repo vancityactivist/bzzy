@@ -14,7 +14,7 @@ export const metadata: Metadata = { title: "Join a team", robots: { index: false
 export default function JoinPage(props: PageProps<"/join/[token]">) {
   return (
     <div className="mx-auto w-full max-w-md px-4 py-12 sm:py-20">
-      <Suspense fallback={<p className="text-center text-muted">Loading…</p>}>
+      <Suspense fallback={<p className="text-center text-muted-foreground">Loading…</p>}>
         <JoinContent {...props} />
       </Suspense>
     </div>
@@ -24,11 +24,11 @@ export default function JoinPage(props: PageProps<"/join/[token]">) {
 function Header({ title, children }: { title: string; children?: React.ReactNode }) {
   return (
     <div className="flex flex-col items-center text-center">
-      <span aria-hidden className="flex size-11 items-center justify-center rounded-xl bg-subtle text-muted">
+      <span aria-hidden className="flex size-11 items-center justify-center rounded-xl bg-subtle text-muted-foreground">
         <UsersIcon className="size-5" />
       </span>
       <h1 className="mt-4 text-xl font-semibold tracking-tight text-balance">{title}</h1>
-      {children && <p className="mt-1.5 text-sm text-pretty text-muted">{children}</p>}
+      {children && <p className="mt-1.5 text-sm text-pretty text-muted-foreground">{children}</p>}
     </div>
   );
 }
@@ -84,7 +84,7 @@ async function JoinContent({ params }: PageProps<"/join/[token]">) {
           <div className="space-y-6">
             <NewAccountForm token={token} teamName={invite.teamName} />
             <div className="border-t border-line pt-5">
-              <p className="mb-3 text-center text-sm text-muted">Already use bzzy?</p>
+              <p className="mb-3 text-center text-sm text-muted-foreground">Already use bzzy?</p>
               <SignInToJoin token={token} />
             </div>
           </div>

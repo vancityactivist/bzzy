@@ -11,11 +11,28 @@
 
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { toast } from "sonner";
 
 import { deleteGifsAction, renameGifAction, setFavouriteAction, uploadGifAction } from "@/app/actions";
 import { DevicePreview } from "@/components/device-preview";
 import { CheckIcon, ImageIcon, PencilIcon, PlayIcon, PlusIcon, SearchIcon, StarIcon, TrashIcon, UploadIcon, XIcon } from "@/components/icons";
-import { Badge, Button, buttonClass, cx, EmptyState, Input } from "@/components/ui";
+import { EmptyState } from "@/components/ui";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Slider } from "@/components/ui/slider";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { cn } from "@/lib/utils";
 import type { ScreenView } from "@/lib/screen";
 
 export type LibraryItem = {
@@ -169,6 +186,7 @@ export function GifLibrary({ items: initial, add }: { items: LibraryItem[]; add:
         !/^image\/(gif|png|jpeg|webp)$/.test(f.type) ? "Not a GIF, PNG, JPEG or WebP" : f.size > MAX_BYTES ? "Over 4 MB" : undefined,
     }));
     setUploads(queue.map((u) => ({ name: u.file.name, state: u.error ? "failed" : "waiting", error: u.error })));
+    let added = 0;
     for (const [n, u] of queue.entries()) {
       if (u.error) continue;
       setUploads((all) => all.map((x, i) => (i === n ? { ...x, state: "uploading" } : x)));
@@ -177,7 +195,9 @@ export function GifLibrary({ items: initial, add }: { items: LibraryItem[]; add:
       fd.set("name", u.file.name.replace(/\.[^.]+$/, "").slice(0, 60));
       const r = await uploadGifAction(null, fd);
       setUploads((all) => all.map((x, i) => (i === n ? { ...x, state: r?.ok ? "done" : "failed", error: r?.ok ? undefined : r?.error } : x)));
+      if (r?.ok) added++;
     }
+    if (added) toast.success(added === 1 ? "Added 1 GIF" : `Added ${added} GIFs`);
     router.refresh();
   };
 
@@ -191,14 +211,16 @@ export function GifLibrary({ items: initial, add }: { items: LibraryItem[]; add:
       return next;
     });
   const deletable = items.filter((i) => selected.has(i.choice) && i.editable);
+  const [confirming, setConfirming] = useState(false);
   const deleteSelected = () => {
     if (!deletable.length) return;
-    if (!confirm(`Delete ${deletable.length === 1 ? "this GIF" : `these ${deletable.length} GIFs`}? Lights using them go back to the built-in ones.`)) return;
+    const n = deletable.length;
     startDelete(async () => {
       for (const i of deletable) edit(i.choice, { gone: true });
       await deleteGifsAction(deletable.map((i) => i.id!));
       setSelected(new Set());
       setSelecting(false);
+      toast.success(n === 1 ? "Deleted 1 GIF" : `Deleted ${n} GIFs`);
     });
   };
 
@@ -266,7 +288,7 @@ export function GifLibrary({ items: initial, add }: { items: LibraryItem[]; add:
           <div className="space-y-3">
             <div className="flex flex-wrap items-center gap-2">
               <div className="relative min-w-48 flex-1">
-                <SearchIcon className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted" />
+                <SearchIcon className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   ref={search}
                   type="search"
@@ -283,16 +305,16 @@ export function GifLibrary({ items: initial, add }: { items: LibraryItem[]; add:
                   placeholder={`Search ${items.length} GIFs`}
                   className="pr-9 pl-9"
                 />
-                <kbd className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 rounded border border-line px-1.5 text-[0.6875rem] text-muted max-sm:hidden">
+                <kbd className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 rounded border px-1.5 text-[0.6875rem] text-muted-foreground max-sm:hidden">
                   /
                 </kbd>
               </div>
-              <Button variant={adding ? "secondary" : "primary"} onClick={() => setAdding((a) => !a)} aria-expanded={adding}>
+              <Button variant={adding ? "outline" : "default"} onClick={() => setAdding((a) => !a)} aria-expanded={adding}>
                 {adding ? <XIcon /> : <PlusIcon />}
                 {adding ? "Close" : "Add GIFs"}
               </Button>
               <Button
-                variant="secondary"
+                variant="outline"
                 aria-pressed={selecting}
                 onClick={() => {
                   setSelecting((s) => !s);
@@ -304,35 +326,35 @@ export function GifLibrary({ items: initial, add }: { items: LibraryItem[]; add:
             </div>
 
             <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
-              <div className="relative -mx-1 flex min-w-0 flex-1 gap-1.5 overflow-x-auto px-1 py-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" role="group" aria-label="Show">
-                {FILTERS.filter((f) => f.id === "all" || counts[f.id] > 0 || f.id === filter).map((f) => (
-                  <button
-                    key={f.id}
-                    type="button"
-                    aria-pressed={filter === f.id}
-                    onClick={() => setFilter(f.id)}
-                    className={cx(
-                      "flex h-8 shrink-0 items-center gap-1.5 rounded-full border px-3 text-sm font-medium whitespace-nowrap transition-colors",
-                      filter === f.id ? "border-foreground bg-foreground text-background" : "border-line bg-card text-muted hover:border-line-strong hover:text-foreground",
-                    )}
-                  >
-                    {f.id === "favourites" && <StarIcon className="size-3.5" />}
-                    {f.label}
-                    {f.id !== "all" && <span className="text-xs opacity-60">{counts[f.id]}</span>}
-                  </button>
-                ))}
+              <div className="relative -mx-1 min-w-0 flex-1 overflow-x-auto px-1 py-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                <ToggleGroup
+                  type="single"
+                  variant="pill"
+                  size="sm"
+                  spacing={1.5}
+                  value={filter}
+                  onValueChange={(v) => v && setFilter(v as Filter)}
+                  aria-label="Show"
+                >
+                  {FILTERS.filter((f) => f.id === "all" || counts[f.id] > 0 || f.id === filter).map((f) => (
+                    <ToggleGroupItem key={f.id} value={f.id} className="shrink-0 gap-1.5 px-3">
+                      {f.id === "favourites" && <StarIcon className="size-3.5" />}
+                      {f.label}
+                      {f.id !== "all" && <span className="text-xs opacity-60">{counts[f.id]}</span>}
+                    </ToggleGroupItem>
+                  ))}
+                </ToggleGroup>
               </div>
-              <label className="flex shrink-0 items-center gap-2 text-xs text-muted">
+              <label className="flex shrink-0 items-center gap-2 text-xs text-muted-foreground">
                 <span aria-hidden className="size-2.5 rounded-sm border border-current" />
-                <input
-                  type="range"
+                <Slider
                   min={MIN_SIZE}
                   max={MAX_SIZE}
                   step={1}
-                  value={size}
-                  onChange={(e) => pickSize(Number(e.target.value))}
+                  value={[size]}
+                  onValueChange={([n]) => pickSize(n)}
                   aria-label="GIF size"
-                  className="w-28 accent-foreground"
+                  className="w-28"
                 />
                 <span aria-hidden className="size-4 rounded-sm border border-current" />
               </label>
@@ -344,19 +366,33 @@ export function GifLibrary({ items: initial, add }: { items: LibraryItem[]; add:
           {uploads.length > 0 && <UploadList uploads={uploads} onClose={() => setUploads([])} />}
 
           {selecting && (
-            <div className="sticky top-16 z-20 flex flex-wrap items-center gap-3 rounded-xl border border-line bg-card/95 p-2.5 pl-4 shadow-card backdrop-blur max-lg:top-[4.5rem]">
+            <div className="sticky top-16 z-20 flex flex-wrap items-center gap-3 rounded-xl border bg-card/95 p-2.5 pl-4 shadow-card backdrop-blur max-lg:top-[4.5rem]">
               <p className="flex-1 text-sm">
                 {selected.size === 0
                   ? "Tap GIFs to select them."
                   : `${selected.size} selected${deletable.length < selected.size ? ` · ${selected.size - deletable.length} you can't delete` : ""}`}
               </p>
-              <Button size="sm" variant="secondary" onClick={() => setSelected(new Set(listedOrAll(browsing, listed, items).filter((i) => i.editable).map((i) => i.choice)))}>
+              <Button size="sm" variant="outline" onClick={() => setSelected(new Set(listedOrAll(browsing, listed, items).filter((i) => i.editable).map((i) => i.choice)))}>
                 Select all yours
               </Button>
-              <Button size="sm" variant="danger" disabled={!deletable.length || deleting} onClick={deleteSelected}>
+              <Button size="sm" variant="destructive" disabled={!deletable.length || deleting} onClick={() => setConfirming(true)}>
                 <TrashIcon />
                 {deleting ? "Deleting…" : `Delete${deletable.length ? ` ${deletable.length}` : ""}`}
               </Button>
+              <AlertDialog open={confirming} onOpenChange={setConfirming}>
+                <AlertDialogContent size="sm">
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Delete {deletable.length === 1 ? "this GIF" : `${deletable.length} GIFs`}?</AlertDialogTitle>
+                    <AlertDialogDescription>Lights using {deletable.length === 1 ? "it" : "them"} go back to the built-in ones.</AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Keep</AlertDialogCancel>
+                    <AlertDialogAction variant="destructive" onClick={deleteSelected}>
+                      Delete
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </div>
           )}
 
@@ -383,7 +419,7 @@ export function GifLibrary({ items: initial, add }: { items: LibraryItem[]; add:
             </EmptyState>
           ) : (
             <section aria-label={FILTERS.find((f) => f.id === filter)?.label}>
-              <p className="mb-3 text-sm text-muted">
+              <p className="mb-3 text-sm text-muted-foreground">
                 {listed.length} {listed.length === 1 ? "GIF" : "GIFs"}
                 {filter !== "all" && (
                   <>
@@ -423,13 +459,13 @@ function TryOn({
   return (
     <section
       aria-label="Try it on your light"
-      className="sticky top-0 z-10 -mx-4 border-b border-line bg-background/90 px-4 py-3 backdrop-blur max-lg:pt-0 sm:-mx-6 sm:px-6 lg:top-20 lg:mx-0 lg:rounded-2xl lg:border lg:bg-card lg:p-5 lg:shadow-card"
+      className="sticky top-0 z-10 -mx-4 border-b bg-background/90 px-4 py-3 backdrop-blur max-lg:pt-0 sm:-mx-6 sm:px-6 lg:top-20 lg:mx-0 lg:rounded-2xl lg:border lg:bg-card lg:p-5 lg:shadow-card"
     >
       <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-4 lg:grid-cols-1 lg:gap-y-4">
         <div className="flex justify-center max-lg:[zoom:0.42]">
           <DevicePreview view={TRY_ON} gifSrc={item?.src ?? null} scale={1} className="m-4 lg:m-0 lg:[zoom:0.85]" />
         </div>
-        {item ? <Details item={item} key={item.choice} onFavourite={onFavourite} onRename={onRename} /> : <p className="text-sm text-muted">No GIFs yet.</p>}
+        {item ? <Details item={item} key={item.choice} onFavourite={onFavourite} onRename={onRename} /> : <p className="text-sm text-muted-foreground">No GIFs yet.</p>}
       </div>
     </section>
   );
@@ -477,7 +513,7 @@ function Details({
             onKeyDown={(e) => e.key === "Escape" && setRenaming(false)}
             className="h-8 min-w-0 flex-1 text-sm"
           />
-          <Button size="icon-sm" variant="primary" disabled={saving} aria-label="Save name">
+          <Button size="icon-sm" disabled={saving} aria-label="Save name">
             <CheckIcon />
           </Button>
         </form>
@@ -494,34 +530,37 @@ function Details({
         </div>
       )}
       {error && (
-        <p className="text-xs text-danger" role="alert">
+        <p className="text-xs text-destructive" role="alert">
           {error}
         </p>
       )}
-      <p className="truncate text-xs text-muted">{meta.join(" · ")}</p>
+      <p className="truncate text-xs text-muted-foreground">{meta.join(" · ")}</p>
       {item.usedBy.length > 0 && (
         <div className="flex flex-wrap gap-1 max-lg:hidden">
           {item.usedBy.slice(0, 4).map((u) => (
-            <Badge key={u}>{u}</Badge>
+            <Badge key={u} variant="muted">
+              {u}
+            </Badge>
           ))}
-          {item.usedBy.length > 4 && <Badge>+{item.usedBy.length - 4} more</Badge>}
+          {item.usedBy.length > 4 && <Badge variant="muted">+{item.usedBy.length - 4} more</Badge>}
         </div>
       )}
       <div className="flex gap-2 pt-1">
-        <a href={showHref(item.choice)} className={buttonClass("primary", "sm")}>
-          <PlayIcon />
-          Show now
-        </a>
+        <Button asChild size="sm">
+          <a href={showHref(item.choice)}>
+            <PlayIcon />
+            Show now
+          </a>
+        </Button>
         <Button
           size="icon-sm"
-          variant="secondary"
+          variant="outline"
           aria-pressed={item.favourite}
           aria-label={item.favourite ? "Remove from favourites" : "Add to favourites"}
           title={item.favourite ? "Favourite" : "Add to favourites"}
           onClick={() => onFavourite(item)}
-          className="size-8"
         >
-          <StarIcon className={cx("size-4", item.favourite && "fill-current text-away")} />
+          <StarIcon className={cn("size-4", item.favourite && "fill-current text-away")} />
         </Button>
       </div>
     </div>
@@ -535,10 +574,10 @@ function Shelf({ title, count, onSeeAll, hint, children }: { title: string; coun
     <section aria-label={title} className="min-w-0">
       <div className="mb-2.5 flex items-baseline justify-between gap-3">
         <h2 className="font-semibold tracking-tight">
-          {title} {count > 0 && <span className="text-sm font-normal text-muted">{count}</span>}
+          {title} {count > 0 && <span className="text-sm font-normal text-muted-foreground">{count}</span>}
         </h2>
         {count > 6 && (
-          <button type="button" onClick={onSeeAll} className="text-sm text-muted underline-offset-2 hover:text-foreground hover:underline">
+          <button type="button" onClick={onSeeAll} className="text-sm text-muted-foreground underline-offset-2 hover:text-foreground hover:underline">
             See all
           </button>
         )}
@@ -546,7 +585,7 @@ function Shelf({ title, count, onSeeAll, hint, children }: { title: string; coun
       {/* `relative` keeps anything absolutely placed inside the scroller from widening the page. */}
       <div className="relative -mx-1 flex snap-x scroll-px-1 gap-3 overflow-x-auto px-1 pt-1 pb-2 [scrollbar-width:thin]">
         {children}
-        {hint && <p className="self-center px-2 text-sm text-muted">{hint}</p>}
+        {hint && <p className="self-center px-2 text-sm text-muted-foreground">{hint}</p>}
       </div>
     </section>
   );
@@ -558,7 +597,7 @@ function AddTile({ size, onClick }: { size: number; onClick: () => void }) {
       type="button"
       onClick={onClick}
       style={{ width: size }}
-      className="flex aspect-square shrink-0 snap-start flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-line-strong/70 text-muted transition-colors hover:border-foreground hover:text-foreground"
+      className="flex aspect-square shrink-0 snap-start flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-line-strong/70 text-muted-foreground transition-colors hover:border-foreground hover:text-foreground"
     >
       <PlusIcon className="size-5" />
       <span className="text-xs font-medium">Add</span>
@@ -622,7 +661,7 @@ function Tile({
   const isSelected = selected.has(item.choice);
   return (
     <div
-      className={cx("group relative shrink-0 snap-start", !fill && "w-[var(--w)]")}
+      className={cn("group relative shrink-0 snap-start", !fill && "w-[var(--w)]")}
       style={fill ? undefined : ({ "--w": `${size}px` } as React.CSSProperties)}
       onMouseEnter={() => onHover(item.choice)}
       onMouseLeave={() => onHover(null)}
@@ -647,7 +686,7 @@ function Tile({
             onFavourite(item);
           }
         }}
-        className={cx(
+        className={cn(
           "relative block aspect-square w-full overflow-hidden rounded-xl bg-[#0b0b0c] transition-[box-shadow,transform] duration-150 hover:ring-2 hover:ring-line-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground motion-safe:hover:scale-[1.02]",
           (selecting ? isSelected : pinned === item.choice) && "ring-2 ring-foreground ring-offset-2 ring-offset-background hover:ring-foreground",
         )}
@@ -659,7 +698,7 @@ function Tile({
         </span>
         {selecting && (
           <span
-            className={cx(
+            className={cn(
               "absolute top-1.5 left-1.5 flex size-5 items-center justify-center rounded-full border-2",
               isSelected ? "border-foreground bg-foreground text-background" : "border-white/80 bg-black/30",
               !item.editable && "opacity-40",
@@ -677,12 +716,12 @@ function Tile({
             aria-pressed={item.favourite}
             title={item.favourite ? "Favourite" : "Add to favourites"}
             onClick={() => onFavourite(item)}
-            className={cx(
+            className={cn(
               "absolute top-1 right-1 flex size-7 items-center justify-center rounded-full bg-black/45 text-white backdrop-blur transition-opacity hover:bg-black/70",
               item.favourite ? "opacity-100" : "opacity-0 group-hover:opacity-100 focus-visible:opacity-100 max-lg:hidden",
             )}
           >
-            <StarIcon className={cx("size-3.5", item.favourite && "fill-current text-away")} />
+            <StarIcon className={cn("size-3.5", item.favourite && "fill-current text-away")} />
           </button>
           <a
             href={showHref(item.choice)}
@@ -708,7 +747,7 @@ function UploadList({
   const busy = uploads.some((u) => u.state === "waiting" || u.state === "uploading");
   const done = uploads.filter((u) => u.state === "done").length;
   return (
-    <div className="rounded-xl border border-line bg-card p-3 shadow-card" role="status">
+    <div className="rounded-xl border bg-card p-3 shadow-card" role="status">
       <div className="flex items-center justify-between gap-3">
         <p className="text-sm font-medium">{busy ? `Adding ${uploads.length} GIFs…` : `Added ${done} of ${uploads.length}`}</p>
         {!busy && (
@@ -720,9 +759,9 @@ function UploadList({
       <ul className="mt-2 max-h-40 space-y-1 overflow-y-auto text-sm">
         {uploads.map((u, i) => (
           <li key={i} className="flex items-center gap-2">
-            <span className={cx("size-2 shrink-0 rounded-full", u.state === "done" ? "bg-free" : u.state === "failed" ? "bg-busy" : u.state === "uploading" ? "animate-pulse bg-away" : "bg-line-strong")} />
+            <span className={cn("size-2 shrink-0 rounded-full", u.state === "done" ? "bg-free" : u.state === "failed" ? "bg-busy" : u.state === "uploading" ? "animate-pulse bg-away" : "bg-line-strong")} />
             <span className="min-w-0 flex-1 truncate">{u.name}</span>
-            {u.error && <span className="shrink-0 text-xs text-danger">{u.error}</span>}
+            {u.error && <span className="shrink-0 text-xs text-destructive">{u.error}</span>}
           </li>
         ))}
       </ul>

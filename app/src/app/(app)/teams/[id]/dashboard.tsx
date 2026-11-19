@@ -37,7 +37,7 @@ export function Dashboard({ cards, nowMs }: { cards: MemberCard[]; nowMs: number
         <h2 id="dashboard-heading" className="font-semibold tracking-tight">
           Right now
         </h2>
-        <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted">
+        <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
           {(["free", "busy", "dnd", "away"] as const)
             .filter((s) => counts[s])
             .map((s) => (
@@ -72,7 +72,7 @@ export function Dashboard({ cards, nowMs }: { cards: MemberCard[]; nowMs: number
                   <StatusDot status={c.status} size="sm" />
                   {STATUS_META[c.status].label}
                 </p>
-                <p className="mt-0.5 text-xs text-pretty text-muted">{sourceLine(c)}</p>
+                <p className="mt-0.5 text-xs text-pretty text-muted-foreground">{sourceLine(c)}</p>
               </div>
               <div className="flex shrink-0 flex-col items-end gap-1.5 sm:mt-auto sm:flex-row sm:flex-wrap sm:justify-center sm:pt-3">
                 <LightBadge c={c} nowMs={nowMs} />

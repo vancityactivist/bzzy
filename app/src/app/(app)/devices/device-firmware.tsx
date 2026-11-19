@@ -69,7 +69,7 @@ export function DeviceFirmware({
     <div className="flex w-full flex-wrap items-center gap-x-4 gap-y-2 border-t border-line pt-3 text-sm">
       <div className="flex min-w-0 flex-1 basis-64 flex-wrap items-center gap-x-2 gap-y-1">
         <Badge tone={state.kind === "available" || state.kind === "failed" ? "inverse" : "neutral"}>{d.badge}</Badge>
-        {d.text && <span className="text-muted">{d.text}</span>}
+        {d.text && <span className="text-muted-foreground">{d.text}</span>}
       </div>
       {canManage && (
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2">

@@ -15,7 +15,7 @@ export default function PairPage() {
         <div className="flex flex-col items-center text-center">
           <BzzyMark className="size-11" />
           <h1 className="mt-4 text-xl font-semibold tracking-tight">Add a light</h1>
-          <p className="mt-1.5 text-sm text-pretty text-muted">
+          <p className="mt-1.5 text-sm text-pretty text-muted-foreground">
             Plug the light in and connect it to Wi-Fi. It then shows a QR code and a short code. Scan the QR code, or type the code here.
           </p>
         </div>

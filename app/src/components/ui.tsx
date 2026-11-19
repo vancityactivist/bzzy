@@ -57,7 +57,7 @@ export function PageHeader({
     <div className={cx("flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between", className)}>
       <div className="min-w-0">
         <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
-        {description && <p className="mt-1 max-w-2xl text-sm text-muted">{description}</p>}
+        {description && <p className="mt-1 max-w-2xl text-sm text-muted-foreground">{description}</p>}
       </div>
       {actions && <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div>}
     </div>
@@ -76,7 +76,7 @@ const BUTTON_BASE =
 const BUTTON_VARIANTS: Record<ButtonVariant, string> = {
   primary: "bg-foreground text-background shadow-card hover:bg-foreground/85",
   secondary: "border border-line bg-card text-foreground shadow-card hover:border-line-strong hover:bg-subtle",
-  ghost: "text-muted hover:bg-subtle hover:text-foreground",
+  ghost: "text-muted-foreground hover:bg-subtle hover:text-foreground",
   danger: "border border-line bg-card text-danger shadow-card hover:border-danger/40 hover:bg-danger/5",
 };
 
@@ -142,7 +142,7 @@ export function CardHeader({
     <div className={cx("flex items-start justify-between gap-4", className)}>
       <div className="min-w-0">
         <h2 className="font-semibold tracking-tight">{title}</h2>
-        {description && <p className="mt-1 text-sm text-muted">{description}</p>}
+        {description && <p className="mt-1 text-sm text-muted-foreground">{description}</p>}
       </div>
       {actions && <div className="flex shrink-0 items-center gap-2">{actions}</div>}
     </div>
@@ -152,7 +152,7 @@ export function CardHeader({
 // ---- form controls ----
 
 const CONTROL =
-  "w-full rounded-xl border border-line bg-card text-sm text-foreground shadow-card transition-colors duration-150 placeholder:text-muted/70 hover:border-line-strong focus-visible:border-line-strong disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-danger";
+  "w-full rounded-xl border border-line bg-card text-sm text-foreground shadow-card transition-colors duration-150 placeholder:text-muted-foreground/70 hover:border-line-strong focus-visible:border-line-strong disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-danger";
 
 /** A 40px text input. Also styles type="file" sensibly. */
 export function Input({ className, ...props }: ComponentProps<"input">) {
@@ -186,7 +186,7 @@ export function Select({
       <select className={cx(CONTROL, "h-10 appearance-none pl-3 pr-9", className)} {...props}>
         {children}
       </select>
-      <ChevronDownIcon className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 text-muted" />
+      <ChevronDownIcon className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 text-muted-foreground" />
     </span>
   );
 }
@@ -220,7 +220,7 @@ export function Field({
           {error}
         </p>
       ) : (
-        hint && <p className="text-xs text-muted">{hint}</p>
+        hint && <p className="text-xs text-muted-foreground">{hint}</p>
       )}
     </div>
   );
@@ -258,7 +258,7 @@ export function StatusDot({
 export type BadgeTone = "neutral" | "inverse" | Status;
 
 const BADGE_TONES: Record<BadgeTone, string> = {
-  neutral: "border border-line bg-subtle text-muted",
+  neutral: "border border-line bg-subtle text-muted-foreground",
   inverse: "bg-foreground text-background",
   free: "bg-free/10 text-foreground ring-1 ring-inset ring-free/25",
   busy: "bg-busy/10 text-foreground ring-1 ring-inset ring-busy/25",
@@ -317,12 +317,12 @@ export function EmptyState({
       )}
     >
       {icon && (
-        <div className="mb-4 flex size-11 items-center justify-center rounded-xl bg-subtle text-muted [&_svg]:size-5">
+        <div className="mb-4 flex size-11 items-center justify-center rounded-xl bg-subtle text-muted-foreground [&_svg]:size-5">
           {icon}
         </div>
       )}
       <h3 className="font-semibold tracking-tight">{title}</h3>
-      {children && <div className="mt-1 max-w-sm text-sm text-muted">{children}</div>}
+      {children && <div className="mt-1 max-w-sm text-sm text-muted-foreground">{children}</div>}
       {action && <div className="mt-5">{action}</div>}
     </div>
   );

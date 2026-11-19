@@ -4,7 +4,9 @@ import { Suspense } from "react";
 import { AppShell } from "@/components/app-shell";
 import { Landing } from "@/components/landing";
 import { STATUS_META } from "@/components/status-meta";
-import { Button, Card, CardHeader, Container, StatusDot } from "@/components/ui";
+import { Container, StatusDot } from "@/components/ui";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { refreshStaleCalendars, scheduleForUser } from "@/lib/calendar";
 import { devicesForUser } from "@/lib/devices";
 import { BUILTIN_GIFS, defaultPreviewSrcs, gifsForUser, previewSrc, resolveDeviceGifs } from "@/lib/gifs";
@@ -218,7 +220,7 @@ async function HomeContent({ searchParams }: { searchParams: PageProps<"/">["sea
           )}
           <span className="min-w-0 truncate">
             <span className="font-semibold">Showing {liveShow.gifName ?? "a message"}</span>
-            {liveShow.gifName && liveShow.text && <span className="text-muted"> · {liveShow.text}</span>}
+            {liveShow.gifName && liveShow.text && <span className="text-muted-foreground"> · {liveShow.text}</span>}
           </span>
         </p>
       ) : shown ? (
@@ -226,7 +228,7 @@ async function HomeContent({ searchParams }: { searchParams: PageProps<"/">["sea
           <StatusDot status={shown.status} size="lg" />
           <span className="min-w-0 truncate">
             <span className="font-semibold">{STATUS_META[shown.status].label}</span>
-            {shown.text && <span className="text-muted"> · {shown.text}</span>}
+            {shown.text && <span className="text-muted-foreground"> · {shown.text}</span>}
           </span>
         </p>
       ) : (
@@ -236,7 +238,7 @@ async function HomeContent({ searchParams }: { searchParams: PageProps<"/">["sea
         </p>
       )}
       <div className="mt-1 flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
-        <p className="text-xs text-muted lg:text-sm">
+        <p className="text-xs text-muted-foreground lg:text-sm">
           {liveShow
             ? liveShow.push
               ? `Pushed by ${liveShow.push.team} · press your light's button to dismiss`
@@ -252,12 +254,12 @@ async function HomeContent({ searchParams }: { searchParams: PageProps<"/">["sea
         {liveShow
           ? !liveShow.push && (
               <form action={clearShowAction}>
-                <Button size="sm">Take it down</Button>
+                <Button variant="outline" size="sm">Take it down</Button>
               </form>
             )
           : live && (
               <form action={clearStatus}>
-                <Button size="sm">Back to automatic</Button>
+                <Button variant="outline" size="sm">Back to automatic</Button>
               </form>
             )}
       </div>
@@ -272,18 +274,26 @@ async function HomeContent({ searchParams }: { searchParams: PageProps<"/">["sea
             <StudioPreview devices={previews} example={mine.length === 0} summary={summary} />
             <div className="space-y-6">
               <Card>
-                <CardHeader
-                  title="Set your status"
-                  description="Overrides your calendar until it ends."
-                />
-                <StatusControls active={active} className="mt-5" />
+                <CardHeader>
+                  <CardTitle asChild>
+                    <h2>Set your status</h2>
+                  </CardTitle>
+                  <CardDescription>Overrides your calendar until it ends.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <StatusControls active={active} />
+                </CardContent>
               </Card>
               <Card id="show" className="scroll-mt-48 lg:scroll-mt-20">
-                <CardHeader
-                  title="Show something"
-                  description="A GIF or message on your light right now. A press of its button takes it down."
-                />
-                <ShowNowControls className="mt-5" flashOff={mine.length > 0 && mine.every((d) => !d.ring.allowFlash)} />
+                <CardHeader>
+                  <CardTitle asChild>
+                    <h2>Show something</h2>
+                  </CardTitle>
+                  <CardDescription>A GIF or message on your light right now. A press of its button takes it down.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ShowNowControls flashOff={mine.length > 0 && mine.every((d) => !d.ring.allowFlash)} />
+                </CardContent>
               </Card>
             </div>
           </div>

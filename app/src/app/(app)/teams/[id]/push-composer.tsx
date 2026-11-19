@@ -159,7 +159,7 @@ export function PushComposer({ teamId, members, library }: { teamId: string; mem
                 {result.error}
               </p>
             )}
-            {result?.ok && !pending && <p className="basis-full text-sm text-muted">Sent. Lights pick it up within about 20 seconds.</p>}
+            {result?.ok && !pending && <p className="basis-full text-sm text-muted-foreground">Sent. Lights pick it up within about 20 seconds.</p>}
           </div>
         </div>
       </form>
@@ -233,7 +233,7 @@ export function PushList({ teamId, pushes }: { teamId: string; pushes: PushSumma
             )}
             <div className="min-w-0 flex-1 basis-48 text-sm">
               <p className="truncate font-medium">{p.text ? `“${p.text}”` : p.gifName}</p>
-              <p className="text-muted">
+              <p className="text-muted-foreground">
                 {p.who} · {p.acked} of {p.of} dismissed
                 {p.flash && ` · ${p.flash}`} · {p.by ? `${p.by}, ` : ""}
                 {p.sentAgo}

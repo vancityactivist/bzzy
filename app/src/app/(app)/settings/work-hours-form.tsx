@@ -69,7 +69,7 @@ export function WorkHoursForm({ hours, timeZone, zones }: { hours: WorkHours | n
         <Button variant="primary" disabled={pending}>
           {pending ? "Saving…" : "Save"}
         </Button>
-        {state?.ok && !pending && <span className="text-sm text-muted">Saved. Your lights pick it up within 5 minutes.</span>}
+        {state?.ok && !pending && <span className="text-sm text-muted-foreground">Saved. Your lights pick it up within 5 minutes.</span>}
         {state?.ok === false && (
           <p className="text-sm text-danger" role="alert">
             {state.error}

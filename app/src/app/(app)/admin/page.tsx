@@ -17,7 +17,7 @@ const TZ = "America/Vancouver";
 export default function AdminPage() {
   return (
     <Container>
-      <Suspense fallback={<p className="text-muted">Loading…</p>}>
+      <Suspense fallback={<p className="text-muted-foreground">Loading…</p>}>
         <AdminContent />
       </Suspense>
     </Container>
@@ -31,7 +31,7 @@ function dayLabel(day: string) {
 
 /** Last active / last seen: "Online" as a free badge, otherwise a relative time. */
 function Presence({ at, never, now }: { at: Date | null; never: string; now: Date }) {
-  if (!at) return <span className="text-muted">{never}</span>;
+  if (!at) return <span className="text-muted-foreground">{never}</span>;
   if (now.getTime() - at.getTime() < 2 * 60_000)
     return (
       <Badge tone="free" title={absoluteTime(at)}>
@@ -39,7 +39,7 @@ function Presence({ at, never, now }: { at: Date | null; never: string; now: Dat
       </Badge>
     );
   return (
-    <span className="text-muted" title={absoluteTime(at)}>
+    <span className="text-muted-foreground" title={absoluteTime(at)}>
       {relativeTime(at, now.getTime())}
     </span>
   );
@@ -48,14 +48,14 @@ function Presence({ at, never, now }: { at: Date | null; never: string; now: Dat
 function Stat({ label, value, note }: { label: string; value: number; note?: string }) {
   return (
     <Card padding="sm" className="flex flex-col">
-      <p className="text-sm text-muted">{label}</p>
+      <p className="text-sm text-muted-foreground">{label}</p>
       <p className="mt-1 text-3xl font-semibold tracking-tight tabular-nums">{value}</p>
-      <p className="mt-auto pt-1 text-xs text-muted">{note ?? " "}</p>
+      <p className="mt-auto pt-1 text-xs text-muted-foreground">{note ?? " "}</p>
     </Card>
   );
 }
 
-const TH = "px-3 py-2.5 text-xs font-medium tracking-wide whitespace-nowrap text-muted uppercase first:pl-5 last:pr-5 sm:first:pl-6 sm:last:pr-6";
+const TH = "px-3 py-2.5 text-xs font-medium tracking-wide whitespace-nowrap text-muted-foreground uppercase first:pl-5 last:pr-5 sm:first:pl-6 sm:last:pr-6";
 const TD = "px-3 py-3 first:pl-5 last:pr-5 sm:first:pl-6 sm:last:pr-6";
 
 async function AdminContent() {
@@ -93,7 +93,7 @@ async function AdminContent() {
               />
             ))}
           </div>
-          <div className="mt-2 flex justify-between text-xs text-muted">
+          <div className="mt-2 flex justify-between text-xs text-muted-foreground">
             <span>{dayLabel(days[0].day)}</span>
             <span>{dayLabel(days[Math.floor(days.length / 2)].day)}</span>
             <span>Today</span>
@@ -123,13 +123,13 @@ async function AdminContent() {
                     <div className="flex items-center gap-3">
                       <span
                         aria-hidden="true"
-                        className="flex size-8 shrink-0 items-center justify-center rounded-full bg-subtle text-xs font-semibold text-muted uppercase"
+                        className="flex size-8 shrink-0 items-center justify-center rounded-full bg-subtle text-xs font-semibold text-muted-foreground uppercase"
                       >
                         {(u.name ?? u.email ?? "?").trim().charAt(0) || "?"}
                       </span>
                       <div className="min-w-0">
                         <p className="font-medium">{u.name ?? "—"}</p>
-                        <p className="text-muted">{u.email ?? "no email"}</p>
+                        <p className="text-muted-foreground">{u.email ?? "no email"}</p>
                       </div>
                     </div>
                   </td>
@@ -141,7 +141,7 @@ async function AdminContent() {
                   </td>
                   <td className={`${TD} whitespace-nowrap`}>
                     {u.providers.filter((p) => p !== "passkey").join(", ") || "—"}
-                    {u.passkeys > 0 && <span className="text-muted">{` + ${u.passkeys} passkey${u.passkeys > 1 ? "s" : ""}`}</span>}
+                    {u.passkeys > 0 && <span className="text-muted-foreground">{` + ${u.passkeys} passkey${u.passkeys > 1 ? "s" : ""}`}</span>}
                   </td>
                   <td className={`${TD} tabular-nums`}>{u.devices}</td>
                   <td className={TD}>
@@ -172,7 +172,7 @@ async function AdminContent() {
       <Card padding="none" className="overflow-hidden">
         <CardHeader title="Teams" description={`${teams.length} shared ${teams.length === 1 ? "team" : "teams"}. You can open and manage any of them.`} className="p-5 pb-3 sm:p-6 sm:pb-3" />
         {teams.length === 0 ? (
-          <p className="px-5 pb-5 text-sm text-muted sm:px-6 sm:pb-6">No shared teams yet.</p>
+          <p className="px-5 pb-5 text-sm text-muted-foreground sm:px-6 sm:pb-6">No shared teams yet.</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full min-w-[32rem] text-left text-sm">
@@ -208,7 +208,7 @@ async function AdminContent() {
       <Card padding="none" className="overflow-hidden">
         <CardHeader title="Devices" description={`${devices.length} in total, ${online} online now`} className="p-5 pb-3 sm:p-6 sm:pb-3" />
         {devices.length === 0 ? (
-          <p className="px-5 pb-5 text-sm text-muted sm:px-6 sm:pb-6">No devices yet.</p>
+          <p className="px-5 pb-5 text-sm text-muted-foreground sm:px-6 sm:pb-6">No devices yet.</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full min-w-[36rem] text-left text-sm">
@@ -225,9 +225,9 @@ async function AdminContent() {
                   <tr key={d.id}>
                     <td className={`${TD} font-medium`}>{d.name}</td>
                     <td className={TD}>
-                      <code className="font-mono text-xs text-muted">{d.id}</code>
+                      <code className="font-mono text-xs text-muted-foreground">{d.id}</code>
                     </td>
-                    <td className={`${TD} text-muted`}>{d.ownerName ?? "—"}</td>
+                    <td className={`${TD} text-muted-foreground`}>{d.ownerName ?? "—"}</td>
                     <td className={`${TD} whitespace-nowrap`}>
                       <Presence at={d.lastSeenAt} never="Never" now={now} />
                     </td>

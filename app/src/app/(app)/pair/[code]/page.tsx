@@ -16,7 +16,7 @@ export const metadata: Metadata = { title: "Add a light", robots: { index: false
 export default function PairCodePage(props: PageProps<"/pair/[code]">) {
   return (
     <div className="mx-auto w-full max-w-md px-4 py-12 sm:py-20">
-      <Suspense fallback={<p className="text-center text-muted">Loading…</p>}>
+      <Suspense fallback={<p className="text-center text-muted-foreground">Loading…</p>}>
         <PairContent {...props} />
       </Suspense>
     </div>
@@ -33,7 +33,7 @@ function Header({ title, code, children }: { title: string; code?: string; child
           {formatPairCode(code)}
         </p>
       )}
-      {children && <p className="mt-2 text-sm text-pretty text-muted">{children}</p>}
+      {children && <p className="mt-2 text-sm text-pretty text-muted-foreground">{children}</p>}
     </div>
   );
 }
@@ -88,7 +88,7 @@ async function PairContent({ params }: PageProps<"/pair/[code]">) {
         <div className="mt-6">
           <SignInToPair code={code} />
         </div>
-        <p className="mt-6 border-t border-line pt-4 text-center text-xs text-pretty text-muted">
+        <p className="mt-6 border-t border-line pt-4 text-center text-xs text-pretty text-muted-foreground">
           New to bzzy? Continue with GitHub to make an account, or ask a teammate for an invite.
         </p>
       </Card>

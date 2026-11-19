@@ -2,27 +2,28 @@
 
 import { useActionState, useEffect, useId, useRef, useState, useTransition } from "react";
 
-import { CheckIcon, LinkIcon, TrashIcon, UploadIcon } from "@/components/icons";
+import { LinkIcon, TrashIcon, UploadIcon } from "@/components/icons";
 import { DevicePreview } from "@/components/device-preview";
-import { Button, Card, CardHeader, cx, Field, Input } from "@/components/ui";
+import { toast } from "sonner";
+
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Field, FieldLabel } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { cn } from "@/lib/utils";
 import { viewFor } from "@/lib/screen";
 
 import { deleteGifAction, type GifUploadResult, importGifLinkAction, uploadGifAction } from "@/app/actions";
 
 const MAX_BYTES = 4 * 1024 * 1024;
 
-function Result({ state, success }: { state: GifUploadResult; success: string }) {
+// A failure stays next to the form; success is a toast, since the form has already reset.
+function Result({ state }: { state: GifUploadResult }) {
   if (state?.ok === false)
     return (
-      <p className="text-sm text-danger" role="alert">
+      <p className="text-sm text-destructive" role="alert">
         {state.error}
-      </p>
-    );
-  if (state?.ok)
-    return (
-      <p className="flex items-center gap-1.5 text-sm" role="status">
-        <CheckIcon className="size-4 text-free" />
-        {success}
       </p>
     );
   return null;
@@ -30,54 +31,45 @@ function Result({ state, success }: { state: GifUploadResult; success: string })
 
 /** The "Add a GIF" card: a two-tab switch between uploading a file and pasting a GIPHY or Tenor link. */
 export function AddGifCard() {
-  const [tab, setTab] = useState<"upload" | "link">("upload");
-  const base = useId();
-  const tabs = [
-    { id: "upload" as const, label: "Upload a file", icon: <UploadIcon /> },
-    { id: "link" as const, label: "GIPHY or Tenor link", icon: <LinkIcon /> },
-  ];
   return (
     <Card>
-      <CardHeader title="Add a GIF" description="Uploads are resized to fit the screen (240 × 200)." />
-      <div role="tablist" aria-label="How to add a GIF" className="mt-4 inline-flex gap-1 rounded-xl bg-subtle p-1">
-        {tabs.map((t) => (
-          <button
-            key={t.id}
-            type="button"
-            role="tab"
-            id={`${base}-tab-${t.id}`}
-            aria-selected={tab === t.id}
-            aria-controls={`${base}-panel-${t.id}`}
-            onClick={() => setTab(t.id)}
-            className={cx(
-              "inline-flex h-8 items-center gap-2 rounded-lg px-3 text-sm font-medium transition-colors [&_svg]:size-4",
-              tab === t.id ? "bg-card text-foreground shadow-card" : "text-muted hover:text-foreground",
-            )}
-          >
-            {t.icon}
-            {t.label}
-          </button>
-        ))}
-      </div>
-      <div className="mt-5">
-        <div role="tabpanel" id={`${base}-panel-upload`} aria-labelledby={`${base}-tab-upload`} hidden={tab !== "upload"}>
-          <UploadGifForm />
-        </div>
-        <div role="tabpanel" id={`${base}-panel-link`} aria-labelledby={`${base}-tab-link`} hidden={tab !== "link"}>
-          <p className="mb-4 text-sm text-muted">
-            Find a GIF on{" "}
-            <a href="https://giphy.com" target="_blank" rel="noreferrer" className="text-foreground underline underline-offset-2">
-              giphy.com
-            </a>{" "}
-            or{" "}
-            <a href="https://tenor.com" target="_blank" rel="noreferrer" className="text-foreground underline underline-offset-2">
-              tenor.com
-            </a>
-            , or in the GIPHY app on your phone. Tap Share, then Copy link, and paste it here.
-          </p>
-          <GifLinkForm />
-        </div>
-      </div>
+      <CardHeader>
+        <CardTitle asChild>
+          <h2>Add a GIF</h2>
+        </CardTitle>
+        <CardDescription>Uploads are resized to fit the screen (240 × 200).</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Tabs defaultValue="upload" className="gap-5">
+          <TabsList aria-label="How to add a GIF" className="max-w-full">
+            <TabsTrigger value="upload">
+              <UploadIcon />
+              Upload a file
+            </TabsTrigger>
+            <TabsTrigger value="link">
+              <LinkIcon />
+              GIPHY or Tenor link
+            </TabsTrigger>
+          </TabsList>
+          <TabsContent value="upload">
+            <UploadGifForm />
+          </TabsContent>
+          <TabsContent value="link">
+            <p className="mb-4 text-sm text-muted-foreground">
+              Find a GIF on{" "}
+              <a href="https://giphy.com" target="_blank" rel="noreferrer" className="text-foreground underline underline-offset-2">
+                giphy.com
+              </a>{" "}
+              or{" "}
+              <a href="https://tenor.com" target="_blank" rel="noreferrer" className="text-foreground underline underline-offset-2">
+                tenor.com
+              </a>
+              , or in the GIPHY app on your phone. Tap Share, then Copy link, and paste it here.
+            </p>
+            <GifLinkForm />
+          </TabsContent>
+        </Tabs>
+      </CardContent>
     </Card>
   );
 }
@@ -94,6 +86,7 @@ export function UploadGifForm() {
   const [state, action, pending] = useActionState<GifUploadResult, FormData>(async (prev, fd) => {
     const r = await uploadGifAction(prev, fd);
     if (r?.ok) {
+      toast.success("Added to your GIFs");
       // Uploaded: back to an empty drop box for the next one.
       form.current?.reset();
       setPreview(null);
@@ -142,16 +135,16 @@ export function UploadGifForm() {
             input.current.files = dt.files;
             take(f);
           }}
-          className={cx(
+          className={cn(
             "flex min-h-40 flex-1 cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed px-4 py-6 text-center transition-colors",
-            over ? "border-foreground bg-subtle" : "border-line-strong hover:border-foreground/40 hover:bg-subtle/60",
+            over ? "border-foreground bg-muted" : "border-line-strong hover:border-foreground/40 hover:bg-muted/60",
           )}
         >
-          <span className="flex size-10 items-center justify-center rounded-xl bg-subtle text-muted">
+          <span className="flex size-10 items-center justify-center rounded-xl bg-muted text-muted-foreground">
             <UploadIcon className="size-5" />
           </span>
           <span className="text-sm font-medium">{preview ? "Pick a different file" : "Drop a GIF here, or tap to pick one"}</span>
-          <span className="text-xs text-muted">GIF, PNG, JPEG or WebP, up to 4 MB</span>
+          <span className="text-xs text-muted-foreground">GIF, PNG, JPEG or WebP, up to 4 MB</span>
           <input
             ref={input}
             id={`${id}-file`}
@@ -176,22 +169,23 @@ export function UploadGifForm() {
         )}
       </div>
       {error && (
-        <p className="text-sm text-danger" role="alert">
+        <p className="text-sm text-destructive" role="alert">
           {error}
         </p>
       )}
       {preview && (
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
-          <Field label="Name" htmlFor={`${id}-name`} className="min-w-0 flex-1">
+          <Field className="min-w-0 flex-1 gap-1.5">
+            <FieldLabel htmlFor={`${id}-name`}>Name</FieldLabel>
             <Input id={`${id}-name`} name="name" maxLength={60} defaultValue={preview.name.slice(0, 60)} key={preview.src} />
           </Field>
-          <Button variant="primary" disabled={pending}>
+          <Button disabled={pending}>
             <UploadIcon />
             {pending ? "Uploading…" : "Upload"}
           </Button>
         </div>
       )}
-      <Result state={state} success="Added to your GIFs." />
+      <Result state={state} />
     </form>
   );
 }
@@ -201,13 +195,16 @@ export function GifLinkForm() {
   const form = useRef<HTMLFormElement>(null);
   const id = useId();
   useEffect(() => {
-    if (state?.ok) form.current?.reset();
+    if (!state?.ok) return;
+    form.current?.reset();
+    toast.success("Added to your GIFs");
   }, [state]);
 
   return (
     <form ref={form} action={action} className="space-y-3">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
-        <Field label="Link" htmlFor={`${id}-link`} className="min-w-0 flex-1">
+        <Field className="min-w-0 flex-1 gap-1.5">
+          <FieldLabel htmlFor={`${id}-link`}>Link</FieldLabel>
           <Input
             id={`${id}-link`}
             name="link"
@@ -217,14 +214,15 @@ export function GifLinkForm() {
             placeholder="https://giphy.com/gifs/… or https://tenor.com/view/…"
           />
         </Field>
-        <Field label="Name" htmlFor={`${id}-name`} className="sm:w-44">
+        <Field className="gap-1.5 sm:w-44">
+          <FieldLabel htmlFor={`${id}-name`}>Name</FieldLabel>
           <Input id={`${id}-name`} name="name" maxLength={60} placeholder="Optional" />
         </Field>
-        <Button variant="primary" disabled={pending} className="sm:mt-[1.625rem]">
+        <Button disabled={pending} className="sm:mt-[1.625rem]">
           {pending ? "Adding…" : "Add"}
         </Button>
       </div>
-      <Result state={state} success="Added to your GIFs." />
+      <Result state={state} />
     </form>
   );
 }
@@ -241,7 +239,7 @@ export function DeleteGifButton({ id, name }: { id: string; name?: string }) {
       onClick={() => {
         if (confirm("Delete this GIF? Devices using it go back to the built-in one.")) start(() => deleteGifAction(id));
       }}
-      className="hover:text-danger"
+      className="hover:text-destructive"
     >
       <TrashIcon />
     </Button>

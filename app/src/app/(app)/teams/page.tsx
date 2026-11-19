@@ -16,7 +16,7 @@ export const metadata: Metadata = { title: "Team" };
 export default function TeamsPage({ searchParams }: PageProps<"/teams">) {
   return (
     <Container size="narrow">
-      <Suspense fallback={<p className="text-muted">Loading…</p>}>
+      <Suspense fallback={<p className="text-muted-foreground">Loading…</p>}>
         <TeamsContent searchParams={searchParams} />
       </Suspense>
     </Container>
@@ -43,17 +43,17 @@ async function TeamsContent({ searchParams }: { searchParams: PageProps<"/teams"
             <li key={t.id}>
               <Link href={`/teams/${t.id}`} className="group block rounded-2xl">
                 <Card className="flex items-center gap-3 transition-colors group-hover:border-line-strong">
-                  <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-subtle text-muted">
+                  <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-subtle text-muted-foreground">
                     <UsersIcon />
                   </div>
                   <div className="min-w-0 flex-1">
                     <h2 className="truncate font-semibold tracking-tight">{t.name}</h2>
-                    <p className="text-sm text-muted">
+                    <p className="text-sm text-muted-foreground">
                       {t.members} {t.members === 1 ? "person" : "people"}
                     </p>
                   </div>
                   <Badge tone={t.role === "member" ? "neutral" : "inverse"}>{ROLE_LABEL[t.role]}</Badge>
-                  <ChevronRightIcon className="size-4 text-muted" />
+                  <ChevronRightIcon className="size-4 text-muted-foreground" />
                 </Card>
               </Link>
             </li>

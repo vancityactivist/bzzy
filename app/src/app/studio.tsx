@@ -10,9 +10,18 @@ import { useFormStatus } from "react-dom";
 import Link from "next/link";
 
 import { DevicePreview } from "@/components/device-preview";
-import { CalendarIcon, CheckIcon, ChevronDownIcon, DeviceIcon, LinkIcon, PlusIcon, SearchIcon, UploadIcon, XIcon } from "@/components/icons";
+import { toast } from "sonner";
+
+import { CalendarIcon, CheckIcon, DeviceIcon, LinkIcon, PlusIcon, SearchIcon, UploadIcon, XIcon } from "@/components/icons";
 import { STATUS_META } from "@/components/status-meta";
-import { Badge, Button, buttonClass, cx, Field, Input, Select, StatusDot } from "@/components/ui";
+import { StatusDot } from "@/components/ui";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { cn } from "@/lib/utils";
 import { parseGifLink } from "@/lib/gif-link";
 import { type Status, STATUSES, TEXT_MAX } from "@/lib/protocol";
 import { type RingChoice, RingPicker } from "@/components/ring-picker";
@@ -60,7 +69,7 @@ export function sectionLabel(library: LibraryGif[], i: number): string | null {
 
 /** A group label across a GIF grid ("Built in", "Favourites"). */
 export function GridLabel({ children }: { children: React.ReactNode }) {
-  return <p className="col-span-full pt-1 text-xs font-medium text-muted">{children}</p>;
+  return <p className="col-span-full pt-1 text-xs font-medium text-muted-foreground">{children}</p>;
 }
 
 // minutes: how long to set it for, or KEEP_UNTIL for "keep the end time it has now"
@@ -231,13 +240,13 @@ export function StudioPreview({
   return (
     <section
       aria-label="Your light"
-      className="sticky top-14 z-20 -mx-4 border-b border-line bg-background/90 px-4 py-3 backdrop-blur-lg backdrop-saturate-150 sm:-mx-6 sm:px-6 lg:top-20 lg:mx-0 lg:rounded-2xl lg:border lg:bg-card lg:p-0 lg:shadow-card lg:backdrop-blur-none"
+      className="sticky top-14 z-20 -mx-4 border-b bg-background/90 px-4 py-3 backdrop-blur-lg backdrop-saturate-150 sm:-mx-6 sm:px-6 lg:top-20 lg:mx-0 lg:rounded-2xl lg:border lg:bg-card lg:p-0 lg:shadow-card lg:backdrop-blur-none"
     >
       <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-4 gap-y-2 lg:grid-cols-1 lg:gap-0">
         {/* What you're looking at: the screen as it is, or a draft. */}
         <div className="col-start-2 row-start-1 flex min-w-0 flex-wrap items-center gap-2 self-end lg:col-start-1 lg:justify-between lg:px-5 lg:pt-5">
           {draft ? (
-            <Badge tone="inverse" aria-live="polite">
+            <Badge aria-live="polite">
               <span aria-hidden className="size-1.5 rounded-full bg-background motion-safe:animate-pulse" />
               <span>
                 Preview<span className="max-sm:hidden">, not sent yet</span>
@@ -245,34 +254,35 @@ export function StudioPreview({
             </Badge>
           ) : device.offline ? (
             // Not "on your screen now": the light hasn't checked in, so it may show something older.
-            <Badge aria-live="polite" title="It shows this once it's back online">
-              <span aria-hidden className="size-1.5 rounded-full border border-muted" />
+            <Badge variant="muted" aria-live="polite" title="It shows this once it's back online">
+              <span aria-hidden className="size-1.5 rounded-full border border-muted-foreground" />
               {device.offline}
             </Badge>
           ) : (
-            <Badge aria-live="polite">
+            <Badge variant="muted" aria-live="polite">
               <span aria-hidden className="size-1.5 rounded-full bg-foreground/70" />
               {example ? "How it would look" : "On your screen now"}
             </Badge>
           )}
           {devices.length > 1 ? (
-            <span className="relative inline-flex min-w-0 max-w-full">
-              <select
-                value={index}
-                onChange={(e) => setIndex(Number(e.target.value))}
+            <Select value={String(index)} onValueChange={(v) => setIndex(Number(v))}>
+              <SelectTrigger
+                size="sm"
                 aria-label="Light to preview"
-                className="h-8 min-w-0 max-w-full cursor-pointer appearance-none truncate rounded-lg border border-line bg-card pr-8 pl-2.5 text-xs font-medium text-foreground shadow-card transition-colors hover:border-line-strong lg:h-10 lg:rounded-xl lg:pl-3 lg:pr-9 lg:text-sm"
+                className="min-w-0 max-w-full cursor-pointer rounded-lg text-xs font-medium lg:h-10 lg:rounded-xl lg:text-sm"
               >
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
                 {devices.map((d, i) => (
-                  <option key={d.id} value={i}>
+                  <SelectItem key={d.id} value={String(i)}>
                     {d.name}
-                  </option>
+                  </SelectItem>
                 ))}
-              </select>
-              <ChevronDownIcon className="pointer-events-none absolute top-1/2 right-2.5 size-3.5 -translate-y-1/2 text-muted lg:right-3 lg:size-4" />
-            </span>
+              </SelectContent>
+            </Select>
           ) : (
-            <span className={cx("min-w-0 truncate text-xs text-muted lg:text-sm", example && "max-lg:hidden")}>
+            <span className={cn("min-w-0 truncate text-xs text-muted-foreground lg:text-sm", example && "max-lg:hidden")}>
               {example ? "Example light" : device.name}
             </span>
           )}
@@ -288,18 +298,18 @@ export function StudioPreview({
           </div>
         </div>
 
-        <div className="col-start-2 row-start-2 min-w-0 self-start lg:col-start-1 lg:row-start-3 lg:border-t lg:border-line lg:px-5 lg:py-4">
-          {show.linkPending && <p className="mb-2 text-xs text-muted">The GIF from your link appears here once it&apos;s added.</p>}
+        <div className="col-start-2 row-start-2 min-w-0 self-start lg:col-start-1 lg:row-start-3 lg:border-t lg:px-5 lg:py-4">
+          {show.linkPending && <p className="mb-2 text-xs text-muted-foreground">The GIF from your link appears here once it&apos;s added.</p>}
           {example && (
-            <div className="mb-2 flex flex-wrap items-center gap-x-3 gap-y-1.5 lg:mb-4 lg:flex-nowrap lg:rounded-xl lg:bg-subtle lg:p-3">
-              <DeviceIcon className="size-5 shrink-0 text-muted max-lg:hidden" />
-              <p className="min-w-0 flex-1 text-xs text-muted lg:text-sm">
+            <div className="mb-2 flex flex-wrap items-center gap-x-3 gap-y-1.5 lg:mb-4 lg:flex-nowrap lg:rounded-xl lg:bg-muted lg:p-3">
+              <DeviceIcon className="size-5 shrink-0 text-muted-foreground max-lg:hidden" />
+              <p className="min-w-0 flex-1 text-xs text-muted-foreground lg:text-sm">
                 <span className="font-medium whitespace-nowrap text-foreground">No light yet.</span>
                 <span className="max-lg:hidden"> This is how a new one would look.</span>
               </p>
-              <Link href="/devices" className={buttonClass("secondary", "sm")}>
-                Add your light
-              </Link>
+              <Button asChild variant="outline" size="sm">
+                <Link href="/devices">Add your light</Link>
+              </Button>
             </div>
           )}
           {summary}
@@ -329,6 +339,9 @@ const STATUS_DURATIONS = [
   { minutes: 120, label: "2 hours" },
 ];
 
+// One row of pills (a single-choice toggle group: arrow keys move between them). It scrolls
+// sideways on a narrow phone rather than wrapping into a block; the hidden input carries
+// the choice with the form.
 function Chips({
   name,
   options,
@@ -341,23 +354,23 @@ function Chips({
   onChange: (m: number) => void;
 }) {
   return (
-    // One row: it scrolls sideways on a narrow phone rather than wrapping into a block.
-    <div className="relative -mx-1 flex gap-2 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-      {options.map((d) => (
-        <label key={d.minutes} className="shrink-0 cursor-pointer">
-          <input
-            type="radio"
-            name={name}
-            value={d.minutes}
-            checked={value === d.minutes}
-            onChange={() => onChange(d.minutes)}
-            className="peer sr-only"
-          />
-          <span className="flex h-9 items-center justify-center rounded-full border border-line bg-card px-3.5 text-sm font-medium whitespace-nowrap text-muted shadow-card transition-colors hover:border-line-strong hover:text-foreground peer-checked:border-foreground peer-checked:bg-foreground peer-checked:text-background peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-ring">
+    <div className="relative -mx-1 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <input type="hidden" name={name} value={value} />
+      <ToggleGroup
+        type="single"
+        variant="pill"
+        spacing={2}
+        value={String(value)}
+        // A pill can't be switched off, only another picked.
+        onValueChange={(v) => v && onChange(Number(v))}
+        aria-label="How long"
+      >
+        {options.map((d) => (
+          <ToggleGroupItem key={d.minutes} value={String(d.minutes)} className="h-9 shrink-0">
             {d.label}
-          </span>
-        </label>
-      ))}
+          </ToggleGroupItem>
+        ))}
+      </ToggleGroup>
     </div>
   );
 }
@@ -407,7 +420,7 @@ export function StatusControls({ active = null, className }: { active?: ActiveSt
         setDraft({ status: null });
         if (!form.current?.contains(document.activeElement)) setFocus(null);
       }}
-      className={cx("space-y-4", className)}
+      className={cn("space-y-4", className)}
     >
       {/* How long and what it says come first, so one tap on a status sends all of it. */}
       <fieldset className="min-w-0">
@@ -435,10 +448,10 @@ export function StatusControls({ active = null, className }: { active?: ActiveSt
         placeholder="Add a message, like On a call"
         autoComplete="off"
       />
-        <p id="status-text-hint" className="mt-1.5 text-xs text-muted" aria-live="polite">
+        <p id="status-text-hint" className="mt-1.5 text-xs text-muted-foreground" aria-live="polite">
           {statusCut(status.text) !== null ? (
             // Two lines is all the bar has: say what will show before it's sent.
-            <span className="text-danger">Only “{statusCut(status.text)}” fits. Shorten it, or use Show something for a longer message.</span>
+            <span className="text-destructive">Only “{statusCut(status.text)}” fits. Shorten it, or use Show something for a longer message.</span>
           ) : status.text.trim() && screenText(status.text.trim()) !== status.text.trim() ? (
             "The screen only has plain letters: emoji and accents are left out."
           ) : sendWith ? (
@@ -455,7 +468,7 @@ export function StatusControls({ active = null, className }: { active?: ActiveSt
 
       {manual && changed && (
         <div className="flex justify-end">
-          <Button size="sm" name="status" value={manual.status}>
+          <Button variant="outline" size="sm" name="status" value={manual.status}>
             Update {STATUS_META[manual.status].label}
           </Button>
         </div>
@@ -497,25 +510,25 @@ function StatusTiles({ active, covered }: { active: ActiveStatus | null; covered
             }}
             onMouseEnter={() => setDraft({ status: s })}
             onFocus={() => setDraft({ status: s })}
-            className={cx(
+            className={cn(
               "relative flex min-h-[4.25rem] flex-col items-start justify-between gap-2 rounded-xl border p-3 text-left shadow-card transition-[background-color,border-color,box-shadow,opacity] duration-150",
               isActive
-                ? cx("border-transparent ring-2", meta.ring, meta.tint)
-                : cx("border-line bg-card", meta.hover, previewing && meta.soft),
+                ? cn("border-transparent ring-2", meta.ring, meta.tint)
+                : cn("bg-card", meta.hover, previewing && meta.soft),
               pending && sending !== s && "opacity-60",
             )}
           >
             <span className="flex w-full items-center justify-between gap-2">
               <StatusDot status={s} size="lg" />
               {sending === s ? (
-                <span className={cx("flex h-5 items-center gap-1 rounded-full px-2 text-[0.6875rem] leading-none font-semibold text-white", meta.bg)}>
+                <span className={cn("flex h-5 items-center gap-1 rounded-full px-2 text-[0.6875rem] leading-none font-semibold text-white", meta.bg)}>
                   <span aria-hidden className="size-2.5 rounded-full border-[1.5px] border-white/40 border-t-white motion-safe:animate-spin" />
                   Setting
                 </span>
               ) : (
                 isActive && (
                   <span
-                    className={cx(
+                    className={cn(
                       "flex h-5 items-center gap-0.5 rounded-full pr-2 pl-1 text-[0.6875rem] leading-none font-semibold text-white",
                       meta.bg,
                     )}
@@ -566,6 +579,7 @@ export function ShowNowControls({ className, flashOff = false }: { className?: s
   const [result, action, pending] = useActionState<ShowNowResult, FormData>(async (prev, fd) => {
     const r = await showNowAction(prev, fd);
     if (r?.ok) {
+      toast.success("Sent", { description: "Your light picks it up within about 20 seconds." });
       // Sent: clear the draft so the preview goes back to what's on the screen.
       resetShow();
       setFocus(null);
@@ -614,9 +628,9 @@ export function ShowNowControls({ className, flashOff = false }: { className?: s
   };
 
   return (
-    <div className={cx("space-y-5", className)}>
+    <div className={cn("space-y-5", className)}>
       {live && (
-        <div className="flex items-center gap-3 rounded-xl border border-line bg-subtle p-2.5 pr-3">
+        <div className="flex items-center gap-3 rounded-xl border bg-muted p-2.5 pr-3">
           {live.gifSrc ? (
             // eslint-disable-next-line @next/next/no-img-element -- small animated thumbnail
             <img src={live.gifSrc} alt="" className="size-11 shrink-0 rounded-lg bg-black object-cover" />
@@ -627,16 +641,16 @@ export function ShowNowControls({ className, flashOff = false }: { className?: s
           )}
           <div className="min-w-0 flex-1 text-sm">
             <p className="font-medium">{live.push ? `A push from ${live.push.team} is on your screen` : "On your screen now"}</p>
-            <p className="truncate text-muted">
+            <p className="truncate text-muted-foreground">
               {[live.gifName, live.text && `“${live.text}”`].filter(Boolean).join(" with ")}
               {live.leds ? ` · ${ringLabel(live.leds)} ring` : ""}
               {live.until ? ` · until ${clock(live.until)}` : ""}
             </p>
-            {live.push && <p className="text-muted">Press the top button on your light to dismiss it.</p>}
+            {live.push && <p className="text-muted-foreground">Press the top button on your light to dismiss it.</p>}
           </div>
           {!live.push && (
             <form action={clearShowAction} className="shrink-0">
-              <Button size="sm">
+              <Button variant="outline" size="sm">
                 <XIcon />
                 Take it down
               </Button>
@@ -648,7 +662,7 @@ export function ShowNowControls({ className, flashOff = false }: { className?: s
       <form ref={form} action={action} onFocus={() => setFocus("show")} className="space-y-4">
         {library.length > 12 && (
           <div className="relative">
-            <SearchIcon className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted" />
+            <SearchIcon className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               type="search"
               value={find}
@@ -676,8 +690,8 @@ export function ShowNowControls({ className, flashOff = false }: { className?: s
               aria-label="Add a GIF from a link or a file"
               title="Add a GIF from a link or a file"
               onClick={() => setAdding((a) => !a)}
-              className={cx(
-                "flex aspect-square flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed text-muted transition-colors hover:border-line-strong hover:bg-subtle hover:text-foreground",
+              className={cn(
+                "flex aspect-square flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed text-muted-foreground transition-colors hover:border-line-strong hover:bg-muted hover:text-foreground",
                 adding || usingOther ? "border-foreground text-foreground" : "border-line-strong/70",
               )}
             >
@@ -697,9 +711,9 @@ export function ShowNowControls({ className, flashOff = false }: { className?: s
         <input type="hidden" name="gif" value={textOnly ? TEXT_ONLY : show.choice} />
 
         {adding && (
-          <div className="space-y-3 rounded-xl border border-line bg-subtle p-3">
+          <div className="space-y-3 rounded-xl border bg-muted p-3">
             <div className="relative">
-              <LinkIcon className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted" />
+              <LinkIcon className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 name="link"
                 type="url"
@@ -720,16 +734,16 @@ export function ShowNowControls({ className, flashOff = false }: { className?: s
                 }}
               />
             </div>
-            <div className="flex min-w-0 items-center gap-2 text-sm text-muted">
+            <div className="flex min-w-0 items-center gap-2 text-sm text-muted-foreground">
               <span>or</span>
-              <Button type="button" size="sm" onClick={() => file.current?.click()}>
+              <Button type="button" variant="outline" size="sm" onClick={() => file.current?.click()}>
                 <UploadIcon />
                 Upload a file
               </Button>
               {show.fileSrc && <span className="min-w-0 truncate">{fileName}</span>}
             </div>
             {fileError && (
-              <p className="text-xs text-danger" role="alert">
+              <p className="text-xs text-destructive" role="alert">
                 {fileError}
               </p>
             )}
@@ -756,19 +770,8 @@ export function ShowNowControls({ className, flashOff = false }: { className?: s
         )}
 
         {writing ? (
-          <Field
-            label="Message"
-            htmlFor="show-text"
-            hint={
-              fits || (show.text.trim() && text !== show.text.trim()) ? (
-                <>
-                  {fits}
-                  {fits && show.text.trim() && text !== show.text.trim() && " "}
-                  {show.text.trim() && text !== show.text.trim() && "The screen only has plain letters: emoji and accents are left out."}
-                </>
-              ) : undefined
-            }
-          >
+          <Field className="gap-1.5">
+            <FieldLabel htmlFor="show-text">Message</FieldLabel>
             <Input
               ref={message}
               id="show-text"
@@ -779,6 +782,13 @@ export function ShowNowControls({ className, flashOff = false }: { className?: s
               placeholder={textOnly ? "Type your message" : "Add a message (optional)"}
               autoComplete="off"
             />
+            {(fits || (show.text.trim() && text !== show.text.trim())) && (
+              <FieldDescription className="text-xs">
+                {fits}
+                {fits && show.text.trim() && text !== show.text.trim() && " "}
+                {show.text.trim() && text !== show.text.trim() && "The screen only has plain letters: emoji and accents are left out."}
+              </FieldDescription>
+            )}
           </Field>
         ) : null}
 
@@ -826,31 +836,28 @@ export function ShowNowControls({ className, flashOff = false }: { className?: s
           </div>
         )}
 
-        <div className="flex flex-wrap items-center gap-2 border-t border-line pt-4">
-          <Button variant="primary" disabled={pending || !ready} className="px-5">
+        <div className="flex flex-wrap items-center gap-2 border-t pt-4">
+          <Button disabled={pending || !ready} className="px-5">
             {pending ? "Putting it up…" : "Show it"}
           </Button>
-          <Select
-            name="minutes"
-            aria-label="How long"
-            value={show.minutes}
-            onChange={(e) => setShow({ minutes: Number(e.target.value) })}
-            wrapperClassName="max-w-52"
-            className="cursor-pointer"
-          >
-            {SHOW_DURATIONS.map((d) => (
-              <option key={d.minutes} value={d.minutes}>
-                {d.label}
-              </option>
-            ))}
+          <Select name="minutes" value={String(show.minutes)} onValueChange={(v) => setShow({ minutes: Number(v) })}>
+            <SelectTrigger aria-label="How long" className="w-44 cursor-pointer">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {SHOW_DURATIONS.map((d) => (
+                <SelectItem key={d.minutes} value={String(d.minutes)}>
+                  {d.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
           </Select>
-          {!ready && !pending && <p className="text-sm text-muted">Pick a GIF or write a message first.</p>}
+          {!ready && !pending && <p className="text-sm text-muted-foreground">Pick a GIF or write a message first.</p>}
           {result?.ok === false && (
-            <p className="basis-full text-sm text-danger" role="alert">
+            <p className="basis-full text-sm text-destructive" role="alert">
               {result.error}
             </p>
           )}
-          {result?.ok && !pending && <p className="basis-full text-sm text-muted">Sent. Your light picks it up within about 20 seconds.</p>}
         </div>
       </form>
     </div>
@@ -868,7 +875,7 @@ function Tile({ name, gif, checked, onPick }: { name: string; gif?: LibraryGif; 
       title={name}
       onClick={onPick}
       onMouseEnter={() => setShow({ hover: gif ?? null })}
-      className={cx(
+      className={cn(
         "relative flex aspect-square items-center justify-center overflow-hidden rounded-xl bg-[#0b0b0c] transition-[box-shadow,transform] duration-150 hover:ring-2 hover:ring-line-strong motion-safe:hover:scale-[1.03]",
         checked && "ring-2 ring-foreground ring-offset-2 ring-offset-card hover:ring-foreground",
       )}

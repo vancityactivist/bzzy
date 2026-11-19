@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Suspense, type ReactNode } from "react";
 
 import { BzzyMark } from "./brand";
+import { Toaster } from "./ui/sonner";
 import { HeaderNav, MobileNav } from "./user-menu";
 
 // The app's chrome: skip link, sticky header, main and the phone tab bar. Every app page
@@ -33,6 +34,8 @@ export function AppShell({ children }: { children: ReactNode }) {
       <Suspense fallback={null}>
         <MobileNav />
       </Suspense>
+      {/* Above the phone tab bar. */}
+      <Toaster position="bottom-center" offset={{ bottom: 24 }} mobileOffset={{ bottom: 88 }} />
     </>
   );
 }

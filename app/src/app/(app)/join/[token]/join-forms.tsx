@@ -84,7 +84,7 @@ export function NewAccountForm({ token, teamName }: { token: string; teamName: s
         <KeyIcon />
         {busy ? "Waiting for your device…" : `Join ${teamName} with a passkey`}
       </Button>
-      <p className="text-xs text-pretty text-muted">
+      <p className="text-xs text-pretty text-muted-foreground">
         A passkey signs you in with your fingerprint, face or device PIN. No password to remember.
       </p>
       <ErrorLine message={error} />

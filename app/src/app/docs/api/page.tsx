@@ -55,7 +55,7 @@ export default function ApiDocsPage() {
           </span>
           <span className="text-sm font-medium">API docs</span>
           <nav className="ml-auto flex items-center gap-1 text-sm font-medium" aria-label="Site">
-            <a href={REPO_URL} className="hidden h-8 items-center rounded-full px-3 text-muted hover:text-foreground sm:flex">
+            <a href={REPO_URL} className="hidden h-8 items-center rounded-full px-3 text-muted-foreground hover:text-foreground sm:flex">
               GitHub
             </a>
             <Link href="/settings" className="flex h-8 items-center rounded-full bg-foreground px-3 text-background">
@@ -68,11 +68,11 @@ export default function ApiDocsPage() {
       <div className="mx-auto flex w-full max-w-6xl gap-10 px-4 py-10 sm:px-6 lg:py-14">
         <aside className="hidden w-44 shrink-0 lg:block">
           <nav aria-label="On this page" className="sticky top-24 text-sm">
-            <p className="mb-2 text-xs font-medium tracking-wide text-muted uppercase">On this page</p>
+            <p className="mb-2 text-xs font-medium tracking-wide text-muted-foreground uppercase">On this page</p>
             <ul className="space-y-1.5">
               {TOC.map((t) => (
                 <li key={t.id}>
-                  <a href={`#${t.id}`} className="text-muted hover:text-foreground">
+                  <a href={`#${t.id}`} className="text-muted-foreground hover:text-foreground">
                     {t.label}
                   </a>
                 </li>
@@ -83,9 +83,9 @@ export default function ApiDocsPage() {
 
         <main id="main" className="min-w-0 flex-1 space-y-16">
           <section className="space-y-4">
-            <p className="text-sm font-medium text-muted">Version 1</p>
+            <p className="text-sm font-medium text-muted-foreground">Version 1</p>
             <h1 className="text-3xl font-semibold tracking-tight text-balance sm:text-4xl">The bzzy API</h1>
-            <p className="max-w-2xl text-lg text-muted text-pretty">
+            <p className="max-w-2xl text-lg text-muted-foreground text-pretty">
               Set your status and Show now from anything that can make a web request: a script, a Stream Deck button, Home Assistant, Power Automate,
               or your own app. Read what your lights are showing, and get a webhook the moment it changes.
             </p>
@@ -97,7 +97,7 @@ export default function ApiDocsPage() {
               <ul className="flex flex-wrap gap-2 text-sm">
                 {TOC.map((t) => (
                   <li key={t.id}>
-                    <a href={`#${t.id}`} className="flex h-8 items-center rounded-full border border-line px-3 text-muted hover:text-foreground">
+                    <a href={`#${t.id}`} className="flex h-8 items-center rounded-full border border-line px-3 text-muted-foreground hover:text-foreground">
                       {t.label}
                     </a>
                   </li>
@@ -449,7 +449,7 @@ function C({ children }: { children: ReactNode }) {
 function Code({ label, children }: { label: string; children: string }) {
   return (
     <figure className="overflow-hidden rounded-xl border border-line bg-card">
-      <figcaption className="flex items-center justify-between border-b border-line px-3 py-1 text-xs text-muted">
+      <figcaption className="flex items-center justify-between border-b border-line px-3 py-1 text-xs text-muted-foreground">
         <span>{label}</span>
         <CopyButton value={children} label={`${label} example`} />
       </figcaption>
@@ -463,7 +463,7 @@ function Code({ label, children }: { label: string; children: string }) {
 function Fact({ label, value, href, copy }: { label: string; value: string; href?: string; copy?: boolean }) {
   return (
     <div className="min-w-0 rounded-xl border border-line bg-card px-3 py-2">
-      <dt className="text-xs text-muted">{label}</dt>
+      <dt className="text-xs text-muted-foreground">{label}</dt>
       <dd className="flex items-center justify-between gap-2">
         {href ? (
           <a href={href} className="min-w-0 truncate font-mono text-[13px] underline underline-offset-2">
@@ -558,12 +558,12 @@ function Endpoint({ method, path, op, schemas }: { method: string; path: string;
       <h3 className="flex flex-wrap items-center gap-2 font-mono text-[15px] font-medium">
         <span className={cx("rounded-md px-1.5 py-0.5 text-xs font-semibold", METHOD_TONE[method])}>{method}</span>
         <span>/v1{path}</span>
-        <span className="font-sans text-xs font-normal text-muted">
+        <span className="font-sans text-xs font-normal text-muted-foreground">
           scope: <C>{op["x-bzzy-scope"]}</C>
         </span>
       </h3>
       <p className="font-medium">{op.summary}.</p>
-      {op.description && <p className="text-muted">{op.description.replaceAll("`", "")}</p>}
+      {op.description && <p className="text-muted-foreground">{op.description.replaceAll("`", "")}</p>}
       {body?.properties && (
         <Table
           head={["Field", "Type", "About"]}
@@ -572,7 +572,7 @@ function Endpoint({ method, path, op, schemas }: { method: string; path: string;
               {name}
               {body.required?.includes(name) && <span className="text-busy"> *</span>}
             </span>,
-            <span key="t" className="text-muted">
+            <span key="t" className="text-muted-foreground">
               {typeLabel(s)}
             </span>,
             s.description ?? "",

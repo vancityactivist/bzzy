@@ -67,7 +67,7 @@ export function ClaimForm({ code, teams }: { code: string; teams: { id: string; 
         <input type="checkbox" name="autoUpdate" defaultChecked className="mt-0.5 size-4 shrink-0 accent-foreground" />
         <span>
           Update the firmware automatically
-          <span className="block text-muted">New versions install when you&apos;re free or away. You can change this later.</span>
+          <span className="block text-muted-foreground">New versions install when you&apos;re free or away. You can change this later.</span>
         </span>
       </label>
       <Button variant="primary" className="w-full" disabled={pending}>

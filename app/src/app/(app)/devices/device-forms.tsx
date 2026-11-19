@@ -28,7 +28,7 @@ function Credentials({ id, token }: { id: string; token: string }) {
       <dl className="mt-3 space-y-2">
         {rows.map((r) => (
           <div key={r.label} className="rounded-lg border border-line bg-card px-3 py-2">
-            <dt className="text-xs text-muted">{r.label}</dt>
+            <dt className="text-xs text-muted-foreground">{r.label}</dt>
             <dd className="flex items-center justify-between gap-2">
               <span className="min-w-0 font-mono text-[13px] break-all">{r.value}</span>
               <CopyButton value={r.value} label={r.label} />
@@ -36,7 +36,7 @@ function Credentials({ id, token }: { id: string; token: string }) {
           </div>
         ))}
       </dl>
-      <p className="mt-3 text-muted">
+      <p className="mt-3 text-muted-foreground">
         To open the setup page: hold the top button (or BOOT) while plugging the light in, scan the Wi-Fi code on its
         screen, then open <span className="font-medium text-foreground">Advanced: set up by hand</span>.
       </p>
@@ -73,7 +73,7 @@ export function AddDeviceForm() {
           <input type="checkbox" name="autoUpdate" defaultChecked className="mt-0.5 size-4 shrink-0 accent-foreground" />
           <span>
             Update the firmware automatically
-            <span className="block text-muted">New versions install when you&apos;re free or away. You can change this later.</span>
+            <span className="block text-muted-foreground">New versions install when you&apos;re free or away. You can change this later.</span>
           </span>
         </label>
       </form>

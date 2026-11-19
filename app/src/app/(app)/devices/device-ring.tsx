@@ -80,7 +80,7 @@ export function DeviceRingSettings({
 
   return (
     <details className="group w-full border-t border-line pt-3">
-      <summary className="-mx-2 flex h-8 w-fit cursor-pointer list-none items-center gap-1.5 rounded-lg px-2 text-sm font-medium text-muted transition-colors select-none hover:bg-subtle hover:text-foreground [&::-webkit-details-marker]:hidden">
+      <summary className="-mx-2 flex h-8 w-fit cursor-pointer list-none items-center gap-1.5 rounded-lg px-2 text-sm font-medium text-muted-foreground transition-colors select-none hover:bg-subtle hover:text-foreground [&::-webkit-details-marker]:hidden">
         <ChevronRightIcon className="size-4 transition-transform duration-150 group-open:rotate-90" />
         Ring and flashing
       </summary>
@@ -141,13 +141,13 @@ export function DeviceRingSettings({
               />
               <span>
                 <span className="font-medium">Let this light flash</span>
-                <span className="block text-muted">
+                <span className="block text-muted-foreground">
                   Off keeps the ring steady in the status colour, even for team
                   pushes.
                 </span>
               </span>
             </label>
-            <p className="text-xs text-muted">
+            <p className="text-xs text-muted-foreground">
               Never faster than 3 flashes a second. Lights on older firmware
               stay steady until they update.
             </p>
@@ -205,7 +205,7 @@ export function DeviceRingSettings({
           <div className="space-y-3">
             <div>
               <h3 className="text-sm font-medium">Before a meeting</h3>
-              <p className="text-xs text-muted">
+              <p className="text-xs text-muted-foreground">
                 Flashes from a few minutes before each calendar event until it
                 starts, even if Wi-Fi drops.
               </p>
@@ -316,7 +316,7 @@ export function DeviceRingSettings({
             {pending ? "Saving…" : "Save ring settings"}
           </Button>
           {saved === "saved" && !pending && (
-            <p className="text-sm text-muted" role="status">
+            <p className="text-sm text-muted-foreground" role="status">
               Saved. The light picks it up within about 20 seconds.
             </p>
           )}

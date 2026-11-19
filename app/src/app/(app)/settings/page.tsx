@@ -30,7 +30,7 @@ export const metadata: Metadata = { title: "Settings" };
 export default function SettingsPage() {
   return (
     <Container size="narrow">
-      <Suspense fallback={<p className="text-muted">Loading…</p>}>
+      <Suspense fallback={<p className="text-muted-foreground">Loading…</p>}>
         <SettingsContent />
       </Suspense>
     </Container>
@@ -65,7 +65,7 @@ async function SettingsContent() {
           <a
             key={sec.id}
             href={`#${sec.id}`}
-            className="flex h-8 shrink-0 items-center rounded-full border border-line bg-card px-3 text-sm font-medium whitespace-nowrap text-muted shadow-card transition-colors hover:border-line-strong hover:text-foreground"
+            className="flex h-8 shrink-0 items-center rounded-full border border-line bg-card px-3 text-sm font-medium whitespace-nowrap text-muted-foreground shadow-card transition-colors hover:border-line-strong hover:text-foreground"
           >
             {sec.label}
           </a>
@@ -76,7 +76,7 @@ async function SettingsContent() {
         <CardHeader
           title={
             <span className="flex items-center gap-2">
-              <CalendarIcon className="size-5 text-muted" />
+              <CalendarIcon className="size-5 text-muted-foreground" />
               Calendars
             </span>
           }
@@ -92,7 +92,7 @@ async function SettingsContent() {
                 <li key={c.id} className="space-y-4 p-4">
                   <div>
                     <p className="font-medium">{c.name}</p>
-                    <p className="text-sm text-muted">
+                    <p className="text-sm text-muted-foreground">
                       <span className="break-all">{new URL(c.icsUrl).hostname}</span> ·{" "}
                       <span title={c.lastFetchedAt ? absoluteTime(c.lastFetchedAt) : undefined}>
                         {c.lastFetchedAt ? `checked ${relativeTime(c.lastFetchedAt)}` : "not checked yet"}
@@ -101,15 +101,15 @@ async function SettingsContent() {
                     {c.lastError && <p className="mt-1 text-sm text-danger">{c.lastError}</p>}
                   </div>
                   <div className="text-sm">
-                    <p className="text-xs font-medium tracking-wide text-muted uppercase">Next 24 hours</p>
+                    <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">Next 24 hours</p>
                     {upcoming.length === 0 ? (
-                      <p className="mt-1 text-muted">Nothing that makes you busy.</p>
+                      <p className="mt-1 text-muted-foreground">Nothing that makes you busy.</p>
                     ) : (
                       <ul className="mt-2 space-y-1.5">
                         {upcoming.map((b) => (
                           <li key={`${b.start}-${b.status}`} className="flex items-center gap-2">
                             <StatusDot status={b.status} />
-                            <span className="shrink-0 tabular-nums text-muted">
+                            <span className="shrink-0 tabular-nums text-muted-foreground">
                               {range(b.start, b.end, TZ)}
                             </span>
                             <span className="truncate">{b.text}</span>
@@ -128,7 +128,7 @@ async function SettingsContent() {
         <Reveal label="Add a calendar" defaultOpen={calendars.length === 0} className="mt-5">
           {calendars.length > 0 && <OutlookHelp />}
           <AddCalendarForm first={calendars.length === 0} />
-          <p className="text-xs text-muted">The link is kept private: it&apos;s only used to read your calendar and is never shown again.</p>
+          <p className="text-xs text-muted-foreground">The link is kept private: it&apos;s only used to read your calendar and is never shown again.</p>
         </Reveal>
       </Card>
 
@@ -136,7 +136,7 @@ async function SettingsContent() {
         <CardHeader
           title={
             <span className="flex items-center gap-2">
-              <ClockIcon className="size-5 text-muted" />
+              <ClockIcon className="size-5 text-muted-foreground" />
               Working hours
             </span>
           }
@@ -151,7 +151,7 @@ async function SettingsContent() {
         <CardHeader
           title={
             <span className="flex items-center gap-2">
-              <KeyIcon className="size-5 text-muted" />
+              <KeyIcon className="size-5 text-muted-foreground" />
               Passkeys
             </span>
           }
@@ -168,7 +168,7 @@ async function SettingsContent() {
                       {p.synced ? "synced" : "this device only"}
                     </Badge>
                   </p>
-                  <p className="mt-0.5 text-sm text-muted">
+                  <p className="mt-0.5 text-sm text-muted-foreground">
                     {p.createdAt ? (
                       <span title={absoluteTime(p.createdAt)}>added {relativeTime(p.createdAt)}</span>
                     ) : (
@@ -198,7 +198,7 @@ async function SettingsContent() {
         <CardHeader
           title={
             <span className="flex items-center gap-2">
-              <UsersIcon className="size-5 text-muted" />
+              <UsersIcon className="size-5 text-muted-foreground" />
               Teams
             </span>
           }
@@ -215,7 +215,7 @@ async function SettingsContent() {
               </li>
             ))}
         </ul>
-        <p className="mt-4 text-sm text-muted">
+        <p className="mt-4 text-sm text-muted-foreground">
           {teams.some((t) => !t.personal) ? "" : "You're not in a shared team yet. "}
           <Link href="/teams?all" className="underline">
             Make or manage teams
@@ -224,14 +224,14 @@ async function SettingsContent() {
       </Card>
       <div id="developer" className="scroll-mt-32 pt-4">
         <h2 className="text-lg font-semibold tracking-tight">Developer</h2>
-        <p className="mt-1 text-sm text-muted">For scripts, Stream Deck, Home Assistant and other apps. Most people never need these.</p>
+        <p className="mt-1 text-sm text-muted-foreground">For scripts, Stream Deck, Home Assistant and other apps. Most people never need these.</p>
       </div>
 
       <Card id="api-tokens" className="scroll-mt-32">
         <CardHeader
           title={
             <span className="flex items-center gap-2">
-              <CodeIcon className="size-5 text-muted" />
+              <CodeIcon className="size-5 text-muted-foreground" />
               API tokens
             </span>
           }
@@ -253,11 +253,11 @@ async function SettingsContent() {
                   <div className="min-w-0">
                     <p className="flex flex-wrap items-center gap-2 font-medium">
                       <span className="truncate">{t.name}</span>
-                      <span className="font-mono text-xs text-muted">{t.prefix}…</span>
+                      <span className="font-mono text-xs text-muted-foreground">{t.prefix}…</span>
                       {t.revokedAt ? <Badge>revoked</Badge> : !t.live ? <Badge>expired</Badge> : soon && <Badge tone="away">expires soon</Badge>}
                     </p>
-                    <p className="mt-0.5 text-sm text-muted">{t.scopes.map((s) => SCOPE_INFO[s].label).join(", ")}</p>
-                    <p className="mt-0.5 text-sm text-muted">
+                    <p className="mt-0.5 text-sm text-muted-foreground">{t.scopes.map((s) => SCOPE_INFO[s].label).join(", ")}</p>
+                    <p className="mt-0.5 text-sm text-muted-foreground">
                       <span title={absoluteTime(t.createdAt)}>made {relativeTime(t.createdAt)}</span>
                       {" · "}
                       {t.lastUsedAt ? <span title={absoluteTime(t.lastUsedAt)}>last used {relativeTime(t.lastUsedAt)}</span> : "not used yet"}
@@ -286,7 +286,7 @@ async function SettingsContent() {
         <CardHeader
           title={
             <span className="flex items-center gap-2">
-              <WebhookIcon className="size-5 text-muted" />
+              <WebhookIcon className="size-5 text-muted-foreground" />
               Webhooks
             </span>
           }
@@ -315,11 +315,11 @@ async function SettingsContent() {
                           </Badge>
                         )}
                       </p>
-                      <p className="mt-0.5 truncate font-mono text-[13px] text-muted" title={w.url}>
+                      <p className="mt-0.5 truncate font-mono text-[13px] text-muted-foreground" title={w.url}>
                         {w.url}
                       </p>
-                      <p className="mt-0.5 text-sm text-muted">{w.events.map((e) => EVENT_INFO[e].label).join(", ")}</p>
-                      <p className="mt-0.5 text-sm text-muted">
+                      <p className="mt-0.5 text-sm text-muted-foreground">{w.events.map((e) => EVENT_INFO[e].label).join(", ")}</p>
+                      <p className="mt-0.5 text-sm text-muted-foreground">
                         {last ? (
                           <>
                             <span title={absoluteTime(new Date(last.at))}>last sent {relativeTime(new Date(last.at))}</span>
@@ -336,16 +336,16 @@ async function SettingsContent() {
                   </div>
                   {w.recent.length > 0 && (
                     <details className="group text-sm">
-                      <summary className="cursor-pointer text-muted select-none hover:text-foreground">Recent deliveries ({w.recent.length})</summary>
+                      <summary className="cursor-pointer text-muted-foreground select-none hover:text-foreground">Recent deliveries ({w.recent.length})</summary>
                       <ul className="mt-2 space-y-1">
                         {w.recent.map((d) => (
                           <li key={`${d.id}-${d.at}`} className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
                             <StatusDot status={d.ok ? "free" : "busy"} />
                             <span className="font-mono text-[13px]">{d.type}</span>
-                            <span className="text-muted" title={absoluteTime(new Date(d.at))}>
+                            <span className="text-muted-foreground" title={absoluteTime(new Date(d.at))}>
                               {relativeTime(new Date(d.at))}
                             </span>
-                            <span className="text-muted">
+                            <span className="text-muted-foreground">
                               {d.ok ? `${d.code} in ${d.ms} ms` : d.error}
                               {d.tries > 1 && ` · ${d.tries} tries`}
                             </span>
@@ -365,7 +365,7 @@ async function SettingsContent() {
               <NewWebhookForm first={webhooks.length === 0} />
             </Reveal>
           ) : (
-            <p className="text-sm text-muted">That&apos;s {MAX_WEBHOOKS}, the most you can have. Remove one to add another.</p>
+            <p className="text-sm text-muted-foreground">That&apos;s {MAX_WEBHOOKS}, the most you can have. Remove one to add another.</p>
           )}
         </div>
       </Card>
@@ -385,7 +385,7 @@ const SECTIONS = [
 // Where Outlook hides the ICS link: open for a first calendar, folded once you have one.
 function OutlookHelp() {
   return (
-    <div className="mt-4 rounded-xl bg-subtle p-4 text-sm text-muted">
+    <div className="mt-4 rounded-xl bg-subtle p-4 text-sm text-muted-foreground">
       <p className="font-medium text-foreground">Where to find your ICS link in Outlook</p>
       <ol className="mt-1 list-decimal space-y-0.5 pl-5">
         <li>Settings → Calendar → Shared calendars</li>

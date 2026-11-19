@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "tw-animate-css";
 
 /* The landing page uses the taste kit's own class names, and some of them are also Tailwind
    utilities (its column-start classes would become inset offsets): keep Tailwind off it. */
@@ -7,30 +8,47 @@
 @source not "../../public/landing.css";
 
 /*
- * Design tokens. Calm neutrals everywhere; the four status colours are the only colour.
- * Every token has a light and a dark value; the dark ones follow prefers-color-scheme.
+ * Design tokens, in shadcn/ui's names so its components drop in unchanged. Calm neutrals
+ * everywhere; the four status colours are the only colour. Every token has a light and a dark
+ * value; the dark ones follow prefers-color-scheme (no theme toggle, so no .dark class).
  *
- *   background   page                         card          raised surfaces (cards, menus, inputs)
- *   subtle       hovers, insets, active pills foreground    text, primary buttons
- *   muted        secondary text (AA on background, card and subtle)
- *   line         hairline borders              line-strong   hovered / emphasised borders
- *   ring         focus ring                    danger        destructive text (busy red, AA-tuned)
- *   shadow-card  resting cards and controls    shadow-pop    menus and popovers
+ *   background / foreground       page and text
+ *   card, popover (+ -foreground)  raised surfaces: cards, menus, inputs
+ *   primary (+ -foreground)        solid black (white in dark) buttons and pills
+ *   secondary, muted, accent       hovers, insets, active pills (all the same soft grey)
+ *   muted-foreground               secondary text (AA on background, card and muted)
+ *   border, input                  hairline borders     line-strong   hovered / emphasised borders
+ *   ring                           focus ring           destructive   busy red, AA-tuned
+ *   shadow-card / shadow-pop       resting controls / menus and popovers
+ *
+ * Older names stay as aliases until every page is converted: subtle = muted, line = border,
+ * danger = destructive.
  *
  * Not on the signed-out landing page (html[data-type]): it loads its own design system
  * (public/assets, from the taste skill), which uses some of the same token names.
  */
 :root:not([data-type]) {
   color-scheme: light;
+  --radius: 0.5rem; /* keeps Tailwind's own rounded-sm…xl sizes, which the app already uses */
   --background: #f8f8f7;
   --foreground: #171717;
   --card: #ffffff;
-  --subtle: #f0f0ee;
-  --muted: #62625f;
-  --line: #e6e6e3;
+  --card-foreground: var(--foreground);
+  --popover: #ffffff;
+  --popover-foreground: var(--foreground);
+  --primary: #171717;
+  --primary-foreground: #fafafa;
+  --secondary: #f0f0ee;
+  --secondary-foreground: var(--foreground);
+  --muted: #f0f0ee;
+  --muted-foreground: #62625f;
+  --accent: #f0f0ee;
+  --accent-foreground: var(--foreground);
+  --border: #e6e6e3;
+  --input: #e6e6e3;
   --line-strong: #d3d3cf;
   --ring: rgb(23 23 23 / 0.45);
-  --danger: #c81e1e;
+  --destructive: #c81e1e;
   --shadow-card: 0 1px 2px rgb(0 0 0 / 0.04), 0 1px 1px rgb(0 0 0 / 0.02);
   --shadow-pop: 0 12px 32px -8px rgb(0 0 0 / 0.14), 0 2px 6px rgb(0 0 0 / 0.05);
 }
@@ -41,27 +59,51 @@
     --background: #0a0a0a;
     --foreground: #ededed;
     --card: #141414;
-    --subtle: #1d1d1d;
-    --muted: #a3a3a3;
-    --line: #262626;
+    --popover: #141414;
+    --primary: #ededed;
+    --primary-foreground: #0a0a0a;
+    --secondary: #1d1d1d;
+    --muted: #1d1d1d;
+    --muted-foreground: #a3a3a3;
+    --accent: #1d1d1d;
+    --border: #262626;
+    --input: #262626;
     --line-strong: #383838;
     --ring: rgb(237 237 237 / 0.5);
-    --danger: #f87171;
+    --destructive: #f87171;
     --shadow-card: 0 1px 2px rgb(0 0 0 / 0.5);
     --shadow-pop: 0 16px 40px -8px rgb(0 0 0 / 0.7), 0 0 0 1px rgb(255 255 255 / 0.03);
   }
 }
 
 @theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
-  --color-subtle: var(--subtle);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
   --color-muted: var(--muted);
-  --color-line: var(--line);
-  --color-line-strong: var(--line-strong);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
   --color-ring: var(--ring);
-  --color-danger: var(--danger);
+  --color-destructive: var(--destructive);
+  --color-line-strong: var(--line-strong);
+  /* Older names, until every page uses the ones above. */
+  --color-subtle: var(--muted);
+  --color-line: var(--border);
+  --color-danger: var(--destructive);
   --color-free: #16a34a;
   --color-busy: #dc2626;
   --color-dnd: #7c3aed;
@@ -80,6 +122,11 @@
     -webkit-tap-highlight-color: transparent;
     /* Anchors land below the sticky header. */
     scroll-padding-top: 4.5rem;
+  }
+
+  /* shadcn components draw plain `border`s in the border colour. */
+  :where(:root:not([data-type])) * {
+    border-color: var(--border);
   }
 
   body {

@@ -35,7 +35,7 @@ export const metadata: Metadata = { title: "Team" };
 export default function TeamPage(props: PageProps<"/teams/[id]">) {
   return (
     <Container>
-      <Suspense fallback={<p className="text-muted">Loading…</p>}>
+      <Suspense fallback={<p className="text-muted-foreground">Loading…</p>}>
         <TeamContent {...props} />
       </Suspense>
     </Container>
@@ -106,7 +106,7 @@ async function TeamContent({ params, searchParams }: PageProps<"/teams/[id]">) {
           </span>
         }
         actions={
-          <Link href="/teams?all" className="text-sm text-muted hover:text-foreground">
+          <Link href="/teams?all" className="text-sm text-muted-foreground hover:text-foreground">
             All teams
           </Link>
         }
@@ -139,7 +139,7 @@ async function TeamContent({ params, searchParams }: PageProps<"/teams/[id]">) {
       <div className="space-y-6">
         {!access.role && (
           <p className="flex items-start gap-2 rounded-xl bg-subtle p-4 text-sm">
-            <ShieldIcon className="mt-0.5 size-4 shrink-0 text-muted" />
+            <ShieldIcon className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
             <span>You&apos;re not in this team. Anything you change here is recorded in its activity log as a superadmin action.</span>
           </p>
         )}
@@ -154,16 +154,16 @@ async function TeamContent({ params, searchParams }: PageProps<"/teams/[id]">) {
                 <li key={m.userId} className="flex flex-wrap items-center gap-x-3 gap-y-2 px-5 py-3 sm:px-6">
                   <span
                     aria-hidden="true"
-                    className="flex size-9 shrink-0 items-center justify-center rounded-full bg-subtle text-xs font-semibold text-muted uppercase"
+                    className="flex size-9 shrink-0 items-center justify-center rounded-full bg-subtle text-xs font-semibold text-muted-foreground uppercase"
                   >
                     {name.trim().charAt(0) || "?"}
                   </span>
                   <div className="min-w-0 flex-1 basis-40">
                     <p className="truncate font-medium">
                       {name}
-                      {self && <span className="font-normal text-muted"> (you)</span>}
+                      {self && <span className="font-normal text-muted-foreground"> (you)</span>}
                     </p>
-                    <p className="truncate text-sm text-muted" title={absoluteTime(m.joinedAt)}>
+                    <p className="truncate text-sm text-muted-foreground" title={absoluteTime(m.joinedAt)}>
                       {ROLE_LABEL[m.role]} · joined {shortDate(m.joinedAt)}
                     </p>
                   </div>
@@ -201,7 +201,7 @@ async function TeamContent({ params, searchParams }: PageProps<"/teams/[id]">) {
                       <p className="font-medium">
                         {inv.kind === "team" ? "Team link" : "One-person link"} · joins as {ROLE_LABEL[inv.role].toLowerCase()}
                       </p>
-                      <p className="text-muted">
+                      <p className="text-muted-foreground">
                         {inv.uses} {inv.uses === 1 ? "use" : "uses"} ·{" "}
                         {inv.state === "live" ? (
                           <span title={absoluteTime(inv.expiresAt)}>ends {shortDate(inv.expiresAt)}</span>
@@ -230,7 +230,7 @@ async function TeamContent({ params, searchParams }: PageProps<"/teams/[id]">) {
             <ul className="mt-4 space-y-2 text-sm">
               {log.map((e) => (
                 <li key={e.id} className="flex flex-wrap items-baseline gap-x-2">
-                  <span className="text-muted tabular-nums" title={absoluteTime(e.at)}>
+                  <span className="text-muted-foreground tabular-nums" title={absoluteTime(e.at)}>
                     {relativeTime(e.at, now.getTime())}
                   </span>
                   <span>{describe(e, names)}</span>
@@ -254,7 +254,7 @@ async function TeamContent({ params, searchParams }: PageProps<"/teams/[id]">) {
         )}
 
         {access.role === "member" && (
-          <p className="text-sm text-muted">
+          <p className="text-sm text-muted-foreground">
             The team&apos;s admins can see what your light&apos;s screen shows, and where your status came from. They can also put a
             message on lights that follow this team; the top button on your light dismisses it.
           </p>

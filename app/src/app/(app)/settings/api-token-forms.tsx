@@ -64,7 +64,7 @@ export function NewApiTokenForm({ first }: { first: boolean }) {
               />
               <span>
                 <span className="font-medium">{SCOPE_INFO[s].label}</span>
-                <span className="text-muted"> · {SCOPE_INFO[s].detail}</span>
+                <span className="text-muted-foreground"> · {SCOPE_INFO[s].detail}</span>
               </span>
             </label>
           ))}
