@@ -269,6 +269,17 @@ Drawn by `hardware/main-board/placement.py` (edit the script, then run it to reg
 | BZ1 | buzzer (DNP) | back | upper right (seen from behind), for "knock" later |
 | C5 | 2 × 10 µF LED bulk | back | plus 100 nF per LED on the front, as rev C |
 
+### 7.3 How small could it get?
+
+The board size today comes from the rev C ring board, which had to fit round the Waveshare board. On our own board, the panel (about 30 × 37 mm) and a ring of LEDs just outside it set the size:
+
+- Panel 30 × 37 mm, plus about 5 mm each side for the LEDs and their clearance, gives a board of roughly **40 × 47 mm** instead of 52 × 61 mm. That's about 40% less area.
+- Everything on the back still fits behind that: the module (18 × 19.2 mm) behind the panel's top half, USB-C and power parts at the bottom.
+- The trade-off is a narrower frosted border (about 5 mm instead of 9.5 mm), so the glow is a thinner line, and four mounting holes get tight (two holes or snap fits instead).
+- The case is parametric, so a smaller board mostly means new numbers in `board_dims.scad`.
+
+Default: keep 52 × 61 mm for the first prototypes so the existing case design can be used to judge the light, then decide the final size (Q11).
+
 ## 8. Pin map and firmware impact
 
 Keep the Waveshare pin mapping so the firmware change is a new `config.h` block and a PlatformIO env.
@@ -412,6 +423,8 @@ Defaults are what this spec assumes until Adam says otherwise.
 | Q8 | Antenna position in the case: inside the top wall, or the back plate? | Top wall; compare range on prototypes |
 | Q9 | Screen sourcing: bare panel from a panel maker, or Waveshare's touch module? | Bare panel, Waveshare footprint as fallback |
 | Q10 | Module: N16R8 (drop-in firmware) over the slightly cheaper MINI-1-N8? | N16R8 |
+| Q11 | Device size: keep 52 × 61 mm, or shrink to about 40 × 47 mm with a thinner glow border (7.3)? | Prototype at 52 × 61, decide after |
+| Q12 | Screen: ER-TFT1.69-4 (same 1.69" 240 × 280), or a smaller panel (5.1)? | ER-TFT1.69-4 |
 
 ## 15. Sources
 
