@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { Suspense } from "react";
 
-import { ImageIcon } from "@/components/icons";
+import { ImageIcon, PlayIcon } from "@/components/icons";
 import { SignIn } from "@/components/sign-in";
-import { Badge, Container, EmptyState, PageHeader } from "@/components/ui";
+import { Badge, buttonClass, Container, EmptyState, PageHeader } from "@/components/ui";
 import { BUILTIN_GIFS, gifsForUser } from "@/lib/gifs";
 import { getCurrentUser } from "@/lib/session";
 import { teamsForUser } from "@/lib/teams";
@@ -53,6 +54,20 @@ function Tile({
   );
 }
 
+// Opens the Status page with this GIF picked in Show something, on the preview, ready to send.
+function ShowNowLink({ choice, name }: { choice: string; name: string }) {
+  return (
+    <Link
+      href={`/?show=${encodeURIComponent(choice)}#show`}
+      aria-label={`Show ${name} now`}
+      title="Show it now"
+      className={buttonClass("ghost", "icon-sm")}
+    >
+      <PlayIcon />
+    </Link>
+  );
+}
+
 const GRID = "grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4";
 
 async function GifsContent() {
@@ -82,6 +97,7 @@ async function GifsContent() {
           <ul className={GRID}>
             {uploads.map((g) => (
               <Tile key={g.id} src={`/api/gifs/${g.id}`} name={g.name} note={[`${Math.round(g.bytes / 1024)} KB`, shared.get(g.teamId)].filter(Boolean).join(" · ")}>
+                <ShowNowLink choice={`asset:${g.id}`} name={g.name} />
                 <DeleteGifButton id={g.id} name={g.name} />
               </Tile>
             ))}
@@ -98,7 +114,9 @@ async function GifsContent() {
               src={g.path}
               name={g.name}
               badge={g.status ? `Made for ${g.status === "dnd" ? "do not disturb" : g.status}` : "Any status"}
-            />
+            >
+              <ShowNowLink choice={`builtin:${g.id}`} name={g.name} />
+            </Tile>
           ))}
         </ul>
       </section>

@@ -104,8 +104,18 @@ const useStudio = () => {
   return c;
 };
 
-export function StudioProvider({ library, live, children }: { library: LibraryGif[]; live: LiveShow | null; children: React.ReactNode }) {
-  const [focus, setFocus] = useState<Ctx["focus"]>(null);
+export function StudioProvider({
+  library,
+  live,
+  initialShow,
+  children,
+}: {
+  library: LibraryGif[];
+  live: LiveShow | null;
+  initialShow?: string; // a GIF to start with picked ("Show now" on the GIFs page)
+  children: React.ReactNode;
+}) {
+  const [focus, setFocus] = useState<Ctx["focus"]>(initialShow ? "show" : null);
   const [status, setStatusState] = useState<StatusDraft>({
     status: null,
     text: "",
@@ -114,7 +124,7 @@ export function StudioProvider({ library, live, children }: { library: LibraryGi
   });
   // Stable, so the status form can sync the draft from an effect.
   const setStatus = useCallback((d: Partial<StatusDraft>) => setStatusState((s) => ({ ...s, ...d })), []);
-  const [show, setShowState] = useState<ShowDraft>(EMPTY_SHOW);
+  const [show, setShowState] = useState<ShowDraft>(initialShow ? { ...EMPTY_SHOW, choice: initialShow } : EMPTY_SHOW);
   const value = useMemo<Ctx>(
     () => ({
       library,

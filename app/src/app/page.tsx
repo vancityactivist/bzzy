@@ -61,7 +61,7 @@ const JSON_LD = {
   ],
 };
 
-export default function Home() {
+export default function Home({ searchParams }: PageProps<"/">) {
   return (
     <>
       <script
@@ -71,13 +71,13 @@ export default function Home() {
       />
       {/* Signed-out visitors get this fallback too, so it stays blank rather than app-shaped. */}
       <Suspense fallback={<div className="min-h-[70vh]" aria-busy="true" />}>
-        <HomeContent />
+        <HomeContent searchParams={searchParams} />
       </Suspense>
     </>
   );
 }
 
-async function HomeContent() {
+async function HomeContent({ searchParams }: { searchParams: PageProps<"/">["searchParams"] }) {
   const user = await getCurrentUser();
   if (!user) return <Landing />;
 
@@ -90,6 +90,9 @@ async function HomeContent() {
     getShow(user.id),
     gifsForUser(user.id),
   ]);
+  // "Show now" on the GIFs page links here with ?show=<choice>: start with it picked.
+  const { show: picked } = await searchParams;
+  const pick = typeof picked === "string" ? picked : undefined;
   const library: LibraryGif[] = [
     ...uploads.map((g) => ({
       choice: `asset:${g.id}`,
@@ -223,7 +226,7 @@ async function HomeContent() {
   return (
     <AppShell>
       <Container className="max-lg:pt-0">
-        <StudioProvider library={library} live={liveShow}>
+        <StudioProvider library={library} live={liveShow} initialShow={library.some((g) => g.choice === pick) ? pick : undefined}>
           <div className="grid grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:items-start lg:gap-8">
             <StudioPreview devices={previews} example={mine.length === 0} summary={summary} />
             <div className="space-y-6">
@@ -234,7 +237,7 @@ async function HomeContent() {
                 />
                 <StatusControls active={active} className="mt-5" />
               </Card>
-              <Card>
+              <Card id="show" className="scroll-mt-48 lg:scroll-mt-20">
                 <CardHeader
                   title="Show something"
                   description="A GIF or message on your light right now. A press of its button takes it down."
