@@ -46,7 +46,7 @@ Building your own stays possible and cheap: a Waveshare ESP32-S3-Touch-LCD-1.69,
 ## Loose ends
 
 - [x] Tag `fw-v0.3.2` (no flicker on update progress, double-press fix). Tagged 2026-11-18.
-- [ ] Run `npm run db:migrate` against production. Migrations go up to `0015_gif_prefs` (GIF library) on `main`; 0010 to 0012 (working hours, show-now ring effects, pairing) were still listed as pending.
+- [ ] Run `npm run db:migrate` against production. Migrations go up to `0016_lights_follow` (lights follow you, PR #84) on `main`. Preview deploys now migrate their own Neon branch at build time.
 - [ ] Check the `fw-v0.3.2` release on GitHub isn't marked pre-release.
 
 ## Software roadmap
