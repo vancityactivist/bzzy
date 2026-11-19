@@ -106,7 +106,7 @@ async function TeamContent({ params, searchParams }: PageProps<"/teams/[id]">) {
           </span>
         }
         actions={
-          <Link href="/teams" className="text-sm text-muted hover:text-foreground">
+          <Link href="/teams?all" className="text-sm text-muted hover:text-foreground">
             All teams
           </Link>
         }

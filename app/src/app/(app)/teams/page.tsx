@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { Suspense } from "react";
 
 import { ChevronRightIcon, UsersIcon } from "@/components/icons";
@@ -12,11 +13,11 @@ import { CreateTeamForm } from "./team-forms";
 
 export const metadata: Metadata = { title: "Team" };
 
-export default function TeamsPage() {
+export default function TeamsPage({ searchParams }: PageProps<"/teams">) {
   return (
     <Container size="narrow">
       <Suspense fallback={<p className="text-muted">Loading…</p>}>
-        <TeamsContent />
+        <TeamsContent searchParams={searchParams} />
       </Suspense>
     </Container>
   );
@@ -24,10 +25,13 @@ export default function TeamsPage() {
 
 const ROLE_LABEL = { owner: "Owner", admin: "Admin", member: "Member" } as const;
 
-async function TeamsContent() {
+async function TeamsContent({ searchParams }: { searchParams: PageProps<"/teams">["searchParams"] }) {
   const user = await getCurrentUser();
   if (!user) return <SignIn />;
   const teams = await sharedTeamsForUser(user.id);
+  // Most people are in one team: the Team tab goes straight to it. Its "All teams" link
+  // comes back here with ?all, to make another team.
+  if (teams.length === 1 && !("all" in (await searchParams))) redirect(`/teams/${teams[0].id}`);
 
   return (
     <div className="space-y-6">

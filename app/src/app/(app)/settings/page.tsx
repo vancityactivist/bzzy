@@ -217,7 +217,7 @@ async function SettingsContent() {
         </ul>
         <p className="mt-4 text-sm text-muted">
           {teams.some((t) => !t.personal) ? "" : "You're not in a shared team yet. "}
-          <Link href="/teams" className="underline">
+          <Link href="/teams?all" className="underline">
             Make or manage teams
           </Link>
         </p>
