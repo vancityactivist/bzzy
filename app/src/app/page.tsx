@@ -224,20 +224,20 @@ async function HomeContent() {
     <AppShell>
       <Container className="max-lg:pt-0">
         <StudioProvider library={library} live={liveShow}>
-          <div className="grid gap-6 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:items-start lg:gap-8">
+          <div className="grid grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:items-start lg:gap-8">
             <StudioPreview devices={previews} example={mine.length === 0} summary={summary} />
             <div className="space-y-6">
               <Card>
                 <CardHeader
                   title="Set your status"
-                  description="Tap one to set it. It overrides your calendar until it runs out or you go back to automatic."
+                  description="Overrides your calendar until it ends."
                 />
                 <StatusControls active={active} className="mt-5" />
               </Card>
               <Card>
                 <CardHeader
                   title="Show something"
-                  description="Put a GIF or a message on your screen right now. The ring keeps your status colour unless you add a ring effect, and a press of its button takes it down."
+                  description="A GIF or message on your light right now. A press of its button takes it down."
                 />
                 <ShowNowControls className="mt-5" flashOff={mine.length > 0 && mine.every((d) => !d.ring.allowFlash)} />
               </Card>

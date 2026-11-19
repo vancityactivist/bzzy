@@ -326,9 +326,10 @@ function Chips({
   onChange: (m: number) => void;
 }) {
   return (
-    <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
+    // One row: it scrolls sideways on a narrow phone rather than wrapping into a block.
+    <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
       {options.map((d) => (
-        <label key={d.minutes} className="cursor-pointer">
+        <label key={d.minutes} className="shrink-0 cursor-pointer">
           <input
             type="radio"
             name={name}
@@ -337,7 +338,7 @@ function Chips({
             onChange={() => onChange(d.minutes)}
             className="peer sr-only"
           />
-          <span className="flex h-10 items-center justify-center rounded-xl border border-line bg-card px-3.5 text-sm font-medium text-muted shadow-card transition-colors hover:border-line-strong hover:text-foreground peer-checked:border-foreground peer-checked:bg-foreground peer-checked:text-background peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-ring">
+          <span className="flex h-9 items-center justify-center rounded-full border border-line bg-card px-3.5 text-sm font-medium whitespace-nowrap text-muted shadow-card transition-colors hover:border-line-strong hover:text-foreground peer-checked:border-foreground peer-checked:bg-foreground peer-checked:text-background peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-ring">
             {d.label}
           </span>
         </label>
@@ -388,49 +389,51 @@ export function StatusControls({ active = null, className }: { active?: ActiveSt
         setDraft({ status: null });
         if (!form.current?.contains(document.activeElement)) setFocus(null);
       }}
-      className={cx("space-y-5", className)}
+      className={cx("space-y-4", className)}
     >
-      <StatusTiles active={active} covered={covered} />
-
+      {/* How long and what it says come first, so one tap on a status sends all of it. */}
       <fieldset>
-        <legend className="mb-1.5 text-sm font-medium">For how long</legend>
+        <legend className="mb-1.5 text-sm font-medium">For</legend>
         <Chips name="minutes" options={durations} value={status.minutes} onChange={(m) => setDraft({ minutes: m })} />
       </fieldset>
 
-      <Field
-        label="Message"
-        htmlFor="status-text"
-        hint={
-          !fitsStatusBar(status.text) ? (
+      <div>
+        <label htmlFor="status-text" className="sr-only">
+          Message
+        </label>
+      <Input
+        id="status-text"
+        aria-describedby="status-text-hint"
+        name="text"
+        maxLength={TEXT_MAX}
+        value={status.text}
+        onChange={(e) => setDraft({ text: e.target.value })}
+        onKeyDown={(e) => {
+          if (e.key !== "Enter" || e.nativeEvent.isComposing) return;
+          e.preventDefault();
+          const button = sendWith && form.current?.querySelector<HTMLButtonElement>(`button[name="status"][value="${sendWith}"]`);
+          if (button) form.current?.requestSubmit(button);
+        }}
+        placeholder="Add a message, like On a call"
+        autoComplete="off"
+      />
+        <p id="status-text-hint" className="mt-1.5 text-xs text-muted" aria-live="polite">
+          {!fitsStatusBar(status.text) ? (
             // The light draws it on one line and cuts off both ends: say so before it's sent.
-            <span className="text-danger" aria-live="polite">
-              Too long for one line: the light cuts off both ends. Keep it to about 20 letters, or use Show something for a longer message.
-            </span>
+            <span className="text-danger">Too long for one line: the light cuts off both ends. Keep it to about 20 letters, or use Show something.</span>
           ) : status.text.trim() && screenText(status.text.trim()) !== status.text.trim() ? (
             "The screen only has plain letters: emoji and accents are left out."
           ) : sendWith ? (
-            `Shown under the status on the screen. Optional. Press Enter to send it with ${STATUS_META[sendWith].label}.`
+            <>
+              Optional, shown under your status.<span className="max-sm:hidden"> Press Enter to send it with {STATUS_META[sendWith].label}.</span>
+            </>
           ) : (
-            "Shown under the status on the screen. Optional. Pick a status above to send it."
-          )
-        }
-      >
-        <Input
-          id="status-text"
-          name="text"
-          maxLength={TEXT_MAX}
-          value={status.text}
-          onChange={(e) => setDraft({ text: e.target.value })}
-          onKeyDown={(e) => {
-            if (e.key !== "Enter" || e.nativeEvent.isComposing) return;
-            e.preventDefault();
-            const button = sendWith && form.current?.querySelector<HTMLButtonElement>(`button[name="status"][value="${sendWith}"]`);
-            if (button) form.current?.requestSubmit(button);
-          }}
-          placeholder="On a call, back at 3"
-          autoComplete="off"
-        />
-      </Field>
+            "Optional, shown under your status."
+          )}
+        </p>
+      </div>
+
+      <StatusTiles active={active} covered={covered} />
 
       {manual && changed && (
         <div className="flex justify-end">
