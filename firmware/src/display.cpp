@@ -309,6 +309,19 @@ static bool g_dark = false;
 
 static void drawLogo();
 
+// The black bar along the bottom with a one-off line ("Updating firmware 42%"). With
+// `clear` false the bar is already there: the text is drawn over the old text with a
+// black background the width of the screen, so nothing blanks between the two.
+static void drawNotice(const char* notice, bool clear = true) {
+  if (clear) g_lcd.fillRect(0, kH - 28, kW, 28, TFT_BLACK);
+  g_lcd.setFont(&fonts::Font2);
+  g_lcd.setTextDatum(lgfx::middle_center);
+  g_lcd.setTextColor(TFT_WHITE, TFT_BLACK);
+  g_lcd.setTextPadding(clear ? 0 : kW - 40);  // clear of the offline badge in the corner
+  g_lcd.drawString(notice, kW / 2, kH - 14);
+  g_lcd.setTextPadding(0);
+}
+
 static void redraw(const View& v) {
   if (v.layout == Layout::Off) {
     closeGif();
@@ -383,13 +396,7 @@ static void redraw(const View& v) {
     drawUntil(v.until, kDy + 222, bg);
   }
 
-  if (v.notice && *v.notice) {
-    g_lcd.fillRect(0, kH - 28, kW, 28, TFT_BLACK);
-    g_lcd.setFont(&fonts::Font2);
-    g_lcd.setTextDatum(lgfx::middle_center);
-    g_lcd.setTextColor(TFT_WHITE, TFT_BLACK);
-    g_lcd.drawString(v.notice, kW / 2, kH - 14);
-  }
+  if (v.notice && *v.notice) drawNotice(v.notice);
   drawOfflineBadge(v.online);
 }
 
@@ -528,10 +535,19 @@ void show(const View& v) {
       strcmp(notice, g_lastNotice) == 0) {
     return;
   }
+  // Only the notice's wording changed (the update's percentage ticking up): redraw just
+  // its bar, not the whole screen, which flickered on every percent.
+  const bool onlyNotice = g_drawn && v.layout == g_last.layout && v.status == g_last.status &&
+                          v.until == g_last.until && v.online == g_last.online &&
+                          strcmp(text, g_lastText) == 0 && *notice && *g_lastNotice;
   g_last = v;
   strlcpy(g_lastText, text, sizeof(g_lastText));
   strlcpy(g_lastNotice, notice, sizeof(g_lastNotice));
   g_drawn = true;
+  if (onlyNotice) {
+    drawNotice(notice, false);
+    return;
+  }
   redraw(v);
 }
 
