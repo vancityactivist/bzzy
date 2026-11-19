@@ -48,8 +48,8 @@ export function PushComposer({ teamId, members, library }: { teamId: string; mem
   return (
     <Card>
       <CardHeader
-        title="Send a push"
-        description="Goes on top of whatever each light shows, including their own show now. The top button on a light dismisses it for that person."
+        title="Send an announcement"
+        description="Goes on top of whatever each light shows, including their own Show now. A press of a light's button dismisses it for that person."
       />
       <form action={action} className="mt-5 grid gap-6 md:grid-cols-[auto_1fr]">
         <div className="flex justify-center md:sticky md:top-20 md:self-start">
@@ -132,14 +132,14 @@ export function PushComposer({ teamId, members, library }: { teamId: string; mem
               <RingPicker
                 value={ring}
                 onChange={(v) => setRing((r) => ({ ...r, ...v }))}
-                note="Never faster than 3 flashes a second. Lights on older firmware show the push without flashing until they update."
+                note="Never faster than 3 flashes a second. Lights on older firmware show it without flashing until they update."
               />
             </div>
           </fieldset>
 
           <div className="flex flex-wrap items-center gap-2 border-t border-line pt-4">
             <Button variant="primary" disabled={pending || !ready} className="px-5">
-              {pending ? "Sending…" : "Send push"}
+              {pending ? "Sending…" : "Send announcement"}
             </Button>
             <Select
               name="minutes"
@@ -213,7 +213,7 @@ export function PushList({ teamId, pushes }: { teamId: string; pushes: PushSumma
   if (pushes.length === 0) return null;
   return (
     <Card padding="none" className="overflow-hidden">
-      <CardHeader title="Pushes" description="Live now, and from the last day." className="p-5 pb-3 sm:p-6 sm:pb-3" />
+      <CardHeader title="Announcements" description="Live now, and from the last day." className="p-5 pb-3 sm:p-6 sm:pb-3" />
       <ul className="divide-y divide-line border-t border-line">
         {pushes.map((p) => (
           <li key={p.id} className="flex flex-wrap items-center gap-x-3 gap-y-2 px-5 py-3 sm:px-6">

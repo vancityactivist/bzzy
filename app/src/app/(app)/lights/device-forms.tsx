@@ -1,11 +1,10 @@
 "use client";
 
-import Link from "next/link";
 import { useActionState, useState, useTransition } from "react";
 
 import { CheckIcon, RefreshIcon, TrashIcon } from "@/components/icons";
 import { MoreMenu } from "@/components/more-menu";
-import { Button, Card, CardHeader, Field, Input } from "@/components/ui";
+import { Button, Field, Input } from "@/components/ui";
 
 import { addDevice, newDeviceToken, removeDevice, type NewDeviceResult } from "@/app/actions";
 import { CopyButton } from "./copy-button";
@@ -47,26 +46,15 @@ function Credentials({ id, token }: { id: string; token: string }) {
 export function AddDeviceForm() {
   const [state, action, pending] = useActionState<NewDeviceResult, FormData>(addDevice, null);
   return (
-    <Card id="add-device" className="scroll-mt-20">
-      <CardHeader
-        title="Add a device"
-        description={
-          <>
-            A new light shows a QR code once it&apos;s on Wi-Fi: scan it, or type its code at{" "}
-            <Link href="/pair" className="font-medium text-foreground underline underline-offset-2">
-              /pair
-            </Link>
-            . To set one up by hand instead, give it a name here and type the details into its setup page.
-          </>
-        }
-      />
+    <div>
+      <p className="text-sm text-muted">Give it a name here, then type the details into the light&apos;s own setup page.</p>
       <form action={action} className="mt-4 space-y-3">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
           <Field label="Name" htmlFor="device-name" className="flex-1" error={state?.ok === false ? state.error : undefined}>
             <Input id="device-name" name="name" required maxLength={60} placeholder="Desk light" aria-invalid={state?.ok === false || undefined} />
           </Field>
           <Button variant="primary" disabled={pending}>
-            {pending ? "Adding…" : "Add device"}
+            {pending ? "Adding…" : "Add light"}
           </Button>
         </div>
         <label className="flex cursor-pointer items-start gap-2 text-sm">
@@ -82,7 +70,7 @@ export function AddDeviceForm() {
           <Credentials id={state.id} token={state.token} />
         </div>
       )}
-    </Card>
+    </div>
   );
 }
 

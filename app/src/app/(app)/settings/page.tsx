@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 
-import { CalendarIcon, ClockIcon, CodeIcon, KeyIcon, UsersIcon, WebhookIcon } from "@/components/icons";
+import { CalendarIcon, ClockIcon, CodeIcon, KeyIcon, StatusIcon, WebhookIcon } from "@/components/icons";
 import { AddPasskey } from "@/components/passkey-buttons";
 import { Reveal } from "@/components/reveal";
 import { SignIn } from "@/components/sign-in";
@@ -14,13 +14,14 @@ import { blocksForDevice } from "@/lib/ics";
 import { passkeysForUser } from "@/lib/passkeys";
 import { nowSeconds } from "@/lib/protocol";
 import { getCurrentUser } from "@/lib/session";
-import { teamsForUser } from "@/lib/teams";
+import { getLook } from "@/lib/look";
 import { EVENT_INFO, FAILURES_TO_DISABLE, MAX_WEBHOOKS } from "@/lib/webhook-rules";
 import { webhooksForUser } from "@/lib/webhooks";
 
-import { absoluteTime, relativeTime } from "../devices/relative-time";
+import { absoluteTime, relativeTime } from "../lights/relative-time";
 import { NewApiTokenForm, RevokeApiToken } from "./api-token-forms";
 import { AddCalendarForm, CalendarActions } from "./calendar-forms";
+import { DefaultStatusForm } from "./default-status-form";
 import { PasskeyActions } from "./passkey-forms";
 import { NewWebhookForm, WebhookActions } from "./webhook-forms";
 import { WorkHoursForm } from "./work-hours-form";
@@ -41,8 +42,8 @@ async function SettingsContent() {
   const user = await getCurrentUser();
   if (!user) return <SignIn />;
   await refreshStaleCalendars(user.id);
-  const [teams, calendars, passkeys, clock, tokens, webhooks] = await Promise.all([
-    teamsForUser(user.id),
+  const [look, calendars, passkeys, clock, tokens, webhooks] = await Promise.all([
+    getLook(user.id),
     calendarsForUser(user.id),
     passkeysForUser(user.id),
     userClock(user.id),
@@ -71,6 +72,11 @@ async function SettingsContent() {
           </a>
         ))}
       </nav>
+
+      <div className="pt-2">
+        <h2 className="text-lg font-semibold tracking-tight">Your day</h2>
+        <p className="mt-1 text-sm text-muted">What your lights follow when you haven&apos;t set a status.</p>
+      </div>
 
       <Card id="calendars" className="scroll-mt-32">
         <CardHeader
@@ -132,6 +138,21 @@ async function SettingsContent() {
         </Reveal>
       </Card>
 
+      <Card id="between" className="scroll-mt-32">
+        <CardHeader
+          title={
+            <span className="flex items-center gap-2">
+              <StatusIcon className="size-5 text-muted" />
+              Between meetings
+            </span>
+          }
+          description="What your lights show when there's no meeting and you haven't set anything."
+        />
+        <div className="mt-5">
+          <DefaultStatusForm value={look.defaultStatus} />
+        </div>
+      </Card>
+
       <Card id="hours" className="scroll-mt-32">
         <CardHeader
           title={
@@ -146,6 +167,10 @@ async function SettingsContent() {
           <WorkHoursForm hours={clock.workHours} timeZone={clock.timeZone} zones={timeZones(clock.timeZone)} />
         </div>
       </Card>
+
+      <div className="pt-4">
+        <h2 className="text-lg font-semibold tracking-tight">Account</h2>
+      </div>
 
       <Card id="passkeys" className="scroll-mt-32">
         <CardHeader
@@ -194,34 +219,6 @@ async function SettingsContent() {
         </div>
       </Card>
 
-      <Card id="teams" className="scroll-mt-32">
-        <CardHeader
-          title={
-            <span className="flex items-center gap-2">
-              <UsersIcon className="size-5 text-muted" />
-              Teams
-            </span>
-          }
-        />
-        <ul className="mt-3 divide-y divide-line text-sm">
-          {teams
-            .filter((t) => !t.personal)
-            .map((t) => (
-              <li key={t.id} className="flex items-center justify-between gap-3 py-2.5 first:pt-0 last:pb-0">
-                <Link href={`/teams/${t.id}`} className="min-w-0 truncate font-medium hover:underline">
-                  {t.name}
-                </Link>
-                <Badge>{t.role}</Badge>
-              </li>
-            ))}
-        </ul>
-        <p className="mt-4 text-sm text-muted">
-          {teams.some((t) => !t.personal) ? "" : "You're not in a shared team yet. "}
-          <Link href="/teams?all" className="underline">
-            Make or manage teams
-          </Link>
-        </p>
-      </Card>
       <div id="developer" className="scroll-mt-32 pt-4">
         <h2 className="text-lg font-semibold tracking-tight">Developer</h2>
         <p className="mt-1 text-sm text-muted">For scripts, Stream Deck, Home Assistant and other apps. Most people never need these.</p>
@@ -376,9 +373,9 @@ async function SettingsContent() {
 
 const SECTIONS = [
   { id: "calendars", label: "Calendars" },
+  { id: "between", label: "Between meetings" },
   { id: "hours", label: "Working hours" },
   { id: "passkeys", label: "Passkeys" },
-  { id: "teams", label: "Teams" },
   { id: "developer", label: "Developer" },
 ];
 

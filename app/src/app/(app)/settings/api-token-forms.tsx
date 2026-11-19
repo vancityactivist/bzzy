@@ -7,7 +7,7 @@ import { Button, Field, Input, Select } from "@/components/ui";
 import { DEFAULT_EXPIRY_DAYS, DEFAULT_SCOPES, SCOPE_INFO, SCOPES, TOKEN_EXPIRY_DAYS } from "@/lib/api-rules";
 
 import { createApiTokenAction, type NewTokenResult, revokeApiTokenAction } from "@/app/actions";
-import { CopyButton } from "../devices/copy-button";
+import { CopyButton } from "../lights/copy-button";
 
 const expiryLabel = (d: number) => (d === 0 ? "Never" : d === 365 ? "1 year" : `${d} days`);
 

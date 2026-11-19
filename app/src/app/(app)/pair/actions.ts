@@ -44,5 +44,5 @@ export async function claimPairingAction(code: string, _prev: PairResult, formDa
     throw e;
   }
   refresh();
-  redirect(`/devices?paired=${deviceId}`);
+  redirect(`/lights/${deviceId}?added=1`);
 }

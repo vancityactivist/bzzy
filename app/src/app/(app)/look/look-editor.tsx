@@ -3,21 +3,17 @@
 import { useState, useTransition } from "react";
 
 import { DevicePreview } from "@/components/device-preview";
-import { CheckIcon, ChevronRightIcon } from "@/components/icons";
+import { CheckIcon } from "@/components/icons";
 import { STATUS_META } from "@/components/status-meta";
 import { Button, cx, Select, StatusDot } from "@/components/ui";
-import type { DeviceRing } from "@/lib/devices";
 import { type Status, STATUSES } from "@/lib/protocol";
-import {
-  type LedStyle,
-  type Pattern,
-  PATTERNS,
-  PUSH_COLORS,
-} from "@/lib/push-rules";
-import { ringFromInput, type RingInput, WARN_MINUTES } from "@/lib/ring";
+import { type LedStyle, type Pattern, PATTERNS, PUSH_COLORS } from "@/lib/push-rules";
+import { type LedStyles, lookRingFromInput, type LookRingInput, type MeetingWarn, WARN_MINUTES } from "@/lib/ring";
 import { viewFor } from "@/lib/screen";
 
-import { setDeviceRingAction } from "@/app/actions";
+import { setLookGifAction, setLookRingAction } from "@/app/actions";
+
+export type GifOption = { value: string; label: string; src: string | null };
 
 const PATTERN_LABEL: Record<Pattern, string> = {
   solid: "Steady",
@@ -27,219 +23,195 @@ const PATTERN_LABEL: Record<Pattern, string> = {
   spin: "Spin",
 };
 
-function initial(ring: DeviceRing): RingInput {
+function initialRing(ledStyles: LedStyles | null, meetingWarn: MeetingWarn | null): LookRingInput {
   const styles = Object.fromEntries(
     STATUSES.map((s) => {
-      const st = ring.ledStyles?.[s];
+      const st = ledStyles?.[s];
       return [s, { pattern: st?.pattern ?? "solid", speed: st?.speed ?? 2 }];
     }),
-  ) as RingInput["styles"];
-  const w = ring.meetingWarn;
+  ) as LookRingInput["styles"];
   return {
-    allowFlash: ring.allowFlash,
     styles,
-    warnMinutes: w?.minutes ?? 0,
-    warnPattern: w?.leds.pattern ?? "pulse",
-    warnColor: w?.leds.color ?? "#ff2000",
-    warnSpeed: w?.leds.speed ?? 2,
+    warnMinutes: meetingWarn?.minutes ?? 0,
+    warnPattern: meetingWarn?.leds.pattern ?? "pulse",
+    warnColor: meetingWarn?.leds.color ?? "#ff2000",
+    warnSpeed: meetingWarn?.leds.speed ?? 2,
   };
 }
 
-// How the ring around the screen moves: a style for each status, a warning before
-// meetings, and a switch to keep it steady (team pushes included).
-export function DeviceRingSettings({
-  deviceId,
-  ring,
-  defaultStatus,
-}: {
-  deviceId: string;
-  ring: DeviceRing;
-  defaultStatus: Status;
-}) {
-  const [form, setForm] = useState<RingInput>(() => initial(ring));
-  const [preview, setPreview] = useState<Status | "warn">(defaultStatus);
-  const [saved, setSaved] = useState<"saved" | "failed" | null>(null);
-  const [pending, start] = useTransition();
-  const set = (d: Partial<RingInput>) => {
-    setSaved(null);
-    setForm((f) => ({ ...f, ...d }));
-  };
-  const setStyle = (s: Status, d: Partial<RingInput["styles"][Status]>) => {
-    setPreview(s);
-    set({ styles: { ...form.styles, [s]: { ...form.styles[s], ...d } } });
-  };
+const sameRing = (a: LookRingInput, b: LookRingInput) => JSON.stringify(a) === JSON.stringify(b);
 
-  const built = ringFromInput(form);
+// How every light that follows you looks: the GIF and ring for each status, and the
+// warning before a meeting. One preview beside it shows whichever row you're on, and one
+// Save sends it all (the lights pick it up on their next check-in).
+export function LookEditor({
+  gifs,
+  options,
+  defaults,
+  ledStyles,
+  meetingWarn,
+  lights,
+}: {
+  gifs: Record<Status, string>; // "default" | "none" | "builtin:<id>" | "asset:<id>"
+  options: GifOption[];
+  defaults: Record<Status, GifOption>;
+  ledStyles: LedStyles | null;
+  meetingWarn: MeetingWarn | null;
+  lights: string[]; // names of the lights that follow you, for the "Saved" line
+}) {
+  const [savedGifs, setSavedGifs] = useState(gifs);
+  const [gifDraft, setGifDraft] = useState(gifs);
+  const [savedRing, setSavedRing] = useState(() => initialRing(ledStyles, meetingWarn));
+  const [ring, setRing] = useState(savedRing);
+  const [preview, setPreview] = useState<Status | "warn">("busy");
+  const [result, setResult] = useState<"saved" | "failed" | null>(null);
+  const [pending, start] = useTransition();
+
+  const dirty = STATUSES.some((s) => gifDraft[s] !== savedGifs[s]) || !sameRing(ring, savedRing);
+  const optionFor = (s: Status) => (gifDraft[s] === "default" ? defaults[s] : options.find((o) => o.value === gifDraft[s]));
+  const built = lookRingFromInput(ring);
   const status: Status = preview === "warn" ? "free" : preview;
-  const shown: LedStyle | null = !form.allowFlash
-    ? null
-    : preview === "warn"
-      ? (built.meetingWarn?.leds ?? null)
-      : (built.ledStyles[preview] ?? null);
-  const off = !form.allowFlash;
+  const shownRing: LedStyle | null = preview === "warn" ? (built.meetingWarn?.leds ?? null) : (built.ledStyles[preview] ?? null);
+  const touch = () => setResult(null);
+  const setStyle = (s: Status, d: Partial<LookRingInput["styles"][Status]>) => {
+    touch();
+    setPreview(s);
+    setRing((r) => ({ ...r, styles: { ...r.styles, [s]: { ...r.styles[s], ...d } } }));
+  };
+  const setWarn = (d: Partial<LookRingInput>) => {
+    touch();
+    setPreview("warn");
+    setRing((r) => ({ ...r, ...d }));
+  };
 
   return (
-    <details className="group w-full border-t border-line pt-3">
-      <summary className="-mx-2 flex h-8 w-fit cursor-pointer list-none items-center gap-1.5 rounded-lg px-2 text-sm font-medium text-muted transition-colors select-none hover:bg-subtle hover:text-foreground [&::-webkit-details-marker]:hidden">
-        <ChevronRightIcon className="size-4 transition-transform duration-150 group-open:rotate-90" />
-        Ring and flashing
-      </summary>
-      <form
-        className="mt-4 space-y-6"
-        onSubmit={(e) => {
-          e.preventDefault();
-          start(async () => {
-            const r = await setDeviceRingAction(deviceId, form);
-            setSaved(r.ok ? "saved" : "failed");
-          });
-        }}
-      >
-        <div className="flex flex-col items-center gap-5 rounded-xl bg-subtle p-4 sm:flex-row sm:items-start">
-          <DevicePreview
-            view={viewFor({ status, text: "", until: 0 })}
-            gifSrc={null}
-            ring={shown}
-            scale={0.6}
-            className="m-3 shrink-0"
-          />
-          <div className="w-full min-w-0 space-y-3">
-            <h3 className="text-sm font-medium">Preview the ring</h3>
-            <div
-              className="flex flex-wrap gap-2"
-              role="group"
-              aria-label="What to preview"
-            >
-              {STATUSES.map((s) => (
-                <Button
-                  key={s}
-                  type="button"
-                  size="sm"
-                  variant={preview === s ? "primary" : "secondary"}
-                  aria-pressed={preview === s}
-                  onClick={() => setPreview(s)}
-                >
-                  <StatusDot status={s} size="sm" />
-                  {STATUS_META[s].label}
-                </Button>
-              ))}
-              <Button
-                type="button"
-                size="sm"
-                variant={preview === "warn" ? "primary" : "secondary"}
-                aria-pressed={preview === "warn"}
-                onClick={() => setPreview("warn")}
-              >
-                Meeting soon
-              </Button>
-            </div>
-            <label className="flex items-start gap-2 pt-2 text-sm">
-              <input
-                type="checkbox"
-                className="mt-0.5 size-4 accent-foreground"
-                checked={form.allowFlash}
-                onChange={(e) => set({ allowFlash: e.target.checked })}
-              />
-              <span>
-                <span className="font-medium">Let this light flash</span>
-                <span className="block text-muted">
-                  Off keeps the ring steady in the status colour, even for team
-                  pushes.
-                </span>
-              </span>
-            </label>
-            <p className="text-xs text-muted">
-              Never faster than 3 flashes a second. Lights on older firmware
-              stay steady until they update.
-            </p>
-          </div>
-        </div>
+    <form
+      className="grid grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-[minmax(0,4fr)_minmax(0,7fr)] lg:items-start"
+      onSubmit={(e) => {
+        e.preventDefault();
+        start(async () => {
+          const changed = STATUSES.filter((s) => gifDraft[s] !== savedGifs[s]);
+          const results = await Promise.all([
+            ...changed.map((s) => setLookGifAction(s, gifDraft[s])),
+            sameRing(ring, savedRing) ? { ok: true } : setLookRingAction(ring),
+          ]);
+          const ok = results.every((r) => r.ok);
+          if (ok) {
+            setSavedGifs(gifDraft);
+            setSavedRing(ring);
+          }
+          setResult(ok ? "saved" : "failed");
+        });
+      }}
+    >
+      <div className="flex flex-col items-center gap-3 rounded-2xl bg-subtle p-5 lg:sticky lg:top-20">
+        <DevicePreview
+          view={viewFor({ status, text: "", until: 0 })}
+          gifSrc={preview === "warn" ? optionFor("free")?.src ?? null : (optionFor(preview)?.src ?? null)}
+          ring={shownRing}
+          scale={0.8}
+          className="m-4"
+        />
+        <p className="text-center text-sm text-muted" aria-live="polite">
+          {preview === "warn" ? "A meeting is about to start" : STATUS_META[preview].label}
+        </p>
+      </div>
 
-        <fieldset
-          disabled={off}
-          className={cx("space-y-6", off && "opacity-50")}
-        >
-          <div>
-            <h3 className="text-sm font-medium">For each status</h3>
-            <ul className="mt-3 grid gap-3 sm:grid-cols-2">
-              {STATUSES.map((s) => (
-                <li key={s} className="flex flex-wrap items-center gap-2">
-                  <span className="flex basis-full items-center gap-1.5 text-sm">
+      <div className="min-w-0 space-y-6">
+        <ul className="divide-y divide-line rounded-2xl border border-line bg-card shadow-card">
+          {STATUSES.map((s) => {
+            const opt = optionFor(s);
+            const st = ring.styles[s];
+            return (
+              <li
+                key={s}
+                className={cx("flex flex-wrap items-center gap-3 p-4 transition-colors", preview === s && "bg-subtle/60")}
+                onMouseEnter={() => setPreview(s)}
+                onFocus={() => setPreview(s)}
+              >
+                <div className="flex h-12 w-14 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-[#0b0b0c]">
+                  {opt?.src ? (
+                    // eslint-disable-next-line @next/next/no-img-element -- animated GIF preview
+                    <img src={opt.src} alt="" className="max-h-full max-w-full" />
+                  ) : (
+                    <span className={cx("h-full w-full", STATUS_META[s].bg)} />
+                  )}
+                </div>
+                <div className="min-w-0 flex-1 basis-56 space-y-2">
+                  <p className="flex items-center gap-1.5 text-sm font-medium">
                     <StatusDot status={s} size="sm" />
                     {STATUS_META[s].label}
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <Select
-                      aria-label={`${STATUS_META[s].label}: pattern`}
-                      value={form.styles[s].pattern}
-                      onChange={(e) =>
-                        setStyle(s, { pattern: e.target.value as Pattern })
-                      }
-                      onFocus={() => setPreview(s)}
-                    >
-                      {PATTERNS.map((p) => (
-                        <option key={p} value={p}>
-                          {PATTERN_LABEL[p]}
-                        </option>
-                      ))}
-                    </Select>
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    <div className="min-w-0 flex-1 basis-44">
+                      <Select
+                        aria-label={`${STATUS_META[s].label}: GIF`}
+                        value={gifDraft[s]}
+                        onChange={(e) => {
+                          touch();
+                          setPreview(s);
+                          setGifDraft((g) => ({ ...g, [s]: e.target.value }));
+                        }}
+                      >
+                        <option value="default">{defaults[s].label} (built in)</option>
+                        {options.map((o) => (
+                          <option key={o.value} value={o.value}>
+                            {o.label}
+                          </option>
+                        ))}
+                        <option value="none">No GIF, just the colour</option>
+                      </Select>
+                    </div>
+                    <div className="w-28 shrink-0">
+                      <Select
+                        aria-label={`${STATUS_META[s].label}: ring`}
+                        value={st.pattern}
+                        onChange={(e) => setStyle(s, { pattern: e.target.value as Pattern })}
+                      >
+                        {PATTERNS.map((p) => (
+                          <option key={p} value={p}>
+                            {PATTERN_LABEL[p]}
+                          </option>
+                        ))}
+                      </Select>
+                    </div>
+                    {st.pattern !== "solid" && (
+                      <div className="w-24 shrink-0">
+                        <Select
+                          aria-label={`${STATUS_META[s].label}: ring speed`}
+                          value={st.speed}
+                          onChange={(e) => setStyle(s, { speed: Number(e.target.value) })}
+                        >
+                          <option value={1}>Slow</option>
+                          <option value={2}>Normal</option>
+                          <option value={3}>Fast</option>
+                        </Select>
+                      </div>
+                    )}
                   </div>
-                  <div className="w-28 shrink-0">
-                    <Select
-                      aria-label={`${STATUS_META[s].label}: speed`}
-                      value={form.styles[s].speed}
-                      disabled={off || form.styles[s].pattern === "solid"}
-                      onChange={(e) =>
-                        setStyle(s, { speed: Number(e.target.value) })
-                      }
-                    >
-                      <option value={1}>Slow</option>
-                      <option value={2}>Normal</option>
-                      <option value={3}>Fast</option>
-                    </Select>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <div className="space-y-3">
+                </div>
+              </li>
+            );
+          })}
+          <li className={cx("space-y-3 p-4 transition-colors", preview === "warn" && "bg-subtle/60")} onMouseEnter={() => setPreview("warn")} onFocus={() => setPreview("warn")}>
             <div>
-              <h3 className="text-sm font-medium">Before a meeting</h3>
-              <p className="text-xs text-muted">
-                Flashes from a few minutes before each calendar event until it
-                starts, even if Wi-Fi drops.
-              </p>
+              <p className="text-sm font-medium">Before a meeting</p>
+              <p className="text-xs text-muted">Flashes the ring from a few minutes before each calendar event until it starts, even if Wi-Fi drops.</p>
             </div>
             <div className="flex flex-wrap gap-2">
-              <div className="w-52">
-                <Select
-                  aria-label="When"
-                  value={form.warnMinutes}
-                  onChange={(e) => {
-                    setPreview("warn");
-                    set({ warnMinutes: Number(e.target.value) });
-                  }}
-                >
+              <div className="w-48">
+                <Select aria-label="When to warn" value={ring.warnMinutes} onChange={(e) => setWarn({ warnMinutes: Number(e.target.value) })}>
                   {WARN_MINUTES.map((m) => (
                     <option key={m} value={m}>
-                      {m === 0
-                        ? "Don't warn me"
-                        : `${m} ${m === 1 ? "minute" : "minutes"} before`}
+                      {m === 0 ? "Don't warn me" : `${m} ${m === 1 ? "minute" : "minutes"} before`}
                     </option>
                   ))}
                 </Select>
               </div>
-              {form.warnMinutes > 0 && (
+              {ring.warnMinutes > 0 && (
                 <>
-                  <div className="w-32">
-                    <Select
-                      aria-label="Warning pattern"
-                      value={form.warnPattern}
-                      onChange={(e) => {
-                        setPreview("warn");
-                        set({ warnPattern: e.target.value as Pattern });
-                      }}
-                    >
+                  <div className="w-28">
+                    <Select aria-label="Warning pattern" value={ring.warnPattern} onChange={(e) => setWarn({ warnPattern: e.target.value as Pattern })}>
                       {PATTERNS.map((p) => (
                         <option key={p} value={p}>
                           {PATTERN_LABEL[p]}
@@ -247,60 +219,38 @@ export function DeviceRingSettings({
                       ))}
                     </Select>
                   </div>
-                  <div className="w-28">
-                    <Select
-                      aria-label="Warning speed"
-                      value={form.warnSpeed}
-                      disabled={off || form.warnPattern === "solid"}
-                      onChange={(e) =>
-                        set({ warnSpeed: Number(e.target.value) })
-                      }
-                    >
-                      <option value={1}>Slow</option>
-                      <option value={2}>Normal</option>
-                      <option value={3}>Fast</option>
-                    </Select>
-                  </div>
+                  {ring.warnPattern !== "solid" && (
+                    <div className="w-24">
+                      <Select aria-label="Warning speed" value={ring.warnSpeed} onChange={(e) => setWarn({ warnSpeed: Number(e.target.value) })}>
+                        <option value={1}>Slow</option>
+                        <option value={2}>Normal</option>
+                        <option value={3}>Fast</option>
+                      </Select>
+                    </div>
+                  )}
                 </>
               )}
             </div>
-            {form.warnMinutes > 0 && (
-              <div
-                className="flex flex-wrap items-center gap-2"
-                role="radiogroup"
-                aria-label="Warning colour"
-              >
+            {ring.warnMinutes > 0 && (
+              <div className="flex flex-wrap items-center gap-2" role="radiogroup" aria-label="Warning colour">
                 {PUSH_COLORS.map((c) => (
                   <button
                     key={c.value}
                     type="button"
                     role="radio"
-                    aria-checked={form.warnColor === c.value}
+                    aria-checked={ring.warnColor === c.value}
                     aria-label={c.value ? c.label : "The status colour"}
                     title={c.value ? c.label : "The status colour"}
-                    onClick={() => {
-                      setPreview("warn");
-                      set({ warnColor: c.value });
-                    }}
+                    onClick={() => setWarn({ warnColor: c.value })}
                     className={cx(
                       "flex size-8 items-center justify-center rounded-full ring-1 ring-line ring-inset transition-shadow",
-                      form.warnColor === c.value &&
-                        "ring-2 ring-foreground ring-offset-2 ring-offset-card",
+                      ring.warnColor === c.value && "ring-2 ring-foreground ring-offset-2 ring-offset-card",
                     )}
-                    style={{
-                      background:
-                        c.value ||
-                        "conic-gradient(#00c828 0 25%, #ff1400 0 50%, #a000ff 0 75%, #ff8c00 0)",
-                    }}
+                    style={{ background: c.value || "conic-gradient(#00c828 0 25%, #ff1400 0 50%, #a000ff 0 75%, #ff8c00 0)" }}
                   >
-                    {form.warnColor === c.value && (
+                    {ring.warnColor === c.value && (
                       <CheckIcon
-                        className={cx(
-                          "size-4",
-                          c.value === "#ffffff" || c.value === "#ffd400"
-                            ? "text-black"
-                            : "text-white",
-                        )}
+                        className={cx("size-4", c.value === "#ffffff" || c.value === "#ffd400" ? "text-black" : "text-white")}
                         strokeWidth={3}
                       />
                     )}
@@ -308,25 +258,33 @@ export function DeviceRingSettings({
                 ))}
               </div>
             )}
-          </div>
-        </fieldset>
+          </li>
+        </ul>
 
         <div className="flex flex-wrap items-center gap-3">
-          <Button variant="primary" disabled={pending}>
-            {pending ? "Saving…" : "Save ring settings"}
+          <Button variant="primary" disabled={pending || !dirty}>
+            {pending ? "Saving…" : "Save"}
           </Button>
-          {saved === "saved" && !pending && (
+          {dirty && !pending && <p className="text-sm text-muted">Not saved yet. The preview shows how it would look.</p>}
+          {result === "saved" && !dirty && !pending && (
             <p className="text-sm text-muted" role="status">
-              Saved. The light picks it up within about 20 seconds.
+              Saved.{" "}
+              {lights.length > 0
+                ? `${lights.join(", ")} ${lights.length === 1 ? "picks" : "pick"} it up within about 20 seconds.`
+                : "Your lights pick it up when you add them."}
             </p>
           )}
-          {saved === "failed" && (
+          {result === "failed" && (
             <p className="text-sm text-danger" role="alert">
-              Couldn&apos;t save that. Try again?
+              Couldn&apos;t save all of that. Try again?
             </p>
           )}
         </div>
-      </form>
-    </details>
+        <p className="text-xs text-muted">
+          A light can stay steady with &ldquo;Allow flashing&rdquo; off on its page. Rings never flash faster than 3 times a second, and lights on
+          older firmware stay steady until they update.
+        </p>
+      </div>
+    </form>
   );
 }

@@ -17,6 +17,9 @@ const nextConfig: NextConfig = {
         destination: "https://bzzy.ca/:path",
         permanent: true,
       },
+      // Old names for the Lights and Look pages (bookmarks, old links in emails).
+      { source: "/devices", destination: "/lights", permanent: false },
+      { source: "/gifs", destination: "/look#library", permanent: false },
     ];
   },
   // Search engines should only list bzzy.ca. The old host keeps serving lights (see above) but

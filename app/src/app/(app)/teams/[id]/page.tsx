@@ -11,12 +11,13 @@ import { BUILTIN_GIFS, gifsForUser, previewSrc } from "@/lib/gifs";
 import { mailConfigured } from "@/lib/mail";
 import { nowSeconds } from "@/lib/protocol";
 import { ackCount, PUSH_FLASHES, pushLive } from "@/lib/push-rules";
+import { devicesForUser } from "@/lib/devices";
 import { teamPushes } from "@/lib/pushes";
 import { getCurrentUser } from "@/lib/session";
 import { can, canRemove } from "@/lib/team-rules";
 import { teamAccess, teamAuditLog, teamInvites, teamMembers } from "@/lib/teams";
 
-import { absoluteTime, relativeTime, shortDate } from "../../devices/relative-time";
+import { absoluteTime, relativeTime, shortDate } from "../../lights/relative-time";
 import {
   DeleteTeamButton,
   InviteForm,
@@ -28,6 +29,7 @@ import {
 import type { LibraryGif } from "@/app/studio";
 import { AutoRefresh } from "./auto-refresh";
 import { Dashboard } from "./dashboard";
+import { LightRow } from "../../lights/light-row";
 import { PushComposer, PushList, type PushSummary } from "./push-composer";
 
 export const metadata: Metadata = { title: "Team" };
@@ -57,13 +59,16 @@ async function TeamContent({ params, searchParams }: PageProps<"/teams/[id]">) {
   const manage = can(access, "manage");
   const owner = can(access, "owner");
   const nowSec = nowSeconds();
-  const [members, invites, log, pushes, uploads] = await Promise.all([
+  const [members, invites, log, pushes, uploads, devices] = await Promise.all([
     teamMembers(team.id),
     manage ? teamInvites(team.id) : Promise.resolve([]),
     manage ? teamAuditLog(team.id) : Promise.resolve([]),
     manage ? teamPushes(team.id, nowSec) : Promise.resolve([]),
     manage ? gifsForUser(user.id) : Promise.resolve([]),
+    manage ? devicesForUser(user.id) : Promise.resolve([]),
   ]);
+  // The team's lights, for its admins: rename, flashing, updates (each light's page).
+  const teamLights = devices.filter((d) => d.teamId === team.id && d.canManage);
   const now = new Date();
   // Admins (and the superadmin) see everyone's light and send pushes; members don't.
   const cards = manage ? await teamDashboard(members, nowSec) : null;
@@ -116,11 +121,11 @@ async function TeamContent({ params, searchParams }: PageProps<"/teams/[id]">) {
         <div role="status" className="flex items-start gap-2 rounded-xl bg-free/10 p-4 text-sm ring-1 ring-inset ring-free/30">
           <CheckIcon className="mt-0.5 size-4 shrink-0 text-free" />
           <span>
-            You&apos;re in. Add your light on the{" "}
-            <Link href="/devices" className="underline">
-              Devices
+            You&apos;re in. Your lights show this team&apos;s announcements now. To change a light&apos;s team, open it on the{" "}
+            <Link href="/lights" className="underline">
+              Lights
             </Link>{" "}
-            page, where you can also choose which team each light follows.
+            page.
           </span>
         </div>
       )}
@@ -142,6 +147,17 @@ async function TeamContent({ params, searchParams }: PageProps<"/teams/[id]">) {
             <ShieldIcon className="mt-0.5 size-4 shrink-0 text-muted" />
             <span>You&apos;re not in this team. Anything you change here is recorded in its activity log as a superadmin action.</span>
           </p>
+        )}
+
+        {teamLights.length > 0 && (
+          <Card padding="none" className="overflow-hidden">
+            <CardHeader title="Lights" description="Lights in this team. Open one for its name, flashing and updates." className="p-5 pb-3 sm:p-6 sm:pb-3" />
+            <ul className="divide-y divide-line border-t border-line p-2">
+              {teamLights.map((d) => (
+                <LightRow key={d.id} d={d} now={now.getTime()} line={`${names.get(d.ownerUserId) ?? "Someone"}${d.followsOwner ? "" : " · its own status"}`} />
+              ))}
+            </ul>
+          </Card>
         )}
 
         <Card padding="none" className="overflow-hidden">
@@ -292,9 +308,9 @@ function describe(e: LogEntry, names: Map<string, string>): string {
     case "revoked":
       return `${who} revoked an invite link`;
     case "push":
-      return `${who} sent a push to ${d.target === "all" ? "everyone" : `${d.people} ${d.people === 1 ? "person" : "people"}`}${d.text ? `: “${d.text}”` : ""}`;
+      return `${who} sent an announcement to ${d.target === "all" ? "everyone" : `${d.people} ${d.people === 1 ? "person" : "people"}`}${d.text ? `: “${d.text}”` : ""}`;
     case "push-ended":
-      return `${who} ended a push${d.text ? `: “${d.text}”` : ""}`;
+      return `${who} ended an announcement${d.text ? `: “${d.text}”` : ""}`;
     default:
       return `${who}: ${e.action}`;
   }

@@ -10,9 +10,9 @@ import { cx } from "./ui";
 // The signed-in app's sections: pills in the header from sm up, a bottom tab bar on phones.
 
 const SECTIONS: { href: string; label: string; icon: ComponentType<IconProps> }[] = [
-  { href: "/", label: "Status", icon: StatusIcon },
-  { href: "/devices", label: "Devices", icon: DeviceIcon },
-  { href: "/gifs", label: "GIFs", icon: ImageIcon },
+  { href: "/", label: "Home", icon: StatusIcon },
+  { href: "/look", label: "Look", icon: ImageIcon },
+  { href: "/lights", label: "Lights", icon: DeviceIcon },
   { href: "/teams", label: "Team", icon: UsersIcon },
   { href: "/settings", label: "Settings", icon: SlidersIcon },
 ];

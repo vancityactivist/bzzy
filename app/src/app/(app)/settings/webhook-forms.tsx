@@ -14,7 +14,7 @@ import {
   testWebhookAction,
   type WebhookTestResult,
 } from "@/app/actions";
-import { CopyButton } from "../devices/copy-button";
+import { CopyButton } from "../lights/copy-button";
 
 export function NewWebhookForm({ first }: { first: boolean }) {
   const [state, action, pending] = useActionState<NewWebhookResult, FormData>(createWebhookAction, null);
