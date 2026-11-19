@@ -312,6 +312,7 @@ Keep the Waveshare pin mapping so the firmware change is a new `config.h` block 
 
 Firmware changes:
 
+- **Bench test first:** env `s3_devkit_tft169` (config block `BZZY_BOARD_S3_DEVKIT_TFT169`) runs an ESP32-S3-DevKitC-1 wired to a sample ER-TFT1.69-4 with exactly these pins. See [s3-devkit-bench-test.md](../s3-devkit-bench-test.md).
 - New env `bzzy_main_reva` extending `waveshare_s3_touch_lcd169`, with a `BZZY_BOARD_BZZY_MAIN_REVA` block in `config.h`: same pins, `BZZY_HAS_RTC 1`, `BZZY_HAS_TOUCH 1`, no IMU, `kLedMaxMilliamps` 250.
 - Display offsets and colour order depend on the panel chosen. If it's the same panel family, they match the Waveshare.
 - Memory: N16R8 = same `default_16MB.csv` partitions, OTA slots and GIF space. No change to OTA or the size check.

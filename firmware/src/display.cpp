@@ -27,6 +27,9 @@
 #ifndef BZZY_LCD_OFFSET_Y
 #define BZZY_LCD_OFFSET_Y 20
 #endif
+#ifndef BZZY_LCD_BL_INVERT
+#define BZZY_LCD_BL_INVERT 0  // 1 when the backlight is lit by pulling its pin LOW
+#endif
 #ifndef BZZY_LCD_PWM_CHANNEL
 #define BZZY_LCD_PWM_CHANNEL 7
 #endif
@@ -76,6 +79,7 @@ class Panel : public lgfx::LGFX_Device {
       c.pin_bl = PIN_LCD_BL;
       c.freq = 44100;
       c.pwm_channel = BZZY_LCD_PWM_CHANNEL;
+      c.invert = BZZY_LCD_BL_INVERT;
       light_.config(c);
       panel_.setLight(&light_);
     }
