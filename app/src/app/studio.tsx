@@ -393,6 +393,9 @@ export function StatusControls({ active = null, className }: { active?: ActiveSt
         setDraft({ status: null });
         setFocus(null);
       }}
+      // Don't let React's after-action reset untick the controlled duration pills
+      // (the next status would then go without one).
+      onReset={(e) => e.preventDefault()}
       onFocus={() => setFocus("status")}
       onMouseEnter={() => setFocus("status")}
       onMouseLeave={() => {
