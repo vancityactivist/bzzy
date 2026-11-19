@@ -52,7 +52,7 @@ export const SCOPE_INFO: Record<Scope, { label: string; detail: string }> = {
   status: { label: "Status", detail: "Set and clear your status" },
   show: { label: "Show now", detail: "Put a message or GIF on your lights and take it down" },
   webhooks: { label: "Webhooks", detail: "Add, change and remove your webhooks" },
-  push: { label: "Team pushes", detail: "Send and end pushes in teams where you're an owner or admin" },
+  push: { label: "Team announcements", detail: "Send and end announcements in teams where you're an owner or admin" },
 };
 
 export const DEFAULT_SCOPES: Scope[] = ["read", "status", "show"];

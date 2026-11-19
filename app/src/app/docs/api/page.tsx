@@ -297,9 +297,9 @@ def from_bzzy(secret: str, headers, body: bytes) -> bool:
           </Section>
 
           <Section id="recipes" title="Recipes">
-            <h3 className="text-lg font-semibold">Team pushes</h3>
+            <h3 className="text-lg font-semibold">Team announcements</h3>
             <p>
-              If you&apos;re a team&apos;s owner or admin, a token with the <C>push</C> scope can put a message on everyone&apos;s lights, the way
+              If you&apos;re a team&apos;s owner or admin, a token with the <C>push</C> scope can put an announcement on everyone&apos;s lights, the way
               the team page does. Find the team id with <C>GET /teams</C>, then:
             </p>
             <Code label="curl">{`curl -X POST ${BASE}/teams/$TEAM_ID/pushes \\
@@ -309,7 +309,7 @@ def from_bzzy(secret: str, headers, body: bytes) -> bool:
             <p>
               Add <C>&quot;people&quot;: [ids]</C> (from <C>GET /teams/&#123;id&#125;</C>) to send it to just those people. It stays up until it
               runs out, someone ends it (<C>DELETE /teams/&#123;id&#125;/pushes/&#123;pushId&#125;</C>), or each person dismisses it with their
-              light&apos;s button. Lights only show pushes from the team they follow, which each person picks on their Devices page.
+              light&apos;s button. A light shows announcements from its team, which its owner picks on the light&apos;s page under Lights.
             </p>
 
             <h3 className="text-lg font-semibold">Home Assistant</h3>
