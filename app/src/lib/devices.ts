@@ -5,6 +5,8 @@ import { desc, eq, inArray } from "drizzle-orm";
 import { db, schema } from "@/db";
 
 import { expire, tag } from "./cache";
+import { getLooks } from "./look";
+import { withLook } from "./look-rules";
 import { liveSeen } from "./seen";
 
 import { hashToken, newDeviceId, newDeviceToken } from "./device-token";
@@ -18,7 +20,14 @@ export type DeviceSummary = {
   name: string;
   teamId: string;
   teamName: string;
+  // Its team is the owner's personal one (shown as "Just you").
+  teamPersonal: boolean;
+  // The team whose announcements it shows, if the viewer is in it.
+  pushTeamName: string | null;
   ownerUserId: string;
+  // Off: it has its own status and Show now, and a press on it changes only it.
+  followsOwner: boolean;
+  // What it shows between meetings: its owner's, or its own when it doesn't follow them.
   defaultStatus: Status;
   pushTeamId: string | null;
   lastSeenAt: Date | null;
@@ -31,6 +40,7 @@ export type DeviceSummary = {
   ring: DeviceRing;
 };
 
+// allowFlash is the light's own; the styles and meeting warning are its owner's look.
 export type DeviceRing = { allowFlash: boolean; ledStyles: LedStyles | null; meetingWarn: MeetingWarn | null };
 
 export async function devicesForUser(userId: string): Promise<DeviceSummary[]> {
@@ -44,14 +54,19 @@ export async function devicesForUser(userId: string): Promise<DeviceSummary[]> {
       .orderBy(desc(schema.devices.createdAt)),
   );
   const byId = new Map(teams.map((t) => [t.id, t]));
-  return rows.map((d) => {
+  const looks = await getLooks(rows.map((d) => d.ownerUserId));
+  return rows.map((row) => {
+    const d = withLook(row, looks.get(row.ownerUserId)!);
     const team = byId.get(d.teamId)!;
     return {
       id: d.id,
       name: d.name,
       teamId: d.teamId,
       teamName: team.name,
+      teamPersonal: team.personal,
+      pushTeamName: d.pushTeamId ? (byId.get(d.pushTeamId)?.name ?? null) : null,
       ownerUserId: d.ownerUserId,
+      followsOwner: d.followsOwner,
       defaultStatus: d.defaultStatus,
       pushTeamId: d.pushTeamId,
       lastSeenAt: d.lastSeenAt,
@@ -68,6 +83,13 @@ export async function devicesForUser(userId: string): Promise<DeviceSummary[]> {
       ring: { allowFlash: d.allowFlash, ledStyles: d.ledStyles, meetingWarn: d.meetingWarn },
     };
   });
+}
+
+// The light, if this person owns it (whose status it shows, or could).
+export async function ownedDevice(userId: string, deviceId: string) {
+  const rows = await db().select().from(schema.devices).where(eq(schema.devices.id, deviceId)).limit(1);
+  const d = rows[0];
+  return d && d.ownerUserId === userId ? d : null;
 }
 
 // Owners of the device, and team owners/admins, can manage it.
@@ -90,8 +112,29 @@ export async function createDevice(userId: string, displayName: string, name: st
   return { id, token };
 }
 
-export async function setDeviceRing(deviceId: string, ring: DeviceRing) {
-  await db().update(schema.devices).set(ring).where(eq(schema.devices.id, deviceId));
+export async function setAllowFlash(deviceId: string, allowFlash: boolean) {
+  await db().update(schema.devices).set({ allowFlash }).where(eq(schema.devices.id, deviceId));
+  await expire(tag.device(deviceId));
+}
+
+export async function renameDevice(deviceId: string, name: string) {
+  await db().update(schema.devices).set({ name }).where(eq(schema.devices.id, deviceId));
+  await expire(tag.device(deviceId));
+}
+
+// "Follows me" off: the light starts on its own status from nothing set, so it shows its
+// "between meetings" status (which starts as its owner's).
+export async function setFollowsOwner(deviceId: string, followsOwner: boolean, ownerDefault: Status) {
+  await db()
+    .update(schema.devices)
+    .set(followsOwner ? { followsOwner } : { followsOwner, defaultStatus: ownerDefault })
+    .where(eq(schema.devices.id, deviceId));
+  await expire(tag.device(deviceId));
+}
+
+// What a light with its own status shows between meetings.
+export async function setLightDefault(deviceId: string, defaultStatus: Status) {
+  await db().update(schema.devices).set({ defaultStatus }).where(eq(schema.devices.id, deviceId));
   await expire(tag.device(deviceId));
 }
 

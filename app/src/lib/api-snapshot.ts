@@ -8,6 +8,9 @@ import { type ApiShow, apiStatus, type ApiStatus, iso } from "./api-rules";
 import { cachedRead, tag } from "./cache";
 import { calendarsForUser, type CalendarRow, refreshCalendar, scheduleFromCalendars, staleCalendars, userClock } from "./calendar";
 import type { ResolvedGif } from "./gifs";
+import { getLightShow, getLightStatus } from "./light-state";
+import { getLook } from "./look";
+import { withLook } from "./look-rules";
 import { isOnline } from "./poll-writes";
 import { type Presence, showVisible, type Status } from "./protocol";
 import { type LedStyle, pushAsShow, pushFor } from "./push-rules";
@@ -27,6 +30,9 @@ import { inWorkHours, type WorkHours, workWindows } from "./work-hours";
 type Light = {
   id: string;
   name: string;
+  followsOwner: boolean;
+  // A light that doesn't follow its owner: its own status and Show now.
+  own: { presence: Presence | null; show: CurrentShow | null } | null;
   defaultStatus: Status;
   pushTeamId: string | null;
   allowFlash: boolean;
@@ -46,19 +52,22 @@ export type ApiSnapshot = {
   presenceSource: string | null;
   show: CurrentShow | null;
   calendars: CalendarRow[];
+  // Their look's "between meetings" status (lib/look.ts).
+  defaultStatus: Status;
   lights: Light[];
   pushes: Push[];
 };
 
-const key = (userId: string) => `api:v1:${userId}`;
+const key = (userId: string) => `api:v2:${userId}`;
 const SNAPSHOT_TTL_SEC = 3 * 3600;
 
 async function load(userId: string) {
-  const [lights, clock, presenceRows, show, calendars, userRows] = await Promise.all([
+  const [rows, clock, presenceRows, show, calendars, userRows, look] = await Promise.all([
     db()
       .select({
         id: schema.devices.id,
         name: schema.devices.name,
+        followsOwner: schema.devices.followsOwner,
         defaultStatus: schema.devices.defaultStatus,
         pushTeamId: schema.devices.pushTeamId,
         allowFlash: schema.devices.allowFlash,
@@ -76,7 +85,14 @@ async function load(userId: string) {
     getShow(userId),
     calendarsForUser(userId),
     db().select({ name: schema.users.name, email: schema.users.email }).from(schema.users).where(eq(schema.users.id, userId)).limit(1),
+    getLook(userId),
   ]);
+  const lights: Light[] = await Promise.all(
+    rows.map(async (r) => ({
+      ...withLook(r, look),
+      own: r.followsOwner ? null : { presence: (await getLightStatus(r.id)).presence, show: await getLightShow(r.id) },
+    })),
+  );
   const teams = [...new Set(lights.map((l) => l.pushTeamId).filter((t): t is string => !!t))];
   const pushes = await livePushes(teams);
   const p = presenceRows[0];
@@ -89,10 +105,11 @@ async function load(userId: string) {
     presenceSource: p?.source ?? null,
     show,
     calendars,
+    defaultStatus: look.defaultStatus,
     lights,
     pushes,
   };
-  const assetTags = [show?.gif, ...pushes.map((x) => x.gif)].flatMap((g) => (g?.kind === "asset" ? [tag.asset(g.id)] : []));
+  const assetTags = [show?.gif, ...lights.map((l) => l.own?.show?.gif), ...pushes.map((x) => x.gif)].flatMap((g) => (g?.kind === "asset" ? [tag.asset(g.id)] : []));
   const tags = [tag.user(userId), ...lights.map((l) => tag.device(l.id)), ...teams.map((t) => tag.team(t)), ...assetTags];
   return { value, tags: [...new Set(tags)] };
 }
@@ -118,8 +135,7 @@ const offHours = (snap: ApiSnapshot, now: number) =>
 export function statusFrom(snap: ApiSnapshot, now: number): ApiStatus {
   return apiStatus({
     now,
-    // Status with no light, or for the person as a whole: their first light's default.
-    defaultStatus: snap.lights[0]?.defaultStatus ?? "free",
+    defaultStatus: snap.defaultStatus,
     presence: snap.presence,
     presenceSource: snap.presenceSource,
     schedule: scheduleFromCalendars(snap.calendars, now),
@@ -135,7 +151,7 @@ const gifOut = (g: ResolvedGif) => (g ? { id: gifId(g)!, name: g.name } : null);
 export function showFrom(snap: ApiSnapshot, now: number): ApiShow | null {
   const s = snap.show;
   if (!s || !showVisible(s, snap.presence, now)) return null;
-  const pushUp = snap.lights.some((l) => !!pushForLight(snap, l, now));
+  const pushUp = snap.lights.some((l) => l.followsOwner && !!pushForLight(snap, l, now));
   return { text: s.text, gif: gifOut(s.gif), ring: s.leds, until: iso(s.until), setAt: iso(s.updatedAt), hiddenByPush: pushUp };
 }
 
@@ -153,6 +169,8 @@ function pushForLight(snap: ApiSnapshot, light: Light, now: number): Push | null
 export type ApiLight = {
   id: string;
   name: string;
+  // false: it has its own status (set on the light or in the app), not the person's.
+  follows: boolean;
   online: boolean;
   lastSeenAt: string | null;
   firmwareVersion: string | null;
@@ -167,9 +185,10 @@ export async function lightsFrom(snap: ApiSnapshot, now: number): Promise<ApiLig
   const schedule = scheduleFromCalendars(snap.calendars, now);
   const dark = offHours(snap, now);
   const seen = await liveSeen(snap.lights);
-  const { presence, show } = snap;
   return seen.map((l) => {
-    const resolved = resolveScreen({ now, defaultStatus: l.defaultStatus, presence, schedule });
+    // A light with its own status ignores its owner's status, Show now and calendar.
+    const { presence, show } = l.own ?? snap;
+    const resolved = resolveScreen({ now, defaultStatus: l.defaultStatus, presence, schedule: l.own ? [] : schedule });
     const push = pushForLight(snap, l, now);
     const ownShow = !push && show && showVisible(show, presence, now) ? show : null;
     const onScreen = push
@@ -181,12 +200,13 @@ export async function lightsFrom(snap: ApiSnapshot, now: number): Promise<ApiLig
     return {
       id: l.id,
       name: l.name,
+      follows: l.followsOwner,
       online: isOnline(l.lastSeenAt, now * 1000, l.pollSec),
       lastSeenAt: l.lastSeenAt?.toISOString() ?? null,
       firmwareVersion: l.firmwareVersion,
       dark,
       screen: { layout: view.layout, status: resolved.status, text: view.text, until: iso(view.until) },
-      ring: ringFor({ ...l, status: resolved.status, schedule, now, push, show: ownShow }),
+      ring: ringFor({ ...l, status: resolved.status, schedule: l.own ? [] : schedule, now, push, show: ownShow }),
       push: push ? { id: push.id, text: push.text, gif: gifOut(push.gif) } : null,
     };
   });

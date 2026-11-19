@@ -5,7 +5,9 @@ import { and, desc, eq, inArray } from "drizzle-orm";
 import { db, schema } from "@/db";
 
 import { scheduleForUser } from "./calendar";
-import { defaultPreviewSrcs, previewSrc, resolveDeviceGifs } from "./gifs";
+import { previewSrc, resolveUserGifs } from "./gifs";
+import { getLooks } from "./look";
+import { withLook } from "./look-rules";
 import { getPresence } from "./presence";
 import { type LedStyle, pushFor } from "./push-rules";
 import { ringFor } from "./ring";
@@ -51,6 +53,7 @@ export async function teamDashboard(members: TeamMemberRow[], now: number): Prom
         id: schema.devices.id,
         name: schema.devices.name,
         ownerUserId: schema.devices.ownerUserId,
+        followsOwner: schema.devices.followsOwner,
         defaultStatus: schema.devices.defaultStatus,
         lastSeenAt: schema.devices.lastSeenAt,
         pushTeamId: schema.devices.pushTeamId,
@@ -59,7 +62,8 @@ export async function teamDashboard(members: TeamMemberRow[], now: number): Prom
         meetingWarn: schema.devices.meetingWarn,
       })
       .from(schema.devices)
-      .where(inArray(schema.devices.ownerUserId, ids))
+      // A light with its own status (a boardroom) isn't that person, so it's left out.
+      .where(and(inArray(schema.devices.ownerUserId, ids), eq(schema.devices.followsOwner, true)))
       .orderBy(desc(schema.devices.lastSeenAt)),
     db()
       .select({ userId: schema.presence.userId, source: schema.presence.source })
@@ -67,7 +71,8 @@ export async function teamDashboard(members: TeamMemberRow[], now: number): Prom
       .where(inArray(schema.presence.userId, ids)),
   ]);
   // "Last seen" lives in the cache between the occasional database writes; newest first.
-  const devices = (await liveSeen(seenDevices)).sort((a, b) => (b.lastSeenAt?.getTime() ?? -1) - (a.lastSeenAt?.getTime() ?? -1));
+  const looks = await getLooks(ids);
+  const devices = (await liveSeen(seenDevices.map((d) => withLook(d, looks.get(d.ownerUserId)!)))).sort((a, b) => (b.lastSeenAt?.getTime() ?? -1) - (a.lastSeenAt?.getTime() ?? -1));
   const sourceOf = new Map(sources.map((s) => [s.userId, s.source]));
   // Pushes from whichever team each person's main light follows.
   const mainOf = new Map<string, (typeof devices)[number]>();
@@ -87,18 +92,16 @@ export async function teamDashboard(members: TeamMemberRow[], now: number): Prom
         getPresence(m.userId),
         scheduleForUser(m.userId, now),
         getShow(m.userId),
-        main ? resolveDeviceGifs(main.id) : Promise.resolve(null),
+        resolveUserGifs(m.userId),
       ]);
-      const resolved = resolveScreen({ now, defaultStatus: main?.defaultStatus ?? "free", presence, schedule });
+      const resolved = resolveScreen({ now, defaultStatus: looks.get(m.userId)!.defaultStatus, presence, schedule });
       const push = main?.pushTeamId ? pushFor(pushes.filter((p) => p.teamId === main.pushTeamId), m.userId, now) : null;
       const live = !push && show && showVisible(show, presence, now) ? show : null;
       const lastSeenAt = main?.lastSeenAt ?? null;
       const online = isOnline(lastSeenAt, nowMs, main?.pollSec);
       const shown = push ?? live;
       const view = withShow(viewFor(resolved, online || !main), shown ? { text: shown.text, until: shown.until, gif: !!shown.gif } : null);
-      const statusGifs = gifs
-        ? (Object.fromEntries(STATUSES.map((s) => [s, previewSrc(gifs[s])])) as Record<Status, string | null>)
-        : defaultPreviewSrcs();
+      const statusGifs = Object.fromEntries(STATUSES.map((s) => [s, previewSrc(gifs[s])])) as Record<Status, string | null>;
       const source = sourceOf.get(m.userId);
       return {
         userId: m.userId,

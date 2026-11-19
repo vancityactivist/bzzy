@@ -6,7 +6,9 @@
 // personal case; inviting coworkers later is just more rows in team_members.
 //
 // Status ("presence") belongs to a person, not a device, so someone with a
-// desk light and a door light sets their status once.
+// desk light and a door light sets their status once. So does the look: which GIF and
+// ring style each status gets. A light that doesn't follow its owner (a boardroom, a
+// shared door) has a status and Show now of its own (light_status, light_show).
 
 import {
   boolean,
@@ -41,6 +43,8 @@ const id = () =>
 // Site-wide role, separate from team roles. "admin" can open /admin.
 export const userRole = pgEnum("user_role", ["user", "admin"]);
 
+export const statusKind = pgEnum("status_kind", ["free", "busy", "dnd", "away"]);
+
 export const users = pgTable("user", {
   id: id(),
   name: text("name"),
@@ -50,6 +54,11 @@ export const users = pgTable("user", {
   timezone: text("timezone").notNull().default("America/Vancouver"),
   // Working hours (lib/work-hours.ts); null = always on.
   workHours: jsonb("work_hours").$type<WorkHours>(),
+  // The look of every light that follows this person (lib/look.ts): what they show
+  // between meetings, how the ring moves for each status, and the meeting warning.
+  defaultStatus: statusKind("default_status").notNull().default("free"),
+  ledStyles: jsonb("led_styles").$type<LedStyles>(),
+  meetingWarn: jsonb("meeting_warn").$type<MeetingWarn>(),
   role: userRole("role").notNull().default("user"),
   // A superadmin turned off this person's API tokens (all revoked, no new ones).
   apiBlocked: boolean("api_blocked").notNull().default(false),
@@ -197,7 +206,6 @@ export const teamAudit = pgTable(
 // Status
 // ---------------------------------------------------------------------------
 
-export const statusKind = pgEnum("status_kind", ["free", "busy", "dnd", "away"]);
 
 // A person's manual override. One row per user; `active = false` keeps the
 // time it was cleared so older button presses can't bring it back.
@@ -227,20 +235,27 @@ export const devices = pgTable(
     teamId: text("team_id")
       .notNull()
       .references(() => teams.id, { onDelete: "cascade" }),
-    // Whose status the light shows.
+    // Whose status the light shows (unless followsOwner is off).
     ownerUserId: text("owner_user_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
     name: text("name").notNull(),
     // SHA-256 of the device token. The token itself is shown once and never stored.
     tokenHash: text("token_hash").notNull(),
+    // Off: the light has its own status and Show now (light_status, light_show), and a
+    // press on it changes only it. On: it shows its owner's.
+    followsOwner: boolean("follows_owner").notNull().default(true),
+    // What a light that doesn't follow its owner shows when nothing is set. Lights that
+    // follow use the owner's (user.default_status).
     defaultStatus: statusKind("default_status").notNull().default("free"),
     // The one team whose pushes this light shows. Null = none. Never a personal team.
     pushTeamId: text("push_team_id").references(() => teams.id, { onDelete: "set null" }),
     // X-Bzzy-Features from the last poll ("leds,push"). Null = firmware from before it.
     features: text("features"),
-    // The ring (docs/protocol.md, "LED styles"). allowFlash off: always steady, pushes too.
+    // allowFlash off: the ring is always steady, pushes too.
     allowFlash: boolean("allow_flash").notNull().default(true),
+    // No longer read: the ring styles moved to the owner (user.led_styles). Kept until a
+    // later migration drops them, so rolling back is safe.
     ledStyles: jsonb("led_styles").$type<LedStyles>(),
     meetingWarn: jsonb("meeting_warn").$type<MeetingWarn>(),
     lastSeenAt: timestamp("last_seen_at", { mode: "date" }),
@@ -324,6 +339,8 @@ export const assets = pgTable(
   (t) => [index("asset_team_idx").on(t.teamId)],
 );
 
+// No longer read: the GIF for each status moved to the owner (user_gif). Kept until a
+// later migration drops it, so rolling back is safe.
 // Which GIF a device plays for each status. No row: the built-in default for that
 // status. A row with an upload or a built-in id: that GIF. A row with neither: no GIF
 // (the plain colour card).
@@ -339,6 +356,51 @@ export const deviceAssets = pgTable(
   },
   (t) => [uniqueIndex("device_asset_unique").on(t.deviceId, t.status)],
 );
+
+// Which GIF each status shows on every light that follows this person. No row: the
+// built-in default for that status. A row with an upload or a built-in id: that GIF. A
+// row with neither: no GIF (the plain colour card).
+export const userGifs = pgTable(
+  "user_gif",
+  {
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    status: statusKind("status").notNull(),
+    assetId: text("asset_id").references(() => assets.id, { onDelete: "cascade" }),
+    builtin: text("builtin"),
+  },
+  (t) => [primaryKey({ columns: [t.userId, t.status] })],
+);
+
+// The status of a light that doesn't follow its owner, set from the app or its own
+// button. Same shape and rules as presence.
+export const lightStatus = pgTable("light_status", {
+  deviceId: text("device_id")
+    .primaryKey()
+    .references(() => devices.id, { onDelete: "cascade" }),
+  active: boolean("active").notNull().default(false),
+  status: statusKind("status").notNull().default("free"),
+  text: text("text").notNull().default(""),
+  until: integer("until").notNull().default(0),
+  updatedAt: integer("updated_at").notNull().default(0),
+  // "web", "api" or the light's own id.
+  source: text("source").notNull().default("web"),
+});
+
+// "Show now" on a light that doesn't follow its owner. Same shape as show_now.
+export const lightShow = pgTable("light_show", {
+  deviceId: text("device_id")
+    .primaryKey()
+    .references(() => devices.id, { onDelete: "cascade" }),
+  active: boolean("active").notNull().default(false),
+  assetId: text("asset_id").references(() => assets.id, { onDelete: "set null" }),
+  builtin: text("builtin"),
+  text: text("text").notNull().default(""),
+  leds: jsonb("leds").$type<LedStyle>(),
+  until: integer("until").notNull().default(0),
+  updatedAt: integer("updated_at").notNull().default(0),
+});
 
 // "Show now": a GIF and/or message a person puts on their lights' screens, on top of
 // whatever their status is. One row per user, like presence. An upload that's

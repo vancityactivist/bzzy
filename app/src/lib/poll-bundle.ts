@@ -9,7 +9,10 @@ import { calendarsForUser, type CalendarRow, userClock } from "./calendar";
 import type { AuthedDevice } from "./device-auth";
 import { tokenMatches, bearerToken } from "./device-token";
 import { type ReleaseRow, savedRelease } from "./firmware-release";
-import { type ResolvedGif, resolveDeviceGifs } from "./gifs";
+import { type ResolvedGif, resolveUserGifs } from "./gifs";
+import { getLightShow, getLightStatus } from "./light-state";
+import { getLook } from "./look";
+import { withLook } from "./look-rules";
 import { getPresence } from "./presence";
 import { nowSeconds, type Presence, type Status } from "./protocol";
 import { followedPushes, type Push } from "./pushes";
@@ -23,11 +26,15 @@ import type { WorkHours } from "./work-hours";
 // reads it fresh. Time-dependent choices (which schedule blocks are in the next 24 h,
 // whether a push or override has run out) are still made on every poll from this data.
 export type PollBundle = {
+  // The light, with its owner's look (lib/look-rules.ts withLook) in its ring and
+  // "between meetings" fields.
   device: AuthedDevice;
   timeZone: string;
   // The owner's working hours; null = always on.
   workHours: WorkHours | null;
+  // The owner's status, or the light's own when it doesn't follow them.
   presence: Presence | null;
+  // The owner's calendars; none for a light with its own status.
   calendars: CalendarRow[];
   gifs: Record<Status, ResolvedGif>;
   show: CurrentShow | null;
@@ -43,26 +50,29 @@ export type PollBundle = {
 export const POLL_BUNDLE_TTL_SEC = 3 * 3600;
 
 // Bump the version when PollBundle changes shape: cache entries outlive deployments.
-const key = (deviceId: string) => `poll:v3:${deviceId}`;
+const key = (deviceId: string) => `poll:v4:${deviceId}`;
 
 const assetTags = (...gifs: (ResolvedGif | undefined)[]) =>
   gifs.flatMap((g) => (g?.kind === "asset" ? [tag.asset(g.id)] : []));
 
 async function loadBundle(deviceId: string) {
   const rows = await db().select().from(schema.devices).where(eq(schema.devices.id, deviceId)).limit(1);
-  const device = rows[0];
-  if (!device) return null;
-  const owner = device.ownerUserId;
-  const [{ timeZone, workHours }, presence, calendars, gifs, show, release, pushes, webhooks] = await Promise.all([
+  const row = rows[0];
+  if (!row) return null;
+  const owner = row.ownerUserId;
+  const own = !row.followsOwner;
+  const [{ timeZone, workHours }, look, presence, calendars, gifs, show, release, pushes, webhooks] = await Promise.all([
     userClock(owner),
-    getPresence(owner),
-    calendarsForUser(owner),
-    resolveDeviceGifs(device.id),
-    getShow(owner),
+    getLook(owner),
+    own ? getLightStatus(row.id).then((r) => r.presence) : getPresence(owner),
+    own ? Promise.resolve([]) : calendarsForUser(owner),
+    resolveUserGifs(owner),
+    own ? getLightShow(row.id) : getShow(owner),
     savedRelease(),
-    followedPushes(device, nowSeconds()),
+    followedPushes(row, nowSeconds()),
     hasLiveWebhooks(owner),
   ]);
+  const device = withLook(row, look);
   const value: PollBundle = { device, timeZone, workHours, presence, calendars, gifs, show, release, pushes, webhooks };
   const tags = [
     tag.device(device.id),

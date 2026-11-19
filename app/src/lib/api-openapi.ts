@@ -84,6 +84,7 @@ const schemas = {
     properties: {
       id: { type: "string" },
       name: { type: "string" },
+      follows: { type: "boolean", description: "Shows your status. false: it has its own status, like a boardroom light." },
       online: { type: "boolean" },
       lastSeenAt: time,
       firmwareVersion: { type: ["string", "null"] },
@@ -105,7 +106,7 @@ const schemas = {
         required: ["id", "text", "gif"],
       },
     },
-    required: ["id", "name", "online", "lastSeenAt", "firmwareVersion", "dark", "screen", "ring", "push"],
+    required: ["id", "name", "follows", "online", "lastSeenAt", "firmwareVersion", "dark", "screen", "ring", "push"],
   },
   Gif: {
     type: "object",

@@ -1,20 +1,24 @@
 import type { NextRequest } from "next/server";
 
 import { authenticateDevice, unauthorized } from "@/lib/device-auth";
-import { deviceMayFetch, openAsset } from "@/lib/gifs";
+import { lookMayFetch, openAsset } from "@/lib/gifs";
+import { lightShowMayFetch } from "@/lib/light-state";
 import { pushMayFetch } from "@/lib/pushes";
 import { showMayFetch } from "@/lib/show";
 
 // A device downloading one of its uploaded GIFs. Uploads are private, so this is
-// the only way a device gets at them. A device may fetch the GIFs it's set to show
-// for a status, the one its owner is showing now, and one a team push is showing.
+// the only way a device gets at them. A device may fetch the GIFs its owner picked for
+// each status, the one being shown now (its owner's, or its own if it doesn't follow
+// them), and one a team push is showing.
 export async function GET(req: NextRequest, ctx: RouteContext<"/api/device/[id]/gif/[assetId]">) {
   const { id, assetId } = await ctx.params;
   const device = await authenticateDevice(id, req.headers.get("authorization"));
   if (!device) return unauthorized();
 
   const blobUrl =
-    (await deviceMayFetch(device.id, assetId)) ?? (await showMayFetch(device.ownerUserId, assetId)) ?? (await pushMayFetch(device, assetId));
+    (await lookMayFetch(device.ownerUserId, assetId)) ??
+    (device.followsOwner ? await showMayFetch(device.ownerUserId, assetId) : await lightShowMayFetch(device.id, assetId)) ??
+    (await pushMayFetch(device, assetId));
   if (!blobUrl) return new Response("Not found", { status: 404 });
   const blob = await openAsset(blobUrl);
   if (!blob || blob.statusCode !== 200) return new Response("Not found", { status: 404 });
