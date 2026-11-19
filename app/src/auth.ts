@@ -13,6 +13,7 @@ import { ensurePersonalTeam, lookupInvite } from "@/lib/teams";
 // passkey alone only from a live team invite link (/join), so the site isn't open to
 // anonymous passkey sign-ups. Email magic links (Resend) drop in here later.
 export const { handlers, auth, signIn, signOut } = NextAuth((req) => ({
+  secret: authSecrets(),
   adapter: adapter(req?.headers.get("user-agent")),
   providers: [GitHub, Passkey({ getUserInfo: passkeyUserInfo })],
   experimental: { enableWebAuthn: true },
@@ -23,6 +24,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth((req) => ({
     },
   },
 }));
+
+// Every Auth.js secret that's set, newest first: the first one encrypts, all of them
+// decrypt. Passed explicitly because next-auth fills `secret` from AUTH_SECRET alone,
+// and Auth.js then never looks at AUTH_SECRET_1..3. Production needs AUTH_SECRET_1 (the
+// secret it shares with previews) to read the state a preview sign-in sends through
+// bzzy.ca (docs/domains.md).
+function authSecrets(): string[] {
+  const { AUTH_SECRET_3, AUTH_SECRET_2, AUTH_SECRET_1, AUTH_SECRET } = process.env;
+  return [AUTH_SECRET_3, AUTH_SECRET_2, AUTH_SECRET_1, AUTH_SECRET].filter((s): s is string => !!s);
+}
 
 // Who a passkey request is for. Signed-in people adding a passkey never get here (Auth.js
 // uses the session). With an email: an existing account signs in with its passkeys; a new
