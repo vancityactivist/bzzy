@@ -117,7 +117,30 @@ Two ways to buy it:
 | Thickness | thinnest; panel sits flat on the board | adds the module's PCB, about 2 to 4 mm |
 | Risk | pinouts differ between vendors; need the vendor's datasheet and 2 or 3 sample panels | single, known source; 32-week lead times have been listed on non-touch versions |
 
-**Recommendation: A, with B as a fallback footprint.** Lay out the FPC connector for the panel we sample, and also put an unpopulated GH1.25 12-pin footprint on the back wired to the same signals. If a panel vendor disappears, a batch can use the Waveshare module without a new board.
+**Recommendation: A, with B as a fallback footprint.**
+
+### 5.1 Panel pick (2026-11-19)
+
+**Candidate: East Rising / BuyDisplay ER-TFT1.69-4** (1.69" 240 × 280 IPS, ST7789 family, CST816 capacitive touch, 4-wire SPI + I2C).
+
+- Sold in single units and small quantities with a published datasheet, mechanical drawing, and ST7789VW and CST816 datasheets on the product page. That's the main reason over anonymous AliExpress panels.
+- Listed at about **US$3.74 each** (quote above 500). Whether the touch layer is included in that price or an option isn't clear from the listing **(verify at checkout)**.
+- **18-pin, 0.5 mm pitch FPC** for a ZIF connector, per the listing's document list **(verify pinout in the datasheet)**. J3 in the placement becomes an 18-pin 0.5 mm ZIF connector.
+- The sibling non-touch panel (ER-TFT1.69-3) has a 30.07 × 37.43 × 1.6 mm outline, which matches the placement drawing. Confirm the -4's outline (touch adds thickness).
+- Same resolution and driver family as the Waveshare board, so firmware, the app's live preview and every GIF stay as they are.
+
+Before layout: order 3 to 5, check the CST816 variant (S, T or D; the I2C address and gestures differ slightly), and caliper them.
+
+Smaller screens considered (Adam is open to a smaller device):
+
+| Panel | Visible size | Effect on device | Firmware and app | Verdict |
+|---|---|---|---|---|
+| **1.69" 240 × 280 (ER-TFT1.69-4)** | ~28 × 33 mm | board could still shrink by tightening the border (section 7.3) | none | **pick** |
+| 1.47" 172 × 320 | ~18 × 33 mm | ~10 mm narrower, same height; tall and thin | new resolution: GIFs, preview and layouts change. Touch versions found use a JD9853 driver + AXS5106 touch, both new to the firmware | only if a narrow shape is the goal |
+| 1.54" 240 × 240 | ~28 × 28 mm | ~5 mm shorter | square GIFs and layouts; touch versions use ST7789 + CST816D | small saving for real work |
+| 1.28" round 240 × 240 (GC9A01) | 32 mm circle | not smaller (round outline ~36 mm) | new driver, round layouts | different look, not smaller |
+
+ Lay out the FPC connector for the panel we sample, and also put an unpopulated GH1.25 12-pin footprint on the back wired to the same signals. If a panel vendor disappears, a batch can use the Waveshare module without a new board.
 
 Before layout: order 3 panels each from 2 vendors, get their datasheets (FPC pin count and order, backlight current and voltage, touch I2C address, outline drawing), and caliper them. Pick the one whose datasheet is complete.
 
