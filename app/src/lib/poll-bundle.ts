@@ -84,8 +84,16 @@ export async function authenticatedBundle(
 ): Promise<{ bundle: PollBundle; loaded: boolean } | null> {
   const token = bearerToken(authHeader);
   if (!token) return null;
-  const { value: bundle, loaded } = await cachedRead(key(deviceId), POLL_BUNDLE_TTL_SEC, () => loadBundle(deviceId));
-  if (loaded) console.info(`[db] poll ${deviceId}: read from the database (cache miss)`);
+  const { bundle, loaded } = await cachedBundle(deviceId, "poll");
   if (!bundle || !tokenMatches(token, bundle.device.tokenHash)) return null;
+  return { bundle, loaded };
+}
+
+// The light's bundle with no token check, for callers that have checked who's asking
+// some other way (the Status page's live check, lib/live.ts). It's the same entry the
+// light's poll reads, so a check right after a poll is a cache hit, and the other way round.
+export async function cachedBundle(deviceId: string, who: string): Promise<{ bundle: PollBundle | null; loaded: boolean }> {
+  const { value: bundle, loaded } = await cachedRead(key(deviceId), POLL_BUNDLE_TTL_SEC, () => loadBundle(deviceId));
+  if (loaded) console.info(`[db] ${who} ${deviceId}: read from the database (cache miss)`);
   return { bundle, loaded };
 }

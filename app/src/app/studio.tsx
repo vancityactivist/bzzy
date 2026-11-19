@@ -25,6 +25,7 @@ export type PreviewDevice = {
   id: string;
   name: string;
   offline?: string | null; // "Offline · seen 3 days ago" when the light isn't checking in
+  dark?: string | null; // "Off hours · on at 8:00 AM" while working hours have it dark
   view: ScreenView; // the status part, as it is now
   gifs: Record<Status, string | null>;
   ring?: LedStyle | null; // what the ring is doing now (a push, a show, a meeting warning, the status's style)
@@ -227,6 +228,7 @@ export function StudioPreview({
   }
 
   const [r, g, b] = LED_RGB[view.status];
+  const dark = !draft && !!device.dark;
 
   return (
     <section
@@ -248,6 +250,12 @@ export function StudioPreview({
             <Badge aria-live="polite" title="It shows this once it's back online">
               <span aria-hidden className="size-1.5 rounded-full border border-muted" />
               {device.offline}
+            </Badge>
+          ) : device.dark ? (
+            // Working hours are over, so the screen and ring are off until the next window.
+            <Badge aria-live="polite" title="A press of its button wakes it for a few minutes">
+              <span aria-hidden className="size-1.5 rounded-full border border-muted" />
+              {device.dark}
             </Badge>
           ) : (
             <Badge aria-live="polite">
@@ -281,10 +289,10 @@ export function StudioPreview({
         {/* The light, on a stage lit by its own colour. */}
         <div
           className="col-start-1 row-span-2 row-start-1 flex items-center justify-center lg:row-span-1 lg:row-start-2 lg:mx-5 lg:my-2 lg:rounded-xl lg:py-6 lg:transition-[background] lg:duration-300"
-          style={{ ["--stage" as string]: `radial-gradient(closest-side, rgb(${r} ${g} ${b} / 0.16), transparent)` }}
+          style={{ ["--stage" as string]: `radial-gradient(closest-side, rgb(${r} ${g} ${b} / ${dark ? 0 : 0.16}), transparent)` }}
         >
           <div className="max-lg:[zoom:0.5] lg:[background:var(--stage)] lg:rounded-full lg:p-6">
-            <DevicePreview view={view} gifSrc={gif} ring={ring} scale={1} className="max-lg:m-5" />
+            <DevicePreview view={view} gifSrc={gif} ring={ring} dark={dark} scale={1} className="max-lg:m-5" />
           </div>
         </div>
 

@@ -26,6 +26,14 @@ The database is still the source of truth. Every cache read falls back to it, an
 - When a poll does have to read the database (its cached copy ran out or was expired), it also saves `lastSeenAt` if that's more than 30 minutes old, so the 6-hour write rarely needs a wake of its own.
 - A calendar or release re-read only writes to the database when something changed. A feed is kept from the person's midnight for 8 days, a window that moves once a day, so an unchanged feed reads back the same events all day (a window sliding with the clock would change them whenever a meeting aged out).
 
+## The Status page's live preview
+
+While the Status page is open and visible, it asks `GET /api/live` every 20 seconds whether anything its lights show has changed (`app/src/components/live-sync.tsx`). The answer is a short fingerprint worked out from each light's cached `poll:v3:` bundle and `seen:` entry, plus the clock (a meeting starting, a status, show or push running out, working hours ending, the light going offline), so a check costs no database time. Only when the fingerprint changes does the page re-render, which reads the database like any page load. A hidden tab doesn't check at all, and coming back to it checks at once.
+
+The check can't use the sign-in session, because sessions are database rows. The page hands out a ticket instead, signed with `AUTH_SECRET`, naming the person and their lights and good for 12 hours (`app/src/lib/live-rules.ts`). All it unlocks is the fingerprint. When it runs out the page re-renders once for a new one.
+
+It reads the same bundle as the light's own poll, so it keeps working only as long as writes keep expiring their tags (below). A bundle miss here logs `[db] live`.
+
 ## Checking it
 
 Every time a poll or an API call touches the database it logs a line starting `[db]` (`[db] api` for the API, `[db] webhooks` for webhooks): a cache miss, a "last seen" save, a calendar or firmware release change. Search the runtime logs for `[db]` (Vercel → Logs, or the last hour on Hobby): an idle light should show a miss about every 3 hours and little else. Webhooks only add database work when something is sent: each delivery saves its result (one update), and a poll for someone with webhooks reads their cached status, which the poll's own writes keep fresh. A person without webhooks costs a poll nothing extra: the poll bundle already says so. Whether Neon actually suspends is on the Neon console: Monitoring, or Branches → main → Computes.
