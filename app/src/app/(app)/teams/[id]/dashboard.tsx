@@ -4,7 +4,7 @@ import { Badge, Card, StatusDot } from "@/components/ui";
 import type { MemberCard } from "@/lib/dashboard";
 import { untilLabel } from "@/lib/screen";
 
-import { absoluteTime, relativeTime } from "../../devices/relative-time";
+import { absoluteTime, relativeTime } from "../../lights/relative-time";
 
 // One live card per person: their light's screen as it is now, and where the status
 // came from. Server-rendered; AutoRefresh re-renders it every 20 s.
@@ -76,7 +76,7 @@ export function Dashboard({ cards, nowMs }: { cards: MemberCard[]; nowMs: number
               </div>
               <div className="flex shrink-0 flex-col items-end gap-1.5 sm:mt-auto sm:flex-row sm:flex-wrap sm:justify-center sm:pt-3">
                 <LightBadge c={c} nowMs={nowMs} />
-                {c.push ? <Badge tone="inverse">Push</Badge> : c.showing && <Badge tone="inverse">Show now</Badge>}
+                {c.push ? <Badge tone="inverse">Announcement</Badge> : c.showing && <Badge tone="inverse">Show now</Badge>}
               </div>
             </Card>
           </li>

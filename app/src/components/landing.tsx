@@ -99,12 +99,12 @@ const SPECS: { term: string; detail: string }[] = [
 // publish an ICS link, by name.
 const FLOW = {
   layout: "fanin",
-  alt: "Your phone, Google Calendar, Outlook and a team push all set your status at bzzy.ca, and the light fetches it every 20 seconds.",
+  alt: "Your phone, Google Calendar, Outlook and a team announcement all set your status at bzzy.ca, and the light fetches it every 20 seconds.",
   sources: [
     { label: "Phone or laptop", icon: "ui:smartphone", sub: "Tap a status" },
     { label: "Google Calendar", icon: "google-calendar", sub: "ICS link" },
     { label: "Outlook", icon: "file:file-type-outlook", sub: "ICS link" },
-    { label: "Your team", icon: "ui:users", sub: "A push to every light" },
+    { label: "Your team", icon: "ui:users", sub: "An announcement on every light" },
   ],
   target: { label: "bzzy.ca", icon: "ui:server" },
   then: { label: "Your light", icon: "ui:lightbulb", meta: "every 20 s" },

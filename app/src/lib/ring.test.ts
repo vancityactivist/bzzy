@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { buildState } from "./protocol";
-import { ringFor, ringFromInput, ringInput, sentLeds } from "./ring";
+import { lookRingFromInput, lookRingInput, ringFor, sentLeds } from "./ring";
 
 const now = 1_762_900_000;
 const pulse = { pattern: "pulse" as const, speed: 1 };
@@ -73,9 +73,8 @@ describe("sentLeds", () => {
   });
 });
 
-describe("ringFromInput", () => {
+describe("lookRingFromInput", () => {
   const input = {
-    allowFlash: true,
     styles: { free: { pattern: "solid" as const, speed: 2 }, busy: pulse, dnd: { pattern: "spin" as const, speed: 3 }, away: { pattern: "solid" as const, speed: 2 } },
     warnMinutes: 5,
     warnPattern: "blink" as const,
@@ -83,14 +82,13 @@ describe("ringFromInput", () => {
     warnSpeed: 2,
   };
   it("keeps only moving styles and builds the warning", () => {
-    expect(ringInput.parse(input)).toBeTruthy();
-    expect(ringFromInput(input)).toEqual({
-      allowFlash: true,
+    expect(lookRingInput.parse(input)).toBeTruthy();
+    expect(lookRingFromInput(input)).toEqual({
       ledStyles: { busy: pulse, dnd: { pattern: "spin", speed: 3 } },
       meetingWarn: { minutes: 5, leds: { pattern: "blink", speed: 2, color: "#ff2000" } },
     });
   });
   it("turns the warning off at 0 minutes", () => {
-    expect(ringFromInput({ ...input, warnMinutes: 0 }).meetingWarn).toBeNull();
+    expect(lookRingFromInput({ ...input, warnMinutes: 0 }).meetingWarn).toBeNull();
   });
 });

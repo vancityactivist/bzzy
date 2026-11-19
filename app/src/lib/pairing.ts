@@ -118,12 +118,15 @@ export async function claimPairing(
   if (!pairing || pairingState(pairing, now) !== "live") throw new PairingError("This code has run out. The light will show a new one.");
   const teams = await pairingTeams(user.id, user.name);
   if (!teams.some((t) => t.id === input.teamId)) throw new PairingError("Pick one of your teams.");
+  // A light in a shared team shows that team's announcements: one setting, not two.
+  const personal = teams[0].id === input.teamId;
 
   // The pairing secret becomes the device token: the light already has it.
   const id = newDeviceId();
   await db().insert(schema.devices).values({
     id,
     teamId: input.teamId,
+    pushTeamId: personal ? null : input.teamId,
     ownerUserId: user.id,
     name: input.name,
     tokenHash: pairing.secretHash,

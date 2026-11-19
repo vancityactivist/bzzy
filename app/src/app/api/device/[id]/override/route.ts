@@ -1,6 +1,7 @@
 import { after, type NextRequest } from "next/server";
 
 import { authenticateDevice, markSeen, unauthorized } from "@/lib/device-auth";
+import { clearLightShow, getLightStatus, setLightStatus } from "@/lib/light-state";
 import { getPresenceAndSource, setPresence } from "@/lib/presence";
 import { hasFeature, nowSeconds, overrideBody, presenceFromDevice, shouldApplyDeviceOverride } from "@/lib/protocol";
 import { ackPush, pushForDevice } from "@/lib/pushes";
@@ -18,14 +19,19 @@ export async function POST(req: NextRequest, ctx: RouteContext<"/api/device/[id]
     return Response.json({ error: "bad request" }, { status: 400, headers: { "Cache-Control": "no-store" } });
   }
 
-  const { presence: current, source } = await getPresenceAndSource(device.ownerUserId);
+  // A light that follows its owner changes their status, so all their lights follow. One
+  // with its own status changes only itself.
+  const own = !device.followsOwner;
+  const { presence: current, source } = own ? await getLightStatus(device.id) : await getPresenceAndSource(device.ownerUserId);
   const applied = shouldApplyDeviceOverride(current, parsed.data, nowSeconds(), source === device.id);
   if (applied) {
     // A press on the device also takes down "show now" (the device already has).
-    await Promise.all([
-      setPresence(device.ownerUserId, presenceFromDevice(parsed.data), device.id),
-      clearShow(device.ownerUserId, parsed.data.updatedAt),
-    ]);
+    const presence = presenceFromDevice(parsed.data);
+    await Promise.all(
+      own
+        ? [setLightStatus(device.id, presence, device.id), clearLightShow(device.id, parsed.data.updatedAt)]
+        : [setPresence(device.ownerUserId, presence, device.id), clearShow(device.ownerUserId, parsed.data.updatedAt)],
+    );
   }
 
   // Firmware from before pushes shows a push as "show now" and hides it on a press, so
@@ -39,7 +45,8 @@ export async function POST(req: NextRequest, ctx: RouteContext<"/api/device/[id]
     Promise.all([
       markSeen(device.id),
       applied && buttonPressed(device, parsed.data),
-      applied && noticeChanges(device.ownerUserId, { status: true, show: true }),
+      // Webhooks follow the person's status, which a light of its own doesn't change.
+      applied && !own && noticeChanges(device.ownerUserId, { status: true, show: true }),
     ]),
   );
   // 200 either way: an ignored (older) press is not an error, and the device

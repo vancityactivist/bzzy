@@ -398,7 +398,23 @@ async function adoptPushTeam(userId: string, teamId: string) {
   await expire(tag.user(userId));
 }
 
-// The Devices page picker. Only the light's owner, and only teams they're in.
+// A light's team, set by its owner: a shared team they're in, or null for just them. The
+// team's admins can manage the light, and it shows the team's announcements.
+export async function setDeviceTeam(userId: string, displayName: string, deviceId: string, teamId: string | null) {
+  if (teamId) {
+    const shared = await sharedTeamsForUser(userId);
+    if (!shared.some((t) => t.id === teamId)) throw new TeamError("You aren't in that team.");
+  }
+  const personal = await ensurePersonalTeam(userId, displayName);
+  await db()
+    .update(schema.devices)
+    .set({ teamId: teamId ?? personal, pushTeamId: teamId })
+    .where(and(eq(schema.devices.id, deviceId), eq(schema.devices.ownerUserId, userId)));
+  await expire(tag.device(deviceId), tag.user(userId));
+}
+
+// Only the light's owner, and only teams they're in. (The API's announcements setting;
+// the app sets the team and announcements together with setDeviceTeam.)
 export async function setDevicePushTeam(userId: string, deviceId: string, teamId: string | null) {
   if (teamId) {
     const shared = await sharedTeamsForUser(userId);

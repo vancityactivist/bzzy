@@ -10,7 +10,7 @@ import { useFormStatus } from "react-dom";
 import Link from "next/link";
 
 import { DevicePreview } from "@/components/device-preview";
-import { CalendarIcon, CheckIcon, ChevronDownIcon, DeviceIcon, LinkIcon, PlusIcon, SearchIcon, UploadIcon, XIcon } from "@/components/icons";
+import { CalendarIcon, CheckIcon, DeviceIcon, LinkIcon, PlusIcon, SearchIcon, UploadIcon, XIcon } from "@/components/icons";
 import { STATUS_META } from "@/components/status-meta";
 import { Badge, Button, buttonClass, cx, Field, Input, Select, StatusDot } from "@/components/ui";
 import { parseGifLink } from "@/lib/gif-link";
@@ -30,7 +30,7 @@ export type PreviewDevice = {
   gifs: Record<Status, string | null>;
   ring?: LedStyle | null; // what the ring is doing now (a push, a show, a meeting warning, the status's style)
   baseRing?: LedStyle | null; // the same, leaving out their own show now's
-  allowFlash?: boolean; // "Let this light flash" on the Devices page
+  allowFlash?: boolean; // "Allow flashing" on the light's page
   styles?: Record<Status, LedStyle | null>; // each status's style, for drafts
 };
 
@@ -93,6 +93,11 @@ const EMPTY_SHOW: ShowDraft = {
 
 type Ctx = {
   library: LibraryGif[];
+  // The light whose own status the page is setting, or null for you (every light that
+  // follows you). Goes with each form as "light".
+  light: string | null;
+  // Who picks a change up, for "Sent" lines: "Desk and Door", "Boardroom", "Your lights".
+  lightsLabel: string;
   live: LiveShow | null;
   focus: "status" | "show" | null; // which card the person is working in
   setFocus: (f: "status" | "show" | null) => void;
@@ -114,10 +119,14 @@ export function StudioProvider({
   library,
   live,
   initialShow,
+  light = null,
+  lightsLabel = "Your lights",
   children,
 }: {
   library: LibraryGif[];
   live: LiveShow | null;
+  light?: string | null;
+  lightsLabel?: string;
   initialShow?: string; // a GIF to start with picked ("Show now" on the GIFs page)
   children: React.ReactNode;
 }) {
@@ -134,6 +143,8 @@ export function StudioProvider({
   const value = useMemo<Ctx>(
     () => ({
       library,
+      light,
+      lightsLabel,
       live,
       focus,
       setFocus,
@@ -143,9 +154,60 @@ export function StudioProvider({
       setShow: (d) => setShowState((s) => ({ ...s, ...d })),
       resetShow: () => setShowState(EMPTY_SHOW),
     }),
-    [library, live, focus, status, setStatus, show],
+    [library, light, lightsLabel, live, focus, status, setStatus, show],
   );
   return <Studio.Provider value={value}>{children}</Studio.Provider>;
+}
+
+// Which light a form is for, when it isn't you (lib actions targetLight).
+export function LightField() {
+  const { light } = useStudio();
+  return light ? <input type="hidden" name="light" value={light} /> : null;
+}
+
+// Status and Show now as two tabs of one card, so the page is one place to change what's
+// on your lights. Both stay mounted, so a half-picked GIF survives a look at the other tab.
+export function StudioTabs({ status, show, statusHint, showHint }: { status: React.ReactNode; show: React.ReactNode; statusHint: string; showHint: string }) {
+  const { focus, setFocus } = useStudio();
+  // The GIF library's play button arrives with a GIF picked (focus "show"): open Show now.
+  const [tab, setTab] = useState<"status" | "show">(focus === "show" ? "show" : "status");
+  const tabs = [
+    { id: "status" as const, label: "Status" },
+    { id: "show" as const, label: "Show now" },
+  ];
+  return (
+    <div>
+      <div role="tablist" aria-label="What to change" className="inline-flex gap-1 rounded-xl bg-subtle p-1">
+        {tabs.map((t) => (
+          <button
+            key={t.id}
+            type="button"
+            role="tab"
+            id={`tab-${t.id}`}
+            aria-selected={tab === t.id}
+            aria-controls={`panel-${t.id}`}
+            onClick={() => {
+              setTab(t.id);
+              setFocus(null);
+            }}
+            className={cx(
+              "h-9 rounded-lg px-4 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-ring",
+              tab === t.id ? "bg-card text-foreground shadow-card" : "text-muted hover:text-foreground",
+            )}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+      <p className="mt-3 text-sm text-muted">{tab === "status" ? statusHint : showHint}</p>
+      <div role="tabpanel" id="panel-status" aria-labelledby="tab-status" hidden={tab !== "status"} className="mt-5">
+        {status}
+      </div>
+      <div role="tabpanel" id="panel-show" aria-labelledby="tab-show" hidden={tab !== "show"} className="mt-5">
+        {show}
+      </div>
+    </div>
+  );
 }
 
 // The ring picked for a show, as the light would play it (flashing, so you can see it).
@@ -180,8 +242,8 @@ export function StudioPreview({
   example?: boolean; // no lights yet: devices holds one example
 }) {
   const { live, focus, status, show, library } = useStudio();
-  const [index, setIndex] = useState(0);
-  const device = devices[Math.min(index, devices.length - 1)];
+  // The first is the one to draw: the page puts an online light first.
+  const device = devices[0];
   if (!device) return null;
 
   let view = device.view;
@@ -260,28 +322,21 @@ export function StudioPreview({
           ) : (
             <Badge aria-live="polite">
               <span aria-hidden className="size-1.5 rounded-full bg-foreground/70" />
-              {example ? "How it would look" : "On your screen now"}
+              {example ? "How it would look" : "Live"}
             </Badge>
           )}
-          {devices.length > 1 ? (
-            <span className="relative inline-flex min-w-0 max-w-full">
-              <select
-                value={index}
-                onChange={(e) => setIndex(Number(e.target.value))}
-                aria-label="Light to preview"
-                className="h-8 min-w-0 max-w-full cursor-pointer appearance-none truncate rounded-lg border border-line bg-card pr-8 pl-2.5 text-xs font-medium text-foreground shadow-card transition-colors hover:border-line-strong lg:h-10 lg:rounded-xl lg:pl-3 lg:pr-9 lg:text-sm"
-              >
-                {devices.map((d, i) => (
-                  <option key={d.id} value={i}>
-                    {d.name}
-                  </option>
-                ))}
-              </select>
-              <ChevronDownIcon className="pointer-events-none absolute top-1/2 right-2.5 size-3.5 -translate-y-1/2 text-muted lg:right-3 lg:size-4" />
-            </span>
+          {example ? (
+            <span className="min-w-0 truncate text-xs text-muted max-lg:hidden lg:text-sm">Example light</span>
           ) : (
-            <span className={cx("min-w-0 truncate text-xs text-muted lg:text-sm", example && "max-lg:hidden")}>
-              {example ? "Example light" : device.name}
+            // Every light listed shows the same thing, so there's nothing to pick: just say where.
+            <span className="flex min-w-0 flex-wrap items-center gap-x-2.5 gap-y-1 text-xs text-muted lg:text-sm">
+              {devices.map((d) => (
+                <span key={d.id} className="inline-flex min-w-0 items-center gap-1.5" title={d.offline ?? "Online"}>
+                  <span aria-hidden className={cx("size-1.5 shrink-0 rounded-full", d.offline ? "border border-muted" : "bg-free")} />
+                  <span className="truncate">{d.name}</span>
+                  {d.offline && <span className="sr-only">({d.offline})</span>}
+                </span>
+              ))}
             </span>
           )}
         </div>
@@ -305,7 +360,7 @@ export function StudioPreview({
                 <span className="font-medium whitespace-nowrap text-foreground">No light yet.</span>
                 <span className="max-lg:hidden"> This is how a new one would look.</span>
               </p>
-              <Link href="/devices" className={buttonClass("secondary", "sm")}>
+              <Link href="/lights#add-device" className={buttonClass("secondary", "sm")}>
                 Add your light
               </Link>
             </div>
@@ -417,6 +472,7 @@ export function StatusControls({ active = null, className }: { active?: ActiveSt
       }}
       className={cx("space-y-4", className)}
     >
+      <LightField />
       {/* How long and what it says come first, so one tap on a status sends all of it. */}
       <fieldset className="min-w-0">
         <legend className="mb-1.5 text-sm font-medium">For</legend>
@@ -446,7 +502,7 @@ export function StatusControls({ active = null, className }: { active?: ActiveSt
         <p id="status-text-hint" className="mt-1.5 text-xs text-muted" aria-live="polite">
           {statusCut(status.text) !== null ? (
             // Two lines is all the bar has: say what will show before it's sent.
-            <span className="text-danger">Only “{statusCut(status.text)}” fits. Shorten it, or use Show something for a longer message.</span>
+            <span className="text-danger">Only “{statusCut(status.text)}” fits. Shorten it, or use Show now for a longer message.</span>
           ) : status.text.trim() && screenText(status.text.trim()) !== status.text.trim() ? (
             "The screen only has plain letters: emoji and accents are left out."
           ) : sendWith ? (
@@ -545,21 +601,21 @@ function StatusTiles({ active, covered }: { active: ActiveStatus | null; covered
 // ---- show now ----
 //
 // Kept to a row of GIFs and one button: tap a GIF and it's on the preview, press
-// Show it. Pasting a link or uploading hides behind the "+" tile, the message behind
+// Show now. Pasting a link or uploading hides behind the "+" tile, the message behind
 // "Add a message", and how long is one small menu that most people never touch.
 
 const SHOW_DURATIONS = [
   { minutes: 15, label: "For 15 min" },
   { minutes: 60, label: "For 1 hour" },
   { minutes: 240, label: "For 4 hours" },
-  { minutes: 0, label: "Until I take it down" },
+  { minutes: 0, label: "Until I stop it" },
 ];
 
 const MAX_UPLOAD = 4 * 1024 * 1024;
 const TEXT_ONLY = "none";
 
 export function ShowNowControls({ className, flashOff = false }: { className?: string; flashOff?: boolean }) {
-  const { library, live, setFocus, show, setShow, resetShow } = useStudio();
+  const { library, live, setFocus, show, setShow, resetShow, lightsLabel } = useStudio();
   const form = useRef<HTMLFormElement>(null);
   const file = useRef<HTMLInputElement>(null);
   const message = useRef<HTMLInputElement>(null);
@@ -634,19 +690,20 @@ export function ShowNowControls({ className, flashOff = false }: { className?: s
             </span>
           )}
           <div className="min-w-0 flex-1 text-sm">
-            <p className="font-medium">{live.push ? `A push from ${live.push.team} is on your screen` : "On your screen now"}</p>
+            <p className="font-medium">{live.push ? `An announcement from ${live.push.team} is on screen` : "On screen now"}</p>
             <p className="truncate text-muted">
               {[live.gifName, live.text && `“${live.text}”`].filter(Boolean).join(" with ")}
               {live.leds ? ` · ${ringLabel(live.leds)} ring` : ""}
               {live.until ? ` · until ${clock(live.until)}` : ""}
             </p>
-            {live.push && <p className="text-muted">Press the top button on your light to dismiss it.</p>}
+            {live.push && <p className="text-muted">Press the top button on a light to dismiss it.</p>}
           </div>
           {!live.push && (
             <form action={clearShowAction} className="shrink-0">
+              <LightField />
               <Button size="sm">
                 <XIcon />
-                Take it down
+                Stop showing
               </Button>
             </form>
           )}
@@ -654,6 +711,7 @@ export function ShowNowControls({ className, flashOff = false }: { className?: s
       )}
 
       <form ref={form} action={action} onFocus={() => setFocus("show")} className="space-y-4">
+        <LightField />
         {library.length > 12 && (
           <div className="relative">
             <SearchIcon className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted" />
@@ -801,7 +859,7 @@ export function ShowNowControls({ className, flashOff = false }: { className?: s
               }}
               note={
                 flashOff
-                  ? "Flashing is off for your light, so its ring stays steady. Turn on Let this light flash on the Devices page."
+                  ? "Flashing is off for these lights, so the ring stays steady. Turn on Allow flashing on a light's page."
                   : "Never faster than 3 flashes a second. A light on older firmware keeps its usual ring until it updates."
               }
             />
@@ -836,7 +894,7 @@ export function ShowNowControls({ className, flashOff = false }: { className?: s
 
         <div className="flex flex-wrap items-center gap-2 border-t border-line pt-4">
           <Button variant="primary" disabled={pending || !ready} className="px-5">
-            {pending ? "Putting it up…" : "Show it"}
+            {pending ? "Showing…" : "Show now"}
           </Button>
           <Select
             name="minutes"
@@ -858,7 +916,7 @@ export function ShowNowControls({ className, flashOff = false }: { className?: s
               {result.error}
             </p>
           )}
-          {result?.ok && !pending && <p className="basis-full text-sm text-muted">Sent. Your light picks it up within about 20 seconds.</p>}
+          {result?.ok && !pending && <p className="basis-full text-sm text-muted">Sent. {lightsLabel} {lightsLabel.includes(" and ") || lightsLabel === "Your lights" ? "pick" : "picks"} it up within about 20 seconds.</p>}
         </div>
       </form>
     </div>

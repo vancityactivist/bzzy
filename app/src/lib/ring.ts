@@ -61,18 +61,18 @@ export function ringFor(opts: {
   return opts.ledStyles?.[opts.status] ?? null;
 }
 
-// The Devices page form.
-export const ringInput = z.object({
-  allowFlash: z.boolean(),
+// The Look page form: how the ring moves for each status, and the meeting warning. (Whether
+// a light may flash at all is the light's own setting.)
+export const lookRingInput = z.object({
   styles: z.record(z.enum(STATUSES), z.object({ pattern: z.enum(PATTERNS), speed: z.number().int().min(1).max(3) })),
   warnMinutes: z.number().int().min(0).max(60),
   warnPattern: z.enum(PATTERNS),
   warnColor: z.union([z.literal(""), z.string().regex(/^#[0-9a-f]{6}$/i)]),
   warnSpeed: z.number().int().min(1).max(3),
 });
-export type RingInput = z.infer<typeof ringInput>;
+export type LookRingInput = z.infer<typeof lookRingInput>;
 
-export function ringFromInput(i: RingInput): { allowFlash: boolean; ledStyles: LedStyles; meetingWarn: MeetingWarn | null } {
+export function lookRingFromInput(i: LookRingInput): { ledStyles: LedStyles; meetingWarn: MeetingWarn | null } {
   const styles: LedStyles = {};
   for (const s of STATUSES) {
     const st = i.styles[s];
@@ -80,5 +80,5 @@ export function ringFromInput(i: RingInput): { allowFlash: boolean; ledStyles: L
   }
   const leds: LedStyle = { pattern: i.warnPattern, speed: i.warnSpeed };
   if (i.warnColor) leds.color = i.warnColor.toLowerCase();
-  return { allowFlash: i.allowFlash, ledStyles: styles, meetingWarn: i.warnMinutes > 0 ? { minutes: i.warnMinutes, leds } : null };
+  return { ledStyles: styles, meetingWarn: i.warnMinutes > 0 ? { minutes: i.warnMinutes, leds } : null };
 }

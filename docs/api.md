@@ -119,7 +119,7 @@ A team push from an admin beats your own Show now while it's up (`hiddenByPush` 
 
 ### `GET /lights`
 
-Each light: `id`, `name`, `online`, `lastSeenAt`, `firmwareVersion`, `dark` (off outside working hours), `screen` (`layout`, `status`, `text`, `until`), `ring` (what the ring is doing, or `null` for steady), and `push` (a team push on it, if any). It's the same thing the Status page preview shows.
+Each light: `id`, `name`, `follows` (`false` for a light with its own status, like a boardroom), `online`, `lastSeenAt`, `firmwareVersion`, `dark` (off outside working hours), `screen` (`layout`, `status`, `text`, `until`), `ring` (what the ring is doing, or `null` for steady), and `push` (a team push on it, if any). It's the same thing the Status page preview shows.
 
 ### `POST /teams/{id}/pushes`
 

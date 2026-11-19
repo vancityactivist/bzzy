@@ -5,7 +5,7 @@ import { useActionState, useState, useTransition } from "react";
 import { CheckIcon, LinkIcon, LogOutIcon, PlusIcon, TrashIcon, XIcon } from "@/components/icons";
 import { Button, Card, CardHeader, Field, Input, Select } from "@/components/ui";
 
-import { CopyButton } from "../devices/copy-button";
+import { CopyButton } from "../lights/copy-button";
 import {
   createInviteAction,
   createTeamAction,

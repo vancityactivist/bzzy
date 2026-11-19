@@ -190,10 +190,10 @@ export async function openAsset(blobUrl: string) {
   return get(blobUrl, { access: ACCESS });
 }
 
-// ---- per-device choices ----
+// ---- the GIF for each status (part of a person's look) ----
 
-export async function deviceGifChoices(deviceId: string): Promise<Record<Status, GifChoice>> {
-  const rows = await db().select().from(schema.deviceAssets).where(eq(schema.deviceAssets.deviceId, deviceId));
+export async function userGifChoices(userId: string): Promise<Record<Status, GifChoice>> {
+  const rows = await db().select().from(schema.userGifs).where(eq(schema.userGifs.userId, userId));
   const out = Object.fromEntries(STATUSES.map((s) => [s, "default"])) as Record<Status, GifChoice>;
   for (const r of rows) {
     out[r.status] = r.assetId ? `asset:${r.assetId}` : r.builtin ? `builtin:${r.builtin}` : "none";
@@ -201,67 +201,57 @@ export async function deviceGifChoices(deviceId: string): Promise<Record<Status,
   return out;
 }
 
-export async function setDeviceGif(deviceId: string, deviceTeamId: string, status: Status, choice: GifChoice): Promise<boolean> {
-  const where = and(eq(schema.deviceAssets.deviceId, deviceId), eq(schema.deviceAssets.status, status));
+// Any upload the person can see (theirs, or one from a team they're in) can go on any of
+// their lights, whatever team the light is in.
+export async function setUserGif(userId: string, status: Status, choice: GifChoice): Promise<boolean> {
+  const where = and(eq(schema.userGifs.userId, userId), eq(schema.userGifs.status, status));
   if (choice === "default") {
-    await db().delete(schema.deviceAssets).where(where);
-    await expire(tag.device(deviceId));
+    await db().delete(schema.userGifs).where(where);
+    await expire(tag.user(userId));
     return true;
   }
   let assetId: string | null = null;
   let builtin: string | null = null;
-  if (choice.startsWith("builtin:")) {
-    builtin = choice.slice(8);
-    if (!builtinById.has(builtin)) return false;
-  } else if (choice.startsWith("asset:")) {
-    assetId = choice.slice(6);
-    // Only GIFs from the device's own team.
-    const rows = await db()
-      .select({ id: schema.assets.id })
-      .from(schema.assets)
-      .where(and(eq(schema.assets.id, assetId), eq(schema.assets.teamId, deviceTeamId)))
-      .limit(1);
-    if (!rows[0]) return false;
-  } else if (choice !== "none") {
-    return false;
+  if (choice !== "none") {
+    const checked = await checkGifChoice(userId, choice);
+    if (!checked) return false;
+    ({ assetId, builtin } = checked);
   }
   await db()
-    .insert(schema.deviceAssets)
-    .values({ deviceId, status, assetId, builtin })
-    .onConflictDoUpdate({ target: [schema.deviceAssets.deviceId, schema.deviceAssets.status], set: { assetId, builtin } });
-  await expire(tag.device(deviceId));
+    .insert(schema.userGifs)
+    .values({ userId, status, assetId, builtin })
+    .onConflictDoUpdate({ target: [schema.userGifs.userId, schema.userGifs.status], set: { assetId, builtin } });
+  await expire(tag.user(userId));
   return true;
 }
 
-// What each status shows on a device, after defaults.
-export async function resolveDeviceGifs(deviceId: string): Promise<Record<Status, ResolvedGif>> {
+// What each status shows on this person's lights, after defaults.
+export async function resolveUserGifs(userId: string): Promise<Record<Status, ResolvedGif>> {
   const rows = await db()
-    .select({ status: schema.deviceAssets.status, builtin: schema.deviceAssets.builtin, asset: schema.assets })
-    .from(schema.deviceAssets)
-    .leftJoin(schema.assets, eq(schema.assets.id, schema.deviceAssets.assetId))
-    .where(eq(schema.deviceAssets.deviceId, deviceId));
+    .select({ status: schema.userGifs.status, builtin: schema.userGifs.builtin, asset: schema.assets })
+    .from(schema.userGifs)
+    .leftJoin(schema.assets, eq(schema.assets.id, schema.userGifs.assetId))
+    .where(eq(schema.userGifs.userId, userId));
   const byStatus = new Map(rows.map((r) => [r.status, r]));
-
-  const fromBuiltin = builtinGif;
 
   return Object.fromEntries(
     STATUSES.map((s) => {
       const r = byStatus.get(s);
-      if (!r) return [s, fromBuiltin(DEFAULT_BUILTIN[s])];
+      if (!r) return [s, builtinGif(DEFAULT_BUILTIN[s])];
       if (r.asset) return [s, { kind: "asset", id: r.asset.id, name: r.asset.name, sha: r.asset.sha } satisfies ResolvedGif];
-      if (r.builtin) return [s, fromBuiltin(r.builtin)];
+      if (r.builtin) return [s, builtinGif(r.builtin)];
       return [s, null];
     }),
   ) as Record<Status, ResolvedGif>;
 }
 
-// Which upload a device is allowed to download: one it's set to show.
-export async function deviceMayFetch(deviceId: string, assetId: string) {
+// Which upload a light may download for a status: one its owner picked for a status.
+export async function lookMayFetch(ownerUserId: string, assetId: string) {
   const rows = await db()
     .select({ blobUrl: schema.assets.blobUrl })
-    .from(schema.deviceAssets)
-    .innerJoin(schema.assets, eq(schema.assets.id, schema.deviceAssets.assetId))
-    .where(and(eq(schema.deviceAssets.deviceId, deviceId), eq(schema.deviceAssets.assetId, assetId)))
+    .from(schema.userGifs)
+    .innerJoin(schema.assets, eq(schema.assets.id, schema.userGifs.assetId))
+    .where(and(eq(schema.userGifs.userId, ownerUserId), eq(schema.userGifs.assetId, assetId)))
     .limit(1);
   return rows[0]?.blobUrl ?? null;
 }

@@ -1,6 +1,7 @@
 "use server";
 
 import { refresh } from "next/cache";
+import { redirect } from "next/navigation";
 import { after } from "next/server";
 import { z } from "zod";
 
@@ -18,24 +19,30 @@ import {
   canManageDevice,
   createDevice,
   deleteDevice,
-  deviceTeam,
+  ownedDevice,
+  renameDevice,
   requestUpdate,
   rotateDeviceToken,
+  setAllowFlash,
   setAutoUpdate,
-  setDeviceRing,
+  setFollowsOwner,
+  setLightDefault,
 } from "@/lib/devices";
 import { isAdmin, setSuperadmin } from "@/lib/admin";
 import { newTokenInput } from "@/lib/api-rules";
 import { takeLimit } from "@/lib/api-limits";
 import { createApiToken, revokeApiToken, setApiBlocked, TokenError } from "@/lib/api-tokens";
 import { GifError } from "@/lib/gif-process";
-import { checkGifChoice, deleteGif, importGifFromLink, renameGif, setDeviceGif, uploadGif } from "@/lib/gifs";
+import { checkGifChoice, deleteGif, importGifFromLink, renameGif, setUserGif, uploadGif } from "@/lib/gifs";
+import { clearLightShow, getLightStatus, setLightShow, setLightStatus } from "@/lib/light-state";
+import { getLook, setDefaultStatus, setLookRing } from "@/lib/look";
 import { noteShown, setFavourite } from "@/lib/gif-prefs";
 import { PasskeyError, renamePasskey, revokePasskey } from "@/lib/passkeys";
 import { getPresence, setPresence } from "@/lib/presence";
 import { clipText, nowSeconds, STATUSES } from "@/lib/protocol";
 import { pushInput, pushLeds } from "@/lib/push-rules";
-import { ringFromInput, type RingInput, ringInput } from "@/lib/ring";
+import { lookRingFromInput, type LookRingInput, lookRingInput } from "@/lib/ring";
+import { setDeviceTeam, TeamError } from "@/lib/teams";
 import { requireUser } from "@/lib/session";
 import { clearShow, setShow } from "@/lib/show";
 import { webhookInput } from "@/lib/webhook-rules";
@@ -58,6 +65,17 @@ export async function signOutAction() {
 
 // ---- status ----
 
+// Which light a status or Show now is for: null for the person (every light that follows
+// them), or the id of one of their lights that has its own status. Anything else is
+// refused, so a form can't reach someone else's light.
+async function targetLight(userId: string, formData: FormData): Promise<string | null> {
+  const raw = formData.get("light");
+  if (!raw) return null;
+  const d = await ownedDevice(userId, String(raw));
+  if (!d || d.followsOwner) throw new Error("Not a light with its own status");
+  return d.id;
+}
+
 const statusInput = z.object({
   status: z.enum(STATUSES),
   // -1: keep the end time the status you set has now (the form's "Until 3:15 PM" chip).
@@ -72,39 +90,35 @@ export async function setStatus(formData: FormData) {
     minutes: formData.get("minutes") ?? 0,
     text: formData.get("text") ?? "",
   });
+  const light = await targetLight(user.id, formData);
   const now = nowSeconds();
   let until = input.minutes > 0 ? now + input.minutes * 60 : 0;
   if (input.minutes === -1) {
-    const p = await getPresence(user.id);
+    const p = light ? (await getLightStatus(light)).presence : await getPresence(user.id);
     until = p?.active && p.until > now ? p.until : 0;
   }
+  const presence = { active: true, status: input.status, text: clipText(input.text.trim()), until, updatedAt: now };
   // Changing the status takes down "show now", like a press on the device does.
-  await Promise.all([
-    setPresence(
-      user.id,
-      {
-        active: true,
-        status: input.status,
-        text: clipText(input.text.trim()),
-        until,
-        updatedAt: now,
-      },
-      "web",
-    ),
-    clearShow(user.id, now),
-  ]);
-  after(() => noticeChanges(user.id, { status: true, show: true }));
+  if (light) {
+    await Promise.all([setLightStatus(light, presence, "web"), clearLightShow(light, now)]);
+  } else {
+    await Promise.all([setPresence(user.id, presence, "web"), clearShow(user.id, now)]);
+    after(() => noticeChanges(user.id, { status: true, show: true }));
+  }
   refresh();
 }
 
-export async function clearStatus() {
+export async function clearStatus(formData?: FormData) {
   const user = await requireUser();
+  const light = formData ? await targetLight(user.id, formData) : null;
   const now = nowSeconds();
-  await Promise.all([
-    setPresence(user.id, { active: false, status: "free", text: "", until: 0, updatedAt: now }, "web"),
-    clearShow(user.id, now),
-  ]);
-  after(() => noticeChanges(user.id, { status: true, show: true }));
+  const cleared = { active: false, status: "free" as const, text: "", until: 0, updatedAt: now };
+  if (light) {
+    await Promise.all([setLightStatus(light, cleared, "web"), clearLightShow(light, now)]);
+  } else {
+    await Promise.all([setPresence(user.id, cleared, "web"), clearShow(user.id, now)]);
+    after(() => noticeChanges(user.id, { status: true, show: true }));
+  }
   refresh();
 }
 
@@ -129,6 +143,12 @@ const showInput = z.object({
 // pasted GIPHY/Tenor link or a file, and the last two are saved to the library too.
 export async function showNowAction(_prev: ShowNowResult, formData: FormData): Promise<ShowNowResult> {
   const user = await requireUser();
+  let light: string | null;
+  try {
+    light = await targetLight(user.id, formData);
+  } catch {
+    return { ok: false, error: "That light can't be found. Reload the page." };
+  }
   const input = showInput.safeParse({
     gif: formData.get("gif") ?? "none",
     link: formData.get("link") ?? "",
@@ -180,22 +200,26 @@ export async function showNowAction(_prev: ShowNowResult, formData: FormData): P
   const now = nowSeconds();
   const shown = choice.assetId ? `asset:${choice.assetId}` : choice.builtin ? `builtin:${choice.builtin}` : null;
   if (shown) await noteShown(user.id, shown, now);
-  await setShow(user.id, {
-    ...choice,
-    text,
-    leds: pushLeds(input.data),
-    until: minutes > 0 ? now + minutes * 60 : 0,
-    updatedAt: now,
-  });
-  after(() => noticeChanges(user.id, { status: false, show: true }));
+  const values = { ...choice, text, leds: pushLeds(input.data), until: minutes > 0 ? now + minutes * 60 : 0, updatedAt: now };
+  if (light) {
+    await setLightShow(light, values);
+  } else {
+    await setShow(user.id, values);
+    after(() => noticeChanges(user.id, { status: false, show: true }));
+  }
   refresh();
   return { ok: true, at: now };
 }
 
-export async function clearShowAction() {
+export async function clearShowAction(formData?: FormData) {
   const user = await requireUser();
-  await clearShow(user.id, nowSeconds());
-  after(() => noticeChanges(user.id, { status: false, show: true }));
+  const light = formData ? await targetLight(user.id, formData) : null;
+  if (light) {
+    await clearLightShow(light, nowSeconds());
+  } else {
+    await clearShow(user.id, nowSeconds());
+    after(() => noticeChanges(user.id, { status: false, show: true }));
+  }
   refresh();
 }
 
@@ -239,7 +263,7 @@ export async function removeDevice(deviceId: string) {
   const user = await requireUser();
   if (!(await canManageDevice(user.id, deviceId))) return;
   await deleteDevice(deviceId);
-  refresh();
+  redirect("/lights");
 }
 
 // ---- calendars ----
@@ -474,22 +498,81 @@ export async function setFavouriteAction(choice: string, favourite: boolean) {
   refresh();
 }
 
-export async function setDeviceGifAction(deviceId: string, status: string, choice: string) {
+// ---- the look (every light that follows you) ----
+
+export async function setLookGifAction(status: string, choice: string): Promise<{ ok: boolean }> {
   const user = await requireUser();
   const s = z.enum(STATUSES).safeParse(status);
-  if (!s.success || !(await canManageDevice(user.id, deviceId))) return;
-  const teamId = await deviceTeam(deviceId);
-  if (!teamId) return;
-  await setDeviceGif(deviceId, teamId, s.data, choice);
+  if (!s.success) return { ok: false };
+  const ok = await setUserGif(user.id, s.data, choice);
+  refresh();
+  return { ok };
+}
+
+// How the ring moves for each status, and the meeting warning.
+export async function setLookRingAction(raw: LookRingInput): Promise<{ ok: boolean }> {
+  const user = await requireUser();
+  const input = lookRingInput.safeParse(raw);
+  if (!input.success) return { ok: false };
+  await setLookRing(user.id, lookRingFromInput(input.data));
+  refresh();
+  return { ok: true };
+}
+
+// What your lights show when nothing is set and there's no meeting.
+export async function setDefaultStatusAction(status: string) {
+  const user = await requireUser();
+  const s = z.enum(STATUSES).safeParse(status);
+  if (!s.success) return;
+  await setDefaultStatus(user.id, s.data);
   refresh();
 }
 
-// The ring: a style per status, the meeting warning, and whether it may flash at all.
-export async function setDeviceRingAction(deviceId: string, raw: RingInput): Promise<{ ok: boolean }> {
+// ---- a light's own settings ----
+
+export async function renameDeviceAction(deviceId: string, raw: string): Promise<{ ok: boolean; error?: string }> {
   const user = await requireUser();
-  const input = ringInput.safeParse(raw);
-  if (!input.success || !(await canManageDevice(user.id, deviceId))) return { ok: false };
-  await setDeviceRing(deviceId, ringFromInput(input.data));
+  const name = z.string().trim().min(1).max(60).safeParse(raw);
+  if (!name.success) return { ok: false, error: "Give it a name, up to 60 characters." };
+  if (!(await canManageDevice(user.id, deviceId))) return { ok: false, error: "You can't manage that light." };
+  await renameDevice(deviceId, name.data);
+  refresh();
+  return { ok: true };
+}
+
+export async function setAllowFlashAction(deviceId: string, allowFlash: boolean) {
+  const user = await requireUser();
+  if (!(await canManageDevice(user.id, deviceId))) return;
+  await setAllowFlash(deviceId, allowFlash);
+  refresh();
+}
+
+// "Follows me". Only the light's owner: it's their status it follows.
+export async function setFollowsAction(deviceId: string, follows: boolean) {
+  const user = await requireUser();
+  if (!(await ownedDevice(user.id, deviceId))) return;
+  await setFollowsOwner(deviceId, follows, (await getLook(user.id)).defaultStatus);
+  refresh();
+}
+
+// What a light with its own status shows when nothing is set.
+export async function setLightDefaultAction(deviceId: string, status: string) {
+  const user = await requireUser();
+  const s = z.enum(STATUSES).safeParse(status);
+  if (!s.success || !(await ownedDevice(user.id, deviceId))) return;
+  await setLightDefault(deviceId, s.data);
+  refresh();
+}
+
+// The light's team, which is also whose announcements it shows. "" = just you.
+export async function setDeviceTeamAction(deviceId: string, teamId: string): Promise<{ ok: boolean; error?: string }> {
+  const user = await requireUser();
+  try {
+    await setDeviceTeam(user.id, user.name, deviceId, teamId || null);
+  } catch (err) {
+    if (err instanceof TeamError) return { ok: false, error: err.message };
+    throw err;
+  }
   refresh();
   return { ok: true };
 }

@@ -71,7 +71,7 @@ async function PairContent({ params }: PageProps<"/pair/[code]">) {
       <Card className="p-6 sm:p-8">
         <Header title="This light has been added">It should say “Paired” on its screen in a few seconds.</Header>
         {user && (
-          <Link href="/devices" className={buttonClass("primary", "md", "mt-6 w-full")}>
+          <Link href="/lights" className={buttonClass("primary", "md", "mt-6 w-full")}>
             Open Devices
           </Link>
         )}

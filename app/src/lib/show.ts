@@ -22,8 +22,13 @@ export async function getShow(userId: string): Promise<CurrentShow | null> {
     .where(eq(schema.showNow.userId, userId))
     .limit(1);
   const r = rows[0];
-  if (!r) return null;
-  const { show, asset } = r;
+  return r ? currentShow(r.show, r.asset) : null;
+}
+
+type ShowRow = { active: boolean; assetId: string | null; builtin: string | null; text: string; leds: LedStyle | null; until: number; updatedAt: number };
+
+// A show_now or light_show row (with its upload, if any) as the app and lights use it.
+export function currentShow(show: ShowRow, asset: { id: string; name: string; sha: string } | null): CurrentShow {
   const gif: ResolvedGif = asset
     ? { kind: "asset", id: asset.id, name: asset.name, sha: asset.sha }
     : show.builtin

@@ -88,6 +88,7 @@ export const API_EXAMPLES: Record<string, ApiExample> = {
         {
           id: "bz-k7qf2m",
           name: "Desk",
+          follows: true,
           online: true,
           lastSeenAt: "2026-11-16T18:00:12.000Z",
           firmwareVersion: "0.2.0",

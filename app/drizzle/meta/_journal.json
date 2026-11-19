@@ -113,6 +113,13 @@
       "when": 1795061951737,
       "tag": "0015_gif_prefs",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1795125768159,
+      "tag": "0016_lights_follow",
+      "breakpoints": true
     }
   ]
 }

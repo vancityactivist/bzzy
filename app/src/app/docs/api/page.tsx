@@ -10,7 +10,7 @@ import { LIMITS, MAX_LIVE_TOKENS, SCOPE_INFO, SCOPES } from "@/lib/api-rules";
 import { REPO_URL, SITE_URL } from "@/lib/site";
 import { DELIVERY_TIMEOUT_MS, EVENT_INFO, FAILURES_TO_DISABLE, MAX_WEBHOOKS, RETRY_DELAYS_MS, WEBHOOK_EVENTS } from "@/lib/webhook-rules";
 
-import { CopyButton } from "../../(app)/devices/copy-button";
+import { CopyButton } from "../../(app)/lights/copy-button";
 
 // The public API's docs (docs/api.md is the same story for people reading the repo). Public
 // and indexable, unlike the app's pages. The reference is built from the OpenAPI document the

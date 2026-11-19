@@ -7,7 +7,7 @@ import { adminOverview, requireAdmin } from "@/lib/admin";
 import { allSharedTeams } from "@/lib/teams";
 import { countSince, signupsByDay } from "@/lib/admin-stats";
 
-import { absoluteTime, relativeTime, shortDate } from "../devices/relative-time";
+import { absoluteTime, relativeTime, shortDate } from "../lights/relative-time";
 import { ApiBlockToggle, SuperadminToggle } from "./superadmin-toggle";
 
 export const metadata: Metadata = { title: "Admin", robots: { index: false } };

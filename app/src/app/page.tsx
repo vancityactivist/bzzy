@@ -4,17 +4,20 @@ import { Suspense } from "react";
 import { AppShell } from "@/components/app-shell";
 import { Landing } from "@/components/landing";
 import { STATUS_META } from "@/components/status-meta";
-import { Button, Card, CardHeader, Container, StatusDot } from "@/components/ui";
+import Link from "next/link";
+
+import { Button, Card, Container, cx, StatusDot } from "@/components/ui";
 import { LiveSync } from "@/components/live-sync";
 import { refreshStaleCalendars, scheduleForUser, userClock } from "@/lib/calendar";
 import { devicesForUser } from "@/lib/devices";
-import { BUILTIN_GIFS, defaultPreviewSrcs, gifsForUser, previewSrc, resolveDeviceGifs } from "@/lib/gifs";
+import { BUILTIN_GIFS, defaultPreviewSrcs, gifsForUser, previewSrc, resolveUserGifs } from "@/lib/gifs";
+import { getLightShow, getLightStatus } from "@/lib/light-state";
 import { isOnline } from "@/lib/poll-writes";
 import { gifPrefsForUser } from "@/lib/gif-prefs";
 import { getPresence } from "@/lib/presence";
 import { liveVersionFor } from "@/lib/live";
 import { isDark, signTicket } from "@/lib/live-rules";
-import { hasFeature, nowSeconds, showVisible, STATUSES } from "@/lib/protocol";
+import { type Block, hasFeature, nowSeconds, showVisible, STATUSES } from "@/lib/protocol";
 import { resolveScreen, screenText, viewFor } from "@/lib/screen";
 import { getCurrentUser } from "@/lib/session";
 import { ringNow } from "@/lib/push-rules";
@@ -25,7 +28,7 @@ import { REPO_URL, SITE_NAME, SITE_URL } from "@/lib/site";
 import { sharedTeamsForUser } from "@/lib/teams";
 import { workWindows } from "@/lib/work-hours";
 
-import { relativeTime } from "./(app)/devices/relative-time";
+import { relativeTime } from "./(app)/lights/relative-time";
 import { clearShowAction, clearStatus } from "./actions";
 import {
   type ActiveStatus,
@@ -36,6 +39,7 @@ import {
   StatusControls,
   StudioPreview,
   StudioProvider,
+  StudioTabs,
 } from "./studio";
 
 // The one public page: search engines should list it as https://bzzy.ca/ whichever of the
@@ -88,18 +92,31 @@ async function HomeContent({ searchParams }: { searchParams: PageProps<"/">["sea
 
   const now = nowSeconds();
   await refreshStaleCalendars(user.id);
-  const [presence, { schedule }, devices, show, uploads, prefs, clock] = await Promise.all([
-    getPresence(user.id),
-    scheduleForUser(user.id, now),
+  const [devices, uploads, prefs, clock, gifs, params] = await Promise.all([
     devicesForUser(user.id),
-    getShow(user.id),
     gifsForUser(user.id),
     gifPrefsForUser(user.id),
     userClock(user.id),
+    resolveUserGifs(user.id),
+    searchParams,
   ]);
-  // "Show now" on the GIFs page links here with ?show=<choice>: start with it picked.
-  const { show: picked } = await searchParams;
-  const pick = typeof picked === "string" ? picked : undefined;
+  // Lights that show this person's status (team devices can belong to others), online
+  // ones first, so the preview draws a light that's showing what it says.
+  const online = (d: (typeof devices)[number]) => isOnline(d.lastSeenAt, now * 1000, d.pollSec);
+  const mine = devices.filter((d) => d.ownerUserId === user.id).sort((a, b) => Number(online(b)) - Number(online(a)));
+  const followers = mine.filter((d) => d.followsOwner);
+  const ownLights = mine.filter((d) => !d.followsOwner);
+  // ?light=<id>: one of their lights with its own status. Otherwise: them.
+  const target = ownLights.find((d) => d.id === params.light) ?? null;
+  const shown = target ? [target] : followers;
+
+  const [presence, { schedule }, show] = await Promise.all([
+    target ? getLightStatus(target.id).then((r) => r.presence) : getPresence(user.id),
+    target ? Promise.resolve({ schedule: [] as Block[] }) : scheduleForUser(user.id, now),
+    target ? getLightShow(target.id) : getShow(user.id),
+  ]);
+  // "Show now" on the GIFs library links here with ?show=<choice>: start with it picked.
+  const pick = typeof params.show === "string" ? params.show : undefined;
   // Favourites first, then the few shown most recently, then the rest: with a big
   // library, what you reach for is at the top of the Show now picker.
   const all: LibraryGif[] = [
@@ -126,14 +143,9 @@ async function HomeContent({ searchParams }: { searchParams: PageProps<"/">["sea
     ...recent.map((g) => ({ ...g, section: "Recently shown" as const })),
     ...all.filter((g) => !lifted.has(g.choice)),
   ];
-  // Lights that show this person's status (team devices can belong to others).
-  // Online ones first, so the preview opens on a light that's showing what it says.
-  const mine = devices
-    .filter((d) => d.ownerUserId === user.id)
-    .sort((a, b) => Number(isOnline(b.lastSeenAt, now * 1000, b.pollSec)) - Number(isOnline(a.lastSeenAt, now * 1000, a.pollSec)));
   // A team push beats their own show now. It's the same on all their lights that
   // follow that team, so take the first one that has one.
-  const following = mine.find((d) => d.pushTeamId);
+  const following = shown.find((d) => d.pushTeamId);
   const push = following ? await pushForDevice(following, now) : null;
   const pushTeam = push ? ((await sharedTeamsForUser(user.id)).find((t) => t.id === push.teamId)?.name ?? null) : null;
   const liveShow: LiveShow | null = push
@@ -150,7 +162,7 @@ async function HomeContent({ searchParams }: { searchParams: PageProps<"/">["sea
           until: show.until,
           gifSrc: previewSrc(show.gif),
           gifName: show.gif?.name ?? null,
-          leds: mine.some((d) => d.ring.allowFlash) ? show.leds : null,
+          leds: shown.some((d) => d.ring.allowFlash) ? show.leds : null,
         }
       : null;
   const current = schedule.find((b) => b.start <= now && now < b.end);
@@ -161,41 +173,35 @@ async function HomeContent({ searchParams }: { searchParams: PageProps<"/">["sea
   const windows = workWindows(clock.workHours, clock.timeZone, now);
   const nextOn = windows.find((w) => w.start > now);
   const darkLabel = isDark(windows, now) ? `Off hours${nextOn ? ` · on at ${at(nextOn.start)}` : ""}` : null;
+  const statusGifs = Object.fromEntries(STATUSES.map((s) => [s, previewSrc(gifs[s])])) as PreviewDevice["gifs"];
   const previews: PreviewDevice[] =
-    mine.length > 0
-      ? await Promise.all(
-          mine.map(async (d) => {
-            const gifs = await resolveDeviceGifs(d.id);
-            const resolved = resolveScreen({ now, defaultStatus: d.defaultStatus, presence, schedule });
-            const ringPush = push && d.pushTeamId === push.teamId ? push : null;
-            const ringShow = !ringPush && show && showVisible(show, presence, now) ? show : null;
-            return {
-              id: d.id,
-              name: d.name,
-              offline: isOnline(d.lastSeenAt, now * 1000, d.pollSec)
-                ? null
-                : d.lastSeenAt
-                  ? `Offline · seen ${relativeTime(d.lastSeenAt, now * 1000)}`
-                  : "Never connected",
-              view: viewFor(resolved),
-              gifs: Object.fromEntries(STATUSES.map((s) => [s, previewSrc(gifs[s])])) as PreviewDevice["gifs"],
-              ring: ringFor({ ...d.ring, status: resolved.status, schedule, now, push: ringPush, show: ringShow }),
-              // Without their show now's: what a new show with no ring of its own gets.
-              baseRing: ringFor({ ...d.ring, status: resolved.status, schedule, now, push: ringPush }),
-              dark: hasFeature(d.features, "hours") ? darkLabel : null,
-              allowFlash: d.ring.allowFlash,
-              styles: Object.fromEntries(
-                STATUSES.map((s) => [s, ringFor({ ...d.ring, meetingWarn: null, status: s, schedule: [], now })]),
-              ) as PreviewDevice["styles"],
-            };
-          }),
-        )
+    shown.length > 0
+      ? shown.map((d) => {
+          const resolved = resolveScreen({ now, defaultStatus: d.defaultStatus, presence, schedule });
+          const ringPush = push && d.pushTeamId === push.teamId ? push : null;
+          const ringShow = !ringPush && show && showVisible(show, presence, now) ? show : null;
+          return {
+            id: d.id,
+            name: d.name,
+            offline: online(d) ? null : d.lastSeenAt ? `Offline · seen ${relativeTime(d.lastSeenAt, now * 1000)}` : "Never connected",
+            view: viewFor(resolved),
+            gifs: statusGifs,
+            ring: ringFor({ ...d.ring, status: resolved.status, schedule, now, push: ringPush, show: ringShow }),
+            // Without their show now's: what a new show with no ring of its own gets.
+            baseRing: ringFor({ ...d.ring, status: resolved.status, schedule, now, push: ringPush }),
+            dark: hasFeature(d.features, "hours") ? darkLabel : null,
+            allowFlash: d.ring.allowFlash,
+            styles: Object.fromEntries(
+              STATUSES.map((s) => [s, ringFor({ ...d.ring, meetingWarn: null, status: s, schedule: [], now })]),
+            ) as PreviewDevice["styles"],
+          };
+        })
       : [
           {
             id: "example",
             name: "How a new light would look",
             view: viewFor(resolveScreen({ now, defaultStatus: "free", presence, schedule })),
-            gifs: defaultPreviewSrcs(),
+            gifs: mine.length > 0 ? statusGifs : defaultPreviewSrcs(),
           },
         ];
   const live = presence?.active && (presence.until === 0 || presence.until > now) ? presence : null;
@@ -212,7 +218,10 @@ async function HomeContent({ searchParams }: { searchParams: PageProps<"/">["sea
       ? { status: current.status, source: "calendar" }
       : null;
 
-  const shown = live ?? current ?? null;
+  const between = STATUS_META[(target ?? shown[0])?.defaultStatus ?? "free"].label;
+  const showing = live ?? current ?? null;
+  const names = shown.map((d) => d.name);
+  const lightsLabel = target ? target.name : names.length === 0 ? "Your lights" : names.length === 1 ? names[0] : `${names.slice(0, -1).join(", ")} and ${names.at(-1)}`;
   const summary = (
     <div className="min-w-0">
       {liveShow ? (
@@ -231,43 +240,47 @@ async function HomeContent({ searchParams }: { searchParams: PageProps<"/">["sea
             {liveShow.gifName && liveShow.text && <span className="text-muted"> · {liveShow.text}</span>}
           </span>
         </p>
-      ) : shown ? (
+      ) : showing ? (
         <p className="flex min-w-0 items-center gap-2">
-          <StatusDot status={shown.status} size="lg" />
+          <StatusDot status={showing.status} size="lg" />
           <span className="min-w-0 truncate">
-            <span className="font-semibold">{STATUS_META[shown.status].label}</span>
-            {shown.text && <span className="text-muted"> · {shown.text}</span>}
+            <span className="font-semibold">{STATUS_META[showing.status].label}</span>
+            {showing.text && <span className="text-muted"> · {showing.text}</span>}
           </span>
         </p>
       ) : (
         <p className="flex items-center gap-2">
           <span aria-hidden className="size-3 shrink-0 rounded-full border-2 border-line-strong" />
-          <span className="font-semibold">Automatic</span>
+          <span className="font-semibold">{target ? `${between} (between meetings)` : "Following your calendar"}</span>
         </p>
       )}
       <div className="mt-1 flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
         <p className="text-xs text-muted lg:text-sm">
           {liveShow
             ? liveShow.push
-              ? `Pushed by ${liveShow.push.team} · press your light's button to dismiss`
-              : `Show now · ${liveShow.until ? `until ${at(liveShow.until)}` : "until you take it down"}`
+              ? `Announcement from ${liveShow.push.team} · press a light's button to dismiss it`
+              : `Show now · ${liveShow.until ? `until ${at(liveShow.until)}` : "until you stop it"}`
             : live
-              ? `Set by you · ${live.until ? `until ${at(live.until)}` : "until you change it"}`
+              ? `Set ${live.until ? `until ${at(live.until)}` : "until you change it"}`
               : current
                 ? `From your calendar · until ${at(current.end)}`
-                : next
-                  ? `Following your calendar · ${STATUS_META[next.status].label.toLowerCase()} at ${at(next.start)}`
-                  : "Following your calendar and each light's default"}
+                : target
+                  ? "Nothing set"
+                  : next
+                    ? `${between} now · ${STATUS_META[next.status].label.toLowerCase()} at ${at(next.start)}`
+                    : `${between} between meetings`}
         </p>
         {liveShow
           ? !liveShow.push && (
               <form action={clearShowAction}>
-                <Button size="sm">Take it down</Button>
+                {target && <input type="hidden" name="light" value={target.id} />}
+                <Button size="sm">Stop showing</Button>
               </form>
             )
           : live && (
               <form action={clearStatus}>
-                <Button size="sm">Back to automatic</Button>
+                {target && <input type="hidden" name="light" value={target.id} />}
+                <Button size="sm">{target ? `Back to ${between}` : "Back to calendar"}</Button>
               </form>
             )}
       </div>
@@ -275,32 +288,61 @@ async function HomeContent({ searchParams }: { searchParams: PageProps<"/">["sea
   );
 
   // Keeps the preview in step with the lights while the page is open (lib/live-rules.ts).
-  const ticket = mine.length > 0 ? signTicket(user.id, mine.map((d) => d.id), now) : null;
-  const version = ticket ? await liveVersionFor(user.id, mine.map((d) => d.id)) : null;
+  const ids = shown.map((d) => d.id);
+  const ticket = ids.length > 0 ? signTicket(user.id, ids, now) : null;
+  const version = ticket ? await liveVersionFor(user.id, ids) : null;
 
   return (
     <AppShell>
       {ticket && <LiveSync ticket={ticket} version={version} />}
       <Container className="max-lg:pt-0">
-        <StudioProvider library={library} live={liveShow} initialShow={library.some((g) => g.choice === pick) ? pick : undefined}>
-          <div className="grid grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:items-start lg:gap-8">
-            <StudioPreview devices={previews} example={mine.length === 0} summary={summary} />
-            <div className="space-y-6">
-              <Card>
-                <CardHeader
-                  title="Set your status"
-                  description="Overrides your calendar until it ends."
-                />
-                <StatusControls active={active} className="mt-5" />
-              </Card>
-              <Card id="show" className="scroll-mt-48 lg:scroll-mt-20">
-                <CardHeader
-                  title="Show something"
-                  description="A GIF or message on your light right now. A press of its button takes it down."
-                />
-                <ShowNowControls className="mt-5" flashOff={mine.length > 0 && mine.every((d) => !d.ring.allowFlash)} />
-              </Card>
+        {ownLights.length > 0 && (
+          // Whose status the page sets: theirs, or a light that has its own.
+          <nav aria-label="Whose status" className="mb-4 max-lg:pt-4">
+            <div className="inline-flex max-w-full gap-1 overflow-x-auto rounded-xl bg-subtle p-1 [scrollbar-width:none]">
+              {[{ id: null, label: followers.length ? `You · ${followers.map((d) => d.name).join(", ")}` : "You" }, ...ownLights.map((d) => ({ id: d.id, label: d.name }))].map(
+                (t) => {
+                  const on = (target?.id ?? null) === t.id;
+                  return (
+                    <Link
+                      key={t.id ?? "me"}
+                      href={t.id ? `/?light=${t.id}` : "/"}
+                      aria-current={on ? "page" : undefined}
+                      className={cx(
+                        "flex h-9 shrink-0 items-center rounded-lg px-3.5 text-sm font-medium whitespace-nowrap transition-colors",
+                        on ? "bg-card text-foreground shadow-card" : "text-muted hover:text-foreground",
+                      )}
+                    >
+                      {t.label}
+                    </Link>
+                  );
+                },
+              )}
             </div>
+          </nav>
+        )}
+        <StudioProvider
+          key={target?.id ?? "me"}
+          library={library}
+          live={liveShow}
+          light={target?.id ?? null}
+          lightsLabel={lightsLabel}
+          initialShow={library.some((g) => g.choice === pick) ? pick : undefined}
+        >
+          <div className="grid grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:items-start lg:gap-8">
+            <StudioPreview devices={previews} example={shown.length === 0} summary={summary} />
+            <Card id="show" className="scroll-mt-48 lg:scroll-mt-20">
+              <StudioTabs
+                statusHint={
+                  target
+                    ? `${target.name} shows this until it ends. A press of its button changes it too.`
+                    : `${lightsLabel} ${names.length === 1 ? "shows" : "show"} this instead of your calendar until it ends.`
+                }
+                showHint={`A GIF or message on ${target ? target.name : names.length === 1 ? names[0] : "your lights"} right now. A press of ${target || names.length === 1 ? "its" : "a"} button takes it down.`}
+                status={<StatusControls active={active} />}
+                show={<ShowNowControls flashOff={shown.length > 0 && shown.every((d) => !d.ring.allowFlash)} />}
+              />
+            </Card>
           </div>
         </StudioProvider>
       </Container>

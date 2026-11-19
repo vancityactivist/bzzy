@@ -49,7 +49,7 @@ function describe(s: FirmwareState, autoUpdate: boolean): { badge: string; text:
   }
 }
 
-/** Firmware version, auto-update switch and "Update now". A full-width row in the device card. */
+/** Firmware version, auto-update switch and "Update now", on a light's page. */
 export function DeviceFirmware({
   deviceId,
   state,
@@ -66,7 +66,7 @@ export function DeviceFirmware({
   const d = describe(state, auto);
 
   return (
-    <div className="flex w-full flex-wrap items-center gap-x-4 gap-y-2 border-t border-line pt-3 text-sm">
+    <div className="flex w-full flex-wrap items-center gap-x-4 gap-y-2 pt-2 text-sm">
       <div className="flex min-w-0 flex-1 basis-64 flex-wrap items-center gap-x-2 gap-y-1">
         <Badge tone={state.kind === "available" || state.kind === "failed" ? "inverse" : "neutral"}>{d.badge}</Badge>
         {d.text && <span className="text-muted">{d.text}</span>}
