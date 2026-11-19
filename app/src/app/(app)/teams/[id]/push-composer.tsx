@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState, useTransition } from "react";
+import { Fragment, useActionState, useState, useTransition } from "react";
 
 import { DevicePreview } from "@/components/device-preview";
 import { XIcon } from "@/components/icons";
@@ -10,7 +10,7 @@ import { TEXT_MAX } from "@/lib/protocol";
 import { PUSH_DURATIONS, pushLeds } from "@/lib/push-rules";
 import { screenText, viewFor, withShow, wrapBar, wrapMessage } from "@/lib/screen";
 
-import type { LibraryGif } from "@/app/studio";
+import { GridLabel, type LibraryGif, startsBuiltins } from "@/app/studio";
 import { endPushAction, type PushResult, sendPushAction } from "../actions";
 
 const TEXT_ONLY = "none";
@@ -65,8 +65,11 @@ export function PushComposer({ teamId, members, library }: { teamId: string; mem
               className="-mx-1.5 mt-1.5 grid max-h-[11.5rem] grid-cols-[repeat(auto-fill,minmax(3.75rem,1fr))] gap-2 overflow-y-auto p-1.5"
             >
               <Tile name="Just a message" checked={gif === TEXT_ONLY} onPick={() => setGif(TEXT_ONLY)} />
-              {library.map((g) => (
-                <Tile key={g.choice} name={g.name} src={g.src} checked={gif === g.choice} onPick={() => setGif(g.choice)} />
+              {library.map((g, i) => (
+                <Fragment key={g.choice}>
+                  {startsBuiltins(library, i) && <GridLabel>Built in</GridLabel>}
+                  <Tile name={g.name} src={g.src} checked={gif === g.choice} onPick={() => setGif(g.choice)} />
+                </Fragment>
               ))}
             </div>
             <input type="hidden" name="gif" value={gif} />

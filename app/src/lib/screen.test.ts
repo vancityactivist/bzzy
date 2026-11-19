@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { Block, Presence } from "./protocol";
-import { MESSAGE_WIDTH, resolveScreen, screenText, textWidth, untilLabel, viewFor, withShow, wrapMessage, wrapText } from "./screen";
+import { fitsStatusBar, MESSAGE_WIDTH, resolveScreen, screenText, textWidth, untilLabel, viewFor, withShow, wrapMessage, wrapText } from "./screen";
 
 const now = 1_800_000_000;
 const block = (start: number, end: number, status: Block["status"], text = ""): Block => ({ start, end, status, text });
@@ -122,5 +122,18 @@ describe("withShow", () => {
   it("leaves the screen alone with neither", () => {
     expect(withShow(base, { text: " ", until: 0, gif: false })).toBe(base);
     expect(withShow(base, null)).toBe(base);
+  });
+});
+
+describe("fitsStatusBar", () => {
+  it("fits a short message on one line", () => {
+    expect(fitsStatusBar("On a call")).toBe(true);
+    expect(fitsStatusBar("")).toBe(true);
+  });
+  it("flags a message the light would cut off at both ends", () => {
+    expect(fitsStatusBar("Budget review, back at 3")).toBe(false);
+  });
+  it("measures what the screen draws (emoji dropped, ends trimmed)", () => {
+    expect(fitsStatusBar("  Lunch 🍕  ")).toBe(true);
   });
 });

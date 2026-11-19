@@ -5,7 +5,7 @@ import { Suspense } from "react";
 
 import { CheckIcon, ShieldIcon } from "@/components/icons";
 import { SignIn } from "@/components/sign-in";
-import { Badge, Card, CardHeader, Container, PageHeader } from "@/components/ui";
+import { Badge, Card, CardHeader, Container, cx, PageHeader } from "@/components/ui";
 import { teamDashboard } from "@/lib/dashboard";
 import { BUILTIN_GIFS, gifsForUser, previewSrc } from "@/lib/gifs";
 import { mailConfigured } from "@/lib/mail";
@@ -71,7 +71,7 @@ async function TeamContent({ params, searchParams }: PageProps<"/teams/[id]">) {
   const memberIds = members.map((m) => m.userId);
   const library: LibraryGif[] = [
     ...uploads.map((g) => ({ choice: `asset:${g.id}`, name: g.name, src: `/api/gifs/${g.id}` })),
-    ...BUILTIN_GIFS.map((g) => ({ choice: `builtin:${g.id}`, name: g.name, src: g.path })),
+    ...BUILTIN_GIFS.map((g) => ({ choice: `builtin:${g.id}`, name: g.name, src: g.path, builtin: true })),
   ];
   const pushList: PushSummary[] = pushes.map((p) => ({
     id: p.id,
@@ -128,13 +128,15 @@ async function TeamContent({ params, searchParams }: PageProps<"/teams/[id]">) {
       {cards && <Dashboard cards={cards} nowMs={now.getTime()} />}
 
       {manage && (
-        <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
+        // The list of pushes gets a side column only when there are some; otherwise the
+        // composer takes the full width, like the cards around it.
+        <div className={cx("grid items-start gap-6", pushList.length > 0 && "lg:grid-cols-[minmax(0,1fr)_20rem]")}>
           <PushComposer teamId={team.id} members={members.map((m) => ({ userId: m.userId, name: names.get(m.userId)! }))} library={library} />
           <PushList teamId={team.id} pushes={pushList} />
         </div>
       )}
 
-      <div className="max-w-3xl space-y-6">
+      <div className="space-y-6">
         {!access.role && (
           <p className="flex items-start gap-2 rounded-xl bg-subtle p-4 text-sm">
             <ShieldIcon className="mt-0.5 size-4 shrink-0 text-muted" />

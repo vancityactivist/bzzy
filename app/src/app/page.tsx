@@ -8,6 +8,7 @@ import { Button, Card, CardHeader, Container, StatusDot } from "@/components/ui"
 import { refreshStaleCalendars, scheduleForUser } from "@/lib/calendar";
 import { devicesForUser } from "@/lib/devices";
 import { BUILTIN_GIFS, defaultPreviewSrcs, gifsForUser, previewSrc, resolveDeviceGifs } from "@/lib/gifs";
+import { isOnline } from "@/lib/poll-writes";
 import { getPresence } from "@/lib/presence";
 import { nowSeconds, showVisible, STATUSES } from "@/lib/protocol";
 import { resolveScreen, screenText, viewFor } from "@/lib/screen";
@@ -19,6 +20,7 @@ import { getShow } from "@/lib/show";
 import { REPO_URL, SITE_NAME, SITE_URL } from "@/lib/site";
 import { sharedTeamsForUser } from "@/lib/teams";
 
+import { relativeTime } from "./(app)/devices/relative-time";
 import { clearStatus } from "./actions";
 import {
   type ActiveStatus,
@@ -98,10 +100,14 @@ async function HomeContent() {
       choice: `builtin:${g.id}`,
       name: g.name,
       src: g.path,
+      builtin: true,
     })),
   ];
   // Lights that show this person's status (team devices can belong to others).
-  const mine = devices.filter((d) => d.ownerUserId === user.id);
+  // Online ones first, so the preview opens on a light that's showing what it says.
+  const mine = devices
+    .filter((d) => d.ownerUserId === user.id)
+    .sort((a, b) => Number(isOnline(b.lastSeenAt, now * 1000, b.pollSec)) - Number(isOnline(a.lastSeenAt, now * 1000, a.pollSec)));
   // A team push beats their own show now. It's the same on all their lights that
   // follow that team, so take the first one that has one.
   const following = mine.find((d) => d.pushTeamId);
@@ -139,6 +145,11 @@ async function HomeContent() {
             return {
               id: d.id,
               name: d.name,
+              offline: isOnline(d.lastSeenAt, now * 1000, d.pollSec)
+                ? null
+                : d.lastSeenAt
+                  ? `Offline · seen ${relativeTime(d.lastSeenAt, now * 1000)}`
+                  : "Never connected",
               view: viewFor(resolved),
               gifs: Object.fromEntries(STATUSES.map((s) => [s, previewSrc(gifs[s])])) as PreviewDevice["gifs"],
               ring: ringFor({ ...d.ring, status: resolved.status, schedule, now, push: ringPush, show: ringShow }),

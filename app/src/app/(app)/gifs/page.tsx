@@ -6,6 +6,7 @@ import { SignIn } from "@/components/sign-in";
 import { Badge, Container, EmptyState, PageHeader } from "@/components/ui";
 import { BUILTIN_GIFS, gifsForUser } from "@/lib/gifs";
 import { getCurrentUser } from "@/lib/session";
+import { teamsForUser } from "@/lib/teams";
 
 import { AddGifCard, DeleteGifButton } from "./gif-forms";
 
@@ -57,7 +58,10 @@ const GRID = "grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4";
 async function GifsContent() {
   const user = await getCurrentUser();
   if (!user) return <SignIn />;
-  const uploads = await gifsForUser(user.id);
+  const [uploads, teams] = await Promise.all([gifsForUser(user.id), teamsForUser(user.id)]);
+  // Uploads to a shared team are everyone's in it: say which team, so a GIF someone else
+  // added isn't a surprise.
+  const shared = new Map(teams.filter((t) => !t.personal).map((t) => [t.id, t.name]));
 
   return (
     <div className="space-y-6">
@@ -69,7 +73,7 @@ async function GifsContent() {
       <AddGifCard />
 
       <section className="space-y-4">
-        <h2 className="font-semibold tracking-tight">Yours</h2>
+        <h2 className="font-semibold tracking-tight">Uploaded</h2>
         {uploads.length === 0 ? (
           <EmptyState icon={<ImageIcon />} title="Nothing uploaded yet">
             GIFs you upload or add from a link show up here, ready to pick on the Devices page.
@@ -77,7 +81,7 @@ async function GifsContent() {
         ) : (
           <ul className={GRID}>
             {uploads.map((g) => (
-              <Tile key={g.id} src={`/api/gifs/${g.id}`} name={g.name} note={`${Math.round(g.bytes / 1024)} KB`}>
+              <Tile key={g.id} src={`/api/gifs/${g.id}`} name={g.name} note={[`${Math.round(g.bytes / 1024)} KB`, shared.get(g.teamId)].filter(Boolean).join(" · ")}>
                 <DeleteGifButton id={g.id} name={g.name} />
               </Tile>
             ))}

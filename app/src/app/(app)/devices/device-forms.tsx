@@ -46,7 +46,7 @@ function Credentials({ id, token }: { id: string; token: string }) {
 export function AddDeviceForm() {
   const [state, action, pending] = useActionState<NewDeviceResult, FormData>(addDevice, null);
   return (
-    <Card>
+    <Card id="add-device" className="scroll-mt-20">
       <CardHeader
         title="Add a device"
         description={

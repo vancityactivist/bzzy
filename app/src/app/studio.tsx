@@ -4,7 +4,8 @@
 // hover, pick or type shows on the preview straight away, before it's sent; the
 // caption says whether you're looking at your screen as it is or a draft.
 
-import { createContext, useActionState, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { createContext, Fragment, useActionState, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { useFormStatus } from "react-dom";
 
 import Link from "next/link";
 
@@ -16,13 +17,14 @@ import { parseGifLink } from "@/lib/gif-link";
 import { type Status, STATUSES, TEXT_MAX } from "@/lib/protocol";
 import { type RingChoice, RingPicker } from "@/components/ring-picker";
 import { type LedStyle, PUSH_FLASHES, pushLeds } from "@/lib/push-rules";
-import { LED_RGB, screenText, type ScreenView, viewFor, withShow, wrapBar, wrapMessage } from "@/lib/screen";
+import { fitsStatusBar, LED_RGB, screenText, type ScreenView, viewFor, withShow, wrapBar, wrapMessage } from "@/lib/screen";
 
 import { clearShowAction, setStatus, showNowAction, type ShowNowResult } from "./actions";
 
 export type PreviewDevice = {
   id: string;
   name: string;
+  offline?: string | null; // "Offline · seen 3 days ago" when the light isn't checking in
   view: ScreenView; // the status part, as it is now
   gifs: Record<Status, string | null>;
   ring?: LedStyle | null; // what the ring is doing now (a push, a show, a meeting warning, the status's style)
@@ -42,7 +44,19 @@ export type LiveShow = {
   leds?: LedStyle | null; // their own show's ring
 };
 
-export type LibraryGif = { choice: string; name: string; src: string };
+// builtin: one of the GIFs that come with bzzy; the pickers list them after your own,
+// under a "Built in" label.
+export type LibraryGif = { choice: string; name: string; src: string; builtin?: boolean };
+
+/** True for the first built-in GIF when there are uploads before it: where the label goes. */
+export function startsBuiltins(library: LibraryGif[], i: number) {
+  return !!library[i].builtin && i > 0 && !library[i - 1].builtin;
+}
+
+/** The "Built in" label across a GIF grid. */
+export function GridLabel({ children }: { children: React.ReactNode }) {
+  return <p className="col-span-full pt-1 text-xs font-medium text-muted">{children}</p>;
+}
 
 // minutes: how long to set it for, or KEEP_UNTIL for "keep the end time it has now"
 // (keepUntil, 0 = no end), offered while a status you set is on.
@@ -214,6 +228,12 @@ export function StudioPreview({
                 Preview<span className="max-sm:hidden">, not sent yet</span>
               </span>
             </Badge>
+          ) : device.offline ? (
+            // Not "on your screen now": the light hasn't checked in, so it may show something older.
+            <Badge aria-live="polite" title="It shows this once it's back online">
+              <span aria-hidden className="size-1.5 rounded-full border border-muted" />
+              {device.offline}
+            </Badge>
           ) : (
             <Badge aria-live="polite">
               <span aria-hidden className="size-1.5 rounded-full bg-foreground/70" />
@@ -327,7 +347,7 @@ function Chips({
 }
 
 export function StatusControls({ active = null, className }: { active?: ActiveStatus | null; className?: string }) {
-  const { focus, setFocus, status, setStatus: setDraft, live } = useStudio();
+  const { setFocus, status, setStatus: setDraft, live } = useStudio();
   const form = useRef<HTMLFormElement>(null);
   // While a show has the screen, the status is only what the light glows.
   const covered = live !== null;
@@ -370,51 +390,7 @@ export function StatusControls({ active = null, className }: { active?: ActiveSt
       }}
       className={cx("space-y-5", className)}
     >
-      <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
-        {STATUSES.map((s) => {
-          const meta = STATUS_META[s];
-          const isActive = active?.status === s;
-          // Under the pointer or keyboard focus: what the preview is showing.
-          const previewing = focus === "status" && status.status === s && !isActive;
-          return (
-            <button
-              key={s}
-              name="status"
-              value={s}
-              aria-pressed={isActive}
-              aria-label={
-                isActive
-                  ? `${meta.label} (${covered ? "light colour only, the screen is showing something else" : "now"}${active?.source === "calendar" ? ", from your calendar" : ""})`
-                  : `Set ${meta.label}`
-              }
-              onMouseEnter={() => setDraft({ status: s })}
-              onFocus={() => setDraft({ status: s })}
-              className={cx(
-                "relative flex min-h-[4.25rem] flex-col items-start justify-between gap-2 rounded-xl border p-3 text-left shadow-card transition-[background-color,border-color,box-shadow] duration-150",
-                isActive
-                  ? cx("border-transparent ring-2", meta.ring, meta.tint)
-                  : cx("border-line bg-card", meta.hover, previewing && meta.soft),
-              )}
-            >
-              <span className="flex w-full items-center justify-between gap-2">
-                <StatusDot status={s} size="lg" />
-                {isActive && (
-                  <span
-                    className={cx(
-                      "flex h-5 items-center gap-0.5 rounded-full pr-2 pl-1 text-[0.6875rem] leading-none font-semibold text-white",
-                      meta.bg,
-                    )}
-                  >
-                    {active?.source === "calendar" ? <CalendarIcon className="size-3" strokeWidth={2.5} /> : <CheckIcon className="size-3" strokeWidth={3} />}
-                    {covered ? "Light" : "Now"}
-                  </span>
-                )}
-              </span>
-              <span className="text-sm leading-tight font-semibold">{meta.label}</span>
-            </button>
-          );
-        })}
-      </div>
+      <StatusTiles active={active} covered={covered} />
 
       <fieldset>
         <legend className="mb-1.5 text-sm font-medium">For how long</legend>
@@ -425,9 +401,18 @@ export function StatusControls({ active = null, className }: { active?: ActiveSt
         label="Message"
         htmlFor="status-text"
         hint={
-          sendWith
-            ? `Shown under the status on the screen. Optional. Press Enter to send it with ${STATUS_META[sendWith].label}.`
-            : "Shown under the status on the screen. Optional. Pick a status above to send it."
+          !fitsStatusBar(status.text) ? (
+            // The light draws it on one line and cuts off both ends: say so before it's sent.
+            <span className="text-danger" aria-live="polite">
+              Too long for one line: the light cuts off both ends. Keep it to about 20 letters, or use Show something for a longer message.
+            </span>
+          ) : status.text.trim() && screenText(status.text.trim()) !== status.text.trim() ? (
+            "The screen only has plain letters: emoji and accents are left out."
+          ) : sendWith ? (
+            `Shown under the status on the screen. Optional. Press Enter to send it with ${STATUS_META[sendWith].label}.`
+          ) : (
+            "Shown under the status on the screen. Optional. Pick a status above to send it."
+          )
         }
       >
         <Input
@@ -458,6 +443,76 @@ export function StatusControls({ active = null, className }: { active?: ActiveSt
   );
 }
 
+// The four status buttons. Tapping one sends the form; until the page comes back, the one
+// you tapped says so and the others wait, so a slow connection doesn't look like a dead tap.
+function StatusTiles({ active, covered }: { active: ActiveStatus | null; covered: boolean }) {
+  const { focus, status, setStatus: setDraft } = useStudio();
+  const { pending, data } = useFormStatus();
+  const sending = pending ? (data?.get("status") as Status | null) : null;
+  return (
+    <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4" aria-busy={pending || undefined}>
+      {STATUSES.map((s) => {
+        const meta = STATUS_META[s];
+        const isActive = sending ? sending === s : active?.status === s;
+        // Under the pointer or keyboard focus: what the preview is showing.
+        const previewing = focus === "status" && status.status === s && !isActive;
+        return (
+          <button
+            key={s}
+            name="status"
+            value={s}
+            aria-pressed={isActive}
+            aria-disabled={pending || undefined}
+            aria-label={
+              sending === s
+                ? `Setting ${meta.label}`
+                : isActive
+                  ? `${meta.label} (${covered ? "light colour only, the screen is showing something else" : "now"}${active?.source === "calendar" ? ", from your calendar" : ""})`
+                  : `Set ${meta.label}`
+            }
+            onClick={(e) => {
+              // One at a time: a second tap while the first is on its way is ignored.
+              if (pending) e.preventDefault();
+            }}
+            onMouseEnter={() => setDraft({ status: s })}
+            onFocus={() => setDraft({ status: s })}
+            className={cx(
+              "relative flex min-h-[4.25rem] flex-col items-start justify-between gap-2 rounded-xl border p-3 text-left shadow-card transition-[background-color,border-color,box-shadow,opacity] duration-150",
+              isActive
+                ? cx("border-transparent ring-2", meta.ring, meta.tint)
+                : cx("border-line bg-card", meta.hover, previewing && meta.soft),
+              pending && sending !== s && "opacity-60",
+            )}
+          >
+            <span className="flex w-full items-center justify-between gap-2">
+              <StatusDot status={s} size="lg" />
+              {sending === s ? (
+                <span className={cx("flex h-5 items-center gap-1 rounded-full px-2 text-[0.6875rem] leading-none font-semibold text-white", meta.bg)}>
+                  <span aria-hidden className="size-2.5 rounded-full border-[1.5px] border-white/40 border-t-white motion-safe:animate-spin" />
+                  Setting
+                </span>
+              ) : (
+                isActive && (
+                  <span
+                    className={cx(
+                      "flex h-5 items-center gap-0.5 rounded-full pr-2 pl-1 text-[0.6875rem] leading-none font-semibold text-white",
+                      meta.bg,
+                    )}
+                  >
+                    {active?.source === "calendar" ? <CalendarIcon className="size-3" strokeWidth={2.5} /> : <CheckIcon className="size-3" strokeWidth={3} />}
+                    {covered ? "Light" : "Now"}
+                  </span>
+                )
+              )}
+            </span>
+            <span className="text-sm leading-tight font-semibold">{meta.label}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 // ---- show now ----
 //
 // Kept to a row of GIFs and one button: tap a GIF and it's on the preview, press
@@ -484,6 +539,7 @@ export function ShowNowControls({ className, flashOff = false }: { className?: s
   const [ringing, setRinging] = useState(false); // the ring effect
   const [textOnly, setTextOnly] = useState(false); // the "Aa" tile: a message, no GIF
   const [fileName, setFileName] = useState("");
+  const [fileError, setFileError] = useState<string | null>(null);
 
   const [result, action, pending] = useActionState<ShowNowResult, FormData>(async (prev, fd) => {
     const r = await showNowAction(prev, fd);
@@ -587,14 +643,11 @@ export function ShowNowControls({ className, flashOff = false }: { className?: s
             <span className="text-[0.6875rem] leading-none font-medium">Add</span>
           </button>
           <Tile name="Just a message" checked={!usingOther && textOnly} onPick={() => pick(TEXT_ONLY)} />
-          {library.map((g) => (
-            <Tile
-              key={g.choice}
-              name={g.name}
-              gif={g}
-              checked={!usingOther && !textOnly && show.choice === g.choice}
-              onPick={() => pick(g.choice)}
-            />
+          {library.map((g, i) => (
+            <Fragment key={g.choice}>
+              {startsBuiltins(library, i) && <GridLabel>Built in</GridLabel>}
+              <Tile name={g.name} gif={g} checked={!usingOther && !textOnly && show.choice === g.choice} onPick={() => pick(g.choice)} />
+            </Fragment>
           ))}
         </div>
         {/* The choice goes with the form; tiles are buttons so tapping one previews it. */}
@@ -632,6 +685,11 @@ export function ShowNowControls({ className, flashOff = false }: { className?: s
               </Button>
               {show.fileSrc && <span className="min-w-0 truncate">{fileName}</span>}
             </div>
+            {fileError && (
+              <p className="text-xs text-danger" role="alert">
+                {fileError}
+              </p>
+            )}
             <input
               ref={file}
               name="file"
@@ -642,9 +700,10 @@ export function ShowNowControls({ className, flashOff = false }: { className?: s
                 const f = e.target.files?.[0];
                 if (f && f.size > MAX_UPLOAD) {
                   e.target.value = "";
-                  alert("That file is over 4 MB.");
+                  setFileError(`${f.name} is over 4 MB. Try a smaller GIF.`);
                   return;
                 }
+                setFileError(null);
                 setFocus("show");
                 setFileName(f?.name ?? "");
                 setShow({ fileSrc: f ? URL.createObjectURL(f) : null });
@@ -742,6 +801,7 @@ export function ShowNowControls({ className, flashOff = false }: { className?: s
               </option>
             ))}
           </Select>
+          {!ready && !pending && <p className="text-sm text-muted">Pick a GIF or write a message first.</p>}
           {result?.ok === false && (
             <p className="basis-full text-sm text-danger" role="alert">
               {result.error}

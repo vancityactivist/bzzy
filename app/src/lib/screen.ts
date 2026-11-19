@@ -203,3 +203,11 @@ export function wrapMessage(s: string): { font: WrapFont; lines: string[] } {
 export function wrapBar(s: string): string[] {
   return wrapText(s, "bold12", MESSAGE_WIDTH, 2).lines;
 }
+
+// display.cpp drawScreen(): a status's message is one line in the bar under the GIF, in
+// bold 12 pt and centred on the 240 px screen, with no wrap. Wider than that and the light
+// cuts off both ends, so the app warns before it's sent.
+export const BAR_WIDTH = 240;
+export function fitsStatusBar(s: string): boolean {
+  return textWidth(screenText(s.trim()), "bold12") <= BAR_WIDTH;
+}
