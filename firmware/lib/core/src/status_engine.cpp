@@ -131,8 +131,18 @@ void mergeFromServer(State& cached, const State& fromServer, uint32_t now) {
   }
 }
 
+// Each press is strictly newer than the override it replaces. Times are whole seconds,
+// so two quick presses would otherwise share one, and a tie goes to the app: the light
+// would jump back to the first press on its next poll.
+// (No clock yet: leave it as it was.)
+static uint32_t pressTime(const Override& o, uint32_t now) {
+  if (now == 0 || now > o.updatedAt) return now;
+  return o.updatedAt + 1;
+}
+
 void cycleLocalOverride(State& st, uint32_t now) {
   Override& o = st.manual;
+  const uint32_t at = pressTime(o, now);  // before a reset below forgets the old time
   const bool live = overrideLive(o, now);
   if (!live) {
     o = Override();
@@ -151,7 +161,7 @@ void cycleLocalOverride(State& st, uint32_t now) {
   }
   o.text[0] = '\0';
   o.until = 0;
-  o.updatedAt = now;
+  o.updatedAt = at;
   o.local = true;
 }
 
@@ -160,7 +170,7 @@ void clearLocalOverride(State& st, uint32_t now) {
   o.active = false;  // kept as a tombstone, see cycleLocalOverride
   o.text[0] = '\0';
   o.until = 0;
-  o.updatedAt = now;
+  o.updatedAt = pressTime(o, now);
   o.local = true;
 }
 
