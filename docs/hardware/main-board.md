@@ -26,15 +26,15 @@ Status: **draft for review, nothing designed yet.** Written 2026-11-19. Every de
 
 ## 1. Summary
 
-One board replaces both the Waveshare ESP32-S3-Touch-LCD-1.69 and the LED ring board. It keeps the ring board's **52 × 61 mm outline** plus a small tab at the top for the antenna, so the case carries over with small changes and the **full ring of 16 LEDs stays lit**. On it:
+One board replaces both the Waveshare ESP32-S3-Touch-LCD-1.69 and the LED ring board. It keeps the ring board's **52 × 61 mm outline**, so the case carries over with small changes, and the **full ring of 16 LEDs stays lit** (the antenna is a separate small part stuck inside the case). On it:
 
-- An **ESP32-S3-WROOM-1-N16R8** module: Espressif's pre-certified module with the antenna printed on it. It has the same chip, 16 MB flash and 8 MB PSRAM as the Waveshare board, so the firmware needs a new pin map and nothing else.
+- An **ESP32-S3-WROOM-1U-N16R8** module (Adam's pick, 2026-11-19): Espressif's pre-certified module with a u.FL socket for a small external antenna, stuck inside the case. It has the same chip, 16 MB flash and 8 MB PSRAM as the Waveshare board, so the firmware needs a new pin map and nothing else.
 - The **same 1.69" 240 × 280 touch panel** (ST7789V2 display, CST816T touch), bought bare and plugged into an FPC connector, the way the Waveshare board does it.
 - The **16 WS2812B-2020 LEDs**, 5 V level shifter and top button from rev C, with the rev D fixes folded in.
 - **USB-C** for power and flashing, straight into the S3's own USB (no USB-to-serial chip), with ESD protection and a fuse.
 - The **PCF85063 clock** with a supercap, so calendar blocks still switch on time after a short power cut.
 
-Certification: because the radio is a certified module used exactly as certified, the product **inherits the module's ISED certification (IC: 21098-ESPS3WROOM1)**. bzzy itself then needs only an **ICES-003 Class B emissions test** (the "digital device" test), which Adam self-declares with a lab report. The same test run can produce the FCC Part 15B report for the US later.
+Certification: because the radio is a certified module used exactly as certified, the product **inherits the module's ISED certification (IC: 21098-ESPS3WROOMU)**, as long as the antenna is the same type as the certified one with no more gain (2.33 dBi). bzzy itself then needs only an **ICES-003 Class B emissions test** (the "digital device" test), which Adam self-declares with a lab report. The same test run can produce the FCC Part 15B report for the US later.
 
 Rough cost: **about US$22 to US$30 a board at 25 units** for the assembled board and screen, before case, box and shipping. One-off costs: about US$150 to US$250 for 5 prototypes, and **roughly CA$2,000 to CA$5,000 for the lab test (estimate, get quotes)**.
 
@@ -67,7 +67,7 @@ Non-goals (for rev A)
 
 All of these are Espressif modules with FCC and ISED modular certification. Prices are LCSC listings seen 2026-11-19 and move a lot **(verify at order time)**.
 
-| | **ESP32-S3-WROOM-1-N16R8** (recommended) | ESP32-S3-WROOM-1-N8R2 | ESP32-S3-MINI-1-N8 | ESP32-S3-WROOM-1U-N16R8 | ESP32-C6-MINI-1 |
+| | ESP32-S3-WROOM-1-N16R8 | ESP32-S3-WROOM-1-N8R2 | ESP32-S3-MINI-1-N8 | **ESP32-S3-WROOM-1U-N16R8** (chosen) | ESP32-C6-MINI-1 |
 |---|---|---|---|---|---|
 | Chip | ESP32-S3 | ESP32-S3 | ESP32-S3 | ESP32-S3 | ESP32-C6 (single core, Wi-Fi 6) |
 | Flash / PSRAM | 16 MB / 8 MB octal | 8 MB / 2 MB quad | 8 MB / none | 16 MB / 8 MB octal | 4 or 8 MB / none |
@@ -79,21 +79,29 @@ All of these are Espressif modules with FCC and ISED modular certification. Pric
 | Price, 1 to 30 pcs | ~US$3.70 to 6.40 | a little less | ~US$3.70 to 4.50 | ~US$6 | ~US$3 |
 | Firmware | **same as Waveshare: drop-in** | new partitions, less GIF room | new partitions, no PSRAM | drop-in | C6 build exists, image already 1.57 MB of a 1.625 MB slot |
 
-**Recommendation: ESP32-S3-WROOM-1-N16R8.**
+**Chosen: ESP32-S3-WROOM-1U-N16R8** (Adam, 2026-11-19), with a small external antenna inside the case. The printed-antenna WROOM-1-N16R8 needed a copper-free corner, which meant either a dark corner in the ring or a taller case (section 7.1).
 
 - It is the same memory as the Waveshare board, so the 16 MB partition table, OTA slots and GIF storage don't change and every board runs the same firmware image apart from pins.
 - 8 MB PSRAM keeps headroom for full-screen GIFs and future features. The MINI-1-N8 would work today (the C6 board proves bzzy runs without PSRAM), but it saves under a dollar and costs headroom.
-- Printed antenna rather than -1U: the certification covers specific antennas, and a printed antenna can't be swapped, bent or left unplugged at the bench. The -1U is the fallback only if the layout can't give the antenna a clear edge (section 7).
+- -1U rather than the printed antenna: the whole board perimeter stays free for LEDs, and the antenna can sit wherever the case gives it the clearest view. The costs: about US$1 to 3 more a light, a cable to click in at the bench, and the antenna choice is constrained by the certification (section 4.1). LCSC showed C3013946 out of stock; DigiKey and Mouser stock it, and JLCPCB can source it or take consigned parts **(verify before ordering)**.
 - C6 is not recommended: the firmware image barely fits its 4 MB flash today, and there is no PSRAM.
 
 Integration rules for keeping the module certification (from the module grant and Espressif's guidance; **verify against the module's user manual**):
 
-1. Don't modify the module or its shield. Use only the printed antenna.
-2. **Antenna keep-out:** no copper, traces, vias or parts on any layer under the antenna, and keep metal well away from it. Put the antenna end at a board edge, ideally flush or slightly overhanging. Use Espressif's ESP32-S3 Hardware Design Guidelines keep-out figure as the exact shape; plan on about 15 mm of clear space around the antenna in the plane of the board until checked.
+1. Don't modify the module or its shield. Use an antenna that meets section 4.1.
+2. **Antenna placement:** stick the antenna to plastic, away from the board's ground plane, the screen's metal backplate, screws and the monitor. Keep the cable short and don't coil it.
 3. Don't raise transmit power above Espressif's defaults or change the RF calibration data. Lowering it (the firmware's `BZZY_WIFI_TX_POWER`) is fine.
 4. Set the Wi-Fi country to Canada (channels 1 to 11).
 5. Keep the device used at least 20 cm from people, which a desk light naturally is. Check the module grant's RF exposure condition.
-6. Label the product "Contains IC: 21098-ESPS3WROOM1" (and "Contains FCC ID: 2AC7Z-ESPS3WROOM1" for the US).
+6. Label the product "Contains IC: 21098-ESPS3WROOMU" (and "Contains FCC ID: 2AC7Z-ESPS3WROOM1U" for the US).
+
+### 4.1 Which antenna
+
+The module was certified with an **I-PEX/u.FL monopole antenna of 2.33 dBi** (FCC test report for 2AC7Z-ESPS3WROOM1U). Espressif's datasheet says a replacement must not exceed that gain, and the grant says to use the antennas it was tested with. FCC and ISED rules generally allow another antenna of the **same type with equal or lower gain** without new certification.
+
+- **Default:** buy the antenna Espressif certified with, or the closest match: a 2.4 GHz flexible (FPC) monopole with an adhesive back, u.FL/IPEX MHF1 plug, cable 50 to 100 mm, **gain no more than 2.33 dBi**. Reportedly Espressif's part is material code TFPD05H08750011 **(unconfirmed; ask Espressif or a distributor)**.
+- Get the antenna's datasheet (type and gain) into the technical file, and have the lab confirm at the pre-scan that it counts as "same type, equal or lower gain".
+- Don't use a higher-gain "booster" antenna, a dipole of a different type, or an external stick antenna: any of those would need the radio re-certified.
 
 ## 5. Screen
 
@@ -123,7 +131,8 @@ flowchart LR
   ESD --> F[Polyfuse<br/>~750 mA]
   F --> V5[5 V rail]
   V5 --> LDO[3.3 V LDO<br/>1 A]
-  LDO --> MOD[ESP32-S3-WROOM-1<br/>N16R8]
+  LDO --> MOD[ESP32-S3-WROOM-1U<br/>N16R8]
+  MOD -- u.FL cable --> ANT[FPC antenna<br/>inside case top]
   ESD -- "D+/D- (GPIO19/20)" --> MOD
   MOD -- SPI --> LCD[1.69in panel<br/>ST7789V2]
   MOD -- I2C --> TP[CST816T touch]
@@ -172,51 +181,45 @@ PCF85063 (same chip as Waveshare, same firmware driver) with a 32.768 kHz crysta
 ### 6.6 PCB
 
 - **4 layers**, 1.6 mm, JLCPCB standard. A solid ground layer under the module and USB pair is the single best thing for emissions and Wi-Fi range, and JLCPCB's 4-layer price is close to 2-layer at this size.
-- Ground stitching vias round the board edge (none near the antenna tab).
+- Ground stitching vias round the board edge.
 - Parts on both sides: LEDs and button on the front, module and everything else on the back (section 7).
 
 ## 7. Layout concept
 
-Keep the 52 × 61 mm board, the M2 holes in the same four corners, and USB-C at bottom centre. **The full ring of 16 LEDs stays, with no dark corner.**
-
-The trick: only the module's *antenna* needs the copper-free keep-out, not the module body. So the module goes on the back, centred at the top, with its antenna end **sticking out past the board's top edge** into a small tab. That's Espressif's preferred placement anyway (antenna outside the base board gives the best range). The LEDs on the front can sit right over the module body, where they are today.
+Keep the 52 × 61 mm board, the M2 holes in the same four corners, and USB-C at bottom centre. **All 16 LEDs stay in their rev C positions**, including the existing small gap round the USB-C socket at the bottom, which the frosted border already hides.
 
 ```
-                 +-----------------------+
-                 |  ANTENNA (back side)  |   <- ~18 x 7 mm, sticks out past the board edge,
-                 |  in a plastic pocket  |      no copper on the board under it
-   +-------------+-----------------------+-------------+
-   | (SW1)   o        o           o        o           |   <- top LEDs as on rev C,
-   | o                                               o |      over the module body
+   +---------------------------------------------------+
+   | (SW1)   o        o           o        o           |   top button stays centred
+   | o                                               o |
    | o         +---------------------------+         o |
    | o         |                           |         o |
-   | o         |    1.69" panel (front)    |         o |   module body (25.5 x 18 mm)
-   |           |       ~30 x 37 mm         |           |   sits behind the panel's
-   | o         |                           |         o |   top half on the back side
+   | o         |    1.69" panel (front)    |         o |   back side: WROOM-1U module
+   |           |       ~30 x 37 mm         |           |   (18 x 19.2 mm) with its u.FL
+   | o         |                           |         o |   socket near the top edge
    | o         +---------------------------+         o |
    | o      [FPC conn]  [LDO]  [RTC]                 o |
    |     o      o          [USB-C]         o      o    |
    +---------------------------------------------------+
+
+   antenna: flat flex antenna stuck to the inside of the case's top wall,
+   short cable down to the module's u.FL socket
 ```
 
-- **LED positions don't change from rev C**, including the existing small gap round the USB-C socket at the bottom, which the frosted border already hides.
-- **The case grows about 6 to 8 mm at the top** to give the antenna a plastic-only pocket. That band is also where the button and the "bzzy" wordmark already live, so it reads as a slightly taller brow rather than a new feature.
-- **The top button moves off centre** (to one side of the antenna pocket). The cap and the case follow.
-- The top LEDs are a few millimetres from the antenna's base. That's normal for this placement, but compare Wi-Fi range against the Waveshare board at bring-up.
-- **The panel's metal backplate stays well below the antenna.**
+- **Module on the back**, near the top edge so the antenna cable is short. Under the module, normal copper and ground are fine (no keep-out, since the antenna isn't on the board).
+- **Antenna** stuck to the inside of the case's **top wall**, above the board edge and the button, facing up and out. That's the furthest point from the board's ground, the screen's metal back and the monitor. If the top wall is too short for the antenna, the inside of the back plate's upper half is the second choice (more of the signal then passes through the monitor side, so compare range).
+- **Top button stays centred.** The antenna goes beside it or the button cap's flange is shaped round it.
+- **Case size doesn't change** for the antenna. It needs a flat plastic area about 30 × 8 mm (typical small FPC antenna size, **verify against the chosen antenna**) and a channel for the cable.
+- Compare Wi-Fi range against the Waveshare board at bring-up, with the case closed and clipped to a monitor.
 - Run the kicad-happy `kicad` and `emc` checks on the layout before ordering, as on rev C.
 
 ### 7.1 Alternatives considered
 
 | | Ring | Case | Cost and risk |
 |---|---|---|---|
-| **A. Antenna tab past the top edge** (recommended) | full ring, rev C spacing | ~6 to 8 mm taller at top, button off centre | no extra parts; Espressif's preferred placement |
-| B. ESP32-S3-WROOM-1U + small flex antenna stuck inside the case | full ring | no size change | +US$1 to 3 a light; the antenna must be a type listed on the -1U grant (IC 21098-ESPS3WROOMU) **(verify)**; a u.FL cable to click in at the bench, which can be missed or come loose |
-| C. Antenna inside the board outline, LEDs skip that corner | gap of 2 or 3 LEDs at one top corner | no change | visibly dimmer corner; rejected |
-
-If the taller top doesn't look right in renders, B is the fallback. Both keep the radio approval.
-
-This is a concept. The exact antenna keep-out comes from Espressif's guidelines figure, and the exact panel outline comes from the chosen panel's drawing.
+| **A. WROOM-1U + stuck-on antenna** (chosen) | full ring, rev C spacing | no size change; antenna pad and cable channel inside | +US$1 to 3 a light; antenna must be same type, ≤ 2.33 dBi; a u.FL cable to click in at the bench |
+| B. WROOM-1 with its antenna on a tab past the top edge | full ring | ~6 to 8 mm taller at top, button off centre | no extra parts |
+| C. WROOM-1 antenna inside the board outline, LEDs skip that corner | gap of 2 or 3 LEDs at one top corner | no change | visibly dimmer corner; rejected |
 
 ## 8. Pin map and firmware impact
 
@@ -241,7 +244,7 @@ Firmware changes:
 - Memory: N16R8 = same `default_16MB.csv` partitions, OTA slots and GIF space. No change to OTA or the size check.
 - Wi-Fi country code set to CA (section 4, rule 4). Check the firmware doesn't set a TX power above the default.
 - Add the env to the release workflow so each `fw-v*` tag publishes a signed image for it. Devices already pick their image by board, so OTA works the same way.
-- Optional: a "Regulatory" line on the device's info screen showing "Contains IC: 21098-ESPS3WROOM1". ISED allows electronic labelling on products with a screen (Notice 2014-DRS1003), but a printed label is simpler and is the default here.
+- Optional: a "Regulatory" line on the device's info screen showing "Contains IC: 21098-ESPS3WROOMU". ISED allows electronic labelling on products with a screen (Notice 2014-DRS1003), but a printed label is simpler and is the default here.
 
 ## 9. BOM and cost at 10 to 25 units
 
@@ -249,7 +252,8 @@ Estimates in **US dollars**, per board, at 25 units. Part prices are LCSC/AliExp
 
 | Part | Qty | Est. each | Est. per board |
 |---|---|---|---|
-| ESP32-S3-WROOM-1-N16R8 module | 1 | 3.70 to 6.40 | 5.00 |
+| ESP32-S3-WROOM-1U-N16R8 module | 1 | 5 to 7 | 6.00 |
+| 2.4 GHz FPC monopole antenna, u.FL, ≤ 2.33 dBi | 1 | 0.80 to 2.50 | 1.50 |
 | 1.69" ST7789V2 + CST816T panel (bare, FPC) | 1 | 5 to 10 | 8.00 |
 | WS2812B-2020 LED | 16 | 0.08 to 0.15 | 1.80 |
 | 74AHCT1G125 shifter | 1 | 0.10 | 0.10 |
@@ -264,13 +268,13 @@ Estimates in **US dollars**, per board, at 25 units. Part prices are LCSC/AliExp
 | Alps SKRT top button | 1 | 0.30 | 0.30 |
 | BOOT + RESET switches | 2 | 0.05 | 0.10 |
 | Passives (~40) | | | 0.50 |
-| **Parts subtotal** | | | **~US$18** |
+| **Parts subtotal** | | | **~US$20** |
 | PCB, 4-layer 52 × 61 mm (spread over 25) | | | 1.00 to 2.00 |
 | JLCPCB assembly, double-sided (setup, stencils, extended-part fees and joints, spread over 25) | | | 3.00 to 6.00 |
 | Shipping and duty to Canada (spread over 25) | | | 1.50 to 3.00 |
-| **Assembled board + screen** | | | **~US$22 to 30** (about CA$31 to 42) |
+| **Assembled board + screen + antenna** | | | **~US$24 to 32** (about CA$34 to 45) |
 
-At 10 units the fixed fees spread thinner: expect about US$28 to 38 per board. Ordering for 25 even when a batch closes at 10 is an option once demand is known, since leftover boards keep.
+At 10 units the fixed fees spread thinner: expect about US$30 to 40 per board. Ordering for 25 even when a batch closes at 10 is an option once demand is known, since leftover boards keep.
 
 Compared with today: the Waveshare touch board alone is roughly US$20 to 25 retail before the ring board, so the custom board is about cost-neutral while making the product sellable.
 
@@ -279,24 +283,24 @@ The case, frosted border, button cap, clip, screws, foam pad, box and labels are
 ## 10. Making it at JLCPCB, and bench assembly
 
 - **JLCPCB PCBA, standard (not economic) service**, double-sided: needed for the module on the back and LEDs on the front. The module, LEDs and shifter are likely "extended" parts (a ~US$3 setup fee each per order). Keep the passives to basic parts.
-- Module footprint: Espressif's own footprint, with the antenna area marked keep-out on all copper layers. Watch JLCPCB's placement preview for module and LED rotation (as on rev C: WS2812B-2020 +90°).
+- Module footprint: Espressif's WROOM-1U footprint. Leave room round the u.FL socket for a finger or tool to press the plug home. Watch JLCPCB's placement preview for module and LED rotation (as on rev C: WS2812B-2020 +90°).
 - Use JLCPCB's "global sourcing" or pre-order parts into the JLCPCB part library ahead of time if stock is low. The module had a few thousand in stock at LCSC.
 - **Not assembled by JLCPCB:** the screen. Adam sticks the panel on with a pre-cut foam pad, folds the tail and clicks it into the FPC connector.
-- **Bench steps per light (about 10 minutes):** plug in USB, run a flashing script (esptool: bootloader, partitions, signed firmware, OTA key) over the native USB, run a self-test screen (all LEDs, touch, clock, Wi-Fi scan), pair to the buyer's account (batch spec 7.2), close the case, stick on the label. Script lives in `firmware/scripts/` (to be written).
+- **Bench steps per light (about 10 minutes):** stick the antenna in the case and click its u.FL plug onto the module (press until it snaps; a dot of glue or tape strain-relief on the cable), plug in USB, run a flashing script (esptool: bootloader, partitions, signed firmware, OTA key) over the native USB, run a self-test screen (all LEDs, touch, clock, Wi-Fi scan with signal strength, which also catches an unplugged antenna), pair to the buyer's account (batch spec 7.2), close the case, stick on the label. Script lives in `firmware/scripts/` (to be written).
 - Prototype order: **5 boards**, plus 6 sample panels, about US$150 to 250 delivered.
 
 ## 11. Certification: Canada now, US later
 
 ### 11.1 What the module gives us
 
-The ESP32-S3-WROOM-1 holds **ISED certification 21098-ESPS3WROOM1** (Espressif, approval dated 2024-08-16 on the copy found) and **FCC ID 2AC7Z-ESPS3WROOM1**. Integrated per its conditions (section 4), bzzy does not need its own radio certification. **Verify the number on ISED's Radio Equipment List** before relying on it; the ISED and Espressif sites weren't reachable from the session that wrote this.
+The ESP32-S3-WROOM-1U holds **ISED certification 21098-ESPS3WROOMU** (Nemko certificate, September 2021, on Espressif's site) and **FCC ID 2AC7Z-ESPS3WROOM1U**, tested with a 2.33 dBi IPEX monopole antenna. (The printed-antenna WROOM-1 is 21098-ESPS3WROOM1 / 2AC7Z-ESPS3WROOM1, a different grant.) Integrated per its conditions (section 4), bzzy does not need its own radio certification. **Verify the number on ISED's Radio Equipment List** before relying on it; the ISED and Espressif sites weren't reachable from the session that wrote this.
 
 ### 11.2 Canada (batch 1)
 
 What bzzy itself needs:
 
 1. **ICES-003, Class B** (information technology equipment, home use). It's self-declared: an accredited lab tests radiated and conducted emissions (CISPR 32 / ANSI C63.4 methods), Adam keeps the report and declares compliance. No ISED filing fee. Test with the radio on and the LEDs and a GIF running, powered from a typical USB adapter.
-2. **Labels** on the back of the case (and in the manual): "Contains IC: 21098-ESPS3WROOM1" and "CAN ICES-003(B) / NMB-003(B)". Bilingual as needed; the batch spec's bilingual insert card can carry the manual statements.
+2. **Labels** on the back of the case (and in the manual): "Contains IC: 21098-ESPS3WROOMU" and "CAN ICES-003(B) / NMB-003(B)". Bilingual as needed; the batch spec's bilingual insert card can carry the manual statements.
 3. **Manual statements:** the standard ISED licence-exempt notice in English and French, from RSS-Gen. (RSS-Gen Issue 6 was reportedly published 2026-07-30 with a one-year transition; the lab will know which wording applies.)
 4. Keep a **technical file**: schematic, BOM showing the module part number, photos, test report, label artwork.
 
@@ -309,23 +313,23 @@ What it costs and takes **(estimates; get 2 or 3 quotes)**:
 ### 11.3 United States (later)
 
 - **FCC Part 15B** for the host, by **Supplier's Declaration of Conformity (SDoC)**. The SDoC needs a **responsible party located in the US** (a US company, distributor or compliance agent). That's the main extra step for a Canadian seller.
-- Label "Contains FCC ID: 2AC7Z-ESPS3WROOM1" plus the Part 15 statement in the manual.
+- Label "Contains FCC ID: 2AC7Z-ESPS3WROOM1U" plus the Part 15 statement in the manual.
 - Follow FCC KDB 996369 (module integration): confirm with the lab that the radio is used within the grant, so no permissive change is needed.
 - The batch spec's US duty and shipping issues (6.3) still apply.
 
 ### 11.4 What would break the inherited certification
 
-- Changing the antenna, or moving it next to metal or copper. Mitigation: follow the keep-out exactly, plastic case only, no metal near the antenna pocket.
+- Changing the antenna, or moving it next to metal or copper. Mitigation: use only an antenna meeting section 4.1, stuck to plastic, with no metal near it.
 - Firmware raising TX power beyond the module's defaults.
-- Switching to a module variant not on the same grant (for example -1U without a listed antenna). Any module change: re-check the grant.
+- An antenna of a different type or higher gain than 2.33 dBi. Any change of module or antenna: re-check the grant.
 
 ## 12. Case impact
 
-- **Same outline (plus the antenna tab), same screws:** 52 × 61 mm board in place of the ring board, so `board_dims.scad` keeps `RING_W`/`RING_H`. The Waveshare pocket goes away.
+- **Same outline, same screws:** 52 × 61 mm board in place of the ring board, so `board_dims.scad` keeps `RING_W`/`RING_H`. The Waveshare pocket goes away.
 - **Thinner:** no Waveshare board stacked behind the ring. The back shell shrinks by roughly the Waveshare's thickness minus the module's 3.1 mm. New `BOARD_STACK` parameter for the depth.
 - **USB-C:** the socket is on our board edge, so the rev C ring notch isn't needed. Keep the case opening where it is.
-- **Antenna pocket:** the case top grows about 6 to 8 mm to house the antenna tab (section 7). Plastic only there: no metal screw, insert or magnet nearby. The monitor clip is plastic and at the back.
-- **Button:** moves off centre, beside the antenna pocket (Q8). The wordmark stays on the top face.
+- **Antenna:** a flat area inside the top wall (about 30 × 8 mm, to suit the chosen antenna) and a cable channel down to the module. Plastic only near it: no metal screw, insert or magnet. The monitor clip is plastic and at the back.
+- **Button:** stays centred; its cap flange may need shaping round the antenna. The wordmark stays on the top face.
 - **Label:** a flat area on the back for the IC and ICES labels, about 25 × 12 mm.
 - **Pinhole** for BOOT/RESET on the back, if kept (Q7).
 
@@ -351,13 +355,13 @@ Defaults are what this spec assumes until Adam says otherwise.
 | # | Question | Default |
 |---|---|---|
 | Q1 | Screen: keep the same 1.69" 240 × 280 touch panel? | Yes, touch kept |
-| Q2 | Antenna: printed on the module (WROOM-1), or a small external antenna on a cable (-1U)? | Printed; -1U only if the light ring looks uneven |
+| Q2 | Antenna: printed on the module (WROOM-1), or a small external antenna on a cable (-1U)? | **Decided 2026-11-19: -1U with an external antenna** |
 | Q3 | Clock backup through a power cut: supercap (days), coin cell (months), or none (time from Wi-Fi)? | Supercap |
 | Q4 | Extras: drop the motion sensor? Add a buzzer footprint for the roadmap "knock" feature? | Drop the sensor; unpopulated buzzer footprint |
 | Q5 | Assembly: JLCPCB does everything but the screen; Adam fits the screen, flashes, pairs and closes the case? | Yes |
 | Q6 | US: certify for FCC in the same lab visit, or Canada only? | Canada only, but ask for a combined ICES-003 + 15B quote |
 | Q7 | BOOT and RESET: small switches behind a pinhole, or test pads only? | Switches behind a pinhole |
-| Q8 | Antenna: tab past the top edge (case ~6 to 8 mm taller at top, button off centre), or -1U with a stuck-on antenna (no size change)? Either keeps the full ring | Tab; decide after case renders |
+| Q8 | Antenna position in the case: inside the top wall, or the back plate? | Top wall; compare range on prototypes |
 | Q9 | Screen sourcing: bare panel from a panel maker, or Waveshare's touch module? | Bare panel, Waveshare footprint as fallback |
 | Q10 | Module: N16R8 (drop-in firmware) over the slightly cheaper MINI-1-N8? | N16R8 |
 
@@ -369,6 +373,7 @@ Checked 2026-11-19. Espressif's and ISED's own sites weren't reachable from the 
 - ESP32-S3-WROOM-1 module user manual, host label wording: https://manuals.plus/espressif/esp32-s3-wroom-1-bluetooth-module-manual
 - FCC test reports for 2AC7Z-ESPS3WROOM1: https://fcc.report/FCC-ID/2AC7Z-ESPS3WROOM1/5645479.pdf
 - ESP32-S3-WROOM-1U ISED certificate (Nemko, 21098-ESPS3WROOMU): https://documentation.espressif.com/ESP32-S3-WROOM-1U%20IC%20Certification.pdf
+- FCC RF test report for 2AC7Z-ESPS3WROOM1U (IPEX antenna, 2.33 dBi): https://fcc.report/FCC-ID/2AC7Z-ESPS3WROOM1U/5786846.pdf
 - ESP32-S3-MINI-1 IC certification (21098-ESPS3MINI1): https://www.espressif.com/sites/default/files/ESP32-S3-MINI-1 IC Certification.pdf
 - Espressif certificates index: https://www.espressif.com/en/support/documents/certificates
 - ESP32-S3-WROOM-1/1U datasheet: https://www.espressif.com/sites/default/files/documentation/esp32-s3-wroom-1_wroom-1u_datasheet_en.pdf
