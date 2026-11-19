@@ -12,6 +12,7 @@ import { type GifLink, GifLinkError, isGifHost, mediaFromPage, parseGifLink } fr
 import { GifError, MAX_LINK_BYTES, processUpload } from "./gif-process";
 import { STATUSES, type Status } from "./protocol";
 import { FetchRefused, fetchPublicBytes } from "./safe-fetch";
+import { forgetChoice } from "./gif-prefs";
 import { ensurePersonalTeam, teamsForUser } from "./teams";
 
 export type BuiltinGif = { id: string; name: string; status: Status | null; path: string; sha: string; bytes: number };
@@ -141,15 +142,37 @@ export function builtinGif(id: string): ResolvedGif {
   return g ? { kind: "builtin", id: g.id, name: g.name, sha: g.sha, path: g.path } : null;
 }
 
-// Uploader or a team owner/admin may delete.
-export async function deleteGif(userId: string, assetId: string): Promise<boolean> {
+// The upload, if this person may change it: its uploader, or a team owner/admin.
+async function editableAsset(userId: string, assetId: string) {
   const rows = await db().select().from(schema.assets).where(eq(schema.assets.id, assetId)).limit(1);
   const asset = rows[0];
-  if (!asset) return false;
+  if (!asset) return null;
   const teams = await teamsForUser(userId);
   const team = teams.find((t) => t.id === asset.teamId);
-  if (!team || (asset.uploadedBy !== userId && team.role === "member")) return false;
+  if (!team || (asset.uploadedBy !== userId && team.role === "member")) return null;
+  return asset;
+}
+
+/** Whether this person may rename or delete each upload, by id. */
+export async function editableAssets(userId: string, assets: { id: string; teamId: string; uploadedBy: string | null }[]) {
+  const teams = new Map((await teamsForUser(userId)).map((t) => [t.id, t.role]));
+  return new Set(assets.filter((a) => a.uploadedBy === userId || (teams.has(a.teamId) && teams.get(a.teamId) !== "member")).map((a) => a.id));
+}
+
+export async function renameGif(userId: string, assetId: string, name: string): Promise<boolean> {
+  const asset = await editableAsset(userId, assetId);
+  if (!asset) return false;
+  await db().update(schema.assets).set({ name }).where(eq(schema.assets.id, assetId));
+  await expire(tag.asset(assetId), tag.team(asset.teamId));
+  return true;
+}
+
+// Uploader or a team owner/admin may delete.
+export async function deleteGif(userId: string, assetId: string): Promise<boolean> {
+  const asset = await editableAsset(userId, assetId);
+  if (!asset) return false;
   await db().delete(schema.assets).where(eq(schema.assets.id, assetId));
+  await forgetChoice(`asset:${assetId}`);
   await expire(tag.asset(assetId), tag.team(asset.teamId));
   await del(asset.blobUrl).catch(() => {}); // the row is what matters; a stray blob is harmless
   return true;

@@ -10,7 +10,7 @@ import { useFormStatus } from "react-dom";
 import Link from "next/link";
 
 import { DevicePreview } from "@/components/device-preview";
-import { CalendarIcon, CheckIcon, ChevronDownIcon, DeviceIcon, LinkIcon, PlusIcon, UploadIcon, XIcon } from "@/components/icons";
+import { CalendarIcon, CheckIcon, ChevronDownIcon, DeviceIcon, LinkIcon, PlusIcon, SearchIcon, UploadIcon, XIcon } from "@/components/icons";
 import { STATUS_META } from "@/components/status-meta";
 import { Badge, Button, buttonClass, cx, Field, Input, Select, StatusDot } from "@/components/ui";
 import { parseGifLink } from "@/lib/gif-link";
@@ -45,15 +45,20 @@ export type LiveShow = {
 };
 
 // builtin: one of the GIFs that come with bzzy; the pickers list them after your own,
-// under a "Built in" label.
-export type LibraryGif = { choice: string; name: string; src: string; builtin?: boolean };
+// under a "Built in" label. section: "Favourites" or "Recently shown" for the ones the
+// Status page lifts to the front (each GIF still appears once).
+export type LibraryGif = { choice: string; name: string; src: string; builtin?: boolean; section?: "Favourites" | "Recently shown" };
 
-/** True for the first built-in GIF when there are uploads before it: where the label goes. */
-export function startsBuiltins(library: LibraryGif[], i: number) {
-  return !!library[i].builtin && i > 0 && !library[i - 1].builtin;
+const sectionOf = (g: LibraryGif) => g.section ?? (g.builtin ? "Built in" : "Your GIFs");
+
+/** The label to put before GIF `i` in a picker grid, where a new group starts; null for none. */
+export function sectionLabel(library: LibraryGif[], i: number): string | null {
+  const label = sectionOf(library[i]);
+  if (i === 0) return library[i].section ?? null; // a plain list of uploads needs no heading
+  return label !== sectionOf(library[i - 1]) ? label : null;
 }
 
-/** The "Built in" label across a GIF grid. */
+/** A group label across a GIF grid ("Built in", "Favourites"). */
 export function GridLabel({ children }: { children: React.ReactNode }) {
   return <p className="col-span-full pt-1 text-xs font-medium text-muted">{children}</p>;
 }
@@ -393,6 +398,9 @@ export function StatusControls({ active = null, className }: { active?: ActiveSt
         setDraft({ status: null });
         setFocus(null);
       }}
+      // Don't let React's after-action reset untick the controlled duration pills
+      // (the next status would then go without one).
+      onReset={(e) => e.preventDefault()}
       onFocus={() => setFocus("status")}
       onMouseEnter={() => setFocus("status")}
       onMouseLeave={() => {
@@ -551,6 +559,7 @@ export function ShowNowControls({ className, flashOff = false }: { className?: s
   const [writing, setWriting] = useState(false); // the message box
   const [ringing, setRinging] = useState(false); // the ring effect
   const [textOnly, setTextOnly] = useState(false); // the "Aa" tile: a message, no GIF
+  const [find, setFind] = useState(""); // filters the picker once the library is big
   const [fileName, setFileName] = useState("");
   const [fileError, setFileError] = useState<string | null>(null);
 
@@ -594,6 +603,9 @@ export function ShowNowControls({ className, flashOff = false }: { className?: s
         : `Only “${shown}” fits on the screen.`
       : null;
 
+  const q = find.trim().toLowerCase();
+  const found = q ? library.filter((g) => g.name.toLowerCase().includes(q)) : library;
+
   const pick = (choice: string) => {
     setFocus("show");
     setTextOnly(choice === TEXT_ONLY);
@@ -634,6 +646,20 @@ export function ShowNowControls({ className, flashOff = false }: { className?: s
       )}
 
       <form ref={form} action={action} onFocus={() => setFocus("show")} className="space-y-4">
+        {library.length > 12 && (
+          <div className="relative">
+            <SearchIcon className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted" />
+            <Input
+              type="search"
+              value={find}
+              onChange={(e) => setFind(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && e.preventDefault()}
+              aria-label="Find a GIF"
+              placeholder={`Find one of your ${library.length} GIFs`}
+              className="h-9 pl-9 text-sm"
+            />
+          </div>
+        )}
         {/* The scroll box wraps the grid rather than being it: Safari squashes the
             rows of a height-capped grid, so square tiles spill into the next row. */}
         <div className="-mx-1.5 -mt-1.5 max-h-[17rem] overflow-y-auto p-1.5">
@@ -659,9 +685,9 @@ export function ShowNowControls({ className, flashOff = false }: { className?: s
               <span className="text-[0.6875rem] leading-none font-medium">Add</span>
             </button>
             <Tile name="Just a message" checked={!usingOther && textOnly} onPick={() => pick(TEXT_ONLY)} />
-            {library.map((g, i) => (
+            {found.map((g, i) => (
               <Fragment key={g.choice}>
-                {startsBuiltins(library, i) && <GridLabel>Built in</GridLabel>}
+                {sectionLabel(found, i) && <GridLabel>{sectionLabel(found, i)}</GridLabel>}
                 <Tile name={g.name} gif={g} checked={!usingOther && !textOnly && show.choice === g.choice} onPick={() => pick(g.choice)} />
               </Fragment>
             ))}

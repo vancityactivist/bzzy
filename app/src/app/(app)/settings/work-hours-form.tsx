@@ -18,7 +18,10 @@ export function WorkHoursForm({ hours, timeZone, zones }: { hours: WorkHours | n
   const id = useId();
 
   return (
-    <form action={action} className="space-y-4">
+    // React resets a form after its action runs, which would untick the controlled
+    // checkbox while `enabled` stays true (and the next Save would turn hours off).
+    // The form shows what's saved, so keep it as it is.
+    <form action={action} onReset={(e) => e.preventDefault()} className="space-y-4">
       <label className="flex cursor-pointer items-center gap-2 text-sm">
         <input
           type="checkbox"

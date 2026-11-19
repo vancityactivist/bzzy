@@ -343,6 +343,24 @@ export const deviceAssets = pgTable(
 // "Show now": a GIF and/or message a person puts on their lights' screens, on top of
 // whatever their status is. One row per user, like presence. An upload that's
 // deleted leaves the row with no GIF.
+// A person's own marks on a GIF in their library: a favourite, and when they last put
+// it on their light. `choice` is the same "builtin:<id>" / "asset:<id>" the pickers
+// use, so built-in GIFs can be favourites too. A row for a deleted upload is harmless
+// (the library ignores choices it can't show) and goes when the person does.
+export const gifPrefs = pgTable(
+  "gif_pref",
+  {
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    choice: text("choice").notNull(),
+    favourite: boolean("favourite").notNull().default(false),
+    // Unix seconds; 0 = never shown from the app.
+    lastShownAt: integer("last_shown_at").notNull().default(0),
+  },
+  (t) => [primaryKey({ columns: [t.userId, t.choice] })],
+);
+
 export const showNow = pgTable("show_now", {
   userId: text("user_id")
     .primaryKey()

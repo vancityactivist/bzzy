@@ -282,3 +282,28 @@ export function PlayIcon(props: IconProps) {
     </Icon>
   );
 }
+
+export function StarIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="m12 3.75 2.55 5.17 5.7.83-4.12 4.02.97 5.68L12 16.77l-5.1 2.68.97-5.68-4.12-4.02 5.7-.83L12 3.75Z" />
+    </Icon>
+  );
+}
+
+export function SearchIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <circle cx="11" cy="11" r="6.25" />
+      <path d="m20 20-4.5-4.5" />
+    </Icon>
+  );
+}
+
+export function PencilIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M15.5 5.5 18.5 8.5M4.75 19.25l1-4L16 5a2.12 2.12 0 0 1 3 3L8.75 18.25l-4 1Z" />
+    </Icon>
+  );
+}
