@@ -38,9 +38,9 @@ function Tile({
 }) {
   return (
     <li className="overflow-hidden rounded-2xl border border-line bg-card shadow-card">
-      <div className="flex aspect-[6/5] items-center justify-center bg-[#0b0b0c]">
+      <div className="relative aspect-[6/5] bg-[#0b0b0c]">
         {/* eslint-disable-next-line @next/next/no-img-element -- animated GIFs, already sized */}
-        <img src={src} alt={name} loading="lazy" className="max-h-full max-w-full" />
+        <img src={src} alt={name} loading="lazy" className="absolute inset-0 m-auto max-h-full max-w-full" />
       </div>
       <div className="flex items-center gap-2 p-3">
         <div className="min-w-0 flex-1">

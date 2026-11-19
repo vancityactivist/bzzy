@@ -180,7 +180,7 @@ function Tile({ name, src, checked, onPick }: { name: string; src?: string; chec
     >
       {src ? (
         // eslint-disable-next-line @next/next/no-img-element -- animated GIFs, already sized
-        <img src={src} alt="" loading="lazy" className="max-h-full max-w-full" />
+        <img src={src} alt="" loading="lazy" className="absolute inset-0 m-auto max-h-full max-w-full" />
       ) : (
         <span className="text-base leading-none font-semibold text-white/85">Aa</span>
       )}
