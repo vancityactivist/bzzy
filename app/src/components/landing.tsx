@@ -31,7 +31,7 @@ import { LandingKit } from "./landing-kit";
 
 const REPO = "https://github.com/vancityactivist/bzzy";
 const HARDWARE = `${REPO}/tree/main/hardware`;
-const ORDERING = `${REPO}/tree/main/hardware/archive/led-ring-revC#ordering-from-jlcpcb`;
+const ORDERING = `${REPO}/tree/main/hardware#ordering-from-jlcpcb`;
 const FIRMWARE = `${REPO}/tree/main/firmware`;
 const PROTOCOL = `${REPO}/blob/main/docs/protocol.md`;
 const LICENSE = `${REPO}/blob/main/LICENSE.md`;

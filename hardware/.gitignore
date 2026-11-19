@@ -1,10 +1,10 @@
 # Generated or per-user files
 case/stl/
-archive/led-ring-revC/__pycache__/
-archive/led-ring-revC/*.kicad_prl
-archive/led-ring-revC/*-backups/
-archive/led-ring-revC/fp-info-cache
-archive/led-ring-revC/*.dsn
-archive/led-ring-revC/*.ses
-archive/led-ring-revC/_autosave-*
-archive/led-ring-revC/fab/gerbers.zip
+led-ring/__pycache__/
+led-ring/*.kicad_prl
+led-ring/*-backups/
+led-ring/fp-info-cache
+led-ring/*.dsn
+led-ring/*.ses
+led-ring/_autosave-*
+led-ring/fab/gerbers.zip

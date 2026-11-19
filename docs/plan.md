@@ -4,12 +4,12 @@ Where bzzy is going next, in order. Agreed 2026-11-19, after the switch from the
 
 ## Why the plan changed
 
-Until 2026-11-18 the plan was to put the Waveshare ESP32-S3-Touch-LCD-1.69 inside a custom LED ring board ([archived](../hardware/archive/led-ring-revC/README.md)) and a printed case. To sell built bzzys in Canada, every part with a radio needs ISED certification, and the Waveshare board has none: its ESP32-S3 is a bare chip with its own antenna, not a certified module. Certifying it ourselves would cost thousands more and repeat for every board change.
+Until 2026-11-18 the plan was to put the Waveshare ESP32-S3-Touch-LCD-1.69 inside a custom LED ring board and a printed case ([hardware/](../hardware/README.md)). To sell built bzzys in Canada, every part with a radio needs ISED certification, and the Waveshare board has none: its ESP32-S3 is a bare chip with its own antenna, not a certified module. Certifying it ourselves would cost thousands more and repeat for every board change.
 
 So the product becomes **one custom board** with Espressif's pre-certified ESP32-S3-WROOM-1U module and a small stuck-on antenna, the bare 1.69" screen (BuyDisplay ER-TFT1.69-4), USB-C, a clock and the 16-LED ring. The radio certification comes with the module, so bzzy itself only needs an ICES-003 emissions test. Full spec: [hardware/main-board.md](hardware/main-board.md).
 
-- The Waveshare board stays as the **development board**. Firmware keeps its build.
-- The ring board (rev B, B2, C) was never ordered. Rev D is dropped; its review fixes and the 250 mA LED cap fold into the main board.
+- The Waveshare + ring board + printed case build stays as the **DIY side stream**, for people building their own (see below). The Waveshare board is also the **development board**. Firmware keeps its build.
+- The ring board's review fixes and the 250 mA LED cap also fold into the main board.
 
 ## Hardware path
 
@@ -23,6 +23,17 @@ So the product becomes **one custom board** with Espressif's pre-certified ESP32
 | 6 | **First batch.** On the batch ordering system | |
 
 Rough time from step 3 to batch-ready: 2 to 3 months, mostly shipping and lab lead time.
+
+## DIY side stream
+
+Building your own stays possible and cheap: a Waveshare ESP32-S3-Touch-LCD-1.69, the LED ring board and a printed case ([hardware/](../hardware/README.md)). It's worked on alongside the main track, at a lower priority. **No ring board has been built or tested yet** (rev B, B2 and C were never ordered).
+
+| Step | Status |
+|---|---|
+| Measure a Waveshare board with calipers (size, thickness, glass height, USB-C and BOOT positions, antenna edge, 5V pad) | Board in hand; overlaps with hardware step 1 |
+| Rev D of the ring: rev C review fixes plus the measurements, and the firmware LED cap 400 → 250 mA | After measuring |
+| Order a few ring boards from JLCPCB, print the case in PLA, build and test one | |
+| Update the build guide with photos once one works | |
 
 ## Business path (in parallel)
 

@@ -1,6 +1,6 @@
 # bzzy main board, rev A (spec)
 
-Status: **agreed direction, schematic not started.** Written 2026-11-19 (PR #82). This board replaces the Waveshare board plus the LED ring board, which is now [archived](../../hardware/archive/README.md). Decisions made so far are marked in [Open questions](#14-open-questions); the others are still defaults. The step-by-step plan is in [docs/plan.md](../plan.md).
+Status: **agreed direction, schematic not started.** Written 2026-11-19 (PR #82). For sold units, this board replaces the Waveshare board plus the LED ring board. That DIY build carries on as a side stream for people building their own ([hardware/](../../hardware/README.md)). Decisions made so far are marked in [Open questions](#14-open-questions); the others are still defaults. The step-by-step plan is in [docs/plan.md](../plan.md).
 
 > Not legal advice. The certification section says what the rules appear to be and where to check, so the questions for a test lab are short ones. Facts I could not confirm from a primary source are marked **(verify)**.
 
@@ -210,7 +210,7 @@ PCF85063 (same chip as Waveshare, same firmware driver) with a 32.768 kHz crysta
 ### 6.5 LED ring and top button (from rev C, plus rev D)
 
 - 16 × WS2812B-2020 around the screen, chained from GPIO17 through a 74AHCT1G125 shifter, 33 Ω series, 100 kΩ pull-down so the LEDs stay dark at boot. 100 nF per LED and 2 × 10 µF bulk, as rev C.
-- **Rev D items fold in here**: the review tweaks from the ring board thread and the firmware LED cap 400 → 250 mA. (The ring board itself is archived and rev D is dropped: it was only needed if the Waveshare stack were sold, which it can't be.)
+- **Rev D items fold in here**: the review tweaks from the ring board thread and the firmware LED cap 400 → 250 mA. (Ring-board rev D carries on separately, for the DIY build only.)
 - The full ring stays: the antenna sticks out past the top edge (section 7), so no LEDs have to move.
 - Top button: the same Alps SKRT side-push switch on the top edge, to GPIO18 with the internal pull-up. Unchanged behaviour.
 

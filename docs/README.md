@@ -14,10 +14,9 @@ Start with [plan.md](plan.md) for where things are going, and the [root README](
 |---|---|
 | [hardware/main-board.md](hardware/main-board.md) | **The product board.** Spec for the merged custom board: ESP32-S3-WROOM-1U, ER-TFT1.69-4 screen, power, layout, pins, BOM and cost, JLCPCB, ICES-003 certification, case impact, open questions |
 | [s3-devkit-bench-test.md](s3-devkit-bench-test.md) | Bench test of the main board's screen on an ESP32-S3 DevKitC, before the PCB |
-| [../hardware/README.md](../hardware/README.md) | The hardware folder: the case, the main board placement study, and the archive |
+| [../hardware/README.md](../hardware/README.md) | The DIY build: Waveshare board + LED ring board (rev C, not built yet) + printed case, with files to order. Also the main board placement study |
 | [esp32-test-build.md](esp32-test-build.md) | Cheap test build: a classic ESP32 with a 16x2 character LCD |
 | [esp32-c6-test-build.md](esp32-c6-test-build.md) | Test build on the Waveshare ESP32-C6-LCD-1.47, no wiring |
-| [../hardware/archive/](../hardware/archive/README.md) | **Archived:** the LED ring board (rev C) for the Waveshare board. Never ordered |
 
 ## Firmware and device
 
