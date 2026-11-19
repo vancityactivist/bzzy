@@ -131,7 +131,7 @@ export function CalendarSketch() {
 
 /**
  * The light itself, with a finger-tap ripple on the screen. Taps go Free, Busy, Do not
- * disturb, then back to automatic (firmware status_engine.cpp cycleLocalOverride).
+ * disturb, Away, then back to automatic (firmware status_engine.cpp cycleLocalOverride).
  */
 export function TapSketch({ gifSrc }: { gifSrc: string | null }) {
   return (
@@ -147,7 +147,7 @@ export function TapSketch({ gifSrc }: { gifSrc: string | null }) {
         <li>
           <Key>tap</Key>
           <span className="mt-1.5 flex items-center gap-1 text-muted">
-            <StatusDot status="free" size="sm" />→<StatusDot status="busy" size="sm" />→<StatusDot status="dnd" size="sm" />→ auto
+            <StatusDot status="free" size="sm" />→<StatusDot status="busy" size="sm" />→<StatusDot status="dnd" size="sm" />→<StatusDot status="away" size="sm" />→ auto
           </span>
         </li>
         <li>

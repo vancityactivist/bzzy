@@ -106,7 +106,9 @@ void test_button_cycles_and_returns_to_auto() {
   cycleLocalOverride(st, T0 + 5);
   TEST_ASSERT_EQUAL(Status::Dnd, resolve(st, T0 + 6).status);
   cycleLocalOverride(st, T0 + 7);
-  Resolved r = resolve(st, T0 + 8);
+  TEST_ASSERT_EQUAL(Status::Away, resolve(st, T0 + 8).status);
+  cycleLocalOverride(st, T0 + 9);
+  Resolved r = resolve(st, T0 + 10);
   TEST_ASSERT_EQUAL(Source::Calendar, r.source);
 }
 
@@ -158,7 +160,8 @@ void test_merge_keeps_local_clear_over_older_server_override() {
   cycleLocalOverride(cached, T0 + 100);
   cycleLocalOverride(cached, T0 + 101);
   cycleLocalOverride(cached, T0 + 102);
-  cycleLocalOverride(cached, T0 + 103);  // cleared: back to automatic
+  cycleLocalOverride(cached, T0 + 103);
+  cycleLocalOverride(cached, T0 + 104);  // cleared: back to automatic
 
   State server = freshState();
   server.manual.active = true;
