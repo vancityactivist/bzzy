@@ -26,7 +26,7 @@ Status: **draft for review, nothing designed yet.** Written 2026-11-19. Every de
 
 ## 1. Summary
 
-One board replaces both the Waveshare ESP32-S3-Touch-LCD-1.69 and the LED ring board. It keeps the ring board's **52 × 61 mm outline**, so the case carries over with small changes. On it:
+One board replaces both the Waveshare ESP32-S3-Touch-LCD-1.69 and the LED ring board. It keeps the ring board's **52 × 61 mm outline** plus a small tab at the top for the antenna, so the case carries over with small changes and the **full ring of 16 LEDs stays lit**. On it:
 
 - An **ESP32-S3-WROOM-1-N16R8** module: Espressif's pre-certified module with the antenna printed on it. It has the same chip, 16 MB flash and 8 MB PSRAM as the Waveshare board, so the firmware needs a new pin map and nothing else.
 - The **same 1.69" 240 × 280 touch panel** (ST7789V2 display, CST816T touch), bought bare and plugged into an FPC connector, the way the Waveshare board does it.
@@ -166,42 +166,55 @@ PCF85063 (same chip as Waveshare, same firmware driver) with a 32.768 kHz crysta
 
 - 16 × WS2812B-2020 around the screen, chained from GPIO17 through a 74AHCT1G125 shifter, 33 Ω series, 100 kΩ pull-down so the LEDs stay dark at boot. 100 nF per LED and 2 × 10 µF bulk, as rev C.
 - **Rev D items fold in here**: the review tweaks from the ring board thread and the firmware LED cap 400 → 250 mA. (The ring-board rev D itself can stay on hold; it's only needed if the Waveshare stack is ever sold, which it can't be.)
-- The antenna zone means the LEDs can't sit where the antenna is. Section 7 covers how the ring spacing changes.
+- The full ring stays: the antenna sticks out past the top edge (section 7), so no LEDs have to move.
 - Top button: the same Alps SKRT side-push switch on the top edge, to GPIO18 with the internal pull-up. Unchanged behaviour.
 
 ### 6.6 PCB
 
 - **4 layers**, 1.6 mm, JLCPCB standard. A solid ground layer under the module and USB pair is the single best thing for emissions and Wi-Fi range, and JLCPCB's 4-layer price is close to 2-layer at this size.
-- Ground stitching vias round the board edge (but not in the antenna zone).
+- Ground stitching vias round the board edge (none near the antenna tab).
 - Parts on both sides: LEDs and button on the front, module and everything else on the back (section 7).
 
 ## 7. Layout concept
 
-Keep the outline **52 × 61 mm**, the M2 holes in the same four corners, and USB-C at bottom centre.
+Keep the 52 × 61 mm board, the M2 holes in the same four corners, and USB-C at bottom centre. **The full ring of 16 LEDs stays, with no dark corner.**
+
+The trick: only the module's *antenna* needs the copper-free keep-out, not the module body. So the module goes on the back, centred at the top, with its antenna end **sticking out past the board's top edge** into a small tab. That's Espressif's preferred placement anyway (antenna outside the base board gives the best range). The LEDs on the front can sit right over the module body, where they are today.
 
 ```
-            top edge (button + wordmark in the case above)
-   +-----------------------------------------------+
-   | [ANTENNA ZONE ~18 x 8 mm  ]   (SW1 top btn)   |   <- module antenna flush with top edge,
-   |  no copper, no LEDs           o  o  o  LED    |      at the top-left corner (back side)
-   | o                                           o |
-   | o        +-------------------------+        o |
-   | o        |                         |        o |
-   | o        |   1.69" panel (front)   |        o |   module body sits behind the
-   |          |      ~30 x 37 mm        |          |   panel on the back side
-   | o        |                         |        o |
-   | o        +-------------------------+        o |
-   |    o      [FPC conn] [LDO] [RTC]      o       |
-   |       o     o      [USB-C]      o     o       |
-   +-----------------------------------------------+
-                      bottom edge
+                 +-----------------------+
+                 |  ANTENNA (back side)  |   <- ~18 x 7 mm, sticks out past the board edge,
+                 |  in a plastic pocket  |      no copper on the board under it
+   +-------------+-----------------------+-------------+
+   | (SW1)   o        o           o        o           |   <- top LEDs as on rev C,
+   | o                                               o |      over the module body
+   | o         +---------------------------+         o |
+   | o         |                           |         o |
+   | o         |    1.69" panel (front)    |         o |   module body (25.5 x 18 mm)
+   |           |       ~30 x 37 mm         |           |   sits behind the panel's
+   | o         |                           |         o |   top half on the back side
+   | o         +---------------------------+         o |
+   | o      [FPC conn]  [LDO]  [RTC]                 o |
+   |     o      o          [USB-C]         o      o    |
+   +---------------------------------------------------+
 ```
 
-- **Module on the back, antenna end at the top edge, offset to one side.** The button moves to the opposite side of the top edge if needed (case button cap follows).
-- **LEDs skip the antenna zone.** 16 LEDs over the remaining perimeter, slightly closer together. The 9.5 mm frosted border spreads light well, but the antenna corner will be a little dimmer. If that's visible, options are: (a) drop to 15 LEDs and space evenly round the rest; (b) use the -1U module with a small certified flex antenna stuck to the inside of the case top, which frees the whole ring for LEDs. Prototype (a) first.
-- **Screen keeps its current position** in the window, so the case's light ring and frame need few changes.
-- **The panel's metal backplate is at least ~11 mm from the antenna**, which leaves the antenna in the clear.
+- **LED positions don't change from rev C**, including the existing small gap round the USB-C socket at the bottom, which the frosted border already hides.
+- **The case grows about 6 to 8 mm at the top** to give the antenna a plastic-only pocket. That band is also where the button and the "bzzy" wordmark already live, so it reads as a slightly taller brow rather than a new feature.
+- **The top button moves off centre** (to one side of the antenna pocket). The cap and the case follow.
+- The top LEDs are a few millimetres from the antenna's base. That's normal for this placement, but compare Wi-Fi range against the Waveshare board at bring-up.
+- **The panel's metal backplate stays well below the antenna.**
 - Run the kicad-happy `kicad` and `emc` checks on the layout before ordering, as on rev C.
+
+### 7.1 Alternatives considered
+
+| | Ring | Case | Cost and risk |
+|---|---|---|---|
+| **A. Antenna tab past the top edge** (recommended) | full ring, rev C spacing | ~6 to 8 mm taller at top, button off centre | no extra parts; Espressif's preferred placement |
+| B. ESP32-S3-WROOM-1U + small flex antenna stuck inside the case | full ring | no size change | +US$1 to 3 a light; the antenna must be a type listed on the -1U grant (IC 21098-ESPS3WROOMU) **(verify)**; a u.FL cable to click in at the bench, which can be missed or come loose |
+| C. Antenna inside the board outline, LEDs skip that corner | gap of 2 or 3 LEDs at one top corner | no change | visibly dimmer corner; rejected |
+
+If the taller top doesn't look right in renders, B is the fallback. Both keep the radio approval.
 
 This is a concept. The exact antenna keep-out comes from Espressif's guidelines figure, and the exact panel outline comes from the chosen panel's drawing.
 
@@ -302,17 +315,17 @@ What it costs and takes **(estimates; get 2 or 3 quotes)**:
 
 ### 11.4 What would break the inherited certification
 
-- Changing the antenna, or moving it next to metal or copper. Mitigation: follow the keep-out exactly, plastic case only, no metal clip near the antenna corner.
+- Changing the antenna, or moving it next to metal or copper. Mitigation: follow the keep-out exactly, plastic case only, no metal near the antenna pocket.
 - Firmware raising TX power beyond the module's defaults.
 - Switching to a module variant not on the same grant (for example -1U without a listed antenna). Any module change: re-check the grant.
 
 ## 12. Case impact
 
-- **Same outline, same screws:** 52 × 61 mm board in place of the ring board, so `board_dims.scad` keeps `RING_W`/`RING_H`. The Waveshare pocket goes away.
+- **Same outline (plus the antenna tab), same screws:** 52 × 61 mm board in place of the ring board, so `board_dims.scad` keeps `RING_W`/`RING_H`. The Waveshare pocket goes away.
 - **Thinner:** no Waveshare board stacked behind the ring. The back shell shrinks by roughly the Waveshare's thickness minus the module's 3.1 mm. New `BOARD_STACK` parameter for the depth.
 - **USB-C:** the socket is on our board edge, so the rev C ring notch isn't needed. Keep the case opening where it is.
-- **Antenna corner:** no metal parts there, and no thick light-blocking ribs over it. The monitor clip is plastic and at the back; keep any metal screw or magnet out of the antenna corner.
-- **Button:** may move along the top edge, away from the antenna (Q8). The wordmark stays.
+- **Antenna pocket:** the case top grows about 6 to 8 mm to house the antenna tab (section 7). Plastic only there: no metal screw, insert or magnet nearby. The monitor clip is plastic and at the back.
+- **Button:** moves off centre, beside the antenna pocket (Q8). The wordmark stays on the top face.
 - **Label:** a flat area on the back for the IC and ICES labels, about 25 × 12 mm.
 - **Pinhole** for BOOT/RESET on the back, if kept (Q7).
 
@@ -344,7 +357,7 @@ Defaults are what this spec assumes until Adam says otherwise.
 | Q5 | Assembly: JLCPCB does everything but the screen; Adam fits the screen, flashes, pairs and closes the case? | Yes |
 | Q6 | US: certify for FCC in the same lab visit, or Canada only? | Canada only, but ask for a combined ICES-003 + 15B quote |
 | Q7 | BOOT and RESET: small switches behind a pinhole, or test pads only? | Switches behind a pinhole |
-| Q8 | OK for the top button to move along the top edge (and the antenna corner to be slightly dimmer)? | Yes, decide after prototypes |
+| Q8 | Antenna: tab past the top edge (case ~6 to 8 mm taller at top, button off centre), or -1U with a stuck-on antenna (no size change)? Either keeps the full ring | Tab; decide after case renders |
 | Q9 | Screen sourcing: bare panel from a panel maker, or Waveshare's touch module? | Bare panel, Waveshare footprint as fallback |
 | Q10 | Module: N16R8 (drop-in firmware) over the slightly cheaper MINI-1-N8? | N16R8 |
 
