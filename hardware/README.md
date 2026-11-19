@@ -1,6 +1,13 @@
 # bzzy hardware
 
-The final device is a frame of light around the screen. It has four parts:
+bzzy hardware now runs on two tracks:
+
+- **Main track: the bzzy main board** (being designed). One custom board with a certified ESP32-S3-WROOM-1U module, the bare 1.69" touch screen and the 16 LEDs. This is what built bzzys will be sold on, because the Waveshare board has no ISED radio certification and can't be sold inside one. Spec: [docs/hardware/main-board.md](../docs/hardware/main-board.md). Plan: [docs/plan.md](../docs/plan.md). Placement study: [main-board/](main-board/).
+- **DIY side stream: Waveshare + LED ring board + printed case** (this page). For people building their own: buy a Waveshare board, order the ring board, get the case printed. It keeps the barrier to building one low, and work on it continues on the side.
+
+> **Not built yet.** No LED ring board (rev B, B2 or C) has been ordered, built or tested. The files below passed KiCad's design-rule check and a design review, but treat them as unproven until someone builds one. Measure your Waveshare board first ([Before you order](#before-you-order)).
+
+The DIY build is a frame of light around the screen. It has four parts:
 
 1. The **Waveshare ESP32-S3-Touch-LCD-1.69**, the brains and the screen. It's unchanged from the prototype.
 2. A custom **LED ring board** with 16 small RGB LEDs. It sits around the Waveshare board.
@@ -9,7 +16,7 @@ The final device is a frame of light around the screen. It has four parts:
 
 Nothing changes in the firmware. The ring board uses the same data pin (GPIO17) and LED count (16) that `firmware/src/config.h` already has.
 
-This is **rev C, a concept**. Rev C opens the bottom of the ring so a USB-C plug can reach the Waveshare socket (rev B added the button on top). The board has been through KiCad's design-rule check, but nobody has built one yet. Measure the Waveshare board before you order anything (see [Before you order](#before-you-order)).
+This is **rev C, never built**. Rev C opens the bottom of the ring so a USB-C plug can reach the Waveshare socket (rev B added the button on top). The board has been through KiCad's design-rule check, but nobody has built or tested one yet. Measure the Waveshare board before you order anything (see [Before you order](#before-you-order)).
 
 | Front | Busy (lit red) | Top: button and wordmark |
 |---|---|---|
@@ -19,8 +26,8 @@ This is **rev C, a concept**. Rev C opens the bottom of the ring so a USB-C plug
 
 ## Plan
 
-- **Now (rev C):** an LED ring board around the Waveshare board, with a button on top, plus a printed case. It's cheap and quick to get made.
-- **v2 (later):** one custom board with the ESP32-S3, the bare screen, USB-C and the LEDs. See [v2: full custom board](#v2-full-custom-board).
+- **DIY side stream (rev C):** an LED ring board around the Waveshare board, with a button on top, plus a printed case. It's cheap and quick to get made, and fine for building your own. Next for it: measure a Waveshare board, then order and test a ring. Fixes from the rev C review (and a 250 mA LED cap) would go into a rev D once the measurements are in.
+- **Main track:** the [bzzy main board](../docs/hardware/main-board.md), for built bzzys that are sold. It keeps this ring board's 52 × 61 mm outline, corner holes and LED positions, so the case works for both.
 
 ## How it fits together
 
@@ -160,19 +167,9 @@ Then print the frame, light ring and back once in cheap PLA to check the fit bef
 3. Turn on **PCB Assembly**, top side, and upload `fab/bom-jlcpcb.csv` and `fab/cpl-jlcpcb.csv`.
 4. In the parts-matching step, confirm the LCSC part on each line. In the placement preview, **check every LED, U1 and SW1**: the pin 1 dot should match the KiCad drawing. U1 matters most: placed backwards, it gets 5 V on its GND pin. Fix any rotation in the preview if needed.
 
-## v2: full custom board
+## The main board
 
-These are notes for later, once the ring board has proven the case and the light.
-
-**Update 2026-11-19:** the Waveshare board has no ISED certification, so it can't be sold inside bzzy. The full spec for the custom board (one board with the ring merged in, built on a certified Espressif module) is in [docs/hardware/main-board.md](../docs/hardware/main-board.md).
-
-- **MCU:** an ESP32-S3-WROOM-1-N16R8 module. It has the same 16 MB flash and 8 MB PSRAM as the Waveshare board, plus a certified antenna. Keep the module's antenna end at the top edge, with no copper or LEDs under it.
-- **Screen:** the bare 1.69" 240 × 280 ST7789V2 panel with CST816T touch on an FPC connector. Waveshare sells the panel separately as the "1.69inch Touch LCD Module". Find the panel's FPC pinout before laying out.
-- **Pins:** keep the Waveshare mapping (LCD 4 to 8 and 15, I2C 10 and 11, touch 13 and 14, LEDs 17, top button 18, BOOT 0). The firmware then only needs a new PlatformIO env, or none at all.
-- **Power:** USB-C into the S3's native USB (GPIO19 and 20), with 5.1 kΩ CC resistors, ESD protection and a fuse. A 3.3 V LDO rated 1 A for the S3's Wi-Fi peaks, and the LEDs straight off 5 V.
-- **Keep:** PCF85063 RTC with a coin cell or supercap, and the BOOT and RESET buttons.
-- **Drop:** the IMU, buzzer and Li-ion charger, unless there's a reason to keep them.
-- **Result:** one board, roughly the ring board's size. That makes the case thinner and the build simpler, with no wires between boards.
+The custom board that used to be called "v2" is now the main track: one board with an ESP32-S3-WROOM-1U module, the bare screen, USB-C, a clock and the LEDs. Its full spec, including the certification path, is [docs/hardware/main-board.md](../docs/hardware/main-board.md).
 
 ## Open questions
 

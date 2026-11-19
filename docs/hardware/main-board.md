@@ -1,6 +1,6 @@
 # bzzy main board, rev A (spec)
 
-Status: **draft for review, nothing designed yet.** Written 2026-11-19. Every default below is a proposal. The decisions Adam needs to make are in [Open questions](#14-open-questions).
+Status: **agreed direction, schematic not started.** Written 2026-11-19 (PR #82). For sold units, this board replaces the Waveshare board plus the LED ring board. That DIY build carries on as a side stream for people building their own ([hardware/](../../hardware/README.md)). Decisions made so far are marked in [Open questions](#14-open-questions); the others are still defaults. The step-by-step plan is in [docs/plan.md](../plan.md).
 
 > Not legal advice. The certification section says what the rules appear to be and where to check, so the questions for a test lab are short ones. Facts I could not confirm from a primary source are marked **(verify)**.
 
@@ -155,9 +155,7 @@ Smaller screens considered (Adam is open to a smaller device):
 | 1.54" 240 × 240 | ~28 × 28 mm | ~5 mm shorter | square GIFs and layouts; touch versions use ST7789 + CST816D | small saving for real work |
 | 1.28" round 240 × 240 (GC9A01) | 32 mm circle | not smaller (round outline ~36 mm) | new driver, round layouts | different look, not smaller |
 
- Lay out the FPC connector for the panel we sample, and also put an unpopulated GH1.25 12-pin footprint on the back wired to the same signals. If a panel vendor disappears, a batch can use the Waveshare module without a new board.
-
-Before layout: order 3 panels each from 2 vendors, get their datasheets (FPC pin count and order, backlight current and voltage, touch I2C address, outline drawing), and caliper them. Pick the one whose datasheet is complete.
+Earlier draft, superseded by 5.1: lay out a GH1.25 fallback footprint for the Waveshare module, and sample panels from two vendors. The ER-TFT1.69-4 came with a full datasheet, so J4 was dropped, and Adam ordered 5 of them (with ZIF connectors and 2 FPC breakouts) on 2026-11-19.
 
 Mounting: the panel sticks to the front of the board on a foam double-sided pad, and its tail folds around the bottom edge to a connector on the back. That's how most watch-style boards do it, and it means the screen can be added at the bench after JLCPCB assembly.
 
@@ -212,7 +210,7 @@ PCF85063 (same chip as Waveshare, same firmware driver) with a 32.768 kHz crysta
 ### 6.5 LED ring and top button (from rev C, plus rev D)
 
 - 16 × WS2812B-2020 around the screen, chained from GPIO17 through a 74AHCT1G125 shifter, 33 Ω series, 100 kΩ pull-down so the LEDs stay dark at boot. 100 nF per LED and 2 × 10 µF bulk, as rev C.
-- **Rev D items fold in here**: the review tweaks from the ring board thread and the firmware LED cap 400 → 250 mA. (The ring-board rev D itself can stay on hold; it's only needed if the Waveshare stack is ever sold, which it can't be.)
+- **Rev D items fold in here**: the review tweaks from the ring board thread and the firmware LED cap 400 → 250 mA. (Ring-board rev D carries on separately, for the DIY build only.)
 - The full ring stays: the antenna sticks out past the top edge (section 7), so no LEDs have to move.
 - Top button: the same Alps SKRT side-push switch on the top edge, to GPIO18 with the internal pull-up. Unchanged behaviour.
 
@@ -409,8 +407,10 @@ What it costs and takes **(estimates; get 2 or 3 quotes)**:
 
 ## 13. Build plan
 
+The agreed order, with status, is in [docs/plan.md](../plan.md). This is the detailed hardware version.
+
 1. **Adam answers the open questions** (section 14). Everything else waits on Q1 to Q3.
-2. **Sample panels:** order 3 each from 2 vendors, get datasheets, measure. Pick one. (1 to 3 weeks shipping.)
+2. **Sample panels:** done. ER-TFT1.69-4 picked, 5 ordered 2026-11-19. Bench test on an S3 DevKit when they arrive ([s3-devkit-bench-test.md](../s3-devkit-bench-test.md)).
 3. **Lab quotes:** email 2 or 3 labs for ICES-003 + FCC 15B and a pre-scan. In parallel with step 2.
 4. **Schematic and layout, rev A,** in `hardware/main-board/`, generated the same way as the ring board. kicad-happy review (schematic, EMC, JLCPCB DFM). One draft PR.
 5. **Firmware env** `bzzy_main_reva` (small PR, can land before boards arrive; CI builds it).
@@ -436,10 +436,10 @@ Defaults are what this spec assumes until Adam says otherwise.
 | Q6 | US: certify for FCC in the same lab visit, or Canada only? | Canada only, but ask for a combined ICES-003 + 15B quote |
 | Q7 | BOOT and RESET: small switches behind a pinhole, or test pads only? | Switches behind a pinhole |
 | Q8 | Antenna position in the case: inside the top wall, or the back plate? | Top wall; compare range on prototypes |
-| Q9 | Screen sourcing: bare panel from a panel maker, or Waveshare's touch module? | Bare panel, Waveshare footprint as fallback |
+| Q9 | Screen sourcing: bare panel from a panel maker, or Waveshare's touch module? | **Decided 2026-11-19: bare panel** (ER-TFT1.69-4), no Waveshare fallback footprint |
 | Q10 | Module: N16R8 (drop-in firmware) over the slightly cheaper MINI-1-N8? | N16R8 |
 | Q11 | Device size: keep 52 × 61 mm, or shrink to about 40 × 47 mm with a thinner glow border (7.3)? | **Decided 2026-11-19: prototype at 52 × 61 mm**, decide final size after |
-| Q12 | Screen: ER-TFT1.69-4 (same 1.69" 240 × 280), or a smaller panel (5.1)? | ER-TFT1.69-4 |
+| Q12 | Screen: ER-TFT1.69-4 (same 1.69" 240 × 280), or a smaller panel (5.1)? | **Decided 2026-11-19: ER-TFT1.69-4**, samples ordered |
 
 ## 15. Sources
 
