@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { Block, Presence } from "./protocol";
-import { fitsStatusBar, MESSAGE_WIDTH, resolveScreen, screenText, textWidth, untilLabel, viewFor, withShow, wrapMessage, wrapText } from "./screen";
+import { MESSAGE_WIDTH, resolveScreen, screenText, textWidth, statusCut, statusLines, untilLabel, viewFor, withShow, wrapMessage, wrapText } from "./screen";
 
 const now = 1_800_000_000;
 const block = (start: number, end: number, status: Block["status"], text = ""): Block => ({ start, end, status, text });
@@ -125,15 +125,21 @@ describe("withShow", () => {
   });
 });
 
-describe("fitsStatusBar", () => {
-  it("fits a short message on one line", () => {
-    expect(fitsStatusBar("On a call")).toBe(true);
-    expect(fitsStatusBar("")).toBe(true);
+describe("statusLines", () => {
+  it("keeps a short message on one line", () => {
+    expect(statusLines("On a call")).toEqual(["On a call"]);
+    expect(statusLines("")).toEqual([]);
   });
-  it("flags a message the light would cut off at both ends", () => {
-    expect(fitsStatusBar("Budget review, back at 3")).toBe(false);
+  it("wraps one too wide for the screen onto two lines", () => {
+    expect(statusLines("Budget review, back at 3")).toEqual(["Budget review,", "back at 3"]);
+    expect(statusCut("Budget review, back at 3")).toBeNull();
+  });
+  it("says what's left when even two lines aren't enough", () => {
+    const long = "Strata council meeting in the boardroom until about half past four";
+    expect(statusLines(long)).toHaveLength(2);
+    expect(statusCut(long)).toBe(statusLines(long).join(" "));
   });
   it("measures what the screen draws (emoji dropped, ends trimmed)", () => {
-    expect(fitsStatusBar("  Lunch 🍕  ")).toBe(true);
+    expect(statusLines("  Lunch 🍕  ")).toEqual(["Lunch"]);
   });
 });

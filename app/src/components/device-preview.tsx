@@ -15,6 +15,8 @@ import {
   SCREEN_LABEL,
   SCREEN_W,
   type ScreenView,
+  STATUS_LINE_GAP,
+  statusLines,
   untilLabel,
   wrapBar,
   wrapMessage,
@@ -71,6 +73,9 @@ export function DevicePreview({
   // display.cpp openGif(): a "show now" GIF with no message gets the whole screen.
   const gifArea = view.layout === "show-gif" && !view.text ? SCREEN_H : GIF_H;
   const oneLineLabel = view.status === "dnd" ? "DO NOT DISTURB" : label.join(" ");
+  // display.cpp statusLines(): the message, or the label in the bar, on one line or two.
+  const barLines = view.layout === "status" ? statusLines(view.text || oneLineLabel) : [];
+  const cardLines = view.layout === "status" && view.text ? statusLines(view.text) : [];
   const [r, g, b] = ring?.color ? hexRgb(ring.color) : LED_RGB[view.status];
   const flash = ring && ring.pattern !== "solid" ? ring : null;
   const led = (a: number) => `rgb(${r} ${g} ${b} / ${a})`;
@@ -146,13 +151,31 @@ export function DevicePreview({
               ) : gif ? (
                 <>
                   <rect x={0} y={GIF_H} width={SCREEN_W} height={SCREEN_H - GIF_H} fill={bg} />
-                  <Line y={topBaseline(GIF_H + 12, 12)} pt={12} bold>
-                    {view.text || label.join(" ")}
-                  </Line>
-                  {until && (
-                    <Line y={topBaseline(GIF_H + 46, 9)} pt={9}>
-                      {until}
-                    </Line>
+                  {barLines.length > 1 ? (
+                    // display.cpp: too wide for one line, so two, 26 px apart, and the end time under them.
+                    <>
+                      {barLines.map((l, i) => (
+                        <Line key={i} y={topBaseline(GIF_H + 3 + i * STATUS_LINE_GAP, 12)} pt={12} bold>
+                          {l}
+                        </Line>
+                      ))}
+                      {until && (
+                        <Line y={topBaseline(GIF_H + 57, 9)} pt={9}>
+                          {until}
+                        </Line>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      <Line y={topBaseline(GIF_H + 12, 12)} pt={12} bold>
+                        {view.text || label.join(" ")}
+                      </Line>
+                      {until && (
+                        <Line y={topBaseline(GIF_H + 46, 9)} pt={9}>
+                          {until}
+                        </Line>
+                      )}
+                    </>
                   )}
                 </>
               ) : (
@@ -172,13 +195,19 @@ export function DevicePreview({
                       {label[0]}
                     </Line>
                   )}
-                  {view.text && (
-                    <Line y={topBaseline(180, 12)} pt={12}>
-                      {view.text}
-                    </Line>
-                  )}
+                  {cardLines.length > 1
+                    ? cardLines.map((l, i) => (
+                        <Line key={i} y={topBaseline(166 + i * STATUS_LINE_GAP, 12)} pt={12}>
+                          {l}
+                        </Line>
+                      ))
+                    : view.text && (
+                        <Line y={topBaseline(180, 12)} pt={12}>
+                          {view.text}
+                        </Line>
+                      )}
                   {until && (
-                    <Line y={topBaseline(220, 9)} pt={9}>
+                    <Line y={topBaseline(222, 9)} pt={9}>
                       {until}
                     </Line>
                   )}

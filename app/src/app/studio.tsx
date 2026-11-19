@@ -17,7 +17,7 @@ import { parseGifLink } from "@/lib/gif-link";
 import { type Status, STATUSES, TEXT_MAX } from "@/lib/protocol";
 import { type RingChoice, RingPicker } from "@/components/ring-picker";
 import { type LedStyle, PUSH_FLASHES, pushLeds } from "@/lib/push-rules";
-import { fitsStatusBar, LED_RGB, screenText, type ScreenView, viewFor, withShow, wrapBar, wrapMessage } from "@/lib/screen";
+import { LED_RGB, screenText, statusCut, type ScreenView, viewFor, withShow, wrapBar, wrapMessage } from "@/lib/screen";
 
 import { clearShowAction, setStatus, showNowAction, type ShowNowResult } from "./actions";
 
@@ -418,9 +418,9 @@ export function StatusControls({ active = null, className }: { active?: ActiveSt
         autoComplete="off"
       />
         <p id="status-text-hint" className="mt-1.5 text-xs text-muted" aria-live="polite">
-          {!fitsStatusBar(status.text) ? (
-            // The light draws it on one line and cuts off both ends: say so before it's sent.
-            <span className="text-danger">Too long for one line: the light cuts off both ends. Keep it to about 20 letters, or use Show something.</span>
+          {statusCut(status.text) !== null ? (
+            // Two lines is all the bar has: say what will show before it's sent.
+            <span className="text-danger">Only “{statusCut(status.text)}” fits. Shorten it, or use Show something for a longer message.</span>
           ) : status.text.trim() && screenText(status.text.trim()) !== status.text.trim() ? (
             "The screen only has plain letters: emoji and accents are left out."
           ) : sendWith ? (

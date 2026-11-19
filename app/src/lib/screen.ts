@@ -204,10 +204,21 @@ export function wrapBar(s: string): string[] {
   return wrapText(s, "bold12", MESSAGE_WIDTH, 2).lines;
 }
 
-// display.cpp drawScreen(): a status's message is one line in the bar under the GIF, in
-// bold 12 pt and centred on the 240 px screen, with no wrap. Wider than that and the light
-// cuts off both ends, so the app warns before it's sent.
+// display.cpp statusLines(): a status's message (or label) is one line in bold 12 pt when
+// it fits across the whole 240 px screen, else it wraps to two lines (the wrapBar() rules).
+// Past two lines the rest is dropped, so the app says what will show before it's sent.
 export const BAR_WIDTH = 240;
-export function fitsStatusBar(s: string): boolean {
-  return textWidth(screenText(s.trim()), "bold12") <= BAR_WIDTH;
+export const STATUS_LINE_GAP = 26; // display.cpp kStatusLineGap
+export function statusLines(s: string): string[] {
+  const text = screenText(s).trim();
+  if (!text) return [];
+  if (textWidth(text, "bold12") <= BAR_WIDTH) return [text];
+  return wrapText(text, "bold12", MESSAGE_WIDTH, 2).lines;
+}
+
+/** What of a status message the light shows, when that's not all of it; else null. */
+export function statusCut(s: string): string | null {
+  const text = screenText(s).trim();
+  const shown = statusLines(text).join(" ");
+  return shown.replace(/ +/g, " ") === text.replace(/ +/g, " ") ? null : shown;
 }
