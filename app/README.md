@@ -17,6 +17,12 @@ npm run db:migrate
 npm run dev
 ```
 
+## Migrations
+
+- **Preview deploys migrate themselves.** `npm run build` runs `scripts/preview-migrate.mjs` first. On a Vercel preview (`VERCEL_ENV=preview`), it applies the migrations to that preview's own Neon branch, so you can sign in to a PR's preview without its connection string. A failed migration fails the preview build. Set `SKIP_PREVIEW_MIGRATE=1` in Vercel to turn it off.
+- **Production is still by hand, before merging.** Run `npm run db:migrate` with `.env.local` pointing at production. New code that reads new columns fails until then; sign-in is usually the first thing to break.
+- Keep migrations additive, so the old code keeps working once they've run.
+
 ## Checks
 
 ```sh
