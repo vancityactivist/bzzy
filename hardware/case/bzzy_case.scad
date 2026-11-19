@@ -14,7 +14,9 @@
 // PART = "assembly" shows everything; "exploded" pulls it apart.
 //
 // Axes: x right, y up, z towards you. z = 0 is the front face of the LED ring board.
-// The board sizes come from board_dims.scad, which gen_led_ring.py writes.
+// The board sizes come from board_dims.scad, which the archived rev C ring generator
+// (hardware/archive/led-ring-revC/gen_led_ring.py) writes. The main board (rev A)
+// keeps the same 52 x 61 mm outline and holes, and its own generator will replace it.
 //
 // How it holds together: four M2 screws go in from the back, through the back
 // plate's posts and the ring board, into bosses on the light ring. That pulls the

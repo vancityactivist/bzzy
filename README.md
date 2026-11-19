@@ -26,8 +26,9 @@ The companion app runs at **[bzzy.ca](https://bzzy.ca)**.
 | Folder | What it is |
 |---|---|
 | [app/](app/README.md) | The companion app: Next.js on Vercel, Postgres on Neon (Drizzle), GIFs in Vercel Blob, sign-in with GitHub or a passkey |
-| [firmware/](firmware/) | PlatformIO firmware for the Waveshare ESP32-S3 board |
-| [hardware/](hardware/README.md) | The LED ring board (KiCad, rev C) and the printed case (OpenSCAD) |
+| [firmware/](firmware/) | PlatformIO firmware for ESP32-S3 boards: the Waveshare development board today, the bzzy main board next, plus cheap test builds |
+| [hardware/](hardware/README.md) | The custom main board (in design), the printed case (OpenSCAD), and the archived LED ring board |
+| [docs/](docs/README.md) | All the docs, indexed. Start with [docs/plan.md](docs/plan.md) for what's next |
 | [docs/protocol.md](docs/protocol.md) | How the device and the app talk |
 | [docs/ota.md](docs/ota.md) | Firmware updates over Wi-Fi |
 | [docs/domains.md](docs/domains.md) | bzzy.ca, the redirect domains, DNS and email records |
@@ -63,19 +64,26 @@ Done:
 1. Breadboard prototype firmware
 2. Companion app with sign-in, teams, status, device API, GIFs, show now and the live preview
 3. Calendar sync from an ICS link
-4. Custom LED ring board (rev C) and a black case with a frosted light border, button cap and bzzy wordmark ([hardware/](hardware/README.md))
+4. A black case with a frosted light border, button cap and bzzy wordmark ([hardware/](hardware/README.md)). It was designed round an LED ring board for the Waveshare board, which is now [archived](hardware/archive/README.md)
 5. Signed firmware updates over Wi-Fi from GitHub Releases ([docs/ota.md](docs/ota.md))
 6. Setup on the light's own screen: QR codes for Wi-Fi, then pairing with the app
 
-Next:
+7. Proof of life on a test build (see the build log below)
+8. Spec for the custom main board ([docs/hardware/main-board.md](docs/hardware/main-board.md))
 
-- **Build the first one.** Measure the Waveshare board, order the ring board from JLCPCB, get the case printed, and test it all on real hardware.
+Next (the full list is in [docs/plan.md](docs/plan.md)):
+
+1. **Waveshare test**, with a few LEDs on GPIO17, and caliper the screen glass.
+2. **Screen bench test**: the main board's ER-TFT1.69-4 panel on an ESP32-S3 DevKit ([docs/s3-devkit-bench-test.md](docs/s3-devkit-bench-test.md)).
+3. **Main board in KiCad**, schematic then layout, and the case redesigned to match.
+4. **Prototypes** from JLCPCB (5 to 10), including a Wi-Fi range test. Expect a second spin.
+5. **ICES-003** emissions test: quotes, a pre-scan, the test.
+6. **First batch** of built bzzys.
 
 ### Later
 
-- **Pre-built lights.** Once the custom board is proven, offer assembled and tested bzzys for people who don't want to order and solder their own. The landing page already says they're coming.
+- **Pre-built lights.** Sell assembled and tested bzzys in small batches, built on the main board. The landing page already says they're coming. The ordering spec is in draft PR #81.
 - **Landing page photos.** The signed-out home page (`app/src/components/landing.tsx`) uses a concept picture and illustrations. Swap them for photos of a real bzzy once one is built.
-- **v2 board.** One custom board with the ESP32-S3, the bare screen, USB-C and the LEDs (see [hardware/](hardware/README.md#v2-full-custom-board)).
 
 ## Build log
 
@@ -95,11 +103,19 @@ It joined Wi-Fi, paired with the live app at bzzy.ca, and then did what it was t
 
 Next up is the same firmware on the Waveshare touch board inside the custom ring and case.
 
+### 2026-11-19: one board instead of two
+
+Change of plan. To sell built bzzys in Canada, anything with a radio needs ISED certification, and the Waveshare board doesn't have it: its ESP32-S3 is a bare chip with its own antenna, not a certified module. Certifying it ourselves would cost thousands more, every time the board changed.
+
+So the sellable bzzy gets **its own board**: Espressif's pre-certified ESP32-S3-WROOM-1U module with a small antenna stuck inside the case, the same 1.69" 240x280 touch screen bought bare (BuyDisplay ER-TFT1.69-4), USB-C, a clock and the ring of 16 LEDs, all on one PCB. Because the radio certification comes with the module, bzzy itself only needs an ICES-003 emissions test. It's the same chip, memory and pins as the Waveshare board, so the firmware only needs a new build target. The spec is in [docs/hardware/main-board.md](docs/hardware/main-board.md).
+
+The LED ring board that was going to sit round the Waveshare board (rev C) was never ordered, so nothing was wasted; it's [archived](hardware/archive/README.md), and its LED layout, button and review fixes carry over. The Waveshare board stays as the development board. Screen samples, FPC breakouts and two ESP32-S3 DevKits are on order for a bench test on Saturday. The plan from here is in [docs/plan.md](docs/plan.md).
+
 ## Hardware
 
-The target board is the **touch** version. The non-touch board and a plain ESP32 still build, for testing.
+The product is the **bzzy main board** (in design): one custom board with an ESP32-S3-WROOM-1U module, the 1.69" touch screen and 16 LEDs, in a printed black case with a frosted border that glows in the status colour. See [docs/hardware/main-board.md](docs/hardware/main-board.md) and [hardware/](hardware/README.md).
 
-The final design is the Waveshare board inside a custom LED ring board (16 LEDs, rev C) and a printed black case with a frosted border that glows in the status colour. See [hardware/](hardware/README.md) for the board, the case and the files to order. The parts below are for the breadboard prototype.
+Until it exists, the **Waveshare ESP32-S3-Touch-LCD-1.69** is the development board. It has the same chip, memory and pins, but no radio certification, so it's for building your own, not for selling. The non-touch board and a plain ESP32 still build, for testing. The parts below are for a breadboard build on the Waveshare board.
 
 | Part | Part number to search | Notes |
 |---|---|---|
@@ -121,11 +137,12 @@ Built with [PlatformIO](https://platformio.org/).
 
 ```sh
 cd firmware
-pio run -e waveshare_s3_touch_lcd169 -t upload   # the real board (touch)
+pio run -e waveshare_s3_touch_lcd169 -t upload   # Waveshare development board (touch)
 pio run -e waveshare_s3_lcd169 -t upload         # non-touch version
 pio run -e esp32_generic -t upload               # a plain ESP32: LEDs, Wi-Fi and sync only
 pio run -e esp32_lcd1602 -t upload               # a plain ESP32 + 16x2 LCD (docs/esp32-test-build.md)
 pio run -e waveshare_c6_lcd147 -t upload         # Waveshare ESP32-C6-LCD-1.47 test board (docs/esp32-c6-test-build.md)
+pio run -e s3_devkit_tft169 -t upload            # S3 DevKit + ER-TFT1.69-4 bench test (docs/s3-devkit-bench-test.md)
 pio test -e native                               # status logic unit tests, no hardware needed
 pio device monitor
 ```
@@ -155,8 +172,9 @@ A green check and two green flashes on the ring mark each finished step. To chan
 ### Not done yet
 
 - HTTPS certificate checking is off (`setInsecure`) for the app connection. Firmware updates don't depend on it: they're checked against a signature.
-- Untested on real hardware: pin numbers come from Waveshare's V2 schematic, and the board dimensions the case and ring use are estimates until someone measures one.
+- Not yet run on the Waveshare S3 touch board: pin numbers come from Waveshare's V2 schematic, and the board dimensions the case uses are estimates until someone measures one. The test builds (classic ESP32, ESP32-C6) do run on real hardware.
+- The main board doesn't exist yet. Its firmware env (`bzzy_main_reva`) comes with the schematic.
 
 ## License
 
-bzzy is free to build and use, but not to sell. The software (app and firmware) is under [PolyForm Noncommercial 1.0.0](LICENSES/PolyForm-Noncommercial-1.0.0.md) and the hardware (ring board and case) under [CC BY-NC-SA 4.0](LICENSES/CC-BY-NC-SA-4.0.txt). Using a light you built at your own job is fine. See [LICENSE.md](LICENSE.md) for details, and ask if you'd like to buy one.
+bzzy is free to build and use, but not to sell. The software (app and firmware) is under [PolyForm Noncommercial 1.0.0](LICENSES/PolyForm-Noncommercial-1.0.0.md) and the hardware (boards and case) under [CC BY-NC-SA 4.0](LICENSES/CC-BY-NC-SA-4.0.txt). Using a light you built at your own job is fine. See [LICENSE.md](LICENSE.md) for details, and ask if you'd like to buy one.

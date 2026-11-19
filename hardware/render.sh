@@ -1,31 +1,34 @@
 #!/usr/bin/env bash
 # Regenerate everything in hardware/ from the two sources of truth:
-#   led-ring/gen_led_ring.py  (board, schematic, BOM/CPL, board_dims.scad)
-#   case/bzzy_case.scad       (case)
+#   archive/led-ring-revC/gen_led_ring.py  (archived rev C ring board; still writes
+#                                           case/board_dims.scad until the main board
+#                                           generator replaces it)
+#   case/bzzy_case.scad                    (case)
 # Needs KiCad 7+ (its Python, for pcbnew) and OpenSCAD. On a headless Linux box,
 # xvfb-run is used for the OpenSCAD images.
 set -euo pipefail
 cd "$(dirname "$0")"
 
 PY=${KICAD_PYTHON:-python3}
-(cd led-ring && "$PY" gen_led_ring.py)
+RING=archive/led-ring-revC
+(cd "$RING" && "$PY" gen_led_ring.py)
 
-mkdir -p img case/stl
-kicad-cli sch export svg -o img led-ring/bzzy-led-ring.kicad_sch >/dev/null
-mv img/bzzy-led-ring.svg img/schematic.svg
+mkdir -p img "$RING/img" case/stl
+kicad-cli sch export svg -o "$RING/img" "$RING/bzzy-led-ring.kicad_sch" >/dev/null
+mv "$RING/img/bzzy-led-ring.svg" "$RING/img/schematic.svg"
 kicad-cli pcb export svg --layers F.Cu,F.Fab,Edge.Cuts --page-size-mode 2 --exclude-drawing-sheet \
-  -o img/pcb-front.svg led-ring/bzzy-led-ring.kicad_pcb >/dev/null
+  -o "$RING/img/pcb-front.svg" "$RING/bzzy-led-ring.kicad_pcb" >/dev/null
 kicad-cli pcb export svg --layers B.Cu,B.SilkS,Edge.Cuts --page-size-mode 2 --exclude-drawing-sheet \
-  -o img/pcb-back.svg led-ring/bzzy-led-ring.kicad_pcb >/dev/null
+  -o "$RING/img/pcb-back.svg" "$RING/bzzy-led-ring.kicad_pcb" >/dev/null
 
 # Gerbers + drill files, zipped for JLCPCB (gitignored: rebuild with this script)
 G=$(mktemp -d)
 kicad-cli pcb export gerbers --layers F.Cu,B.Cu,F.Paste,B.Paste,F.SilkS,B.SilkS,F.Mask,B.Mask,Edge.Cuts \
-  --subtract-soldermask --no-x2 -o "$G/" led-ring/bzzy-led-ring.kicad_pcb >/dev/null
+  --subtract-soldermask --no-x2 -o "$G/" "$RING/bzzy-led-ring.kicad_pcb" >/dev/null
 kicad-cli pcb export drill --format excellon --excellon-separate-th --excellon-units mm \
-  -o "$G/" led-ring/bzzy-led-ring.kicad_pcb >/dev/null
-rm -f led-ring/fab/gerbers.zip
-(cd "$G" && zip -q -r - .) > led-ring/fab/gerbers.zip
+  -o "$G/" "$RING/bzzy-led-ring.kicad_pcb" >/dev/null
+rm -f "$RING/fab/gerbers.zip"
+(cd "$G" && zip -q -r - .) > "$RING/fab/gerbers.zip"
 rm -rf "$G"
 
 SCAD="openscad"
@@ -41,4 +44,4 @@ done
 for part in light frame back trim button clip; do
   openscad -q -D "PART=\"$part\"" -o "case/stl/$part.stl" case/bzzy_case.scad
 done
-echo "done: img/, case/stl/, led-ring/fab/gerbers.zip"
+echo "done: img/, case/stl/, $RING/img/, $RING/fab/gerbers.zip"

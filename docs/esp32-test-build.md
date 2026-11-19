@@ -71,7 +71,7 @@ The firmware drives **12 LEDs** (a common prototype ring) and caps their current
 
 WS2812B at 5 V officially wants a 3.5 V data signal and the ESP32 gives 3.3 V. It almost always works with short wires. If the first LED flickers or shows the wrong colours, any one of these fixes it:
 
-- a level shifter (74AHCT125 or 74AHCT1G125, the same one the real ring board uses), or
+- a level shifter (74AHCT125 or 74AHCT1G125, the same one the bzzy main board uses), or
 - feed the strip's 5V through a diode (1N5817 or 1N4148), which drops it to about 4.5 V so 3.3 V counts as high.
 
 ### Button
