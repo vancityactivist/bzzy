@@ -87,5 +87,27 @@ Same as the real light: the screen shows a QR code for its `bzzy-XXXX` Wi-Fi, th
 
 - **The LED's colours.** Free should be green and Busy red. The onboard LED is RGB order, not GRB like the ring (`BZZY_LED_ORDER` in `config.h`); on the first board we tried, GRB swapped red and green.
 - **The screen's edges.** If there's a stripe of noise down one side or everything is shifted, the 34 px column offset is off.
-- **Over-the-air rollback.** Arduino core 3 is new to bzzy. After the first update over the air, check the light says the new version in the app's Devices page.
+- **Over-the-air updates and rollback.** Arduino core 3 is new to bzzy: see the test below.
 - Everything in [Things to try](esp32-test-build.md#things-to-try) for the classic ESP32 build.
+
+## Testing an update and a rollback (Windows, PowerShell)
+
+The C6 is the first bzzy board on Arduino core 3, so check once that it updates itself and that a bad update rolls back. You need the board on USB with a serial monitor open, the app's Devices page, and a Wi-Fi network you can switch off (a phone hotspot is easiest: set the light up on it with the Wi-Fi setup steps above).
+
+**1. Flash an older version.** Build the current code but call it 0.2.0, so the app offers it the latest release (use your COM port):
+
+```powershell
+cd bzzy\firmware
+$env:BZZY_FW_VERSION = "0.2.0"
+& "$env:USERPROFILE\.platformio\penv\Scripts\pio.exe" run -e waveshare_c6_lcd147 -t upload --upload-port COM5
+Remove-Item Env:BZZY_FW_VERSION
+& "$env:USERPROFILE\.platformio\penv\Scripts\pio.exe" device monitor -p COM5
+```
+
+The Devices page should show the light on 0.2.0 with **Update now** for the newest release (it can take up to 10 minutes to notice a new release).
+
+**2. Update.** Press **Update now**. The screen shows "Updating firmware 42%", and the monitor prints `[ota] installing…`, then the light restarts. After its first sync the monitor prints `[ota] 0.x.y confirmed` and the Devices page shows the new version.
+
+If the light restarts on the new version but never prints `confirmed`, rollback isn't switched on in this core's bootloader: tell us, because a bad update then can't undo itself.
+
+**3. Roll back.** Flash 0.2.0 again (step 1) and press **Update now** again. This time, as soon as the screen reaches "Updating firmware 100%", **turn the hotspot off** so the new version can never reach the app. About 10 minutes after it restarts, the monitor prints `[ota] new firmware never reached the app: rolling back`, and the light restarts on 0.2.0. Turn the hotspot back on: the Devices page says the update didn't start properly and offers **Try again**.
