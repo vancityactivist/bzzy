@@ -222,7 +222,12 @@ export function GifLibrary({ items: initial, add }: { items: LibraryItem[]; add:
     <div
       className="relative"
       onDragOver={(e) => {
-        if (![...e.dataTransfer.types].includes("Files")) return;
+        // The Add panel's own drop box handles a file dropped on it (with a preview and a
+        // name first); only a drop anywhere else uploads straight away.
+        if (![...e.dataTransfer.types].includes("Files") || (e.target as HTMLElement).closest("[data-own-drop]")) {
+          setDrag(false);
+          return;
+        }
         e.preventDefault();
         setDrag(true);
       }}
@@ -230,7 +235,7 @@ export function GifLibrary({ items: initial, add }: { items: LibraryItem[]; add:
         if (!e.currentTarget.contains(e.relatedTarget as Node)) setDrag(false);
       }}
       onDrop={(e) => {
-        if (!e.dataTransfer.files.length) return;
+        if (e.defaultPrevented || !e.dataTransfer.files.length || (e.target as HTMLElement).closest("[data-own-drop]")) return;
         e.preventDefault();
         setDrag(false);
         void uploadFiles([...e.dataTransfer.files]);
@@ -334,7 +339,7 @@ export function GifLibrary({ items: initial, add }: { items: LibraryItem[]; add:
             </div>
           </div>
 
-          {adding && <div>{add}</div>}
+          {adding && <div data-own-drop>{add}</div>}
 
           {uploads.length > 0 && <UploadList uploads={uploads} onClose={() => setUploads([])} />}
 
