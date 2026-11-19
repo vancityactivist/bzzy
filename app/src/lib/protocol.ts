@@ -162,8 +162,8 @@ export function buildState(opts: {
 // Decide whether a button press from the device replaces what we have.
 // Newer wins; a tie keeps what we have, unless what we have came from this same light.
 // Its presses are sent one at a time, in order, and timestamps are whole seconds, so
-// two quick presses can share one: the later one is the light's latest (firmware from
-// before fw-v0.3.3 doesn't bump the second one's time).
+// two quick presses can share one: the later one is the light's latest (older firmware
+// doesn't bump the second one's time).
 export function shouldApplyDeviceOverride(
   current: Presence | null,
   incoming: OverrideBody,
