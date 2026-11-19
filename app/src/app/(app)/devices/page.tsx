@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 
-import { DeviceIcon, PlusIcon } from "@/components/icons";
+import { ChevronRightIcon, DeviceIcon, PlusIcon } from "@/components/icons";
 import { SignIn } from "@/components/sign-in";
 import { Badge, buttonClass, Card, Container, EmptyState, PageHeader } from "@/components/ui";
 import { devicesForUser } from "@/lib/devices";
@@ -54,6 +54,14 @@ async function DevicesContent() {
     STATUSES.map((s) => [s, builtinOptions.find((o) => o.value === `builtin:${DEFAULT_BUILTIN[s]}`)!]),
   ) as Record<Status, GifOption>;
 
+  // What's under a light's Settings, for its summary line.
+  const settingsFor = (d: (typeof devices)[number], i: number) =>
+    [
+      d.ownerUserId === user.id && sharedTeams.length > 0 && "announcements",
+      choices[i] && "screen and GIFs",
+      d.canManage && "ring",
+    ].filter((x): x is string => !!x);
+
   const card = (d: (typeof devices)[number]) => {
     const i = devices.indexOf(d);
     return (
@@ -75,35 +83,48 @@ async function DevicesContent() {
               </p>
             </div>
           </div>
-          {d.canManage && <DeviceActions deviceId={d.id} />}
+          {d.canManage && <DeviceActions deviceId={d.id} name={d.name} />}
           <DeviceFirmware
             deviceId={d.id}
             state={firmwareState(d.firmware, release?.manifest, nowSeconds())}
             autoUpdate={d.firmware.autoUpdate}
             canManage={d.canManage}
           />
-          {d.ownerUserId === user.id && sharedTeams.length > 0 && (
-            <PushTeamSelect
-              deviceId={d.id}
-              value={d.pushTeamId}
-              teams={sharedTeams.map((t) => ({ id: t.id, name: t.name }))}
-            />
+          {/* Everything you set once and rarely touch, folded away so the page is a list
+              of lights rather than a wall of forms. */}
+          {settingsFor(d, i).length > 0 && (
+            <details className="group/settings w-full border-t border-line pt-3">
+              <summary className="-mx-2 flex h-9 cursor-pointer list-none items-center gap-1.5 rounded-lg px-2 text-sm font-medium transition-colors select-none hover:bg-subtle [&::-webkit-details-marker]:hidden">
+                <ChevronRightIcon className="size-4 shrink-0 text-muted transition-transform duration-150 group-open/settings:rotate-90" />
+                Settings
+                <span className="min-w-0 truncate font-normal text-muted">· {settingsFor(d, i).join(", ")}</span>
+              </summary>
+              <div className="mt-3 space-y-4">
+                {d.ownerUserId === user.id && sharedTeams.length > 0 && (
+                  <PushTeamSelect
+                    deviceId={d.id}
+                    value={d.pushTeamId}
+                    teams={sharedTeams.map((t) => ({ id: t.id, name: t.name }))}
+                  />
+                )}
+                {choices[i] && (
+                  <DeviceScreens
+                    deviceId={d.id}
+                    defaultStatus={d.defaultStatus}
+                    choices={choices[i]}
+                    defaults={defaults}
+                    options={[
+                      ...uploads
+                        .filter((u) => u.teamId === d.teamId)
+                        .map((u) => ({ value: `asset:${u.id}`, label: u.name, src: `/api/gifs/${u.id}` })),
+                      ...builtinOptions,
+                    ]}
+                  />
+                )}
+                {d.canManage && <DeviceRingSettings deviceId={d.id} ring={d.ring} defaultStatus={d.defaultStatus} />}
+              </div>
+            </details>
           )}
-          {choices[i] && (
-            <DeviceScreens
-              deviceId={d.id}
-              defaultStatus={d.defaultStatus}
-              choices={choices[i]}
-              defaults={defaults}
-              options={[
-                ...uploads
-                  .filter((u) => u.teamId === d.teamId)
-                  .map((u) => ({ value: `asset:${u.id}`, label: u.name, src: `/api/gifs/${u.id}` })),
-                ...builtinOptions,
-              ]}
-            />
-          )}
-          {d.canManage && <DeviceRingSettings deviceId={d.id} ring={d.ring} defaultStatus={d.defaultStatus} />}
         </Card>
       </li>
     );

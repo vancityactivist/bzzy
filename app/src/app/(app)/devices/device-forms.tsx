@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useActionState, useState, useTransition } from "react";
 
 import { CheckIcon, RefreshIcon, TrashIcon } from "@/components/icons";
+import { MoreMenu } from "@/components/more-menu";
 import { Button, Card, CardHeader, Field, Input } from "@/components/ui";
 
 import { addDevice, newDeviceToken, removeDevice, type NewDeviceResult } from "@/app/actions";
@@ -86,36 +87,35 @@ export function AddDeviceForm() {
 }
 
 /** Renders as flex items of the device row: the buttons, then (when there is one) a full-width panel. */
-export function DeviceActions({ deviceId }: { deviceId: string }) {
+export function DeviceActions({ deviceId, name }: { deviceId: string; name: string }) {
   const [result, setResult] = useState<NewDeviceResult>(null);
   const [pending, start] = useTransition();
   return (
     <>
-      <div className="flex gap-2">
-        <Button
-          size="sm"
-          disabled={pending}
-          onClick={() => {
-            if (confirm("Make a new token? The device stops syncing until you enter it.")) {
-              start(async () => setResult(await newDeviceToken(deviceId)));
-            }
-          }}
-        >
-          <RefreshIcon />
-          New token
-        </Button>
-        <Button
-          size="sm"
-          variant="danger"
-          disabled={pending}
-          onClick={() => {
-            if (confirm("Remove this device?")) start(() => removeDevice(deviceId));
-          }}
-        >
-          <TrashIcon />
-          Remove
-        </Button>
-      </div>
+      <MoreMenu
+        label={`More for ${name}`}
+        items={[
+          {
+            label: "New token",
+            icon: <RefreshIcon />,
+            disabled: pending,
+            onSelect: () => {
+              if (confirm(`Make a new token for ${name}? It stops syncing until you enter the new one.`)) {
+                start(async () => setResult(await newDeviceToken(deviceId)));
+              }
+            },
+          },
+          {
+            label: "Remove light",
+            icon: <TrashIcon />,
+            danger: true,
+            disabled: pending,
+            onSelect: () => {
+              if (confirm(`Remove ${name}? It stops showing your status until it's paired again.`)) start(() => removeDevice(deviceId));
+            },
+          },
+        ]}
+      />
       {result?.ok === false && (
         <p className="w-full text-sm text-danger" role="alert">
           {result.error}

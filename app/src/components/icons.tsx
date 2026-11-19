@@ -262,3 +262,14 @@ export function LogOutIcon(props: IconProps) {
     </Icon>
   );
 }
+
+/** "More": three dots, for a menu of less-used actions. */
+export function MoreIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <circle cx="5" cy="12" r="1.25" fill="currentColor" />
+      <circle cx="12" cy="12" r="1.25" fill="currentColor" />
+      <circle cx="19" cy="12" r="1.25" fill="currentColor" />
+    </Icon>
+  );
+}
