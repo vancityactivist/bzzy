@@ -47,9 +47,11 @@ const FILTERS: { id: Filter; label: string }[] = [
   { id: "unused", label: "Unused" },
 ];
 
-// Tile widths for the size slider, in px.
-const SIZES = [88, 120, 168];
-const SIZE_KEY = "bzzy.gifSize";
+// The size slider sets the tile width in px, anywhere in this range.
+const MIN_SIZE = 72;
+const MAX_SIZE = 220;
+const DEFAULT_SIZE = 120;
+const SIZE_KEY = "bzzy.gifTile";
 const MAX_BYTES = 4 * 1024 * 1024;
 
 // Show now with nothing but a GIF gets the whole screen (display.cpp openGif()).
@@ -95,7 +97,7 @@ export function GifLibrary({ items: initial, add }: { items: LibraryItem[]; add:
 
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<Filter>("all");
-  const [size, setSize] = useState(1);
+  const [size, setSize] = useState(DEFAULT_SIZE);
   const [hover, setHover] = useState<string | null>(null);
   const [pinned, setPinned] = useState<string | null>(null);
   const [selecting, setSelecting] = useState(false);
@@ -109,7 +111,7 @@ export function GifLibrary({ items: initial, add }: { items: LibraryItem[]; add:
       const raw = localStorage.getItem(SIZE_KEY);
       const saved = raw === null ? NaN : Number(raw);
       // eslint-disable-next-line react-hooks/set-state-in-effect -- read once after hydration
-      if (saved >= 0 && saved < SIZES.length) setSize(saved);
+      if (saved >= MIN_SIZE && saved <= MAX_SIZE) setSize(saved);
     } catch {}
   }, []);
   const pickSize = (n: number) => {
@@ -206,7 +208,7 @@ export function GifLibrary({ items: initial, add }: { items: LibraryItem[]; add:
   };
 
   const tileProps = {
-    size: SIZES[size],
+    size,
     selecting,
     selected,
     pinned: current?.choice ?? null,
@@ -319,13 +321,13 @@ export function GifLibrary({ items: initial, add }: { items: LibraryItem[]; add:
                 <span aria-hidden className="size-2.5 rounded-sm border border-current" />
                 <input
                   type="range"
-                  min={0}
-                  max={SIZES.length - 1}
+                  min={MIN_SIZE}
+                  max={MAX_SIZE}
                   step={1}
                   value={size}
                   onChange={(e) => pickSize(Number(e.target.value))}
                   aria-label="GIF size"
-                  className="w-20 accent-foreground"
+                  className="w-28 accent-foreground"
                 />
                 <span aria-hidden className="size-4 rounded-sm border border-current" />
               </label>
@@ -363,7 +365,7 @@ export function GifLibrary({ items: initial, add }: { items: LibraryItem[]; add:
                   onSeeAll={() => setFilter(s.filter)}
                   hint={s.items.length === 0 ? (s.hint ?? (s.add ? "Drop GIFs anywhere here, or press Add." : undefined)) : undefined}
                 >
-                  {s.add && <AddTile size={SIZES[size]} onClick={() => setAdding(true)} />}
+                  {s.add && <AddTile size={size} onClick={() => setAdding(true)} />}
                   {s.items.map((i) => (
                     <Tile key={i.choice} item={i} {...tileProps} />
                   ))}
@@ -387,7 +389,7 @@ export function GifLibrary({ items: initial, add }: { items: LibraryItem[]; add:
                   </>
                 )}
               </p>
-              <div className="grid gap-3" style={{ gridTemplateColumns: `repeat(auto-fill, minmax(${SIZES[size]}px, 1fr))` }}>
+              <div className="grid gap-3" style={{ gridTemplateColumns: `repeat(auto-fill, ${size}px)` }}>
                 {listed.map((i) => (
                   <Tile key={i.choice} item={i} {...tileProps} fill />
                 ))}
