@@ -8,6 +8,7 @@ import { Button, Card, CardHeader, Container, StatusDot } from "@/components/ui"
 import { refreshStaleCalendars, scheduleForUser } from "@/lib/calendar";
 import { devicesForUser } from "@/lib/devices";
 import { BUILTIN_GIFS, defaultPreviewSrcs, gifsForUser, previewSrc, resolveDeviceGifs } from "@/lib/gifs";
+import { isOnline } from "@/lib/poll-writes";
 import { getPresence } from "@/lib/presence";
 import { nowSeconds, showVisible, STATUSES } from "@/lib/protocol";
 import { resolveScreen, screenText, viewFor } from "@/lib/screen";
@@ -19,7 +20,8 @@ import { getShow } from "@/lib/show";
 import { REPO_URL, SITE_NAME, SITE_URL } from "@/lib/site";
 import { sharedTeamsForUser } from "@/lib/teams";
 
-import { clearStatus } from "./actions";
+import { relativeTime } from "./(app)/devices/relative-time";
+import { clearShowAction, clearStatus } from "./actions";
 import {
   type ActiveStatus,
   type LibraryGif,
@@ -59,7 +61,7 @@ const JSON_LD = {
   ],
 };
 
-export default function Home() {
+export default function Home({ searchParams }: PageProps<"/">) {
   return (
     <>
       <script
@@ -69,13 +71,13 @@ export default function Home() {
       />
       {/* Signed-out visitors get this fallback too, so it stays blank rather than app-shaped. */}
       <Suspense fallback={<div className="min-h-[70vh]" aria-busy="true" />}>
-        <HomeContent />
+        <HomeContent searchParams={searchParams} />
       </Suspense>
     </>
   );
 }
 
-async function HomeContent() {
+async function HomeContent({ searchParams }: { searchParams: PageProps<"/">["searchParams"] }) {
   const user = await getCurrentUser();
   if (!user) return <Landing />;
 
@@ -88,6 +90,9 @@ async function HomeContent() {
     getShow(user.id),
     gifsForUser(user.id),
   ]);
+  // "Show now" on the GIFs page links here with ?show=<choice>: start with it picked.
+  const { show: picked } = await searchParams;
+  const pick = typeof picked === "string" ? picked : undefined;
   const library: LibraryGif[] = [
     ...uploads.map((g) => ({
       choice: `asset:${g.id}`,
@@ -98,10 +103,14 @@ async function HomeContent() {
       choice: `builtin:${g.id}`,
       name: g.name,
       src: g.path,
+      builtin: true,
     })),
   ];
   // Lights that show this person's status (team devices can belong to others).
-  const mine = devices.filter((d) => d.ownerUserId === user.id);
+  // Online ones first, so the preview opens on a light that's showing what it says.
+  const mine = devices
+    .filter((d) => d.ownerUserId === user.id)
+    .sort((a, b) => Number(isOnline(b.lastSeenAt, now * 1000, b.pollSec)) - Number(isOnline(a.lastSeenAt, now * 1000, a.pollSec)));
   // A team push beats their own show now. It's the same on all their lights that
   // follow that team, so take the first one that has one.
   const following = mine.find((d) => d.pushTeamId);
@@ -139,6 +148,11 @@ async function HomeContent() {
             return {
               id: d.id,
               name: d.name,
+              offline: isOnline(d.lastSeenAt, now * 1000, d.pollSec)
+                ? null
+                : d.lastSeenAt
+                  ? `Offline · seen ${relativeTime(d.lastSeenAt, now * 1000)}`
+                  : "Never connected",
               view: viewFor(resolved),
               gifs: Object.fromEntries(STATUSES.map((s) => [s, previewSrc(gifs[s])])) as PreviewDevice["gifs"],
               ring: ringFor({ ...d.ring, status: resolved.status, schedule, now, push: ringPush, show: ringShow }),
@@ -176,7 +190,23 @@ async function HomeContent() {
   const shown = live ?? current ?? null;
   const summary = (
     <div className="min-w-0">
-      {shown ? (
+      {liveShow ? (
+        // A GIF or message is up, so that's what the light shows, not the status.
+        <p className="flex min-w-0 items-center gap-2">
+          {liveShow.gifSrc ? (
+            // eslint-disable-next-line @next/next/no-img-element -- tiny animated thumbnail
+            <img src={liveShow.gifSrc} alt="" className="size-5 shrink-0 rounded bg-black object-cover" />
+          ) : (
+            <span aria-hidden className="flex size-5 shrink-0 items-center justify-center rounded bg-black text-[0.5625rem] font-semibold text-white/85">
+              Aa
+            </span>
+          )}
+          <span className="min-w-0 truncate">
+            <span className="font-semibold">Showing {liveShow.gifName ?? "a message"}</span>
+            {liveShow.gifName && liveShow.text && <span className="text-muted"> · {liveShow.text}</span>}
+          </span>
+        </p>
+      ) : shown ? (
         <p className="flex min-w-0 items-center gap-2">
           <StatusDot status={shown.status} size="lg" />
           <span className="min-w-0 truncate">
@@ -192,19 +222,29 @@ async function HomeContent() {
       )}
       <div className="mt-1 flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
         <p className="text-xs text-muted lg:text-sm">
-          {live
-            ? `Set by you · ${live.until ? `until ${at(live.until)}` : "until you change it"}`
-            : current
-              ? `From your calendar · until ${at(current.end)}`
-              : next
-                ? `Following your calendar · ${STATUS_META[next.status].label.toLowerCase()} at ${at(next.start)}`
-                : "Following your calendar and each light's default"}
+          {liveShow
+            ? liveShow.push
+              ? `Pushed by ${liveShow.push.team} · press your light's button to dismiss`
+              : `Show now · ${liveShow.until ? `until ${at(liveShow.until)}` : "until you take it down"}`
+            : live
+              ? `Set by you · ${live.until ? `until ${at(live.until)}` : "until you change it"}`
+              : current
+                ? `From your calendar · until ${at(current.end)}`
+                : next
+                  ? `Following your calendar · ${STATUS_META[next.status].label.toLowerCase()} at ${at(next.start)}`
+                  : "Following your calendar and each light's default"}
         </p>
-        {live && (
-          <form action={clearStatus}>
-            <Button size="sm">Back to automatic</Button>
-          </form>
-        )}
+        {liveShow
+          ? !liveShow.push && (
+              <form action={clearShowAction}>
+                <Button size="sm">Take it down</Button>
+              </form>
+            )
+          : live && (
+              <form action={clearStatus}>
+                <Button size="sm">Back to automatic</Button>
+              </form>
+            )}
       </div>
     </div>
   );
@@ -212,21 +252,21 @@ async function HomeContent() {
   return (
     <AppShell>
       <Container className="max-lg:pt-0">
-        <StudioProvider library={library} live={liveShow}>
-          <div className="grid gap-6 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:items-start lg:gap-8">
+        <StudioProvider library={library} live={liveShow} initialShow={library.some((g) => g.choice === pick) ? pick : undefined}>
+          <div className="grid grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:items-start lg:gap-8">
             <StudioPreview devices={previews} example={mine.length === 0} summary={summary} />
             <div className="space-y-6">
               <Card>
                 <CardHeader
                   title="Set your status"
-                  description="Tap one to set it. It overrides your calendar until it runs out or you go back to automatic."
+                  description="Overrides your calendar until it ends."
                 />
                 <StatusControls active={active} className="mt-5" />
               </Card>
-              <Card>
+              <Card id="show" className="scroll-mt-48 lg:scroll-mt-20">
                 <CardHeader
                   title="Show something"
-                  description="Put a GIF or a message on your screen right now. The ring keeps your status colour unless you add a ring effect, and a press of its button takes it down."
+                  description="A GIF or message on your light right now. A press of its button takes it down."
                 />
                 <ShowNowControls className="mt-5" flashOff={mine.length > 0 && mine.every((d) => !d.ring.allowFlash)} />
               </Card>

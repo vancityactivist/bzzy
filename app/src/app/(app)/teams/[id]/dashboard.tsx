@@ -51,24 +51,30 @@ export function Dashboard({ cards, nowMs }: { cards: MemberCard[]; nowMs: number
           </span>
         </p>
       </div>
-      <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+      {/* Phones: a compact row per person (a small screen beside the name), so the whole
+          team fits on a screen or two. sm up: a grid of cards. */}
+      <ul className="grid grid-cols-1 gap-2 sm:grid-cols-3 sm:gap-3 lg:grid-cols-4">
         {cards.map((c) => (
           <li key={c.userId}>
-            <Card padding="sm" className="flex h-full flex-col items-center text-center">
-              <DevicePreview
-                view={c.view}
-                gifSrc={c.gifSrc}
-                ring={c.ring}
-                scale={0.5}
-                className={c.lights.length === 0 ? "m-3 opacity-60" : "m-3"}
-              />
-              <p className="mt-1 w-full truncate font-medium">{c.name}</p>
-              <p className="flex items-center gap-1.5 text-sm">
-                <StatusDot status={c.status} size="sm" />
-                {STATUS_META[c.status].label}
-              </p>
-              <p className="mt-0.5 text-xs text-pretty text-muted">{sourceLine(c)}</p>
-              <div className="mt-auto flex flex-wrap justify-center gap-1.5 pt-3">
+            <Card padding="sm" className="flex h-full items-center gap-3 max-sm:py-2.5 sm:flex-col sm:gap-0 sm:text-center">
+              <div className="shrink-0 max-sm:[zoom:0.42]">
+                <DevicePreview
+                  view={c.view}
+                  gifSrc={c.gifSrc}
+                  ring={c.ring}
+                  scale={0.5}
+                  className={c.lights.length === 0 ? "m-3 opacity-60" : "m-3"}
+                />
+              </div>
+              <div className="min-w-0 flex-1 sm:flex sm:w-full sm:flex-col sm:items-center">
+                <p className="w-full truncate font-medium sm:mt-1">{c.name}</p>
+                <p className="flex items-center gap-1.5 text-sm">
+                  <StatusDot status={c.status} size="sm" />
+                  {STATUS_META[c.status].label}
+                </p>
+                <p className="mt-0.5 text-xs text-pretty text-muted">{sourceLine(c)}</p>
+              </div>
+              <div className="flex shrink-0 flex-col items-end gap-1.5 sm:mt-auto sm:flex-row sm:flex-wrap sm:justify-center sm:pt-3">
                 <LightBadge c={c} nowMs={nowMs} />
                 {c.push ? <Badge tone="inverse">Push</Badge> : c.showing && <Badge tone="inverse">Show now</Badge>}
               </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState, useTransition } from "react";
+import { Fragment, useActionState, useState, useTransition } from "react";
 
 import { DevicePreview } from "@/components/device-preview";
 import { XIcon } from "@/components/icons";
@@ -10,7 +10,7 @@ import { TEXT_MAX } from "@/lib/protocol";
 import { PUSH_DURATIONS, pushLeds } from "@/lib/push-rules";
 import { screenText, viewFor, withShow, wrapBar, wrapMessage } from "@/lib/screen";
 
-import type { LibraryGif } from "@/app/studio";
+import { GridLabel, type LibraryGif, startsBuiltins } from "@/app/studio";
 import { endPushAction, type PushResult, sendPushAction } from "../actions";
 
 const TEXT_ONLY = "none";
@@ -59,15 +59,21 @@ export function PushComposer({ teamId, members, library }: { teamId: string; mem
         <div className="min-w-0 space-y-5">
           <fieldset>
             <legend className="text-sm font-medium">GIF</legend>
-            <div
-              role="radiogroup"
-              aria-label="GIF to show"
-              className="-mx-1.5 mt-1.5 grid max-h-[11.5rem] grid-cols-[repeat(auto-fill,minmax(3.75rem,1fr))] gap-2 overflow-y-auto p-1.5"
-            >
-              <Tile name="Just a message" checked={gif === TEXT_ONLY} onPick={() => setGif(TEXT_ONLY)} />
-              {library.map((g) => (
-                <Tile key={g.choice} name={g.name} src={g.src} checked={gif === g.choice} onPick={() => setGif(g.choice)} />
-              ))}
+            {/* Scroll box around the grid, not on it: see the Show now picker. */}
+            <div className="-mx-1.5 mt-1.5 max-h-[11.5rem] overflow-y-auto p-1.5">
+              <div
+                role="radiogroup"
+                aria-label="GIF to show"
+                className="grid grid-cols-[repeat(auto-fill,minmax(3.75rem,1fr))] gap-2"
+              >
+                <Tile name="Just a message" checked={gif === TEXT_ONLY} onPick={() => setGif(TEXT_ONLY)} />
+                {library.map((g, i) => (
+                  <Fragment key={g.choice}>
+                    {startsBuiltins(library, i) && <GridLabel>Built in</GridLabel>}
+                    <Tile name={g.name} src={g.src} checked={gif === g.choice} onPick={() => setGif(g.choice)} />
+                  </Fragment>
+                ))}
+              </div>
             </div>
             <input type="hidden" name="gif" value={gif} />
           </fieldset>
@@ -177,7 +183,7 @@ function Tile({ name, src, checked, onPick }: { name: string; src?: string; chec
     >
       {src ? (
         // eslint-disable-next-line @next/next/no-img-element -- animated GIFs, already sized
-        <img src={src} alt="" loading="lazy" className="max-h-full max-w-full" />
+        <img src={src} alt="" loading="lazy" className="absolute inset-0 m-auto max-h-full max-w-full" />
       ) : (
         <span className="text-base leading-none font-semibold text-white/85">Aa</span>
       )}

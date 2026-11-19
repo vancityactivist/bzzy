@@ -251,6 +251,37 @@ static void setFittingFont(const char* text, const lgfx::IFont* font, const lgfx
   if (kNarrow && g_lcd.textWidth(text) > kW - 8) g_lcd.setFont(smaller);
 }
 
+// A status's message (or label) as the screen draws it: one line when it fits across the
+// whole screen in bold 12 pt, else wrapped to two (app/src/lib/screen.ts statusLines()).
+// A narrow screen first tries a smaller font on one line, like setFittingFont().
+static constexpr int kStatusLineGap = 26;
+static bzzy::Wrapped statusLines(const char* text) {
+  bzzy::Wrapped one;
+  one.count = 1;
+  const size_t n = strlen(text);
+  if (bzzy::textWidth(text, n, bzzy::Font::Bold12) <= kW) return one;
+  if (kNarrow) {
+    g_lcd.setFont(&fonts::FreeSansBold9pt7b);
+    if (g_lcd.textWidth(text) <= kW - 8) return one;
+  }
+  return bzzy::wrapBar(text, kTextW);
+}
+
+// Wrapped lines, centred, the first one's top at y and each `gap` below the last.
+static void drawLinesAt(const char* text, const bzzy::Wrapped& w, int y, int gap, uint16_t bg,
+                        const lgfx::IFont* font = nullptr) {
+  g_lcd.setTextDatum(lgfx::top_center);
+  g_lcd.setFont(font ? font : fontFor(w.font));
+  g_lcd.setTextColor(TFT_WHITE, bg);
+  char line[bzzy::kTextMax];
+  for (size_t i = 0; i < w.count; ++i) {
+    const size_t len = w.lines[i].len < sizeof(line) - 1 ? w.lines[i].len : sizeof(line) - 1;
+    memcpy(line, text + w.lines[i].start, len);
+    line[len] = '\0';
+    g_lcd.drawString(line, kW / 2, y + (int)i * gap);
+  }
+}
+
 // Wrapped lines, centred, the first one's top at y.
 static void drawLines(const char* text, const bzzy::Wrapped& w, int y, uint16_t bg) {
   g_lcd.setTextDatum(lgfx::top_center);
@@ -316,9 +347,16 @@ static void redraw(const View& v) {
     // One line in the bar; drawString would drop the '\n' and run "DO NOTDISTURB" together.
     const char* label = v.status == bzzy::Status::Dnd ? "DO NOT DISTURB" : labelFor(v.status);
     const char* line = v.text && *v.text ? v.text : label;
-    setFittingFont(line, &fonts::FreeSansBold12pt7b, &fonts::FreeSansBold9pt7b);
-    g_lcd.drawString(line, kW / 2, kGifH + kDy + 12);
-    drawUntil(v.until, kGifH + kDy + 46, bg);
+    const bzzy::Wrapped w = statusLines(line);
+    if (w.count > 1) {
+      // Too wide for one line: two, a little tighter, with the end time under them.
+      drawLinesAt(line, w, kGifH + kDy + 3, kStatusLineGap, bg);
+      drawUntil(v.until, kGifH + kDy + 57, bg);
+    } else {
+      setFittingFont(line, &fonts::FreeSansBold12pt7b, &fonts::FreeSansBold9pt7b);
+      g_lcd.drawString(line, kW / 2, kGifH + kDy + 12);
+      drawUntil(v.until, kGifH + kDy + 46, bg);
+    }
   } else {
     g_lcd.fillScreen(bg);
     g_lcd.setTextColor(TFT_WHITE, bg);
@@ -332,12 +370,17 @@ static void redraw(const View& v) {
     } else {
       g_lcd.drawString(label, kW / 2, kDy + 120);
     }
-    if (v.text && *v.text) {
+    const bzzy::Wrapped w = v.text && *v.text ? statusLines(v.text) : bzzy::Wrapped{};
+    if (w.count > 1) {
+      // Two lines of the message, wrapped the same way as in the bar (regular weight here,
+      // which is narrower than the bold widths it was wrapped with, so it always fits).
+      drawLinesAt(v.text, w, kDy + 166, kStatusLineGap, bg, &fonts::FreeSans12pt7b);
+    } else if (v.text && *v.text) {
       setFittingFont(v.text, &fonts::FreeSans12pt7b, &fonts::FreeSans9pt7b);
       g_lcd.setTextDatum(lgfx::top_center);
       g_lcd.drawString(v.text, kW / 2, kDy + 180);
     }
-    drawUntil(v.until, kDy + 220, bg);
+    drawUntil(v.until, kDy + 222, bg);
   }
 
   if (v.notice && *v.notice) {

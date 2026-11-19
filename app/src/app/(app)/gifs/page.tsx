@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { Suspense } from "react";
 
-import { ImageIcon } from "@/components/icons";
+import { ImageIcon, PlayIcon } from "@/components/icons";
 import { SignIn } from "@/components/sign-in";
-import { Badge, Container, EmptyState, PageHeader } from "@/components/ui";
+import { Badge, buttonClass, Container, EmptyState, PageHeader } from "@/components/ui";
 import { BUILTIN_GIFS, gifsForUser } from "@/lib/gifs";
 import { getCurrentUser } from "@/lib/session";
+import { teamsForUser } from "@/lib/teams";
 
 import { AddGifCard, DeleteGifButton } from "./gif-forms";
 
@@ -36,9 +38,9 @@ function Tile({
 }) {
   return (
     <li className="overflow-hidden rounded-2xl border border-line bg-card shadow-card">
-      <div className="flex aspect-[6/5] items-center justify-center bg-[#0b0b0c]">
+      <div className="relative aspect-[6/5] bg-[#0b0b0c]">
         {/* eslint-disable-next-line @next/next/no-img-element -- animated GIFs, already sized */}
-        <img src={src} alt={name} loading="lazy" className="max-h-full max-w-full" />
+        <img src={src} alt={name} loading="lazy" className="absolute inset-0 m-auto max-h-full max-w-full" />
       </div>
       <div className="flex items-center gap-2 p-3">
         <div className="min-w-0 flex-1">
@@ -52,12 +54,29 @@ function Tile({
   );
 }
 
+// Opens the Status page with this GIF picked in Show something, on the preview, ready to send.
+function ShowNowLink({ choice, name }: { choice: string; name: string }) {
+  return (
+    <Link
+      href={`/?show=${encodeURIComponent(choice)}#show`}
+      aria-label={`Show ${name} now`}
+      title="Show it now"
+      className={buttonClass("ghost", "icon-sm")}
+    >
+      <PlayIcon />
+    </Link>
+  );
+}
+
 const GRID = "grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4";
 
 async function GifsContent() {
   const user = await getCurrentUser();
   if (!user) return <SignIn />;
-  const uploads = await gifsForUser(user.id);
+  const [uploads, teams] = await Promise.all([gifsForUser(user.id), teamsForUser(user.id)]);
+  // Uploads to a shared team are everyone's in it: say which team, so a GIF someone else
+  // added isn't a surprise.
+  const shared = new Map(teams.filter((t) => !t.personal).map((t) => [t.id, t.name]));
 
   return (
     <div className="space-y-6">
@@ -69,7 +88,7 @@ async function GifsContent() {
       <AddGifCard />
 
       <section className="space-y-4">
-        <h2 className="font-semibold tracking-tight">Yours</h2>
+        <h2 className="font-semibold tracking-tight">Uploaded</h2>
         {uploads.length === 0 ? (
           <EmptyState icon={<ImageIcon />} title="Nothing uploaded yet">
             GIFs you upload or add from a link show up here, ready to pick on the Devices page.
@@ -77,7 +96,8 @@ async function GifsContent() {
         ) : (
           <ul className={GRID}>
             {uploads.map((g) => (
-              <Tile key={g.id} src={`/api/gifs/${g.id}`} name={g.name} note={`${Math.round(g.bytes / 1024)} KB`}>
+              <Tile key={g.id} src={`/api/gifs/${g.id}`} name={g.name} note={[`${Math.round(g.bytes / 1024)} KB`, shared.get(g.teamId)].filter(Boolean).join(" · ")}>
+                <ShowNowLink choice={`asset:${g.id}`} name={g.name} />
                 <DeleteGifButton id={g.id} name={g.name} />
               </Tile>
             ))}
@@ -94,7 +114,9 @@ async function GifsContent() {
               src={g.path}
               name={g.name}
               badge={g.status ? `Made for ${g.status === "dnd" ? "do not disturb" : g.status}` : "Any status"}
-            />
+            >
+              <ShowNowLink choice={`builtin:${g.id}`} name={g.name} />
+            </Tile>
           ))}
         </ul>
       </section>

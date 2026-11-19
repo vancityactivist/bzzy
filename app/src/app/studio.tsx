@@ -4,7 +4,8 @@
 // hover, pick or type shows on the preview straight away, before it's sent; the
 // caption says whether you're looking at your screen as it is or a draft.
 
-import { createContext, useActionState, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { createContext, Fragment, useActionState, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { useFormStatus } from "react-dom";
 
 import Link from "next/link";
 
@@ -16,13 +17,14 @@ import { parseGifLink } from "@/lib/gif-link";
 import { type Status, STATUSES, TEXT_MAX } from "@/lib/protocol";
 import { type RingChoice, RingPicker } from "@/components/ring-picker";
 import { type LedStyle, PUSH_FLASHES, pushLeds } from "@/lib/push-rules";
-import { LED_RGB, screenText, type ScreenView, viewFor, withShow, wrapBar, wrapMessage } from "@/lib/screen";
+import { LED_RGB, screenText, statusCut, type ScreenView, viewFor, withShow, wrapBar, wrapMessage } from "@/lib/screen";
 
 import { clearShowAction, setStatus, showNowAction, type ShowNowResult } from "./actions";
 
 export type PreviewDevice = {
   id: string;
   name: string;
+  offline?: string | null; // "Offline · seen 3 days ago" when the light isn't checking in
   view: ScreenView; // the status part, as it is now
   gifs: Record<Status, string | null>;
   ring?: LedStyle | null; // what the ring is doing now (a push, a show, a meeting warning, the status's style)
@@ -42,7 +44,19 @@ export type LiveShow = {
   leds?: LedStyle | null; // their own show's ring
 };
 
-export type LibraryGif = { choice: string; name: string; src: string };
+// builtin: one of the GIFs that come with bzzy; the pickers list them after your own,
+// under a "Built in" label.
+export type LibraryGif = { choice: string; name: string; src: string; builtin?: boolean };
+
+/** True for the first built-in GIF when there are uploads before it: where the label goes. */
+export function startsBuiltins(library: LibraryGif[], i: number) {
+  return !!library[i].builtin && i > 0 && !library[i - 1].builtin;
+}
+
+/** The "Built in" label across a GIF grid. */
+export function GridLabel({ children }: { children: React.ReactNode }) {
+  return <p className="col-span-full pt-1 text-xs font-medium text-muted">{children}</p>;
+}
 
 // minutes: how long to set it for, or KEEP_UNTIL for "keep the end time it has now"
 // (keepUntil, 0 = no end), offered while a status you set is on.
@@ -90,8 +104,18 @@ const useStudio = () => {
   return c;
 };
 
-export function StudioProvider({ library, live, children }: { library: LibraryGif[]; live: LiveShow | null; children: React.ReactNode }) {
-  const [focus, setFocus] = useState<Ctx["focus"]>(null);
+export function StudioProvider({
+  library,
+  live,
+  initialShow,
+  children,
+}: {
+  library: LibraryGif[];
+  live: LiveShow | null;
+  initialShow?: string; // a GIF to start with picked ("Show now" on the GIFs page)
+  children: React.ReactNode;
+}) {
+  const [focus, setFocus] = useState<Ctx["focus"]>(initialShow ? "show" : null);
   const [status, setStatusState] = useState<StatusDraft>({
     status: null,
     text: "",
@@ -100,7 +124,7 @@ export function StudioProvider({ library, live, children }: { library: LibraryGi
   });
   // Stable, so the status form can sync the draft from an effect.
   const setStatus = useCallback((d: Partial<StatusDraft>) => setStatusState((s) => ({ ...s, ...d })), []);
-  const [show, setShowState] = useState<ShowDraft>(EMPTY_SHOW);
+  const [show, setShowState] = useState<ShowDraft>(initialShow ? { ...EMPTY_SHOW, choice: initialShow } : EMPTY_SHOW);
   const value = useMemo<Ctx>(
     () => ({
       library,
@@ -214,6 +238,12 @@ export function StudioPreview({
                 Preview<span className="max-sm:hidden">, not sent yet</span>
               </span>
             </Badge>
+          ) : device.offline ? (
+            // Not "on your screen now": the light hasn't checked in, so it may show something older.
+            <Badge aria-live="polite" title="It shows this once it's back online">
+              <span aria-hidden className="size-1.5 rounded-full border border-muted" />
+              {device.offline}
+            </Badge>
           ) : (
             <Badge aria-live="polite">
               <span aria-hidden className="size-1.5 rounded-full bg-foreground/70" />
@@ -306,9 +336,10 @@ function Chips({
   onChange: (m: number) => void;
 }) {
   return (
-    <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
+    // One row: it scrolls sideways on a narrow phone rather than wrapping into a block.
+    <div className="relative -mx-1 flex gap-2 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
       {options.map((d) => (
-        <label key={d.minutes} className="cursor-pointer">
+        <label key={d.minutes} className="shrink-0 cursor-pointer">
           <input
             type="radio"
             name={name}
@@ -317,7 +348,7 @@ function Chips({
             onChange={() => onChange(d.minutes)}
             className="peer sr-only"
           />
-          <span className="flex h-10 items-center justify-center rounded-xl border border-line bg-card px-3.5 text-sm font-medium text-muted shadow-card transition-colors hover:border-line-strong hover:text-foreground peer-checked:border-foreground peer-checked:bg-foreground peer-checked:text-background peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-ring">
+          <span className="flex h-9 items-center justify-center rounded-full border border-line bg-card px-3.5 text-sm font-medium whitespace-nowrap text-muted shadow-card transition-colors hover:border-line-strong hover:text-foreground peer-checked:border-foreground peer-checked:bg-foreground peer-checked:text-background peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-ring">
             {d.label}
           </span>
         </label>
@@ -327,7 +358,7 @@ function Chips({
 }
 
 export function StatusControls({ active = null, className }: { active?: ActiveStatus | null; className?: string }) {
-  const { focus, setFocus, status, setStatus: setDraft, live } = useStudio();
+  const { setFocus, status, setStatus: setDraft, live } = useStudio();
   const form = useRef<HTMLFormElement>(null);
   // While a show has the screen, the status is only what the light glows.
   const covered = live !== null;
@@ -368,84 +399,51 @@ export function StatusControls({ active = null, className }: { active?: ActiveSt
         setDraft({ status: null });
         if (!form.current?.contains(document.activeElement)) setFocus(null);
       }}
-      className={cx("space-y-5", className)}
+      className={cx("space-y-4", className)}
     >
-      <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
-        {STATUSES.map((s) => {
-          const meta = STATUS_META[s];
-          const isActive = active?.status === s;
-          // Under the pointer or keyboard focus: what the preview is showing.
-          const previewing = focus === "status" && status.status === s && !isActive;
-          return (
-            <button
-              key={s}
-              name="status"
-              value={s}
-              aria-pressed={isActive}
-              aria-label={
-                isActive
-                  ? `${meta.label} (${covered ? "light colour only, the screen is showing something else" : "now"}${active?.source === "calendar" ? ", from your calendar" : ""})`
-                  : `Set ${meta.label}`
-              }
-              onMouseEnter={() => setDraft({ status: s })}
-              onFocus={() => setDraft({ status: s })}
-              className={cx(
-                "relative flex min-h-[4.25rem] flex-col items-start justify-between gap-2 rounded-xl border p-3 text-left shadow-card transition-[background-color,border-color,box-shadow] duration-150",
-                isActive
-                  ? cx("border-transparent ring-2", meta.ring, meta.tint)
-                  : cx("border-line bg-card", meta.hover, previewing && meta.soft),
-              )}
-            >
-              <span className="flex w-full items-center justify-between gap-2">
-                <StatusDot status={s} size="lg" />
-                {isActive && (
-                  <span
-                    className={cx(
-                      "flex h-5 items-center gap-0.5 rounded-full pr-2 pl-1 text-[0.6875rem] leading-none font-semibold text-white",
-                      meta.bg,
-                    )}
-                  >
-                    {active?.source === "calendar" ? <CalendarIcon className="size-3" strokeWidth={2.5} /> : <CheckIcon className="size-3" strokeWidth={3} />}
-                    {covered ? "Light" : "Now"}
-                  </span>
-                )}
-              </span>
-              <span className="text-sm leading-tight font-semibold">{meta.label}</span>
-            </button>
-          );
-        })}
-      </div>
-
-      <fieldset>
-        <legend className="mb-1.5 text-sm font-medium">For how long</legend>
+      {/* How long and what it says come first, so one tap on a status sends all of it. */}
+      <fieldset className="min-w-0">
+        <legend className="mb-1.5 text-sm font-medium">For</legend>
         <Chips name="minutes" options={durations} value={status.minutes} onChange={(m) => setDraft({ minutes: m })} />
       </fieldset>
 
-      <Field
-        label="Message"
-        htmlFor="status-text"
-        hint={
-          sendWith
-            ? `Shown under the status on the screen. Optional. Press Enter to send it with ${STATUS_META[sendWith].label}.`
-            : "Shown under the status on the screen. Optional. Pick a status above to send it."
-        }
-      >
-        <Input
-          id="status-text"
-          name="text"
-          maxLength={TEXT_MAX}
-          value={status.text}
-          onChange={(e) => setDraft({ text: e.target.value })}
-          onKeyDown={(e) => {
-            if (e.key !== "Enter" || e.nativeEvent.isComposing) return;
-            e.preventDefault();
-            const button = sendWith && form.current?.querySelector<HTMLButtonElement>(`button[name="status"][value="${sendWith}"]`);
-            if (button) form.current?.requestSubmit(button);
-          }}
-          placeholder="On a call, back at 3"
-          autoComplete="off"
-        />
-      </Field>
+      <div>
+        <label htmlFor="status-text" className="sr-only">
+          Message
+        </label>
+      <Input
+        id="status-text"
+        aria-describedby="status-text-hint"
+        name="text"
+        maxLength={TEXT_MAX}
+        value={status.text}
+        onChange={(e) => setDraft({ text: e.target.value })}
+        onKeyDown={(e) => {
+          if (e.key !== "Enter" || e.nativeEvent.isComposing) return;
+          e.preventDefault();
+          const button = sendWith && form.current?.querySelector<HTMLButtonElement>(`button[name="status"][value="${sendWith}"]`);
+          if (button) form.current?.requestSubmit(button);
+        }}
+        placeholder="Add a message, like On a call"
+        autoComplete="off"
+      />
+        <p id="status-text-hint" className="mt-1.5 text-xs text-muted" aria-live="polite">
+          {statusCut(status.text) !== null ? (
+            // Two lines is all the bar has: say what will show before it's sent.
+            <span className="text-danger">Only “{statusCut(status.text)}” fits. Shorten it, or use Show something for a longer message.</span>
+          ) : status.text.trim() && screenText(status.text.trim()) !== status.text.trim() ? (
+            "The screen only has plain letters: emoji and accents are left out."
+          ) : sendWith ? (
+            <>
+              Optional, shown under your status.<span className="max-sm:hidden"> Press Enter to send it with {STATUS_META[sendWith].label}.</span>
+            </>
+          ) : (
+            "Optional, shown under your status."
+          )}
+        </p>
+      </div>
+
+      <StatusTiles active={active} covered={covered} />
 
       {manual && changed && (
         <div className="flex justify-end">
@@ -455,6 +453,76 @@ export function StatusControls({ active = null, className }: { active?: ActiveSt
         </div>
       )}
     </form>
+  );
+}
+
+// The four status buttons. Tapping one sends the form; until the page comes back, the one
+// you tapped says so and the others wait, so a slow connection doesn't look like a dead tap.
+function StatusTiles({ active, covered }: { active: ActiveStatus | null; covered: boolean }) {
+  const { focus, status, setStatus: setDraft } = useStudio();
+  const { pending, data } = useFormStatus();
+  const sending = pending ? (data?.get("status") as Status | null) : null;
+  return (
+    <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4" aria-busy={pending || undefined}>
+      {STATUSES.map((s) => {
+        const meta = STATUS_META[s];
+        const isActive = sending ? sending === s : active?.status === s;
+        // Under the pointer or keyboard focus: what the preview is showing.
+        const previewing = focus === "status" && status.status === s && !isActive;
+        return (
+          <button
+            key={s}
+            name="status"
+            value={s}
+            aria-pressed={isActive}
+            aria-disabled={pending || undefined}
+            aria-label={
+              sending === s
+                ? `Setting ${meta.label}`
+                : isActive
+                  ? `${meta.label} (${covered ? "light colour only, the screen is showing something else" : "now"}${active?.source === "calendar" ? ", from your calendar" : ""})`
+                  : `Set ${meta.label}`
+            }
+            onClick={(e) => {
+              // One at a time: a second tap while the first is on its way is ignored.
+              if (pending) e.preventDefault();
+            }}
+            onMouseEnter={() => setDraft({ status: s })}
+            onFocus={() => setDraft({ status: s })}
+            className={cx(
+              "relative flex min-h-[4.25rem] flex-col items-start justify-between gap-2 rounded-xl border p-3 text-left shadow-card transition-[background-color,border-color,box-shadow,opacity] duration-150",
+              isActive
+                ? cx("border-transparent ring-2", meta.ring, meta.tint)
+                : cx("border-line bg-card", meta.hover, previewing && meta.soft),
+              pending && sending !== s && "opacity-60",
+            )}
+          >
+            <span className="flex w-full items-center justify-between gap-2">
+              <StatusDot status={s} size="lg" />
+              {sending === s ? (
+                <span className={cx("flex h-5 items-center gap-1 rounded-full px-2 text-[0.6875rem] leading-none font-semibold text-white", meta.bg)}>
+                  <span aria-hidden className="size-2.5 rounded-full border-[1.5px] border-white/40 border-t-white motion-safe:animate-spin" />
+                  Setting
+                </span>
+              ) : (
+                isActive && (
+                  <span
+                    className={cx(
+                      "flex h-5 items-center gap-0.5 rounded-full pr-2 pl-1 text-[0.6875rem] leading-none font-semibold text-white",
+                      meta.bg,
+                    )}
+                  >
+                    {active?.source === "calendar" ? <CalendarIcon className="size-3" strokeWidth={2.5} /> : <CheckIcon className="size-3" strokeWidth={3} />}
+                    {covered ? "Light" : "Now"}
+                  </span>
+                )
+              )}
+            </span>
+            <span className="text-sm leading-tight font-semibold">{meta.label}</span>
+          </button>
+        );
+      })}
+    </div>
   );
 }
 
@@ -484,6 +552,7 @@ export function ShowNowControls({ className, flashOff = false }: { className?: s
   const [ringing, setRinging] = useState(false); // the ring effect
   const [textOnly, setTextOnly] = useState(false); // the "Aa" tile: a message, no GIF
   const [fileName, setFileName] = useState("");
+  const [fileError, setFileError] = useState<string | null>(null);
 
   const [result, action, pending] = useActionState<ShowNowResult, FormData>(async (prev, fd) => {
     const r = await showNowAction(prev, fd);
@@ -565,37 +634,38 @@ export function ShowNowControls({ className, flashOff = false }: { className?: s
       )}
 
       <form ref={form} action={action} onFocus={() => setFocus("show")} className="space-y-4">
-        <div
-          role="radiogroup"
-          aria-label="GIF to show"
-          className="-mx-1.5 -mt-1.5 grid max-h-[17rem] grid-cols-[repeat(auto-fill,minmax(4.25rem,1fr))] gap-2.5 overflow-y-auto p-1.5"
-          onMouseEnter={() => setFocus("show")}
-          onMouseLeave={() => setShow({ hover: null })}
-        >
-          <button
-            type="button"
-            aria-expanded={adding}
-            aria-label="Add a GIF from a link or a file"
-            title="Add a GIF from a link or a file"
-            onClick={() => setAdding((a) => !a)}
-            className={cx(
-              "flex aspect-square flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed text-muted transition-colors hover:border-line-strong hover:bg-subtle hover:text-foreground",
-              adding || usingOther ? "border-foreground text-foreground" : "border-line-strong/70",
-            )}
+        {/* The scroll box wraps the grid rather than being it: Safari squashes the
+            rows of a height-capped grid, so square tiles spill into the next row. */}
+        <div className="-mx-1.5 -mt-1.5 max-h-[17rem] overflow-y-auto p-1.5">
+          <div
+            role="radiogroup"
+            aria-label="GIF to show"
+            className="grid grid-cols-[repeat(auto-fill,minmax(4.25rem,1fr))] gap-2.5"
+            onMouseEnter={() => setFocus("show")}
+            onMouseLeave={() => setShow({ hover: null })}
           >
-            <PlusIcon className="size-5" />
-            <span className="text-[0.6875rem] leading-none font-medium">Add</span>
-          </button>
-          <Tile name="Just a message" checked={!usingOther && textOnly} onPick={() => pick(TEXT_ONLY)} />
-          {library.map((g) => (
-            <Tile
-              key={g.choice}
-              name={g.name}
-              gif={g}
-              checked={!usingOther && !textOnly && show.choice === g.choice}
-              onPick={() => pick(g.choice)}
-            />
-          ))}
+            <button
+              type="button"
+              aria-expanded={adding}
+              aria-label="Add a GIF from a link or a file"
+              title="Add a GIF from a link or a file"
+              onClick={() => setAdding((a) => !a)}
+              className={cx(
+                "flex aspect-square flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed text-muted transition-colors hover:border-line-strong hover:bg-subtle hover:text-foreground",
+                adding || usingOther ? "border-foreground text-foreground" : "border-line-strong/70",
+              )}
+            >
+              <PlusIcon className="size-5" />
+              <span className="text-[0.6875rem] leading-none font-medium">Add</span>
+            </button>
+            <Tile name="Just a message" checked={!usingOther && textOnly} onPick={() => pick(TEXT_ONLY)} />
+            {library.map((g, i) => (
+              <Fragment key={g.choice}>
+                {startsBuiltins(library, i) && <GridLabel>Built in</GridLabel>}
+                <Tile name={g.name} gif={g} checked={!usingOther && !textOnly && show.choice === g.choice} onPick={() => pick(g.choice)} />
+              </Fragment>
+            ))}
+          </div>
         </div>
         {/* The choice goes with the form; tiles are buttons so tapping one previews it. */}
         <input type="hidden" name="gif" value={textOnly ? TEXT_ONLY : show.choice} />
@@ -632,6 +702,11 @@ export function ShowNowControls({ className, flashOff = false }: { className?: s
               </Button>
               {show.fileSrc && <span className="min-w-0 truncate">{fileName}</span>}
             </div>
+            {fileError && (
+              <p className="text-xs text-danger" role="alert">
+                {fileError}
+              </p>
+            )}
             <input
               ref={file}
               name="file"
@@ -642,9 +717,10 @@ export function ShowNowControls({ className, flashOff = false }: { className?: s
                 const f = e.target.files?.[0];
                 if (f && f.size > MAX_UPLOAD) {
                   e.target.value = "";
-                  alert("That file is over 4 MB.");
+                  setFileError(`${f.name} is over 4 MB. Try a smaller GIF.`);
                   return;
                 }
+                setFileError(null);
                 setFocus("show");
                 setFileName(f?.name ?? "");
                 setShow({ fileSrc: f ? URL.createObjectURL(f) : null });
@@ -681,7 +757,7 @@ export function ShowNowControls({ className, flashOff = false }: { className?: s
         ) : null}
 
         {ringing && (
-          <fieldset onMouseEnter={() => setFocus("show")}>
+          <fieldset className="min-w-0" onMouseEnter={() => setFocus("show")}>
             <legend className="mb-1.5 text-sm font-medium">Ring</legend>
             <RingPicker
               value={show.ring}
@@ -742,6 +818,7 @@ export function ShowNowControls({ className, flashOff = false }: { className?: s
               </option>
             ))}
           </Select>
+          {!ready && !pending && <p className="text-sm text-muted">Pick a GIF or write a message first.</p>}
           {result?.ok === false && (
             <p className="basis-full text-sm text-danger" role="alert">
               {result.error}
@@ -772,7 +849,7 @@ function Tile({ name, gif, checked, onPick }: { name: string; gif?: LibraryGif; 
     >
       {gif ? (
         // eslint-disable-next-line @next/next/no-img-element -- animated GIFs, already sized
-        <img src={gif.src} alt="" loading="lazy" className="max-h-full max-w-full" />
+        <img src={gif.src} alt="" loading="lazy" className="absolute inset-0 m-auto max-h-full max-w-full" />
       ) : (
         <span className="flex flex-col items-center gap-1 text-white/85">
           <span className="text-lg leading-none font-semibold">Aa</span>
