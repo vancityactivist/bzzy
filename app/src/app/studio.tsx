@@ -634,34 +634,38 @@ export function ShowNowControls({ className, flashOff = false }: { className?: s
       )}
 
       <form ref={form} action={action} onFocus={() => setFocus("show")} className="space-y-4">
-        <div
-          role="radiogroup"
-          aria-label="GIF to show"
-          className="-mx-1.5 -mt-1.5 grid max-h-[17rem] grid-cols-[repeat(auto-fill,minmax(4.25rem,1fr))] gap-2.5 overflow-y-auto p-1.5"
-          onMouseEnter={() => setFocus("show")}
-          onMouseLeave={() => setShow({ hover: null })}
-        >
-          <button
-            type="button"
-            aria-expanded={adding}
-            aria-label="Add a GIF from a link or a file"
-            title="Add a GIF from a link or a file"
-            onClick={() => setAdding((a) => !a)}
-            className={cx(
-              "flex aspect-square flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed text-muted transition-colors hover:border-line-strong hover:bg-subtle hover:text-foreground",
-              adding || usingOther ? "border-foreground text-foreground" : "border-line-strong/70",
-            )}
+        {/* The scroll box wraps the grid rather than being it: Safari squashes the
+            rows of a height-capped grid, so square tiles spill into the next row. */}
+        <div className="-mx-1.5 -mt-1.5 max-h-[17rem] overflow-y-auto p-1.5">
+          <div
+            role="radiogroup"
+            aria-label="GIF to show"
+            className="grid grid-cols-[repeat(auto-fill,minmax(4.25rem,1fr))] gap-2.5"
+            onMouseEnter={() => setFocus("show")}
+            onMouseLeave={() => setShow({ hover: null })}
           >
-            <PlusIcon className="size-5" />
-            <span className="text-[0.6875rem] leading-none font-medium">Add</span>
-          </button>
-          <Tile name="Just a message" checked={!usingOther && textOnly} onPick={() => pick(TEXT_ONLY)} />
-          {library.map((g, i) => (
-            <Fragment key={g.choice}>
-              {startsBuiltins(library, i) && <GridLabel>Built in</GridLabel>}
-              <Tile name={g.name} gif={g} checked={!usingOther && !textOnly && show.choice === g.choice} onPick={() => pick(g.choice)} />
-            </Fragment>
-          ))}
+            <button
+              type="button"
+              aria-expanded={adding}
+              aria-label="Add a GIF from a link or a file"
+              title="Add a GIF from a link or a file"
+              onClick={() => setAdding((a) => !a)}
+              className={cx(
+                "flex aspect-square flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed text-muted transition-colors hover:border-line-strong hover:bg-subtle hover:text-foreground",
+                adding || usingOther ? "border-foreground text-foreground" : "border-line-strong/70",
+              )}
+            >
+              <PlusIcon className="size-5" />
+              <span className="text-[0.6875rem] leading-none font-medium">Add</span>
+            </button>
+            <Tile name="Just a message" checked={!usingOther && textOnly} onPick={() => pick(TEXT_ONLY)} />
+            {library.map((g, i) => (
+              <Fragment key={g.choice}>
+                {startsBuiltins(library, i) && <GridLabel>Built in</GridLabel>}
+                <Tile name={g.name} gif={g} checked={!usingOther && !textOnly && show.choice === g.choice} onPick={() => pick(g.choice)} />
+              </Fragment>
+            ))}
+          </div>
         </div>
         {/* The choice goes with the form; tiles are buttons so tapping one previews it. */}
         <input type="hidden" name="gif" value={textOnly ? TEXT_ONLY : show.choice} />

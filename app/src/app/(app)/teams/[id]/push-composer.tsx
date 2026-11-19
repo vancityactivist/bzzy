@@ -59,18 +59,21 @@ export function PushComposer({ teamId, members, library }: { teamId: string; mem
         <div className="min-w-0 space-y-5">
           <fieldset>
             <legend className="text-sm font-medium">GIF</legend>
-            <div
-              role="radiogroup"
-              aria-label="GIF to show"
-              className="-mx-1.5 mt-1.5 grid max-h-[11.5rem] grid-cols-[repeat(auto-fill,minmax(3.75rem,1fr))] gap-2 overflow-y-auto p-1.5"
-            >
-              <Tile name="Just a message" checked={gif === TEXT_ONLY} onPick={() => setGif(TEXT_ONLY)} />
-              {library.map((g, i) => (
-                <Fragment key={g.choice}>
-                  {startsBuiltins(library, i) && <GridLabel>Built in</GridLabel>}
-                  <Tile name={g.name} src={g.src} checked={gif === g.choice} onPick={() => setGif(g.choice)} />
-                </Fragment>
-              ))}
+            {/* Scroll box around the grid, not on it: see the Show now picker. */}
+            <div className="-mx-1.5 mt-1.5 max-h-[11.5rem] overflow-y-auto p-1.5">
+              <div
+                role="radiogroup"
+                aria-label="GIF to show"
+                className="grid grid-cols-[repeat(auto-fill,minmax(3.75rem,1fr))] gap-2"
+              >
+                <Tile name="Just a message" checked={gif === TEXT_ONLY} onPick={() => setGif(TEXT_ONLY)} />
+                {library.map((g, i) => (
+                  <Fragment key={g.choice}>
+                    {startsBuiltins(library, i) && <GridLabel>Built in</GridLabel>}
+                    <Tile name={g.name} src={g.src} checked={gif === g.choice} onPick={() => setGif(g.choice)} />
+                  </Fragment>
+                ))}
+              </div>
             </div>
             <input type="hidden" name="gif" value={gif} />
           </fieldset>
