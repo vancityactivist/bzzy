@@ -154,7 +154,7 @@ uint32_t pollIntervalSec(const State& st, uint32_t minSec, uint32_t maxSec);
 // while the server still sends it.
 void mergeFromServer(State& cached, const State& fromServer, uint32_t now);
 
-// Button press or screen tap: Free -> Busy -> Dnd -> back to automatic (override cleared).
+// Button press or screen tap: Free -> Busy -> Dnd -> Away -> back to automatic (override cleared).
 void cycleLocalOverride(State& st, uint32_t now);
 
 // Long press on the screen: straight back to automatic (calendar / default).

@@ -138,7 +138,7 @@ pio device monitor
 
 A green check and two green flashes on the ring mark each finished step. To change the Wi-Fi later, hold the top button (or BOOT) for 3 seconds while plugging it in; that keeps the light paired. Deleting a light in the app makes it show a new pairing code. Setting the device ID and token by hand still works, under *Advanced* on the setup page. Details in [docs/protocol.md](docs/protocol.md#setting-up-a-light).
 
-**Controls:** tap the screen (or press BOOT, or the top button on the final hardware) to step Free → Busy → Do not disturb → back to automatic. Long-press the screen or the top button for one second to go straight back to automatic (calendar or default).
+**Controls:** tap the screen (or press BOOT, or the top button on the final hardware) to step Free → Busy → Do not disturb → Away → back to automatic. Long-press the screen or the top button for one second to go straight back to automatic (calendar or default).
 
 **Updates:** after the first USB flash, lights update themselves over Wi-Fi from GitHub Releases: push a tag like `fw-v0.3.0`. Updates are signed, wait until you're free or away, and roll back if the new firmware can't reach the app. See [docs/ota.md](docs/ota.md) for the one-time setup (a signing key).
 

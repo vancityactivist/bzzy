@@ -76,7 +76,7 @@ WS2812B at 5 V officially wants a 3.5 V data signal and the ESP32 gives 3.3 V. I
 
 ### Button
 
-One leg to **GPIO27**, the other to GND. No resistor needed (the firmware turns on the pull-up). It works like the real light's top button: a short press steps Free → Busy → Do not disturb → automatic, holding for one second goes straight back to automatic, and holding it for 3 seconds while plugging in opens the Wi-Fi setup page. BOOT steps the status too.
+One leg to **GPIO27**, the other to GND. No resistor needed (the firmware turns on the pull-up). It works like the real light's top button: a short press steps Free → Busy → Do not disturb → Away → automatic, holding for one second goes straight back to automatic, and holding it for 3 seconds while plugging in opens the Wi-Fi setup page. BOOT steps the status too.
 
 ### All the pins at once
 

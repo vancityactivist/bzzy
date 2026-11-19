@@ -142,6 +142,8 @@ void cycleLocalOverride(State& st, uint32_t now) {
     o.status = Status::Busy;
   } else if (o.status == Status::Busy) {
     o.status = Status::Dnd;
+  } else if (o.status == Status::Dnd) {
+    o.status = Status::Away;
   } else {
     // Back to automatic. Keep a tombstone so a stale server override
     // from before this press doesn't immediately reappear.
