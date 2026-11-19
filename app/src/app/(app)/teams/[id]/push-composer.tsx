@@ -10,7 +10,7 @@ import { TEXT_MAX } from "@/lib/protocol";
 import { PUSH_DURATIONS, pushLeds } from "@/lib/push-rules";
 import { screenText, viewFor, withShow, wrapBar, wrapMessage } from "@/lib/screen";
 
-import { GridLabel, type LibraryGif, startsBuiltins } from "@/app/studio";
+import { GridLabel, type LibraryGif, sectionLabel } from "@/app/studio";
 import { endPushAction, type PushResult, sendPushAction } from "../actions";
 
 const TEXT_ONLY = "none";
@@ -69,7 +69,7 @@ export function PushComposer({ teamId, members, library }: { teamId: string; mem
                 <Tile name="Just a message" checked={gif === TEXT_ONLY} onPick={() => setGif(TEXT_ONLY)} />
                 {library.map((g, i) => (
                   <Fragment key={g.choice}>
-                    {startsBuiltins(library, i) && <GridLabel>Built in</GridLabel>}
+                    {sectionLabel(library, i) && <GridLabel>{sectionLabel(library, i)}</GridLabel>}
                     <Tile name={g.name} src={g.src} checked={gif === g.choice} onPick={() => setGif(g.choice)} />
                   </Fragment>
                 ))}

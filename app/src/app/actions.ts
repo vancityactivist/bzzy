@@ -29,7 +29,8 @@ import { newTokenInput } from "@/lib/api-rules";
 import { takeLimit } from "@/lib/api-limits";
 import { createApiToken, revokeApiToken, setApiBlocked, TokenError } from "@/lib/api-tokens";
 import { GifError } from "@/lib/gif-process";
-import { checkGifChoice, deleteGif, importGifFromLink, setDeviceGif, uploadGif } from "@/lib/gifs";
+import { checkGifChoice, deleteGif, importGifFromLink, renameGif, setDeviceGif, uploadGif } from "@/lib/gifs";
+import { noteShown, setFavourite } from "@/lib/gif-prefs";
 import { PasskeyError, renamePasskey, revokePasskey } from "@/lib/passkeys";
 import { getPresence, setPresence } from "@/lib/presence";
 import { clipText, nowSeconds, STATUSES } from "@/lib/protocol";
@@ -177,6 +178,8 @@ export async function showNowAction(_prev: ShowNowResult, formData: FormData): P
   if (!choice.assetId && !choice.builtin && !text) return { ok: false, error: "Pick a GIF or type a message first." };
 
   const now = nowSeconds();
+  const shown = choice.assetId ? `asset:${choice.assetId}` : choice.builtin ? `builtin:${choice.builtin}` : null;
+  if (shown) await noteShown(user.id, shown, now);
   await setShow(user.id, {
     ...choice,
     text,
@@ -440,6 +443,34 @@ export async function importGifLinkAction(_prev: GifUploadResult, formData: Form
 export async function deleteGifAction(assetId: string) {
   const user = await requireUser();
   await deleteGif(user.id, assetId);
+  refresh();
+}
+
+// Several at once (the library's Select mode). Ones this person can't delete are skipped.
+export async function deleteGifsAction(assetIds: string[]): Promise<{ deleted: number }> {
+  const user = await requireUser();
+  const ids = z.array(z.string().max(100)).max(500).safeParse(assetIds);
+  if (!ids.success) return { deleted: 0 };
+  let deleted = 0;
+  for (const id of new Set(ids.data)) if (await deleteGif(user.id, id)) deleted++;
+  refresh();
+  return { deleted };
+}
+
+export async function renameGifAction(assetId: string, raw: string): Promise<{ ok: true; name: string } | { ok: false; error: string }> {
+  const user = await requireUser();
+  const name = z.string().trim().min(1).max(60).safeParse(raw);
+  if (!name.success) return { ok: false, error: "Give it a name, up to 60 characters." };
+  if (!(await renameGif(user.id, assetId, name.data))) return { ok: false, error: "You can't rename that one." };
+  refresh();
+  return { ok: true, name: name.data };
+}
+
+export async function setFavouriteAction(choice: string, favourite: boolean) {
+  const user = await requireUser();
+  // Only GIFs this person can see; checkGifChoice says no to anything else.
+  if (!(await checkGifChoice(user.id, choice))) return;
+  await setFavourite(user.id, choice, favourite);
   refresh();
 }
 

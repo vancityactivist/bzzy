@@ -9,6 +9,7 @@ import { refreshStaleCalendars, scheduleForUser } from "@/lib/calendar";
 import { devicesForUser } from "@/lib/devices";
 import { BUILTIN_GIFS, defaultPreviewSrcs, gifsForUser, previewSrc, resolveDeviceGifs } from "@/lib/gifs";
 import { isOnline } from "@/lib/poll-writes";
+import { gifPrefsForUser } from "@/lib/gif-prefs";
 import { getPresence } from "@/lib/presence";
 import { nowSeconds, showVisible, STATUSES } from "@/lib/protocol";
 import { resolveScreen, screenText, viewFor } from "@/lib/screen";
@@ -83,17 +84,20 @@ async function HomeContent({ searchParams }: { searchParams: PageProps<"/">["sea
 
   const now = nowSeconds();
   await refreshStaleCalendars(user.id);
-  const [presence, { schedule }, devices, show, uploads] = await Promise.all([
+  const [presence, { schedule }, devices, show, uploads, prefs] = await Promise.all([
     getPresence(user.id),
     scheduleForUser(user.id, now),
     devicesForUser(user.id),
     getShow(user.id),
     gifsForUser(user.id),
+    gifPrefsForUser(user.id),
   ]);
   // "Show now" on the GIFs page links here with ?show=<choice>: start with it picked.
   const { show: picked } = await searchParams;
   const pick = typeof picked === "string" ? picked : undefined;
-  const library: LibraryGif[] = [
+  // Favourites first, then the few shown most recently, then the rest: with a big
+  // library, what you reach for is at the top of the Show now picker.
+  const all: LibraryGif[] = [
     ...uploads.map((g) => ({
       choice: `asset:${g.id}`,
       name: g.name,
@@ -105,6 +109,17 @@ async function HomeContent({ searchParams }: { searchParams: PageProps<"/">["sea
       src: g.path,
       builtin: true,
     })),
+  ];
+  const favourites = all.filter((g) => prefs.get(g.choice)?.favourite);
+  const recent = all
+    .filter((g) => !prefs.get(g.choice)?.favourite && (prefs.get(g.choice)?.lastShownAt ?? 0) > 0)
+    .sort((a, b) => prefs.get(b.choice)!.lastShownAt - prefs.get(a.choice)!.lastShownAt)
+    .slice(0, 6);
+  const lifted = new Set([...favourites, ...recent].map((g) => g.choice));
+  const library: LibraryGif[] = [
+    ...favourites.map((g) => ({ ...g, section: "Favourites" as const })),
+    ...recent.map((g) => ({ ...g, section: "Recently shown" as const })),
+    ...all.filter((g) => !lifted.has(g.choice)),
   ];
   // Lights that show this person's status (team devices can belong to others).
   // Online ones first, so the preview opens on a light that's showing what it says.
