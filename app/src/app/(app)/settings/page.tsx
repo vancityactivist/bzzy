@@ -4,6 +4,7 @@ import { Suspense } from "react";
 
 import { CalendarIcon, ClockIcon, CodeIcon, KeyIcon, UsersIcon, WebhookIcon } from "@/components/icons";
 import { AddPasskey } from "@/components/passkey-buttons";
+import { Reveal } from "@/components/reveal";
 import { SignIn } from "@/components/sign-in";
 import { Badge, Card, CardHeader, Container, PageHeader, StatusDot } from "@/components/ui";
 import { calendarsForUser, refreshStaleCalendars, userClock } from "@/lib/calendar";
@@ -55,7 +56,23 @@ async function SettingsContent() {
     <div className="space-y-6">
       <PageHeader title="Settings" />
 
-      <Card>
+      {/* Jump to a section: a row of pills that stays under the header as you scroll. */}
+      <nav
+        aria-label="Settings sections"
+        className="sticky top-14 z-20 -mx-4 flex gap-1.5 overflow-x-auto border-b border-line bg-background/90 px-4 py-2.5 backdrop-blur-lg [scrollbar-width:none] sm:-mx-6 sm:px-6 lg:top-14 [&::-webkit-scrollbar]:hidden"
+      >
+        {SECTIONS.map((sec) => (
+          <a
+            key={sec.id}
+            href={`#${sec.id}`}
+            className="flex h-8 shrink-0 items-center rounded-full border border-line bg-card px-3 text-sm font-medium whitespace-nowrap text-muted shadow-card transition-colors hover:border-line-strong hover:text-foreground"
+          >
+            {sec.label}
+          </a>
+        ))}
+      </nav>
+
+      <Card id="calendars" className="scroll-mt-32">
         <CardHeader
           title={
             <span className="flex items-center gap-2">
@@ -65,14 +82,7 @@ async function SettingsContent() {
           }
           description="Your lights turn Busy during meetings and Away when you're out of office."
         />
-        <div className="mt-4 rounded-xl bg-subtle p-4 text-sm text-muted">
-          <p className="font-medium text-foreground">Where to find your ICS link in Outlook</p>
-          <ol className="mt-1 list-decimal space-y-0.5 pl-5">
-            <li>Settings → Calendar → Shared calendars</li>
-            <li>Publish a calendar</li>
-            <li>Copy the ICS link and paste it below</li>
-          </ol>
-        </div>
+        {calendars.length === 0 && <OutlookHelp />}
 
         {calendars.length > 0 && (
           <ul className="mt-5 divide-y divide-line rounded-xl border border-line">
@@ -115,15 +125,14 @@ async function SettingsContent() {
           </ul>
         )}
 
-        <div className="mt-5">
+        <Reveal label="Add a calendar" defaultOpen={calendars.length === 0} className="mt-5">
+          {calendars.length > 0 && <OutlookHelp />}
           <AddCalendarForm first={calendars.length === 0} />
-        </div>
-        <p className="mt-3 text-xs text-muted">
-          The link is kept private: it&apos;s only used to read your calendar and is never shown again.
-        </p>
+          <p className="text-xs text-muted">The link is kept private: it&apos;s only used to read your calendar and is never shown again.</p>
+        </Reveal>
       </Card>
 
-      <Card>
+      <Card id="hours" className="scroll-mt-32">
         <CardHeader
           title={
             <span className="flex items-center gap-2">
@@ -138,7 +147,7 @@ async function SettingsContent() {
         </div>
       </Card>
 
-      <Card>
+      <Card id="passkeys" className="scroll-mt-32">
         <CardHeader
           title={
             <span className="flex items-center gap-2">
@@ -185,7 +194,40 @@ async function SettingsContent() {
         </div>
       </Card>
 
-      <Card>
+      <Card id="teams" className="scroll-mt-32">
+        <CardHeader
+          title={
+            <span className="flex items-center gap-2">
+              <UsersIcon className="size-5 text-muted" />
+              Teams
+            </span>
+          }
+        />
+        <ul className="mt-3 divide-y divide-line text-sm">
+          {teams
+            .filter((t) => !t.personal)
+            .map((t) => (
+              <li key={t.id} className="flex items-center justify-between gap-3 py-2.5 first:pt-0 last:pb-0">
+                <Link href={`/teams/${t.id}`} className="min-w-0 truncate font-medium hover:underline">
+                  {t.name}
+                </Link>
+                <Badge>{t.role}</Badge>
+              </li>
+            ))}
+        </ul>
+        <p className="mt-4 text-sm text-muted">
+          {teams.some((t) => !t.personal) ? "" : "You're not in a shared team yet. "}
+          <Link href="/teams" className="underline">
+            Make or manage teams
+          </Link>
+        </p>
+      </Card>
+      <div id="developer" className="scroll-mt-32 pt-4">
+        <h2 className="text-lg font-semibold tracking-tight">Developer</h2>
+        <p className="mt-1 text-sm text-muted">For scripts, Stream Deck, Home Assistant and other apps. Most people never need these.</p>
+      </div>
+
+      <Card id="api-tokens" className="scroll-mt-32">
         <CardHeader
           title={
             <span className="flex items-center gap-2">
@@ -234,11 +276,13 @@ async function SettingsContent() {
           </ul>
         )}
         <div className="mt-5">
-          <NewApiTokenForm first={tokens.length === 0} />
+          <Reveal label="New token">
+            <NewApiTokenForm first={tokens.length === 0} />
+          </Reveal>
         </div>
       </Card>
 
-      <Card>
+      <Card id="webhooks" className="scroll-mt-32">
         <CardHeader
           title={
             <span className="flex items-center gap-2">
@@ -317,41 +361,37 @@ async function SettingsContent() {
         )}
         <div className="mt-5">
           {webhooks.length < MAX_WEBHOOKS ? (
-            <NewWebhookForm first={webhooks.length === 0} />
+            <Reveal label="Add a webhook">
+              <NewWebhookForm first={webhooks.length === 0} />
+            </Reveal>
           ) : (
             <p className="text-sm text-muted">That&apos;s {MAX_WEBHOOKS}, the most you can have. Remove one to add another.</p>
           )}
         </div>
       </Card>
 
-      <Card>
-        <CardHeader
-          title={
-            <span className="flex items-center gap-2">
-              <UsersIcon className="size-5 text-muted" />
-              Teams
-            </span>
-          }
-        />
-        <ul className="mt-3 divide-y divide-line text-sm">
-          {teams
-            .filter((t) => !t.personal)
-            .map((t) => (
-              <li key={t.id} className="flex items-center justify-between gap-3 py-2.5 first:pt-0 last:pb-0">
-                <Link href={`/teams/${t.id}`} className="min-w-0 truncate font-medium hover:underline">
-                  {t.name}
-                </Link>
-                <Badge>{t.role}</Badge>
-              </li>
-            ))}
-        </ul>
-        <p className="mt-4 text-sm text-muted">
-          {teams.some((t) => !t.personal) ? "" : "You're not in a shared team yet. "}
-          <Link href="/teams" className="underline">
-            Make or manage teams
-          </Link>
-        </p>
-      </Card>
+    </div>
+  );
+}
+
+const SECTIONS = [
+  { id: "calendars", label: "Calendars" },
+  { id: "hours", label: "Working hours" },
+  { id: "passkeys", label: "Passkeys" },
+  { id: "teams", label: "Teams" },
+  { id: "developer", label: "Developer" },
+];
+
+// Where Outlook hides the ICS link: open for a first calendar, folded once you have one.
+function OutlookHelp() {
+  return (
+    <div className="mt-4 rounded-xl bg-subtle p-4 text-sm text-muted">
+      <p className="font-medium text-foreground">Where to find your ICS link in Outlook</p>
+      <ol className="mt-1 list-decimal space-y-0.5 pl-5">
+        <li>Settings → Calendar → Shared calendars</li>
+        <li>Publish a calendar</li>
+        <li>Copy the ICS link and paste it below</li>
+      </ol>
     </div>
   );
 }
