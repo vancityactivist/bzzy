@@ -27,6 +27,9 @@ Email:
 
 ## Auth
 
-- GitHub OAuth app callback: `https://bzzy.ca/api/auth/callback/github`. GitHub sign-in only works on that host.
+- GitHub OAuth app callback: `https://bzzy.ca/api/auth/callback/github`. It's the only callback; don't add a wildcard like `*.vercel.app` (anyone can deploy there).
 - Vercel env, Production only: `AUTH_URL=https://bzzy.ca`.
+- Vercel env, Production **and** Preview: `AUTH_REDIRECT_PROXY_URL=https://bzzy.ca/api/auth`. Preview deployments then sign in with GitHub through bzzy.ca: GitHub sends the user back to bzzy.ca, which forwards them (with the code) to the preview that started the sign-in. This is built into Auth.js; no code needed.
+- For that to work, `AUTH_SECRET`, `AUTH_GITHUB_ID` and `AUTH_GITHUB_SECRET` must be set for Preview too, and `AUTH_SECRET` must be the same value in Production and Preview (the forwarded state is encrypted with it).
+- Passkeys don't work across hosts, so on previews use GitHub sign-in. A passkey added on a preview only works on that one preview URL.
 - Passkeys are tied to the host they were made on. Passkeys made on `bzzy.vercel.app` don't work on `bzzy.ca`; add a new one in Settings.
