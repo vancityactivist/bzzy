@@ -221,6 +221,31 @@ Keep the 52 × 61 mm board, the M2 holes in the same four corners, and USB-C at 
 | B. WROOM-1 with its antenna on a tab past the top edge | full ring | ~6 to 8 mm taller at top, button off centre | no extra parts |
 | C. WROOM-1 antenna inside the board outline, LEDs skip that corner | gap of 2 or 3 LEDs at one top corner | no change | visibly dimmer corner; rejected |
 
+### 7.2 Placement concept (to scale)
+
+![Placement concept, front and back](../../hardware/main-board/placement.png)
+
+Drawn by `hardware/main-board/placement.py` (edit the script, then run it to regenerate `placement.svg`). It's a placement study, not a routed board: body sizes are nominal and positions are a starting point for KiCad.
+
+| Ref | Part | Side | Where and why |
+|---|---|---|---|
+| D1 to D16 | WS2812B-2020 | front | rev C positions, unchanged |
+| SW1 | Alps SKRTLAE010 | front | top edge centre, plunger up |
+| U1 | ESP32-S3-WROOM-1U-N16R8 | back | top centre, behind the panel's top half |
+| J2 | u.FL (on the module) | back | top of the module, short cable up to the case-top antenna |
+| J3 | panel FPC connector | back | panel tail goes through a slot just below the panel and folds up into it |
+| J1 | USB-C 16-pin, mid-mount | back | bottom edge centre, same place as the Waveshare socket |
+| U3, D1, F1, FB1 | ESD, TVS, polyfuse, ferrite (DNP) | back | next to J1, before anything else |
+| U2, C2, C3 | 3.3 V LDO 1 A + 22 µF in/out | back | bottom left (seen from behind), between USB and the module |
+| C4 | 10 µF + 100 nF | back | at the module's 3V3 pin |
+| U5 | 74AHCT1G125 | back | near GPIO17 and the start of the LED chain |
+| Q1 | backlight MOSFET | back | near J3 |
+| U4, Y1, C1, D2 | PCF85063, 32.768 kHz crystal, 0.22 F supercap, Schottky | back | lower right (seen from behind) |
+| SW2, SW3 | BOOT, RESET | back | either side, behind pinholes in the back plate |
+| J4 | GH1.25 12-pin (DNP) | back | fallback for Waveshare's touch module |
+| BZ1 | buzzer (DNP) | back | upper right (seen from behind), for "knock" later |
+| C5 | 2 × 10 µF LED bulk | back | plus 100 nF per LED on the front, as rev C |
+
 ## 8. Pin map and firmware impact
 
 Keep the Waveshare pin mapping so the firmware change is a new `config.h` block and a PlatformIO env.
