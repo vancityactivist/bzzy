@@ -4,10 +4,22 @@ import { Suspense } from "react";
 import { AppShell } from "@/components/app-shell";
 import { Landing } from "@/components/landing";
 import { STATUS_META } from "@/components/status-meta";
-import { Button, Card, CardHeader, Container, StatusDot } from "@/components/ui";
+import {
+  Button,
+  Card,
+  CardHeader,
+  Container,
+  StatusDot,
+} from "@/components/ui";
 import { refreshStaleCalendars, scheduleForUser } from "@/lib/calendar";
 import { devicesForUser } from "@/lib/devices";
-import { BUILTIN_GIFS, defaultPreviewSrcs, gifsForUser, previewSrc, resolveDeviceGifs } from "@/lib/gifs";
+import {
+  BUILTIN_GIFS,
+  defaultPreviewSrcs,
+  gifsForUser,
+  previewSrc,
+  resolveDeviceGifs,
+} from "@/lib/gifs";
 import { isOnline } from "@/lib/poll-writes";
 import { getPresence } from "@/lib/presence";
 import { nowSeconds, showVisible, STATUSES } from "@/lib/protocol";
@@ -21,7 +33,7 @@ import { REPO_URL, SITE_NAME, SITE_URL } from "@/lib/site";
 import { sharedTeamsForUser } from "@/lib/teams";
 
 import { relativeTime } from "./(app)/devices/relative-time";
-import { clearStatus } from "./actions";
+import { clearShowAction, clearStatus } from "./actions";
 import {
   type ActiveStatus,
   type LibraryGif,
@@ -67,7 +79,9 @@ export default function Home({ searchParams }: PageProps<"/">) {
       <script
         type="application/ld+json"
         // Static and ours, but escape "<" anyway as the Next.js JSON-LD guide recommends.
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(JSON_LD).replace(/</g, "\\u003c") }}
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(JSON_LD).replace(/</g, "\\u003c"),
+        }}
       />
       {/* Signed-out visitors get this fallback too, so it stays blank rather than app-shaped. */}
       <Suspense fallback={<div className="min-h-[70vh]" aria-busy="true" />}>
@@ -77,7 +91,11 @@ export default function Home({ searchParams }: PageProps<"/">) {
   );
 }
 
-async function HomeContent({ searchParams }: { searchParams: PageProps<"/">["searchParams"] }) {
+async function HomeContent({
+  searchParams,
+}: {
+  searchParams: PageProps<"/">["searchParams"];
+}) {
   const user = await getCurrentUser();
   if (!user) return <Landing />;
 
@@ -110,19 +128,29 @@ async function HomeContent({ searchParams }: { searchParams: PageProps<"/">["sea
   // Online ones first, so the preview opens on a light that's showing what it says.
   const mine = devices
     .filter((d) => d.ownerUserId === user.id)
-    .sort((a, b) => Number(isOnline(b.lastSeenAt, now * 1000, b.pollSec)) - Number(isOnline(a.lastSeenAt, now * 1000, a.pollSec)));
+    .sort(
+      (a, b) =>
+        Number(isOnline(b.lastSeenAt, now * 1000, b.pollSec)) -
+        Number(isOnline(a.lastSeenAt, now * 1000, a.pollSec)),
+    );
   // A team push beats their own show now. It's the same on all their lights that
   // follow that team, so take the first one that has one.
   const following = mine.find((d) => d.pushTeamId);
   const push = following ? await pushForDevice(following, now) : null;
-  const pushTeam = push ? ((await sharedTeamsForUser(user.id)).find((t) => t.id === push.teamId)?.name ?? null) : null;
+  const pushTeam = push
+    ? ((await sharedTeamsForUser(user.id)).find((t) => t.id === push.teamId)
+        ?.name ?? null)
+    : null;
   const liveShow: LiveShow | null = push
     ? {
         text: screenText(push.text),
         until: push.until,
         gifSrc: previewSrc(push.gif),
         gifName: push.gif?.name ?? null,
-        push: { team: pushTeam ?? "your team", leds: ringNow(push.leds, push.updatedAt, now) },
+        push: {
+          team: pushTeam ?? "your team",
+          leds: ringNow(push.leds, push.updatedAt, now),
+        },
       }
     : show && showVisible(show, presence, now)
       ? {
@@ -136,15 +164,28 @@ async function HomeContent({ searchParams }: { searchParams: PageProps<"/">["sea
   const current = schedule.find((b) => b.start <= now && now < b.end);
   const next = schedule.find((b) => b.start > now);
   // "3:30 PM", the way the screen writes it (screen.ts untilLabel: fixed UTC-7).
-  const at = (sec: number) => new Date(sec * 1000).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone: "Etc/GMT+7" });
+  const at = (sec: number) =>
+    new Date(sec * 1000).toLocaleTimeString("en-US", {
+      hour: "numeric",
+      minute: "2-digit",
+      timeZone: "Etc/GMT+7",
+    });
   const previews: PreviewDevice[] =
     mine.length > 0
       ? await Promise.all(
           mine.map(async (d) => {
             const gifs = await resolveDeviceGifs(d.id);
-            const resolved = resolveScreen({ now, defaultStatus: d.defaultStatus, presence, schedule });
+            const resolved = resolveScreen({
+              now,
+              defaultStatus: d.defaultStatus,
+              presence,
+              schedule,
+            });
             const ringPush = push && d.pushTeamId === push.teamId ? push : null;
-            const ringShow = !ringPush && show && showVisible(show, presence, now) ? show : null;
+            const ringShow =
+              !ringPush && show && showVisible(show, presence, now)
+                ? show
+                : null;
             return {
               id: d.id,
               name: d.name,
@@ -154,13 +195,37 @@ async function HomeContent({ searchParams }: { searchParams: PageProps<"/">["sea
                   ? `Offline · seen ${relativeTime(d.lastSeenAt, now * 1000)}`
                   : "Never connected",
               view: viewFor(resolved),
-              gifs: Object.fromEntries(STATUSES.map((s) => [s, previewSrc(gifs[s])])) as PreviewDevice["gifs"],
-              ring: ringFor({ ...d.ring, status: resolved.status, schedule, now, push: ringPush, show: ringShow }),
+              gifs: Object.fromEntries(
+                STATUSES.map((s) => [s, previewSrc(gifs[s])]),
+              ) as PreviewDevice["gifs"],
+              ring: ringFor({
+                ...d.ring,
+                status: resolved.status,
+                schedule,
+                now,
+                push: ringPush,
+                show: ringShow,
+              }),
               // Without their show now's: what a new show with no ring of its own gets.
-              baseRing: ringFor({ ...d.ring, status: resolved.status, schedule, now, push: ringPush }),
+              baseRing: ringFor({
+                ...d.ring,
+                status: resolved.status,
+                schedule,
+                now,
+                push: ringPush,
+              }),
               allowFlash: d.ring.allowFlash,
               styles: Object.fromEntries(
-                STATUSES.map((s) => [s, ringFor({ ...d.ring, meetingWarn: null, status: s, schedule: [], now })]),
+                STATUSES.map((s) => [
+                  s,
+                  ringFor({
+                    ...d.ring,
+                    meetingWarn: null,
+                    status: s,
+                    schedule: [],
+                    now,
+                  }),
+                ]),
               ) as PreviewDevice["styles"],
             };
           }),
@@ -169,11 +234,16 @@ async function HomeContent({ searchParams }: { searchParams: PageProps<"/">["sea
           {
             id: "example",
             name: "How a new light would look",
-            view: viewFor(resolveScreen({ now, defaultStatus: "free", presence, schedule })),
+            view: viewFor(
+              resolveScreen({ now, defaultStatus: "free", presence, schedule }),
+            ),
             gifs: defaultPreviewSrcs(),
           },
         ];
-  const live = presence?.active && (presence.until === 0 || presence.until > now) ? presence : null;
+  const live =
+    presence?.active && (presence.until === 0 || presence.until > now)
+      ? presence
+      : null;
   const active: ActiveStatus | null = live
     ? {
         status: live.status,
@@ -190,35 +260,77 @@ async function HomeContent({ searchParams }: { searchParams: PageProps<"/">["sea
   const shown = live ?? current ?? null;
   const summary = (
     <div className="min-w-0">
-      {shown ? (
+      {liveShow ? (
+        // A GIF or message is up, so that's what the light shows, not the status.
+        <p className="flex min-w-0 items-center gap-2">
+          {liveShow.gifSrc ? (
+            // eslint-disable-next-line @next/next/no-img-element -- tiny animated thumbnail
+            <img
+              src={liveShow.gifSrc}
+              alt=""
+              className="size-5 shrink-0 rounded bg-black object-cover"
+            />
+          ) : (
+            <span
+              aria-hidden
+              className="flex size-5 shrink-0 items-center justify-center rounded bg-black text-[0.5625rem] font-semibold text-white/85"
+            >
+              Aa
+            </span>
+          )}
+          <span className="min-w-0 truncate">
+            <span className="font-semibold">
+              Showing {liveShow.gifName ?? "a message"}
+            </span>
+            {liveShow.gifName && liveShow.text && (
+              <span className="text-muted"> · {liveShow.text}</span>
+            )}
+          </span>
+        </p>
+      ) : shown ? (
         <p className="flex min-w-0 items-center gap-2">
           <StatusDot status={shown.status} size="lg" />
           <span className="min-w-0 truncate">
-            <span className="font-semibold">{STATUS_META[shown.status].label}</span>
+            <span className="font-semibold">
+              {STATUS_META[shown.status].label}
+            </span>
             {shown.text && <span className="text-muted"> · {shown.text}</span>}
           </span>
         </p>
       ) : (
         <p className="flex items-center gap-2">
-          <span aria-hidden className="size-3 shrink-0 rounded-full border-2 border-line-strong" />
+          <span
+            aria-hidden
+            className="size-3 shrink-0 rounded-full border-2 border-line-strong"
+          />
           <span className="font-semibold">Automatic</span>
         </p>
       )}
       <div className="mt-1 flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
         <p className="text-xs text-muted lg:text-sm">
-          {live
-            ? `Set by you · ${live.until ? `until ${at(live.until)}` : "until you change it"}`
-            : current
-              ? `From your calendar · until ${at(current.end)}`
-              : next
-                ? `Following your calendar · ${STATUS_META[next.status].label.toLowerCase()} at ${at(next.start)}`
-                : "Following your calendar and each light's default"}
+          {liveShow
+            ? liveShow.push
+              ? `Pushed by ${liveShow.push.team} · press your light's button to dismiss`
+              : `Show now · ${liveShow.until ? `until ${at(liveShow.until)}` : "until you take it down"}`
+            : live
+              ? `Set by you · ${live.until ? `until ${at(live.until)}` : "until you change it"}`
+              : current
+                ? `From your calendar · until ${at(current.end)}`
+                : next
+                  ? `Following your calendar · ${STATUS_META[next.status].label.toLowerCase()} at ${at(next.start)}`
+                  : "Following your calendar and each light's default"}
         </p>
-        {live && (
-          <form action={clearStatus}>
-            <Button size="sm">Back to automatic</Button>
-          </form>
-        )}
+        {liveShow
+          ? !liveShow.push && (
+              <form action={clearShowAction}>
+                <Button size="sm">Take it down</Button>
+              </form>
+            )
+          : live && (
+              <form action={clearStatus}>
+                <Button size="sm">Back to automatic</Button>
+              </form>
+            )}
       </div>
     </div>
   );
@@ -226,9 +338,19 @@ async function HomeContent({ searchParams }: { searchParams: PageProps<"/">["sea
   return (
     <AppShell>
       <Container className="max-lg:pt-0">
-        <StudioProvider library={library} live={liveShow} initialShow={library.some((g) => g.choice === pick) ? pick : undefined}>
+        <StudioProvider
+          library={library}
+          live={liveShow}
+          initialShow={
+            library.some((g) => g.choice === pick) ? pick : undefined
+          }
+        >
           <div className="grid grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:items-start lg:gap-8">
-            <StudioPreview devices={previews} example={mine.length === 0} summary={summary} />
+            <StudioPreview
+              devices={previews}
+              example={mine.length === 0}
+              summary={summary}
+            />
             <div className="space-y-6">
               <Card>
                 <CardHeader
@@ -242,7 +364,12 @@ async function HomeContent({ searchParams }: { searchParams: PageProps<"/">["sea
                   title="Show something"
                   description="A GIF or message on your light right now. A press of its button takes it down."
                 />
-                <ShowNowControls className="mt-5" flashOff={mine.length > 0 && mine.every((d) => !d.ring.allowFlash)} />
+                <ShowNowControls
+                  className="mt-5"
+                  flashOff={
+                    mine.length > 0 && mine.every((d) => !d.ring.allowFlash)
+                  }
+                />
               </Card>
             </div>
           </div>
