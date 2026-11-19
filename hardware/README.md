@@ -164,6 +164,8 @@ Then print the frame, light ring and back once in cheap PLA to check the fit bef
 
 These are notes for later, once the ring board has proven the case and the light.
 
+**Update 2026-11-19:** the Waveshare board has no ISED certification, so it can't be sold inside bzzy. The full spec for the custom board (one board with the ring merged in, built on a certified Espressif module) is in [docs/hardware/main-board.md](../docs/hardware/main-board.md).
+
 - **MCU:** an ESP32-S3-WROOM-1-N16R8 module. It has the same 16 MB flash and 8 MB PSRAM as the Waveshare board, plus a certified antenna. Keep the module's antenna end at the top edge, with no copper or LEDs under it.
 - **Screen:** the bare 1.69" 240 × 280 ST7789V2 panel with CST816T touch on an FPC connector. Waveshare sells the panel separately as the "1.69inch Touch LCD Module". Find the panel's FPC pinout before laying out.
 - **Pins:** keep the Waveshare mapping (LCD 4 to 8 and 15, I2C 10 and 11, touch 13 and 14, LEDs 17, top button 18, BOOT 0). The firmware then only needs a new PlatformIO env, or none at all.

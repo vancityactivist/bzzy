@@ -14,6 +14,7 @@ static constexpr uint8_t kRegGesture = 0x01;
 static constexpr uint8_t kRegMotionMask = 0xEC;    // enable double-click detection
 static constexpr uint8_t kRegLongPressTime = 0xFC;  // seconds
 static constexpr uint8_t kRegDisAutoSleep = 0xFE;
+static constexpr uint8_t kRegChipId = 0xA7;
 
 static volatile bool g_irq = false;
 static void IRAM_ATTR onIrq() { g_irq = true; }
@@ -32,6 +33,15 @@ void begin() {
   delay(10);
   digitalWrite(PIN_TOUCH_RST, HIGH);
   delay(50);
+  // Chip ID (0xA7): 0xB4 = CST816S, 0xB5 = CST816T, 0xB6 = CST816D. Logged so a new panel
+  // (bench test, docs/s3-devkit-bench-test.md) shows which variant it carries.
+  Wire.beginTransmission(kAddr);
+  Wire.write(kRegChipId);
+  if (Wire.endTransmission(false) == 0 && Wire.requestFrom(kAddr, (uint8_t)1) == 1) {
+    Serial.printf("[touch] CST816 chip id 0x%02X\n", Wire.read());
+  } else {
+    Serial.println("[touch] no answer at 0x15 (check wiring and I2C pull-ups)");
+  }
   writeReg(kRegDisAutoSleep, 0x01);  // stay awake: we're on USB power anyway
   writeReg(kRegMotionMask, 0x01);    // report double taps
   writeReg(kRegLongPressTime, 0x01); // long press = 1 s
@@ -56,6 +66,7 @@ Gesture poll() {
   if (g == last && ms - lastAt < 400) return Gesture::None;
   last = g;
   lastAt = ms;
+  Serial.printf("[touch] gesture 0x%02X\n", g);
 
   switch (g) {
     case 0x01: return Gesture::SwipeUp;

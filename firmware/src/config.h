@@ -63,6 +63,29 @@
 #ifndef BZZY_LED_COUNT
 #define BZZY_LED_COUNT 1
 #endif
+#elif defined(BZZY_BOARD_S3_DEVKIT_TFT169)
+// Bench test for the bzzy main board (docs/hardware/main-board.md): an Espressif
+// ESP32-S3-DevKitC-1(U) wired to the East Rising ER-TFT1.69-4 panel (240x280 ST7789 +
+// CST816 touch) through an 18-pin FPC breakout. Uses the SAME pins as the main board,
+// which kept the Waveshare mapping. Wiring: docs/s3-devkit-bench-test.md.
+#define PIN_LCD_SCLK 6
+#define PIN_LCD_MOSI 7
+#define PIN_LCD_CS 5
+#define PIN_LCD_DC 4
+#define PIN_LCD_RST 8
+#define PIN_LCD_BL 15
+#define PIN_I2C_SDA 11  // touch @ 0x15 (and the RTC @ 0x51 on the main board)
+#define PIN_I2C_SCL 10
+#define PIN_TOUCH_INT 14
+#define PIN_TOUCH_RST 13
+#define PIN_BUTTON 0       // BOOT button
+#define PIN_LED_DATA 17    // optional WS2812B strip
+#define PIN_TOP_BUTTON 18  // optional push button to GND, internal pull-up
+#define BZZY_HAS_RTC 0     // no clock chip on the bench; the main board has one
+#define BZZY_HAS_TOUCH 1
+// On the bench the backlight cathode (panel pin 2) goes through a resistor straight
+// into GPIO15, so LOW = lit. The main board uses a MOSFET instead (not inverted).
+#define BZZY_LCD_BL_INVERT 1
 #elif defined(BZZY_BOARD_GENERIC)
 // Any classic ESP32 dev board (ESP32-WROOM-32D/E). Wiring: docs/esp32-test-build.md.
 // Kept clear of the flash pins (6-11), the strapping pins (0, 2, 5, 12, 15) and the
