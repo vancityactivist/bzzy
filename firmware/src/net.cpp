@@ -189,6 +189,9 @@ static constexpr size_t kGifMargin = 32 * 1024;
 static constexpr uint32_t kGifStallMs = 15000;  // no data for this long: give up
 static constexpr uint32_t kGifMaxMs = 90000;    // a whole download, at most  // LittleFS needs some room to work
 static size_t gifFreeBytes() { return LittleFS.totalBytes() - LittleFS.usedBytes(); }
+// Set by downloadTo() when it failed for lack of room: the bytes it would have needed
+// free (0 = it failed for another reason). Network task only.
+static size_t g_noRoomNeed = 0;
 
 static bool downloadTo(const char* u, const char* path) {
   WiFiClientSecure client;
@@ -212,8 +215,10 @@ static bool downloadTo(const char* u, const char* path) {
   }
   int len = http.getSize();  // -1 when the server doesn't say
   size_t free = gifFreeBytes();
+  g_noRoomNeed = 0;
   if (len > (int)cfg::kMaxGifBytes || (len > 0 && (size_t)len + kGifMargin > free)) {
     Serial.printf("[gif] %d bytes won't fit (%u free)\n", len, (unsigned)free);
+    if (len <= (int)cfg::kMaxGifBytes) g_noRoomNeed = (size_t)len + kGifMargin;
     http.end();
     return false;
   }
@@ -258,7 +263,8 @@ static bool downloadTo(const char* u, const char* path) {
     const int n = stream->read(buf, want);
     if (n <= 0) continue;
     if (f.write(buf, n) != (size_t)n) {
-      why = "flash write failed";
+      why = "flash write failed";  // most likely full: the server didn't say the size
+      g_noRoomNeed = (size_t)written + kGifMargin + (len > 0 ? (size_t)(len - written) : cfg::kMaxGifBytes / 2);
       break;
     }
     written += n;
@@ -323,6 +329,22 @@ static bool waitSwapped(size_t i, uint32_t timeoutMs) {
 }
 #endif
 
+#if BZZY_HAS_DISPLAY
+// The show now GIF doesn't fit beside the status GIFs (the C6 board has about 640 KB):
+// drop status GIFs until `need` bytes are free. False if there was nothing to drop.
+static bool makeRoomForShow(const char (&installed)[bzzy::kGifSlots][17], size_t need) {
+  bool dropped = false;
+  for (size_t j = 0; j < bzzy::kGifSlots && gifFreeBytes() < need; ++j) {
+    if (j == bzzy::kShowSlot || !installed[j][0]) continue;
+    Serial.printf("[gif] removing %s to make room for show now\n", slotName(j));
+    queueSwap(j, "");
+    if (!waitSwapped(j, 2000)) break;
+    dropped = true;
+  }
+  return dropped;
+}
+#endif
+
 static void syncGifs() {
 #if BZZY_HAS_DISPLAY
   if (!g_haveWanted) return;
@@ -348,7 +370,11 @@ static void syncGifs() {
 
     const bzzy::GifRef& want = g_wanted[i];
     if (!want.present) {
-      if (installed[i][0]) queueSwap(i, "");
+      if (installed[i][0]) {
+        queueSwap(i, "");
+        // Room was freed (a show ending, say): status GIFs that didn't fit get another go.
+        memset(g_failCount, 0, sizeof(g_failCount));
+      }
       continue;
     }
     if (strcmp(want.sha, installed[i]) == 0 || gaveUp(i)) continue;
@@ -367,6 +393,9 @@ static void syncGifs() {
       queueSwap(i, want.sha);
       g_failCount[i] = 0;
       Serial.printf("[gif] downloaded %s\n", slotName(i));
+    } else if (i == bzzy::kShowSlot && g_noRoomNeed && makeRoomForShow(installed, g_noRoomNeed)) {
+      // Someone just asked for this GIF: status GIFs made way (they come back once the
+      // show ends). Not a failed try; it downloads again next sync.
     } else {
       if (strcmp(g_failSha[i], want.sha) != 0) {
         strlcpy(g_failSha[i], want.sha, sizeof(g_failSha[i]));
