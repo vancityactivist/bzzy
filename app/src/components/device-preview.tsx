@@ -4,7 +4,7 @@
 // The firmware uses LovyanGFX's FreeSans fonts (a Helvetica clone, rendered at
 // 141 dpi) and never wraps text, so long messages run off both edges here too.
 
-import type { LedStyle } from "@/lib/push-rules";
+import { type LedStyle, RAINBOW } from "@/lib/push-rules";
 import {
   FONT_PT,
   GIF_H,
@@ -79,7 +79,8 @@ export function DevicePreview({
   // display.cpp statusLines(): the message, or the label in the bar, on one line or two.
   const barLines = view.layout === "status" ? statusLines(view.text || oneLineLabel) : [];
   const cardLines = view.layout === "status" && view.text ? statusLines(view.text) : [];
-  const [r, g, b] = ring?.color ? hexRgb(ring.color) : LED_RGB[view.status];
+  const rainbow = ring?.color === RAINBOW ? ring : null;
+  const [r, g, b] = ring?.color && !rainbow ? hexRgb(ring.color) : LED_RGB[view.status];
   const flash = ring && ring.pattern !== "solid" ? ring : null;
   const led = (a: number) => `rgb(${r} ${g} ${b} / ${a})`;
   const bezel = 14 * scale;
@@ -91,7 +92,7 @@ export function DevicePreview({
     view.notice,
     view.online ? null : "offline",
     dark ? "dark (off hours)" : null,
-    flash ? `ring ${PATTERN_WORD[flash.pattern]}` : null,
+    flash || rainbow ? `ring ${[rainbow ? "rainbow" : null, flash ? PATTERN_WORD[flash.pattern] : null].filter(Boolean).join(" ")}` : null,
   ]
     .filter(Boolean)
     .join(", ");
@@ -99,7 +100,9 @@ export function DevicePreview({
   return (
     <div className={`relative inline-block h-max ${className}`} role="img" aria-label={`Screen preview: ${summary}`}>
       {/* LED glow through the translucent frame. "unknown" breathes, like leds.cpp. */}
-      {dark ? null : flash?.pattern === "spin" ? (
+      {dark ? null : rainbow ? (
+        <RainbowGlow style={rainbow} scale={scale} />
+      ) : flash?.pattern === "spin" ? (
         // An arc going round: a turning cone of light behind the frame.
         <div aria-hidden className="absolute -inset-[6%] overflow-hidden rounded-[32%/28%]" style={{ filter: `blur(${10 * scale}px)` }}>
           <div
@@ -247,6 +250,55 @@ export function DevicePreview({
       </div>
     </div>
   );
+}
+
+// The rainbow (led_pattern.cpp rainbowHue): the colour wheel spread round the ring,
+// turning the way Spin goes. Hue falls going clockwise, so each colour travels clockwise.
+const RAINBOW_STOPS = "#ff0000, #ff00a0, #a000ff, #0040ff, #00d0ff, #00ff40, #ffe000, #ff8000, #ff0000";
+
+function RainbowGlow({ style, scale }: { style: LedStyle; scale: number }) {
+  const hue = rainbowSeconds(style);
+  const wheel = `conic-gradient(${RAINBOW_STOPS})`;
+  const turning = (seconds: number, reverse = false) => `bzzy-spin ${seconds}s linear infinite${reverse ? " reverse" : ""}`;
+  const disc = "bzzy-ring absolute top-1/2 left-1/2 aspect-square w-[160%] -translate-x-1/2 -translate-y-1/2";
+  const flash = style.pattern !== "solid" ? style : null;
+  if (flash?.pattern === "spin") {
+    // The arc turns at the spin's speed, and the colours under it at the rainbow's: the
+    // wheel inside the turning arc makes up the difference.
+    const spin = patternSeconds(flash);
+    const rel = 360 / hue - 360 / spin; // degrees a second, relative to the arc
+    const arc = "conic-gradient(#000 0deg 90deg, rgb(0 0 0 / 0.35) 140deg, transparent 180deg)";
+    return (
+      <div aria-hidden className="absolute -inset-[6%] overflow-hidden rounded-[32%/28%]" style={{ filter: `blur(${10 * scale}px)` }}>
+        <div className={disc} style={{ maskImage: arc, WebkitMaskImage: arc, animation: turning(spin) }}>
+          <div
+            className="bzzy-ring absolute inset-0 rounded-full"
+            style={{ background: wheel, opacity: 0.95, animation: rel ? turning(360 / Math.abs(rel), rel < 0) : undefined }}
+          />
+        </div>
+      </div>
+    );
+  }
+  return (
+    <div
+      aria-hidden
+      className="bzzy-ring absolute -inset-[6%] overflow-hidden rounded-[32%/28%]"
+      style={{
+        filter: `blur(${12 * scale}px)`,
+        ...(flash
+          ? { animation: `bzzy-${flash.pattern} ${patternSeconds(flash)}s ${flash.pattern === "pulse" ? "ease-in-out" : "linear"} infinite` }
+          : {}),
+      }}
+    >
+      <div className={disc} style={{ background: wheel, opacity: 0.7, animation: turning(hue) }} />
+    </div>
+  );
+}
+
+// led_pattern.cpp rainbowPeriodMs(), in seconds.
+function rainbowSeconds(s: LedStyle): number {
+  const speed = Math.min(3, Math.max(1, s.speed ?? 2));
+  return 8 / 2 ** (speed - 1);
 }
 
 const PATTERN_WORD: Record<LedStyle["pattern"], string> = {

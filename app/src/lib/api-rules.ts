@@ -196,7 +196,7 @@ export const showBody = z.strictObject({
   ring: ledStyle
     .nullable()
     .default(null)
-    .describe("How the ring moves while it's up: pattern (solid, pulse, blink, strobe, spin), color (#rrggbb), speed (1 to 3), for (seconds of flashing). Left out: the status's own style."),
+    .describe("How the ring moves while it's up: pattern (solid, pulse, blink, strobe, spin), color (#rrggbb, or rainbow), speed (1 to 3), for (seconds of flashing). Left out: the status's own style."),
   ...endFields,
 });
 export type ShowBody = z.infer<typeof showBody>;

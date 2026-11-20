@@ -23,7 +23,7 @@ const ring = {
   description: "How the ring moves. null: the status's own style.",
   properties: {
     pattern: { type: "string", enum: [...PATTERNS] },
-    color: { type: "string", pattern: "^#[0-9a-fA-F]{6}$" },
+    color: { type: "string", pattern: "^(#[0-9a-fA-F]{6}|rainbow)$" },
     speed: { type: "integer", minimum: 1, maximum: 3 },
     for: { type: "integer", minimum: 0, maximum: 3600, description: "Seconds of flashing before the ring goes steady." },
   },

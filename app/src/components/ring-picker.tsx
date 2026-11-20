@@ -7,7 +7,8 @@
 
 import { CheckIcon } from "@/components/icons";
 import { cx, Select } from "@/components/ui";
-import { FLASH_FOR, PUSH_COLORS, PUSH_FLASHES, type PushInput } from "@/lib/push-rules";
+import { FLASH_FOR, PUSH_COLORS, PUSH_FLASHES, type PushInput, RAINBOW } from "@/lib/push-rules";
+import { LED_RGB } from "@/lib/screen";
 
 export type RingChoice = Pick<PushInput, "flash" | "color" | "speed" | "flashFor">;
 
@@ -36,30 +37,7 @@ export function RingPicker({
       <input type="hidden" name="flashFor" value={flashFor} />
       {flash !== "none" && (
         <div className="space-y-3">
-          <div className="flex flex-wrap items-center gap-2" role="radiogroup" aria-label="Colour">
-            {PUSH_COLORS.map((c) => (
-              <button
-                key={c.value}
-                type="button"
-                role="radio"
-                aria-checked={color === c.value}
-                aria-label={c.label}
-                title={c.label}
-                onClick={() => onChange({ color: c.value })}
-                className={cx(
-                  "flex size-8 items-center justify-center rounded-full ring-1 ring-line ring-inset transition-shadow",
-                  color === c.value && "ring-2 ring-foreground ring-offset-2 ring-offset-card",
-                )}
-                style={{
-                  background: c.value || "conic-gradient(#00c828 0 25%, #ff1400 0 50%, #a000ff 0 75%, #ff8c00 0)",
-                }}
-              >
-                {color === c.value && (
-                  <CheckIcon className={cx("size-4", c.value === "#ffffff" || c.value === "#ffd400" ? "text-black" : "text-white")} strokeWidth={3} />
-                )}
-              </button>
-            ))}
-          </div>
+          <ColorSwatches label="Colour" value={color} onChange={(c) => onChange({ color: c })} />
           <div className="flex flex-wrap gap-2">
             <Select aria-label="Speed" value={speed} onChange={(e) => onChange({ speed: Number(e.target.value) })} wrapperClassName="w-36">
               <option value={1}>Slow</option>
@@ -100,5 +78,62 @@ export function Chip({ checked, onClick, children }: { checked: boolean; onClick
       {checked && <CheckIcon className="size-3.5" strokeWidth={3} />}
       {children}
     </button>
+  );
+}
+
+// The ring colours, as round swatches. "" is the status colour, drawn as the four status
+// colours in separate dots (like the bzzy mark) so it doesn't read as the rainbow, which
+// is the full colour wheel.
+const RAINBOW_FILL = "conic-gradient(#ff0000, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff, #ff0000)";
+const STATUS_DOTS = (["free", "busy", "dnd", "away"] as const).map((s) => `rgb(${LED_RGB[s].join(" ")})`);
+
+export function ColorSwatches({
+  label,
+  value,
+  onChange,
+  statusLabel = "Their status colour",
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  statusLabel?: string;
+}) {
+  return (
+    <div className="flex flex-wrap items-center gap-2" role="radiogroup" aria-label={label}>
+      {PUSH_COLORS.map((c) => {
+        const checked = value === c.value;
+        const name = c.value ? c.label : statusLabel;
+        return (
+          <button
+            key={c.value}
+            type="button"
+            role="radio"
+            aria-checked={checked}
+            aria-label={name}
+            title={name}
+            onClick={() => onChange(c.value)}
+            className={cx(
+              "flex size-8 items-center justify-center rounded-full ring-1 ring-line ring-inset transition-shadow",
+              !c.value && "bg-card",
+              checked && "ring-2 ring-foreground ring-offset-2 ring-offset-card",
+            )}
+            style={c.value ? { background: c.value === RAINBOW ? RAINBOW_FILL : c.value } : undefined}
+          >
+            {!c.value ? (
+              // Always the dots: the ring round the swatch says it's picked.
+              <span aria-hidden className="grid grid-cols-2 gap-[3px]">
+                {STATUS_DOTS.map((bg) => (
+                  <span key={bg} className="size-[7px] rounded-full" style={{ background: bg }} />
+                ))}
+              </span>
+            ) : (
+              checked && (
+                <CheckIcon className={cx("size-4", c.value === "#ffffff" || c.value === "#ffd400" ? "text-black" : "text-white")} strokeWidth={3} />
+              )
+            )}
+          </button>
+        );
+      })}
+    </div>
   );
 }

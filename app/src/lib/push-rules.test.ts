@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { ackCount, ledStyle, pushAsShow, pushFor, pushInput, pushLeds, pushLive, type PushWho } from "./push-rules";
+import { ackCount, ledStyle, pushAsShow, pushFor, pushInput, pushLeds, pushLive, type PushWho, ringNow } from "./push-rules";
 
 const now = 1_762_900_000;
 
@@ -64,6 +64,12 @@ describe("pushLeds", () => {
     expect(style).toEqual({ pattern: "pulse", speed: 2, color: "#ff2000", for: 30 });
     expect(ledStyle.parse(style)).toEqual(style);
   });
+  it("can ask for the rainbow", () => {
+    const style = pushLeds({ ...base, flash: "spin", color: "rainbow" });
+    expect(style).toEqual({ pattern: "spin", speed: 2, color: "rainbow", for: 30 });
+    expect(ledStyle.parse(style)).toEqual(style);
+    expect(ringNow(style, 0, 60)).toEqual({ pattern: "solid", color: "rainbow" });
+  });
   it("leaves out for when it flashes the whole time", () => {
     expect(pushLeds({ ...base, flashFor: 0 })).toEqual({ pattern: "pulse", speed: 2 });
   });
@@ -73,6 +79,8 @@ describe("pushInput", () => {
   it("rejects a pattern or colour it doesn't know", () => {
     expect(pushInput.safeParse({ minutes: 15, flash: "rave" }).success).toBe(false);
     expect(pushInput.safeParse({ minutes: 15, color: "red" }).success).toBe(false);
+    expect(pushInput.safeParse({ minutes: 15, color: "Rainbow" }).success).toBe(false);
+    expect(pushInput.safeParse({ minutes: 15, flash: "pulse", color: "rainbow" }).success).toBe(true);
     expect(pushInput.safeParse({ minutes: 15, flash: "strobe", color: "#00ff00", speed: "3" }).success).toBe(true);
   });
 });

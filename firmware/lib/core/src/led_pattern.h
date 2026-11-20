@@ -31,14 +31,28 @@ constexpr uint32_t kStrobeOnMs = 60;
 struct LedStyle {
   bool set = false;  // false: no style here, use the next one down (or solid)
   Pattern pattern = Pattern::Solid;
-  bool hasColor = false;  // false: the current status colour
+  bool hasColor = false;  // false: the current status colour (or the rainbow)
   uint32_t color = 0;     // 0xRRGGBB
+  bool rainbow = false;   // "color": "rainbow": every hue round the ring, turning (rainbowHue)
   uint8_t speed = 2;      // 1 slow, 2 normal, 3 fast; anything else is clamped
   uint16_t forSec = 0;    // after this long, go steady in the same colour; 0 = keep going
 };
 
 // Parses "#rrggbb". Returns false (leaving `out`) for anything else.
 bool parseColor(const char* hex, uint32_t& out);
+
+// The `color` that asks for the rainbow instead of "#rrggbb". Firmware from before it
+// fails parseColor() on it and shows the status colour, which is a fine fallback.
+constexpr const char* kRainbowName = "rainbow";
+
+// How long the rainbow takes to go once round the ring, in ms: 8 s, 4 s, 2 s.
+uint32_t rainbowPeriodMs(uint8_t speed);
+
+// The rainbow's hue (FastLED's 0..255 wheel) for LED `i` of `n`, `elapsedMs` after the
+// style started. The whole wheel is spread round the ring once and turns up the indexes,
+// the way Spin goes; on one LED it just cycles through the colours. The pattern still
+// sets each LED's brightness, and it keeps turning after `forSec` (only flashing stops).
+uint8_t rainbowHue(uint32_t elapsedMs, uint8_t speed, size_t i, size_t n);
 
 // How long one cycle takes, in ms. For Spin, one turn of the ring.
 uint32_t patternPeriodMs(Pattern p, uint8_t speed);

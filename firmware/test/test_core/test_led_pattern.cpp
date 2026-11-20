@@ -168,6 +168,25 @@ static void test_spin_on_one_led_pulses() {
   }
 }
 
+static void test_rainbow_spreads_round_the_ring_and_turns() {
+  // At the start, LED 0 is red (hue 0) and the wheel is spread evenly round 16 LEDs.
+  for (size_t i = 0; i < 16; ++i) TEST_ASSERT_EQUAL_UINT8((256 - i * 16) & 0xFF, rainbowHue(0, 2, i, 16));
+  // Normal speed turns once in 4 s: a quarter of the way after 1 s, and a colour moves up
+  // the indexes (the hue LED 0 had at the start is on LED 4 after 1 s).
+  TEST_ASSERT_EQUAL_UINT32(4000, rainbowPeriodMs(2));
+  TEST_ASSERT_EQUAL_UINT8(64, rainbowHue(1000, 2, 0, 16));
+  TEST_ASSERT_EQUAL_UINT8(0, rainbowHue(1000, 2, 4, 16));
+  TEST_ASSERT_EQUAL_UINT8(rainbowHue(0, 2, 3, 16), rainbowHue(4000, 2, 3, 16));
+  // Slow and fast, with the speed clamped like the patterns.
+  TEST_ASSERT_EQUAL_UINT32(8000, rainbowPeriodMs(1));
+  TEST_ASSERT_EQUAL_UINT32(2000, rainbowPeriodMs(3));
+  TEST_ASSERT_EQUAL_UINT32(2000, rainbowPeriodMs(9));
+  // One LED (the ESP32-C6 test board) cycles through every colour.
+  TEST_ASSERT_EQUAL_UINT8(0, rainbowHue(0, 2, 0, 1));
+  TEST_ASSERT_EQUAL_UINT8(128, rainbowHue(2000, 2, 0, 1));
+  TEST_ASSERT_EQUAL_UINT8(0, rainbowHue(5, 2, 0, 0));  // no LEDs: no crash
+}
+
 void run_led_pattern_tests() {
   RUN_TEST(test_unset_and_solid_are_steady);
   RUN_TEST(test_blink_halves);
@@ -176,6 +195,7 @@ void run_led_pattern_tests() {
   RUN_TEST(test_pulse_stays_between_25_and_100_percent);
   RUN_TEST(test_spin_moves_round_the_ring);
   RUN_TEST(test_spin_on_one_led_pulses);
+  RUN_TEST(test_rainbow_spreads_round_the_ring_and_turns);
   RUN_TEST(test_for_goes_steady_afterwards);
   RUN_TEST(test_parse_names_and_colours);
   RUN_TEST(test_status_style_applies);
