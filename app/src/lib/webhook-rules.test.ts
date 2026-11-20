@@ -55,7 +55,9 @@ describe("secrets at rest", () => {
     expect(sealed).not.toContain("whsec_abc");
     expect(unseal(sealed)).toBe("whsec_abc");
     expect(seal("whsec_abc")).not.toBe(sealed);
-    const flipped = sealed.slice(0, -2) + (sealed.endsWith("A") ? "B" : "A") + sealed.slice(-1);
+    // Change the second-to-last character (checking that one, so it always changes).
+    const flipped = sealed.slice(0, -2) + (sealed.at(-2) === "A" ? "B" : "A") + sealed.slice(-1);
+    expect(flipped).not.toBe(sealed);
     expect(unseal(flipped)).toBeNull();
     process.env.AUTH_SECRET = "another";
     expect(unseal(sealed)).toBeNull();
