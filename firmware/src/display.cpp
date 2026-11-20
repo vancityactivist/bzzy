@@ -92,7 +92,7 @@ static AnimatedGIF g_gif;
 static bool g_gifOpen = false;
 static uint32_t g_nextFrameMs = 0;
 static constexpr uint8_t kBrightness = 180;
-static View g_last = {Layout::Status, bzzy::Status::Unknown, nullptr, 0, false, nullptr};
+static View g_last = {Layout::Status, bzzy::Status::Unknown, nullptr, 0, false, nullptr, -1};
 static char g_lastText[bzzy::kTextMax] = "";
 static char g_lastNotice[64] = "";
 static bool g_drawn = false;
@@ -311,13 +311,20 @@ static void drawShowText(const View& v) {
 
 static bool g_dark = false;
 
-static void drawLogo();
-
-// The black bar along the bottom with a one-off line ("Updating firmware 42%"). With
-// `clear` false the bar is already there: the text is drawn over the old text with a
-// black background the width of the screen, so nothing blanks between the two.
-static void drawNotice(const char* notice, bool clear = true) {
+// The black bar along the bottom with a one-off line ("Updating firmware 42%"), and a
+// thin progress bar along its top edge when `progress` is 0-100. With `clear` false the
+// bar is already there: the text is drawn over the old text with a black background
+// the width of the screen, so nothing blanks between the two.
+static void drawNotice(const char* notice, int progress, bool clear = true) {
+  constexpr int kBarH = 3;
   if (clear) g_lcd.fillRect(0, kH - 28, kW, 28, TFT_BLACK);
+  if (progress >= 0) {
+    const int w = kW * (progress > 100 ? 100 : progress) / 100;
+    g_lcd.fillRect(0, kH - 28, w, kBarH, TFT_WHITE);
+    g_lcd.fillRect(w, kH - 28, kW - w, kBarH, g_lcd.color888(0x3a, 0x3a, 0x3a));
+  } else if (!clear) {
+    g_lcd.fillRect(0, kH - 28, kW, kBarH, TFT_BLACK);  // the size stopped being known
+  }
   g_lcd.setFont(&fonts::Font2);
   g_lcd.setTextDatum(lgfx::middle_center);
   g_lcd.setTextColor(TFT_WHITE, TFT_BLACK);
@@ -338,10 +345,6 @@ static void redraw(const View& v) {
     g_lcd.setBrightness(kBrightness);
     g_dark = false;
   }
-  if (v.layout == Layout::Loading) {
-    drawLogo();  // not splash(): that would make show() redraw it every pass
-    return;
-  }
   const uint16_t bg = bgFor(v.status);
   const bool showMessage = v.text && *v.text;
   if (v.layout == Layout::ShowText) {
@@ -355,7 +358,7 @@ static void redraw(const View& v) {
       const int block = (int)w.count * bzzy::lineHeight(w.font);
       drawLines(v.text, w, kGifH + (kH - kGifH - block) / 2, TFT_BLACK);
     }
-  } else if (openGif(bzzy::statusName(v.status))) {
+  } else if (v.layout != Layout::Loading && openGif(bzzy::statusName(v.status))) {
     // Clear the GIF area too: a GIF smaller than 240x200 doesn't cover all of it.
     g_lcd.fillRect(0, 0, kW, kGifH, TFT_BLACK);
     g_lcd.fillRect(0, kGifH, kW, kH - kGifH, bg);
@@ -375,6 +378,8 @@ static void redraw(const View& v) {
       drawUntil(v.until, kGifH + kDy + 46, bg);
     }
   } else {
+    // No GIF (or its new one still downloading): the colour card.
+    closeGif();
     g_lcd.fillScreen(bg);
     g_lcd.setTextColor(TFT_WHITE, bg);
     g_lcd.setTextDatum(lgfx::middle_center);
@@ -400,7 +405,7 @@ static void redraw(const View& v) {
     drawUntil(v.until, kDy + 222, bg);
   }
 
-  if (v.notice && *v.notice) drawNotice(v.notice);
+  if (v.notice && *v.notice) drawNotice(v.notice, v.progress);
   drawOfflineBadge(v.online);
 }
 
@@ -549,7 +554,7 @@ void show(const View& v) {
   strlcpy(g_lastNotice, notice, sizeof(g_lastNotice));
   g_drawn = true;
   if (onlyNotice) {
-    drawNotice(notice, false);
+    drawNotice(notice, v.progress, false);
     return;
   }
   redraw(v);

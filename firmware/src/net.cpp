@@ -64,6 +64,12 @@ static char g_installed[bzzy::kGifSlots][17];
 static uint8_t g_swapMask = 0;  // bit i: slot i has a new file (or a removal) waiting
 static char g_swapSha[bzzy::kGifSlots][17];
 static uint8_t g_loadingMask = 0;  // bit i: slot i's GIF is on its way (see gifLoading)
+// The download in progress, for the loading bar: bytes so far and the size the server
+// gave (-1 = didn't say). g_dlGot is -1 when nothing is downloading. Written by the
+// network task, read by the main loop; 32-bit stores are atomic, and a torn pair only
+// makes one frame of the bar a percent off.
+static volatile int32_t g_dlGot = -1;
+static volatile int32_t g_dlLen = -1;
 // Network task only: a GIF that fails kGifTries times in a row is given up on until
 // the app sends a different one, so it can't hold up the others or load forever.
 static constexpr uint8_t kGifTries = 3;
@@ -226,6 +232,8 @@ static bool downloadTo(const char* u, const char* path) {
   int written = 0;
   uint8_t lastByte = 0;
   const char* why = nullptr;
+  g_dlLen = len;
+  g_dlGot = 0;
   while (len < 0 || written < len) {
     const uint32_t nowMs = millis();
     if (nowMs - startMs > kGifMaxMs) {
@@ -254,6 +262,7 @@ static bool downloadTo(const char* u, const char* path) {
       break;
     }
     written += n;
+    g_dlGot = written;
     lastByte = buf[n - 1];
     lastDataMs = millis();
     if (written > (int)cfg::kMaxGifBytes) {
@@ -261,6 +270,7 @@ static bool downloadTo(const char* u, const char* path) {
       break;
     }
   }
+  g_dlGot = -1;
   f.close();
   http.end();
   const unsigned ms = (unsigned)(millis() - startMs);
@@ -273,6 +283,13 @@ static bool downloadTo(const char* u, const char* path) {
     return false;
   }
   Serial.printf("[gif] %d bytes in %u ms\n", written, ms);
+  // How much room a download (TLS and all) leaves: "lowest" is the low-water mark since boot.
+  Serial.printf("[mem] heap free %u, lowest %u, largest block %u", (unsigned)ESP.getFreeHeap(),
+                (unsigned)ESP.getMinFreeHeap(), (unsigned)ESP.getMaxAllocHeap());
+#ifdef BOARD_HAS_PSRAM
+  Serial.printf(", PSRAM free %u", (unsigned)ESP.getFreePsram());
+#endif
+  Serial.println();
   return true;
 }
 #endif
@@ -337,7 +354,7 @@ static void syncGifs() {
     if (strcmp(want.sha, installed[i]) == 0 || gaveUp(i)) continue;
 
     // Not enough room for the new GIF beside the old one (the C6 board has 640 KB):
-    // drop the old one first. The screen shows the logo until the new one is in.
+    // drop the old one first. The screen shows "Loading GIF" until the new one is in.
     if (installed[i][0] && gifFreeBytes() < cfg::kMaxGifBytes + kGifMargin) {
       Serial.printf("[gif] removing old %s to make room\n", slotName(i));
       queueSwap(i, "");
@@ -733,6 +750,12 @@ bool gifLoading(size_t slot) {
   bool loading = g_loadingMask & (1u << slot);
   xSemaphoreGive(g_mx);
   return loading;
+}
+
+bool gifDownload(int32_t& got, int32_t& total) {
+  got = g_dlGot;
+  total = g_dlLen;
+  return got >= 0;
 }
 
 bool gifOnFlash(size_t slot) {

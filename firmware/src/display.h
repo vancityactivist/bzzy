@@ -14,7 +14,7 @@ enum class Layout : uint8_t {
   Status,    // the status's GIF and label (or its colour card)
   ShowGif,   // the "show now" GIF on black, full screen (or above its message)
   ShowText,  // the "show now" message, big, on black
-  Loading,   // the bzzy logo while the GIF it needs downloads
+  Loading,   // the status's colour card while the GIF it needs downloads (notice says so)
   Off,       // outside working hours: backlight off
 };
 
@@ -25,6 +25,7 @@ struct View {
   uint32_t until;    // unix seconds; 0 = don't show a time
   bool online;
   const char* notice;  // one-off line such as "Updating firmware 40%"; may be nullptr
+  int8_t progress = -1;  // 0-100: a bar along the notice; -1 = no bar
 };
 
 // A setup screen (lib/core setup_flow.h): the step's QR code and a few lines of text,
