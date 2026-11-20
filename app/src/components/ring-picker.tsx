@@ -16,16 +16,18 @@ export function RingPicker({
   value,
   onChange,
   note,
+  steadyOnly = false,
 }: {
   value: RingChoice;
   onChange: (v: Partial<RingChoice>) => void;
-  note?: React.ReactNode; // under the options, once a pattern is picked
+  note?: React.ReactNode; // under the options
+  steadyOnly?: boolean; // the lights may not flash: just No effect and Steady
 }) {
   const { flash, color, speed, flashFor } = value;
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap gap-2">
-        {PUSH_FLASHES.map((f) => (
+        {PUSH_FLASHES.filter((f) => !steadyOnly || f.value === "none" || f.value === "solid").map((f) => (
           <Chip key={f.value} checked={flash === f.value} onClick={() => onChange({ flash: f.value })}>
             {f.label}
           </Chip>
@@ -62,7 +64,7 @@ export function RingPicker({
               )}
             </div>
           )}
-          {note && flash !== "solid" && <p className="text-xs text-muted">{note}</p>}
+          {note && (flash !== "solid" || steadyOnly) && <p className="text-xs text-muted">{note}</p>}
         </div>
       )}
     </div>

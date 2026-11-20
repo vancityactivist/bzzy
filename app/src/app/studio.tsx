@@ -16,7 +16,8 @@ import { Badge, Button, buttonClass, cx, Field, Input, Select, StatusDot } from 
 import { parseGifLink } from "@/lib/gif-link";
 import { type Status, STATUSES, TEXT_MAX } from "@/lib/protocol";
 import { type RingChoice, RingPicker } from "@/components/ring-picker";
-import { type LedStyle, PUSH_FLASHES, pushLeds } from "@/lib/push-rules";
+import { type LedStyle, PUSH_COLORS, PUSH_FLASHES, pushLeds } from "@/lib/push-rules";
+import { allowedRing } from "@/lib/ring";
 import { LED_RGB, screenText, statusCut, type ScreenView, viewFor, withShow, wrapBar, wrapMessage } from "@/lib/screen";
 
 import { clearShowAction, setStatus, showNowAction, type ShowNowResult } from "./actions";
@@ -213,8 +214,7 @@ export function StudioTabs({ status, show, statusHint, showHint }: { status: Rea
 // The ring picked for a show, as the light would play it (flashing, so you can see it).
 // null: no pattern picked, or this light isn't allowed to flash.
 function draftRing(device: PreviewDevice, show: ShowDraft): LedStyle | null {
-  if (device.allowFlash === false) return null;
-  return pushLeds({ ...show.ring, flashFor: 0 });
+  return allowedRing(pushLeds({ ...show.ring, flashFor: 0 }), device.allowFlash !== false);
 }
 
 const minutesFromNow = (m: number) => (m > 0 ? Math.floor(Date.now() / 1000) + m * 60 : 0);
@@ -857,9 +857,10 @@ export function ShowNowControls({ className, flashOff = false }: { className?: s
                 setFocus("show");
                 setShow({ ring: { ...show.ring, ...v } });
               }}
+              steadyOnly={flashOff}
               note={
                 flashOff
-                  ? "Flashing is off for these lights, so the ring stays steady. Turn on Allow flashing on a light's page."
+                  ? "Flashing is off for these lights, so only Steady is offered. Turn on Allow flashing on a light's page for the others."
                   : "Never faster than 3 flashes a second. A light on older firmware keeps its usual ring until it updates."
               }
             />
@@ -882,7 +883,9 @@ export function ShowNowControls({ className, flashOff = false }: { className?: s
                 onClick={() => {
                   setRinging(true);
                   setFocus("show");
-                  if (show.ring.flash === "none") setShow({ ring: { ...show.ring, flash: "pulse" } });
+                  // Start from the ring that's on screen now, so opening this doesn't swap
+                  // the preview to something else; otherwise a pulse (Steady if it can't flash).
+                  if (show.ring.flash === "none") setShow({ ring: live?.leds ? ringChoice(live.leds) : { ...show.ring, flash: flashOff ? "solid" : "pulse" } });
                 }}
               >
                 <PlusIcon />
@@ -957,9 +960,16 @@ function Tile({ name, gif, checked, onPick }: { name: string; gif?: LibraryGif; 
   );
 }
 
-// "Spin", "Pulse": what a ring style is called in the picker.
+// "Pulse", "Rainbow spin", "Blue steady": what a ring style is called in the picker.
 function ringLabel(leds: LedStyle) {
-  return PUSH_FLASHES.find((f) => f.value === leds.pattern)?.label ?? "Steady";
+  const pattern = PUSH_FLASHES.find((f) => f.value === leds.pattern)?.label ?? "Steady";
+  const color = leds.color ? PUSH_COLORS.find((c) => c.value === leds.color)?.label : null;
+  return color ? `${color} ${pattern.toLowerCase()}` : pattern;
+}
+
+// A sent ring back into the picker's terms.
+function ringChoice(leds: LedStyle): RingChoice {
+  return { flash: leds.pattern, color: leds.color ?? "", speed: leds.speed ?? 2, flashFor: leds.for ?? 0 };
 }
 
 // "3:30 PM", in the light's fixed UTC-7 like untilLabel(), so the page agrees with the

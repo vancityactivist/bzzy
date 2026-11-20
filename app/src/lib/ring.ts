@@ -31,9 +31,17 @@ export function sentLeds(d: { allowFlash: boolean; ledStyles: LedStyles | null; 
   return out;
 }
 
+// A show's or push's ring that a light may play: anything when it may flash, and
+// otherwise only a steady one (one colour, or the slowly turning rainbow), since that
+// doesn't flash.
+export function allowedRing(leds: LedStyle | null | undefined, allowFlash: boolean): LedStyle | null {
+  return leds && (allowFlash || leds.pattern === "solid") ? leds : null;
+}
+
 // The firmware's chooseLeds() (status_engine.cpp): a push's flash, then the person's
 // own show now's, then the meeting warning in its window, then the status's style.
-// null: steady status colour. Pass `show` only while it's on screen (showVisible).
+// null: steady status colour. Pass `show` only while it's on screen (showVisible). A light
+// that may not flash still plays a push's or show's Steady ring (allowedRing).
 export function ringFor(opts: {
   allowFlash: boolean;
   ledStyles: LedStyles | null;
@@ -44,10 +52,14 @@ export function ringFor(opts: {
   push?: { leds: LedStyle | null; updatedAt: number } | null;
   show?: { leds: LedStyle | null; updatedAt: number } | null;
 }): LedStyle | null {
-  if (!opts.allowFlash) return null;
-  if (opts.push?.leds) return ringNow(opts.push.leds, opts.push.updatedAt, opts.now);
+  if (opts.push?.leds) {
+    const leds = allowedRing(opts.push.leds, opts.allowFlash);
+    return leds ? ringNow(leds, opts.push.updatedAt, opts.now) : null;
+  }
   // While a push is up it's what's on screen, so the person's own show can't flash.
-  if (!opts.push && opts.show?.leds) return ringNow(opts.show.leds, opts.show.updatedAt, opts.now);
+  const show = opts.push ? null : allowedRing(opts.show?.leds, opts.allowFlash);
+  if (show && opts.show) return ringNow(show, opts.show.updatedAt, opts.now);
+  if (!opts.allowFlash) return null;
   const w = opts.meetingWarn;
   if (w && w.minutes > 0) {
     const window = w.minutes * 60;
