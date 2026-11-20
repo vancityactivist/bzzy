@@ -4,7 +4,7 @@
 // hover, pick or type shows on the preview straight away, before it's sent; the
 // caption says whether you're looking at your screen as it is or a draft.
 
-import { createContext, Fragment, useActionState, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { createContext, Fragment, useActionState, useCallback, useContext, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useFormStatus } from "react-dom";
 
 import Link from "next/link";
@@ -20,7 +20,7 @@ import { type LedStyle, PUSH_COLORS, PUSH_FLASHES, pushLeds } from "@/lib/push-r
 import { allowedRing } from "@/lib/ring";
 import { LED_RGB, screenText, statusCut, type ScreenView, viewFor, withShow, wrapBar, wrapMessage } from "@/lib/screen";
 
-import { clearShowAction, setStatus, showNowAction, type ShowNowResult } from "./actions";
+import { clearShowAction, type SaveGifResult, saveShowGifAction, setStatus, showNowAction, type ShowNowResult } from "./actions";
 
 export type PreviewDevice = {
   id: string;
@@ -618,6 +618,8 @@ export function ShowNowControls({ className, flashOff = false }: { className?: s
   const { library, live, setFocus, show, setShow, resetShow, lightsLabel } = useStudio();
   const form = useRef<HTMLFormElement>(null);
   const file = useRef<HTMLInputElement>(null);
+  const linkInput = useRef<HTMLInputElement>(null);
+  const grid = useRef<HTMLDivElement>(null);
   const message = useRef<HTMLInputElement>(null);
   const [adding, setAdding] = useState(false); // the "+" panel: link or upload
   const [writing, setWriting] = useState(false); // the message box
@@ -626,10 +628,20 @@ export function ShowNowControls({ className, flashOff = false }: { className?: s
   const [find, setFind] = useState(""); // filters the picker once the library is big
   const [fileName, setFileName] = useState("");
   const [fileError, setFileError] = useState<string | null>(null);
+  const [linkName, setLinkName] = useState(""); // the name GIPHY/Tenor's link suggests
+  const [saveName, setSaveName] = useState("");
+  const [saved, setSaved] = useState<SaveGifResult>(null);
+  const [saving, startSave] = useTransition();
+  const [keptToo, setKeptToo] = useState(false); // the last show was a new GIF, now in the library
 
   const [result, action, pending] = useActionState<ShowNowResult, FormData>(async (prev, fd) => {
+    const fresh = !!fd.get("link") || ((fd.get("file") as File | null)?.size ?? 0) > 0;
     const r = await showNowAction(prev, fd);
     if (r?.ok) {
+      setKeptToo(fresh);
+      setSaved(null);
+      setSaveName("");
+      setLinkName("");
       // Sent: clear the draft so the preview goes back to what's on the screen.
       resetShow();
       setFocus(null);
@@ -653,6 +665,30 @@ export function ShowNowControls({ className, flashOff = false }: { className?: s
   useEffect(() => {
     if (writing) message.current?.focus();
   }, [writing]);
+
+  // A GIF just saved is picked: bring its tile into view in the picker.
+  const savedChoice = saved?.ok ? saved.choice : null;
+  useEffect(() => {
+    if (savedChoice) grid.current?.querySelector('[aria-checked="true"]')?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  }, [savedChoice]);
+
+  // Save the pasted link or picked file to the library without showing it, then pick it.
+  const save = () =>
+    startSave(async () => {
+      if (!form.current) return;
+      const r = await saveShowGifAction(new FormData(form.current));
+      setSaved(r);
+      if (!r?.ok) return;
+      if (linkInput.current) linkInput.current.value = "";
+      if (file.current) file.current.value = "";
+      setFileName("");
+      setLinkName("");
+      setSaveName("");
+      setTextOnly(false);
+      setAdding(false);
+      setFocus("show");
+      setShow({ linkSrc: null, linkPending: false, fileSrc: null, choice: r.choice, hover: null });
+    });
 
   const usingOther = !!(show.fileSrc || show.linkSrc || show.linkPending);
   const hasGif = usingOther || show.choice !== TEXT_ONLY;
@@ -728,7 +764,7 @@ export function ShowNowControls({ className, flashOff = false }: { className?: s
         )}
         {/* The scroll box wraps the grid rather than being it: Safari squashes the
             rows of a height-capped grid, so square tiles spill into the next row. */}
-        <div className="-mx-1.5 -mt-1.5 max-h-[17rem] overflow-y-auto p-1.5">
+        <div ref={grid} className="-mx-1.5 -mt-1.5 max-h-[17rem] overflow-y-auto p-1.5">
           <div
             role="radiogroup"
             aria-label="GIF to show"
@@ -761,12 +797,22 @@ export function ShowNowControls({ className, flashOff = false }: { className?: s
         </div>
         {/* The choice goes with the form; tiles are buttons so tapping one previews it. */}
         <input type="hidden" name="gif" value={textOnly ? TEXT_ONLY : show.choice} />
+        {saved?.ok && !adding && (
+          <p className="flex flex-wrap items-center gap-x-1.5 text-sm" role="status">
+            <CheckIcon className="size-4 text-free" />
+            Saved “{saved.name}” to your GIFs.
+            <Link href="/look#library" className="text-muted underline underline-offset-2 hover:text-foreground">
+              See them all
+            </Link>
+          </p>
+        )}
 
         {adding && (
           <div className="space-y-3 rounded-xl border border-line bg-subtle p-3">
             <div className="relative">
               <LinkIcon className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted" />
               <Input
+                ref={linkInput}
                 name="link"
                 type="url"
                 inputMode="url"
@@ -775,12 +821,18 @@ export function ShowNowControls({ className, flashOff = false }: { className?: s
                 className="pl-9"
                 onChange={(e) => {
                   const raw = e.target.value.trim();
-                  if (!raw) return setShow({ linkSrc: null, linkPending: false });
+                  setSaved(null);
+                  if (!raw) {
+                    setLinkName("");
+                    return setShow({ linkSrc: null, linkPending: false });
+                  }
                   try {
                     const link = parseGifLink(raw);
                     const src = link.media[0]?.toString() ?? null;
+                    setLinkName(link.name);
                     setShow({ linkSrc: src, linkPending: !src });
                   } catch {
+                    setLinkName("");
                     setShow({ linkSrc: null, linkPending: false });
                   }
                 }}
@@ -794,11 +846,6 @@ export function ShowNowControls({ className, flashOff = false }: { className?: s
               </Button>
               {show.fileSrc && <span className="min-w-0 truncate">{fileName}</span>}
             </div>
-            {fileError && (
-              <p className="text-xs text-danger" role="alert">
-                {fileError}
-              </p>
-            )}
             <input
               ref={file}
               name="file"
@@ -813,11 +860,46 @@ export function ShowNowControls({ className, flashOff = false }: { className?: s
                   return;
                 }
                 setFileError(null);
+                setSaved(null);
                 setFocus("show");
                 setFileName(f?.name ?? "");
                 setShow({ fileSrc: f ? URL.createObjectURL(f) : null });
               }}
             />
+            {fileError && (
+              <p className="text-xs text-danger" role="alert">
+                {fileError}
+              </p>
+            )}
+            {usingOther && (
+              <div className="flex flex-col gap-2 border-t border-line pt-3 sm:flex-row sm:items-center">
+                <Input
+                  name="saveName"
+                  value={saveName}
+                  onChange={(e) => setSaveName(e.target.value)}
+                  onKeyDown={(e) => {
+                    // Enter here saves rather than sending the whole Show now form.
+                    if (e.key !== "Enter") return;
+                    e.preventDefault();
+                    if (!saving) save();
+                  }}
+                  maxLength={60}
+                  aria-label="Name"
+                  placeholder={linkName || fileName.replace(/\.[^.]+$/, "") || "Name (optional)"}
+                  autoComplete="off"
+                  className="h-9 min-w-0 flex-1 text-sm"
+                />
+                <Button type="button" size="sm" disabled={saving || pending} onClick={save}>
+                  <CheckIcon />
+                  {saving ? "Saving…" : "Save to my GIFs"}
+                </Button>
+              </div>
+            )}
+            {saved?.ok === false && (
+              <p className="text-xs text-danger" role="alert">
+                {saved.error}
+              </p>
+            )}
           </div>
         )}
 
@@ -919,7 +1001,12 @@ export function ShowNowControls({ className, flashOff = false }: { className?: s
               {result.error}
             </p>
           )}
-          {result?.ok && !pending && <p className="basis-full text-sm text-muted">Sent. {lightsLabel} {lightsLabel.includes(" and ") || lightsLabel === "Your lights" ? "pick" : "picks"} it up within about 20 seconds.</p>}
+          {result?.ok && !pending && (
+            <p className="basis-full text-sm text-muted">
+              Sent. {lightsLabel} {lightsLabel.includes(" and ") || lightsLabel === "Your lights" ? "pick" : "picks"} it up within about 20 seconds.
+              {keptToo && " The GIF is saved to your GIFs too."}
+            </p>
+          )}
         </div>
       </form>
     </div>

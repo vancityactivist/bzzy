@@ -167,6 +167,8 @@ export async function showNowAction(_prev: ShowNowResult, formData: FormData): P
   const { gif, link, minutes } = input.data;
   const text = clipText(input.data.text.trim());
   const file = formData.get("file");
+  const saveName = z.string().trim().max(60).safeParse(formData.get("saveName") ?? "");
+  const named = (saveName.success && saveName.data) || "";
 
   let choice: { assetId: string | null; builtin: string | null } = {
     assetId: null,
@@ -174,10 +176,10 @@ export async function showNowAction(_prev: ShowNowResult, formData: FormData): P
   };
   try {
     if (file instanceof File && file.size > 0) {
-      const name = file.name.replace(/\.[^.]+$/, "").slice(0, 60) || "My GIF";
+      const name = named || file.name.replace(/\.[^.]+$/, "").slice(0, 60) || "My GIF";
       choice.assetId = await uploadGif(user.id, user.name, name, new Uint8Array(await file.arrayBuffer()));
     } else if (link) {
-      choice.assetId = (await importGifFromLink(user.id, user.name, "", link)).id;
+      choice.assetId = (await importGifFromLink(user.id, user.name, named, link)).id;
     } else if (gif !== "none") {
       const checked = await checkGifChoice(user.id, gif);
       if (!checked)
@@ -462,6 +464,36 @@ export async function importGifLinkAction(_prev: GifUploadResult, formData: Form
   }
   refresh();
   return { ok: true };
+}
+
+export type SaveGifResult = { ok: true; choice: string; name: string } | { ok: false; error: string } | null;
+
+// Show now's "Save to my GIFs": the pasted link or picked file from that form goes into
+// the library without being shown, so it can be kept for later.
+export async function saveShowGifAction(formData: FormData): Promise<SaveGifResult> {
+  const user = await requireUser();
+  const file = formData.get("file");
+  const link = z.string().trim().max(2000).safeParse(formData.get("link") ?? "");
+  const name = z.string().trim().max(60).safeParse(formData.get("saveName") ?? "");
+  const named = (name.success && name.data) || "";
+  try {
+    if (file instanceof File && file.size > 0) {
+      const saved = named || file.name.replace(/\.[^.]+$/, "").slice(0, 60) || "My GIF";
+      const id = await uploadGif(user.id, user.name, saved, new Uint8Array(await file.arrayBuffer()));
+      refresh();
+      return { ok: true, choice: `asset:${id}`, name: saved };
+    }
+    if (link.success && link.data) {
+      const saved = await importGifFromLink(user.id, user.name, named, link.data);
+      refresh();
+      return { ok: true, choice: `asset:${saved.id}`, name: saved.name };
+    }
+  } catch (err) {
+    if (err instanceof GifError) return { ok: false, error: err.message };
+    console.error("Show now: saving the GIF failed", err);
+    return { ok: false, error: "Couldn't save that GIF. If this keeps happening, the GIF storage may not be set up yet." };
+  }
+  return { ok: false, error: "Paste a GIPHY or Tenor link or pick a file first." };
 }
 
 export async function deleteGifAction(assetId: string) {
