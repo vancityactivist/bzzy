@@ -38,26 +38,31 @@ export function RingPicker({
       {flash !== "none" && (
         <div className="space-y-3">
           <ColorSwatches label="Colour" value={color} onChange={(c) => onChange({ color: c })} />
-          <div className="flex flex-wrap gap-2">
-            <Select aria-label="Speed" value={speed} onChange={(e) => onChange({ speed: Number(e.target.value) })} wrapperClassName="w-36">
-              <option value={1}>Slow</option>
-              <option value={2}>Normal</option>
-              <option value={3}>Fast</option>
-            </Select>
-            <Select
-              aria-label="How long it flashes"
-              value={flashFor}
-              onChange={(e) => onChange({ flashFor: Number(e.target.value) })}
-              wrapperClassName="w-48"
-            >
-              {FLASH_FOR.map((f) => (
-                <option key={f.seconds} value={f.seconds}>
-                  Flash {f.label}
-                </option>
-              ))}
-            </Select>
-          </div>
-          {note && <p className="text-xs text-muted">{note}</p>}
+          {(flash !== "solid" || color === RAINBOW) && (
+            <div className="flex flex-wrap gap-2">
+              {/* Steady has nothing to time, except how fast the rainbow turns. */}
+              <Select aria-label="Speed" value={speed} onChange={(e) => onChange({ speed: Number(e.target.value) })} wrapperClassName="w-36">
+                <option value={1}>Slow</option>
+                <option value={2}>Normal</option>
+                <option value={3}>Fast</option>
+              </Select>
+              {flash !== "solid" && (
+                <Select
+                  aria-label="How long it flashes"
+                  value={flashFor}
+                  onChange={(e) => onChange({ flashFor: Number(e.target.value) })}
+                  wrapperClassName="w-48"
+                >
+                  {FLASH_FOR.map((f) => (
+                    <option key={f.seconds} value={f.seconds}>
+                      Flash {f.label}
+                    </option>
+                  ))}
+                </Select>
+              )}
+            </div>
+          )}
+          {note && flash !== "solid" && <p className="text-xs text-muted">{note}</p>}
         </div>
       )}
     </div>

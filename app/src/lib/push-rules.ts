@@ -24,8 +24,10 @@ export const ledStyle = z.object({
 export type LedStyle = z.infer<typeof ledStyle>;
 
 // What the composer offers. "none" sends no style: the ring stays on the person's status.
+// "solid" holds one colour (or the turning rainbow) without flashing.
 export const PUSH_FLASHES = [
-  { value: "none", label: "Don't flash" },
+  { value: "none", label: "No effect" },
+  { value: "solid", label: "Steady" },
   { value: "pulse", label: "Pulse" },
   { value: "blink", label: "Blink" },
   { value: "strobe", label: "Strobe" },
