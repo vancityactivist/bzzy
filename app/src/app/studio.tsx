@@ -884,8 +884,8 @@ export function ShowNowControls({ className, flashOff = false }: { className?: s
                   setRinging(true);
                   setFocus("show");
                   // Start from the ring that's on screen now, so opening this doesn't swap
-                  // the preview to something else; otherwise a pulse (Steady if it can't flash).
-                  if (show.ring.flash === "none") setShow({ ring: live?.leds ? ringChoice(live.leds) : { ...show.ring, flash: flashOff ? "solid" : "pulse" } });
+                  // the preview to something else; otherwise Steady.
+                  if (show.ring.flash === "none") setShow({ ring: live?.leds ? ringChoice(live.leds) : { ...show.ring, flash: "solid" } });
                 }}
               >
                 <PlusIcon />
