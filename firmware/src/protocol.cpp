@@ -1,6 +1,7 @@
 #include "protocol.h"
 
 #include <ArduinoJson.h>
+#include <string.h>
 
 namespace bzzy {
 
@@ -12,13 +13,15 @@ static void copyText(char* dst, const char* src) {
   strlcpy(dst, src, kTextMax);
 }
 
-// {"pattern","color","speed","for"}. Anything missing or unknown makes it unset (solid),
+// {"pattern","color","speed","for"}; "color" is "#rrggbb" or "rainbow". Anything missing or unknown makes it unset (solid),
 // so a newer app's pattern this firmware doesn't know is shown steady rather than wrong.
 static LedStyle parseStyle(JsonObjectConst o) {
   LedStyle st;
   if (o.isNull() || !parsePattern(o["pattern"] | "", st.pattern)) return st;
   st.set = true;
-  st.hasColor = parseColor(o["color"] | "", st.color);
+  const char* color = o["color"] | "";
+  st.rainbow = strcmp(color, kRainbowName) == 0;
+  st.hasColor = !st.rainbow && parseColor(color, st.color);
   st.speed = o["speed"] | 2;
   st.forSec = o["for"] | 0;
   return st;
@@ -26,7 +29,9 @@ static LedStyle parseStyle(JsonObjectConst o) {
 
 static void writeStyle(JsonObject o, const LedStyle& st) {
   o["pattern"] = patternName(st.pattern);
-  if (st.hasColor) {
+  if (st.rainbow) {
+    o["color"] = kRainbowName;
+  } else if (st.hasColor) {
     char hex[8];
     snprintf(hex, sizeof(hex), "#%06lx", static_cast<unsigned long>(st.color & 0xFFFFFF));
     o["color"] = hex;

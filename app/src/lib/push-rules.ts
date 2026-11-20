@@ -10,13 +10,14 @@ import { clipText, type Presence, sentManual, type Show } from "./protocol";
 export const PATTERNS = ["solid", "pulse", "blink", "strobe", "spin"] as const;
 export type Pattern = (typeof PATTERNS)[number];
 
+// A colour on the ring: "#rrggbb", or "rainbow" (every hue round the ring, turning;
+// led_pattern.cpp rainbowHue). Firmware from before the rainbow shows the status colour.
+export const RAINBOW = "rainbow";
+export const ringColor = z.union([z.literal(RAINBOW), z.string().regex(/^#[0-9a-f]{6}$/i)]);
+
 export const ledStyle = z.object({
   pattern: z.enum(PATTERNS),
-  color: z
-    .string()
-    .regex(/^#[0-9a-f]{6}$/i)
-    .transform((c) => c.toLowerCase())
-    .optional(),
+  color: ringColor.transform((c) => c.toLowerCase()).optional(),
   speed: z.number().int().min(1).max(3).optional(),
   for: z.number().int().min(0).max(3600).optional(),
 });
@@ -40,6 +41,7 @@ export const PUSH_COLORS = [
   { value: "#2979ff", label: "Blue" },
   { value: "#d500f9", label: "Purple" },
   { value: "#ffffff", label: "White" },
+  { value: RAINBOW, label: "Rainbow" },
 ] as const;
 
 // Minutes; 0 = until someone ends it.
@@ -70,7 +72,7 @@ export const pushInput = z.object({
     .min(0)
     .max(24 * 60),
   flash: z.enum(["none", ...PATTERNS]).default("none"),
-  color: z.union([z.literal(""), z.string().regex(/^#[0-9a-f]{6}$/i)]).default(""),
+  color: z.union([z.literal(""), ringColor]).default(""),
   speed: z.coerce.number().int().min(1).max(3).default(2),
   flashFor: z.coerce.number().int().min(0).max(3600).default(30),
   target: z.enum(["all", "users"]).default("all"),

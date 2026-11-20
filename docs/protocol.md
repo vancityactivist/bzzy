@@ -119,7 +119,7 @@ One object describes everything the ring can do. It's used by `ledStyles`, `meet
 | Field | Values | |
 |---|---|---|
 | `pattern` | `solid`, `pulse`, `blink`, `strobe`, `spin` | an unknown name is treated as no style (solid) |
-| `color` | `#rrggbb`, optional | missing = the status colour |
+| `color` | `#rrggbb` or `rainbow`, optional | missing = the status colour. `rainbow` spreads the colour wheel round the ring and turns it (see below); firmware before 0.3.3 shows the status colour instead |
 | `speed` | 1 slow, 2 normal, 3 fast | clamped to 1..3 |
 | `for` | seconds, optional | after this long the ring goes steady in the same colour; missing or 0 = keeps going |
 
@@ -129,6 +129,8 @@ One object describes everything the ring can do. It's used by `ledStyles`, `meet
 | `blink`: on and off, half each | 1 / 2 / 3 Hz |
 | `strobe`: 60 ms bursts | 1 / 2 / 3 Hz |
 | `spin`: a 4-LED arc with a fading tail goes round the ring (from D1 up) | 0.5 / 1 / 1.5 turns a second |
+
+With `rainbow`, LED *i* of *n* gets hue `t/period − i/n` of the wheel, so every colour is on the ring at once and they travel up the indexes, the way `spin` goes. The wheel turns once every 8 s / 4 s / 2 s for speed 1 / 2 / 3, whatever the pattern; the pattern still sets each LED's brightness (a rainbow `spin` is a rainbow-coloured arc). It keeps turning after `for` (only the flashing stops). A one-LED board cycles through the colours.
 
 The firmware never flashes faster than 3 times a second, whatever it's sent. Which style plays, highest first: a team push's flash while the push is on screen (timed from the push's `updatedAt`), the person's own show now's `leds` while it's on screen (timed from its `updatedAt`; never while a push is up, since then `show` is the push), a meeting warning in its window, then the shown status's style, then solid. The "no recent calendar data" breathe is unchanged. The maths is in `firmware/lib/core/src/led_pattern.cpp`, covered by `firmware/test/`.
 

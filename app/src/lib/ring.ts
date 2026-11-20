@@ -5,7 +5,7 @@
 import { z } from "zod";
 
 import { type Block, type Status, STATUSES } from "./protocol";
-import { type LedStyle, ledStyle, PATTERNS, ringNow } from "./push-rules";
+import { type LedStyle, ledStyle, PATTERNS, ringColor, ringNow } from "./push-rules";
 
 export const ledStyles = z.partialRecord(z.enum(STATUSES), ledStyle);
 export type LedStyles = z.infer<typeof ledStyles>;
@@ -67,7 +67,7 @@ export const lookRingInput = z.object({
   styles: z.record(z.enum(STATUSES), z.object({ pattern: z.enum(PATTERNS), speed: z.number().int().min(1).max(3) })),
   warnMinutes: z.number().int().min(0).max(60),
   warnPattern: z.enum(PATTERNS),
-  warnColor: z.union([z.literal(""), z.string().regex(/^#[0-9a-f]{6}$/i)]),
+  warnColor: z.union([z.literal(""), ringColor]),
   warnSpeed: z.number().int().min(1).max(3),
 });
 export type LookRingInput = z.infer<typeof lookRingInput>;

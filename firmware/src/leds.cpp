@@ -34,6 +34,7 @@ static CRGB colorFor(bzzy::Status s) {
 
 static bool sameStyle(const bzzy::LedStyle& a, const bzzy::LedStyle& b) {
   return a.set == b.set && a.pattern == b.pattern && a.hasColor == b.hasColor && a.color == b.color &&
+         a.rainbow == b.rainbow &&
          a.speed == b.speed && a.forSec == b.forSec;
 }
 
@@ -129,10 +130,13 @@ void tick(uint32_t nowMs) {
     c.nscale8(beatsin8(12, 40, 255));  // slow breathe: "I don't know right now"
     fill_solid(g_leds, cfg::kLedCount, c);
   } else {
+    const uint32_t elapsed = nowMs - g_styleStartMs;
     uint8_t level[cfg::kLedCount];
-    bzzy::renderPattern(g_style, nowMs - g_styleStartMs, level, cfg::kLedCount);
+    bzzy::renderPattern(g_style, elapsed, level, cfg::kLedCount);
+    const bool rainbow = g_style.set && g_style.rainbow;
     for (uint16_t i = 0; i < cfg::kLedCount; ++i) {
       CRGB c = g_current;
+      if (rainbow) hsv2rgb_rainbow(CHSV(bzzy::rainbowHue(elapsed, g_style.speed, i, cfg::kLedCount), 255, 255), c);
       c.nscale8_video(level[i]);
       g_leds[i] = c;
     }

@@ -3,11 +3,11 @@
 import { useState, useTransition } from "react";
 
 import { DevicePreview } from "@/components/device-preview";
-import { CheckIcon } from "@/components/icons";
+import { ColorSwatches } from "@/components/ring-picker";
 import { STATUS_META } from "@/components/status-meta";
 import { Button, cx, Select, StatusDot } from "@/components/ui";
 import { type Status, STATUSES } from "@/lib/protocol";
-import { type LedStyle, type Pattern, PATTERNS, PUSH_COLORS } from "@/lib/push-rules";
+import { type LedStyle, type Pattern, PATTERNS } from "@/lib/push-rules";
 import { type LedStyles, lookRingFromInput, type LookRingInput, type MeetingWarn, WARN_MINUTES } from "@/lib/ring";
 import { viewFor } from "@/lib/screen";
 
@@ -232,31 +232,12 @@ export function LookEditor({
               )}
             </div>
             {ring.warnMinutes > 0 && (
-              <div className="flex flex-wrap items-center gap-2" role="radiogroup" aria-label="Warning colour">
-                {PUSH_COLORS.map((c) => (
-                  <button
-                    key={c.value}
-                    type="button"
-                    role="radio"
-                    aria-checked={ring.warnColor === c.value}
-                    aria-label={c.value ? c.label : "The status colour"}
-                    title={c.value ? c.label : "The status colour"}
-                    onClick={() => setWarn({ warnColor: c.value })}
-                    className={cx(
-                      "flex size-8 items-center justify-center rounded-full ring-1 ring-line ring-inset transition-shadow",
-                      ring.warnColor === c.value && "ring-2 ring-foreground ring-offset-2 ring-offset-card",
-                    )}
-                    style={{ background: c.value || "conic-gradient(#00c828 0 25%, #ff1400 0 50%, #a000ff 0 75%, #ff8c00 0)" }}
-                  >
-                    {ring.warnColor === c.value && (
-                      <CheckIcon
-                        className={cx("size-4", c.value === "#ffffff" || c.value === "#ffd400" ? "text-black" : "text-white")}
-                        strokeWidth={3}
-                      />
-                    )}
-                  </button>
-                ))}
-              </div>
+              <ColorSwatches
+                label="Warning colour"
+                statusLabel="The status colour"
+                value={ring.warnColor}
+                onChange={(c) => setWarn({ warnColor: c })}
+              />
             )}
           </li>
         </ul>

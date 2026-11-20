@@ -63,6 +63,15 @@ uint32_t patternPeriodMs(Pattern p, uint8_t speed) {
   }
 }
 
+uint32_t rainbowPeriodMs(uint8_t speed) { return 8000u >> (clampSpeed(speed) - 1); }
+
+uint8_t rainbowHue(uint32_t elapsedMs, uint8_t speed, size_t i, size_t n) {
+  const uint32_t period = rainbowPeriodMs(speed);
+  const uint32_t base = static_cast<uint32_t>((static_cast<uint64_t>(elapsedMs % period) * 256u) / period);
+  const uint32_t offset = n ? static_cast<uint32_t>((i % n) * 256u / n) : 0;
+  return static_cast<uint8_t>((base + 256u - offset) & 0xFF);
+}
+
 void renderPattern(const LedStyle& style, uint32_t elapsedMs, uint8_t* out, size_t n) {
   if (n == 0) return;
   const bool steady = !style.set || style.pattern == Pattern::Solid ||
