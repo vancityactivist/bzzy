@@ -62,6 +62,9 @@ bool gifOnFlash(size_t slot);
 // Whether the app wants a GIF for this slot that's still downloading (false once it
 // arrives, or once the light gives up on it).
 bool gifLoading(size_t slot);
+// The GIF download in progress, if any: bytes so far, and its size (-1 when the server
+// didn't say). False when nothing is downloading right now.
+bool gifDownload(int32_t& got, int32_t& total);
 void installGifs();
 
 }  // namespace net

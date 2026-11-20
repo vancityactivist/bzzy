@@ -301,10 +301,12 @@ void loop() {
   net::setQuiet(dark || (!showing && (r.status == bzzy::Status::Free || r.status == bzzy::Status::Away)));
 
   const char* notice = nullptr;
+  int8_t progress = -1;
   static char updating[32];
   if (ota::progress() >= 0) {
     snprintf(updating, sizeof(updating), "Updating firmware %d%%", ota::progress());
     notice = updating;
+    progress = (int8_t)ota::progress();
   } else if (r.source == bzzy::Source::Fallback) {
     notice = net::now() ? "No recent calendar data" : "Waiting for the clock";
   }
@@ -315,7 +317,8 @@ void loop() {
                         r.source == bzzy::Source::Fallback ? 0 : r.until, net::online(), notice};
   const bzzy::Show& show = g_state.show;
   if (bzzy::showVisible(g_state, net::now())) {
-    // While its GIF downloads, the logo; if the light gives up on it, just the message.
+    // While its GIF downloads, the status card says so; if the light gives up on it,
+    // just the message.
     if (show.hasGif && net::gifInstalled(bzzy::kShowSlot, show.gifSha)) {
       view.layout = display::Layout::ShowGif;
     } else if (show.hasGif && net::gifLoading(bzzy::kShowSlot)) {
@@ -323,17 +326,34 @@ void loop() {
     } else if (show.text[0]) {
       view.layout = display::Layout::ShowText;
     }
-    if (view.layout != display::Layout::Status) {
+    if (view.layout == display::Layout::ShowGif || view.layout == display::Layout::ShowText) {
       view.text = show.text;
       view.until = show.until;
     }
   }
-  // A status whose new GIF is downloading, with no old one to show meanwhile: the logo.
+  // A status whose new GIF is downloading, with no old one to show meanwhile.
   const size_t slot = static_cast<size_t>(r.status);
   if (view.layout == display::Layout::Status && slot < bzzy::kShowSlot && net::gifLoading(slot) &&
       !net::gifOnFlash(slot)) {
     view.layout = display::Layout::Loading;
   }
+  // Loading: the status's colour card (so it still says whether you can be interrupted)
+  // with "Loading GIF" along the bottom, and a bar when the download's size is known.
+  // A firmware update's notice wins.
+  if (view.layout == display::Layout::Loading && ota::progress() < 0) {
+    static char loading[32];
+    int32_t got = 0, total = 0;
+    if (!net::gifDownload(got, total)) {
+      strlcpy(loading, "Loading GIF", sizeof(loading));  // between tries
+    } else if (total > 0) {
+      progress = (int8_t)((int64_t)got * 100 / total);
+      snprintf(loading, sizeof(loading), "Loading GIF %d%%", (int)progress);
+    } else {
+      snprintf(loading, sizeof(loading), "Loading GIF %u KB", (unsigned)(got / 1024));
+    }
+    view.notice = loading;
+  }
+  view.progress = progress;
 
   if (dark) view = {display::Layout::Off, r.status, "", 0, true, nullptr};
   leds::setOff(dark);
