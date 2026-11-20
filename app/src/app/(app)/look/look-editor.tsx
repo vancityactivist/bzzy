@@ -33,7 +33,7 @@ function initialRing(ledStyles: LedStyles | null, meetingWarn: MeetingWarn | nul
   return {
     styles,
     warnMinutes: meetingWarn?.minutes ?? 0,
-    warnPattern: meetingWarn?.leds.pattern ?? "pulse",
+    warnPattern: meetingWarn?.leds.pattern ?? "solid",
     warnColor: meetingWarn?.leds.color ?? "#ff2000",
     warnSpeed: meetingWarn?.leds.speed ?? 2,
   };

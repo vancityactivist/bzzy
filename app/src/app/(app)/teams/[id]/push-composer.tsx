@@ -25,7 +25,7 @@ export function PushComposer({ teamId, members, library }: { teamId: string; mem
   const [minutes, setMinutes] = useState(15);
   const [target, setTarget] = useState<"all" | "users">("all");
   const [picked, setPicked] = useState<string[]>([]);
-  const [ring, setRing] = useState<RingChoice>({ flash: "pulse", color: "", speed: 2, flashFor: 30 });
+  const [ring, setRing] = useState<RingChoice>({ flash: "solid", color: "", speed: 2, flashFor: 30 });
 
   const [result, action, pending] = useActionState<PushResult, FormData>(async (prev, fd) => {
     const r = await sendPushAction(teamId, prev, fd);
