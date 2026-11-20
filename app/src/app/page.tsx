@@ -21,7 +21,7 @@ import { type Block, hasFeature, nowSeconds, showVisible, STATUSES } from "@/lib
 import { resolveScreen, screenText, viewFor } from "@/lib/screen";
 import { getCurrentUser } from "@/lib/session";
 import { ringNow } from "@/lib/push-rules";
-import { ringFor } from "@/lib/ring";
+import { allowedRing, ringFor } from "@/lib/ring";
 import { pushForDevice } from "@/lib/pushes";
 import { getShow } from "@/lib/show";
 import { REPO_URL, SITE_NAME, SITE_URL } from "@/lib/site";
@@ -162,7 +162,7 @@ async function HomeContent({ searchParams }: { searchParams: PageProps<"/">["sea
           until: show.until,
           gifSrc: previewSrc(show.gif),
           gifName: show.gif?.name ?? null,
-          leds: shown.some((d) => d.ring.allowFlash) ? show.leds : null,
+          leds: allowedRing(show.leds, shown.some((d) => d.ring.allowFlash)),
         }
       : null;
   const current = schedule.find((b) => b.start <= now && now < b.end);

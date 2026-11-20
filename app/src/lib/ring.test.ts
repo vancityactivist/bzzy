@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { buildState } from "./protocol";
-import { lookRingFromInput, lookRingInput, ringFor, sentLeds } from "./ring";
+import { allowedRing, lookRingFromInput, lookRingInput, ringFor, sentLeds } from "./ring";
 
 const now = 1_762_900_000;
 const pulse = { pattern: "pulse" as const, speed: 1 };
@@ -40,6 +40,13 @@ describe("ringFor", () => {
   });
   it("never flashes when flashing is off", () => {
     expect(ringFor({ ...base, allowFlash: false, push: { leds: { pattern: "strobe" }, updatedAt: now } })).toBeNull();
+  });
+  it("still plays a Steady show or push when flashing is off", () => {
+    const steady = { pattern: "solid" as const, color: "rainbow" };
+    expect(ringFor({ ...base, allowFlash: false, show: { leds: steady, updatedAt: now } })).toEqual(steady);
+    expect(ringFor({ ...base, allowFlash: false, push: { leds: steady, updatedAt: now } })).toEqual(steady);
+    expect(allowedRing({ pattern: "pulse" }, false)).toBeNull();
+    expect(allowedRing(steady, false)).toEqual(steady);
   });
 });
 
