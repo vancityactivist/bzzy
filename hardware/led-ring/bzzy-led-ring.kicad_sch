@@ -1,7 +1,7 @@
 (kicad_sch
   (version 20230121)
   (generator bzzy_gen)
-  (uuid cbb7fb5f-db68-470b-8207-fa71c04df42c)
+  (uuid 270acf66-9461-4e87-bbaf-b89af8aecb6c)
   (paper A3)
   (title_block
     (title "bzzy LED ring")
@@ -524,7 +524,7 @@
     (in_bom yes)
     (on_board yes)
     (dnp no)
-    (uuid 60a0f286-2c80-4fb5-88f6-3241b153fc2c)
+    (uuid bf3087c8-934d-4b36-bafc-01908f1bea57)
     (property "Reference" "J1" (at 47.5 56.5 0) (effects (font (size 1.27 1.27)) (justify left)))
     (property "Value" "Wire pads" (at 47.5 63.5 0) (effects (font (size 1.27 1.27)) (justify left)))
     (property
@@ -533,26 +533,26 @@
       (at 45 60 0)
       (effects (font (size 1.27 1.27)) hide))
     (property "Datasheet" "" (at 45 60 0) (effects (font (size 1.27 1.27)) hide))
-    (pin "1" (uuid e4c7c68b-dde6-4a10-98ee-2d8643ba842a))
-    (pin "2" (uuid 0d58876b-9107-4b01-b848-dddf703105ec))
-    (pin "3" (uuid 52f3b91e-3b2c-4aaf-a3c6-3f3f3c8a41d5))
-    (pin "4" (uuid ebb9254b-a0a1-414b-ace9-652ae25063e1))
+    (pin "1" (uuid 0e9922c8-08c0-449c-86c6-347d0f886e8e))
+    (pin "2" (uuid 2f578800-888d-40f0-a51a-c661303952d3))
+    (pin "3" (uuid 196fb364-b57b-4744-91f3-9c00415da83f))
+    (pin "4" (uuid d99137a9-2539-402f-86d7-fb8b8a7b7bc9))
     (instances
-      (project "bzzy-led-ring" (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "J1") (unit 1)))))
+      (project "bzzy-led-ring" (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "J1") (unit 1)))))
   (wire
     (pts (xy 39.92 57.46) (xy 37.38 57.46))
     (stroke (width 0) (type default))
-    (uuid a371ff8f-0f9b-4294-ac7d-6dcc0b3129ec))
+    (uuid 50b03e8a-e358-48f0-9226-d66dbe2334a1))
   (label
     "IO18"
     (at 37.38 57.46 180)
     (fields_autoplaced)
     (effects (font (size 1.27 1.27)) (justify right bottom))
-    (uuid d1c64483-d009-4f9a-aa14-572aba975579))
+    (uuid 9dcf9964-8284-48af-8a61-e93551bf99bb))
   (wire
     (pts (xy 39.92 60) (xy 37.38 60))
     (stroke (width 0) (type default))
-    (uuid 5146d091-402a-4982-9a06-a749b2e34eed))
+    (uuid d9c326aa-8fc0-4a4a-a8d5-503e3dd1209b))
   (symbol
     (lib_id "power:+5V")
     (at 37.38 60 0)
@@ -560,7 +560,7 @@
     (in_bom no)
     (on_board no)
     (dnp no)
-    (uuid 0b5857d2-85b5-4def-9bd3-055a285addaf)
+    (uuid 00709e67-6562-4bad-9fc2-b5491c6fbd8a)
     (property
       "Reference"
       "#PWR01"
@@ -569,15 +569,15 @@
     (property "Value" "+5V" (at 37.38 56.2 0) (effects (font (size 1.27 1.27))))
     (property "Footprint" "" (at 37.38 60 0) (effects (font (size 1.27 1.27)) hide))
     (property "Datasheet" "" (at 37.38 60 0) (effects (font (size 1.27 1.27)) hide))
-    (pin "1" (uuid 41b6b1da-c078-4471-8ff6-8c0af02fc136))
+    (pin "1" (uuid 339c82e5-0d7d-4cda-84c0-04ca31f59602))
     (instances
       (project
         "bzzy-led-ring"
-        (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "#PWR01") (unit 1)))))
+        (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "#PWR01") (unit 1)))))
   (wire
     (pts (xy 39.92 62.54) (xy 37.38 62.54))
     (stroke (width 0) (type default))
-    (uuid 0931ac15-229a-4dd5-a9d9-9825c4bc1534))
+    (uuid 2bd5f78c-a84e-4ed3-9052-85825b783bcc))
   (symbol
     (lib_id "power:GND")
     (at 37.38 62.54 0)
@@ -585,7 +585,7 @@
     (in_bom no)
     (on_board no)
     (dnp no)
-    (uuid bb7690f3-9f6d-44c2-8c4d-b0a360a4e40c)
+    (uuid bb5ec518-d1a1-4a84-bc51-9a914c0d44db)
     (property
       "Reference"
       "#PWR02"
@@ -594,21 +594,21 @@
     (property "Value" "GND" (at 37.38 67.54 0) (effects (font (size 1.27 1.27))))
     (property "Footprint" "" (at 37.38 62.54 0) (effects (font (size 1.27 1.27)) hide))
     (property "Datasheet" "" (at 37.38 62.54 0) (effects (font (size 1.27 1.27)) hide))
-    (pin "1" (uuid 551682de-6340-4488-b172-b1acb108e81c))
+    (pin "1" (uuid 7e4ba410-6061-407a-a2cb-ae69fa257ebb))
     (instances
       (project
         "bzzy-led-ring"
-        (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "#PWR02") (unit 1)))))
+        (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "#PWR02") (unit 1)))))
   (wire
     (pts (xy 39.92 65.08) (xy 37.38 65.08))
     (stroke (width 0) (type default))
-    (uuid 4cb15979-0c8f-439a-85c5-159058ac61d8))
+    (uuid ca28a2ab-e6b8-4dbd-8874-159e3f95ace0))
   (label
     "LED_DATA_3V3"
     (at 37.38 65.08 180)
     (fields_autoplaced)
     (effects (font (size 1.27 1.27)) (justify right bottom))
-    (uuid aeb13a65-175c-46b6-9c9c-e7504b65f81e))
+    (uuid 4b50bb29-8c40-4eb7-b416-dfd61c23b7b1))
   (symbol
     (lib_id "Device:R_Small")
     (at 150 75 0)
@@ -616,7 +616,7 @@
     (in_bom yes)
     (on_board yes)
     (dnp no)
-    (uuid 392cb8f7-ad38-4426-80d2-b7dab7cb93a7)
+    (uuid 3e40984a-2f4a-4b93-a1ad-69ab264bb84b)
     (property "Reference" "R3" (at 152.5 71.5 0) (effects (font (size 1.27 1.27)) (justify left)))
     (property "Value" "1k" (at 152.5 78.5 0) (effects (font (size 1.27 1.27)) (justify left)))
     (property
@@ -627,30 +627,30 @@
     (property "Datasheet" "" (at 150 75 0) (effects (font (size 1.27 1.27)) hide))
     (property "MPN" "0402WGF1001TCE" (at 150 75 0) (effects (font (size 1.27 1.27)) hide))
     (property "LCSC" "C11702" (at 150 75 0) (effects (font (size 1.27 1.27)) hide))
-    (pin "1" (uuid ebe9d260-56f2-4837-bc7f-55e66595ae55))
-    (pin "2" (uuid efde53ea-cf97-40e8-b189-9b283722f873))
+    (pin "1" (uuid df744924-f4c5-4531-8390-1e87c611b8d3))
+    (pin "2" (uuid 06e9c167-635c-4dc7-b07b-d392cb46deff))
     (instances
-      (project "bzzy-led-ring" (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "R3") (unit 1)))))
+      (project "bzzy-led-ring" (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "R3") (unit 1)))))
   (wire
     (pts (xy 150 72.46) (xy 150 69.92))
     (stroke (width 0) (type default))
-    (uuid e7e33004-f401-47f3-a3e6-052d79b41465))
+    (uuid bce84c84-351b-4894-80a3-ba0a628a3b54))
   (label
     "IO18"
     (at 150 69.92 90)
     (fields_autoplaced)
     (effects (font (size 1.27 1.27)) (justify left bottom))
-    (uuid 9f8c1e8a-0ee8-4616-b49a-5e1cca84ece1))
+    (uuid 55167bb4-b848-41f9-9f19-d87a86f36492))
   (wire
     (pts (xy 150 77.54) (xy 150 80.08))
     (stroke (width 0) (type default))
-    (uuid 7a27e8b6-5d4b-44d1-87e0-7cfa4afeb94c))
+    (uuid 12416727-7854-4c15-8b9c-97634f200704))
   (label
     "BTN"
     (at 150 80.08 270)
     (fields_autoplaced)
     (effects (font (size 1.27 1.27)) (justify right bottom))
-    (uuid a0699322-440f-4e0d-bda1-06047ba74862))
+    (uuid 17fa12d8-fcb1-4e5f-ad36-19c2b1bc728c))
   (symbol
     (lib_id "Device:R_Small")
     (at 70 75 0)
@@ -658,7 +658,7 @@
     (in_bom yes)
     (on_board yes)
     (dnp no)
-    (uuid 96de8bed-969f-4254-b5e7-e2aa2f46593b)
+    (uuid 8d7f24f0-4f38-466b-a22f-d987e04dbcde)
     (property "Reference" "R1" (at 72.5 71.5 0) (effects (font (size 1.27 1.27)) (justify left)))
     (property "Value" "10k" (at 72.5 78.5 0) (effects (font (size 1.27 1.27)) (justify left)))
     (property
@@ -669,24 +669,24 @@
     (property "Datasheet" "" (at 70 75 0) (effects (font (size 1.27 1.27)) hide))
     (property "MPN" "0402WGF1002TCE" (at 70 75 0) (effects (font (size 1.27 1.27)) hide))
     (property "LCSC" "C25744" (at 70 75 0) (effects (font (size 1.27 1.27)) hide))
-    (pin "1" (uuid 4027b6ed-f83f-4fab-a9ae-c5983edf4544))
-    (pin "2" (uuid 56c8bccd-172f-4051-aa18-1453d28c57bc))
+    (pin "1" (uuid 0d652d83-04d8-4eb6-9f5c-6d4129835660))
+    (pin "2" (uuid 48606c00-db46-4f09-9620-c7c10d0901d1))
     (instances
-      (project "bzzy-led-ring" (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "R1") (unit 1)))))
+      (project "bzzy-led-ring" (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "R1") (unit 1)))))
   (wire
     (pts (xy 70 72.46) (xy 70 69.92))
     (stroke (width 0) (type default))
-    (uuid 5c1ab058-795d-415c-a5a3-23a2992215bf))
+    (uuid c1496ca4-d39b-44c8-9a36-ad48d7ff370f))
   (label
     "LED_DATA_3V3"
     (at 70 69.92 90)
     (fields_autoplaced)
     (effects (font (size 1.27 1.27)) (justify left bottom))
-    (uuid 99310b9c-fc88-4024-99e5-b38d4a1e31de))
+    (uuid c837c206-3d96-4d1c-bc0e-17cce9db58c8))
   (wire
     (pts (xy 70 77.54) (xy 70 80.08))
     (stroke (width 0) (type default))
-    (uuid 4e4bb2eb-6837-42f2-b057-21eb3907447c))
+    (uuid a2acfcf4-b152-4c33-82e5-274a36635792))
   (symbol
     (lib_id "power:GND")
     (at 70 80.08 0)
@@ -694,7 +694,7 @@
     (in_bom no)
     (on_board no)
     (dnp no)
-    (uuid d3bc8f6f-c0f2-4d4e-a22d-db6f3d7d43ad)
+    (uuid 0c0fc91c-f6d7-4f64-b953-38333c555cee)
     (property
       "Reference"
       "#PWR03"
@@ -703,11 +703,11 @@
     (property "Value" "GND" (at 70 85.08 0) (effects (font (size 1.27 1.27))))
     (property "Footprint" "" (at 70 80.08 0) (effects (font (size 1.27 1.27)) hide))
     (property "Datasheet" "" (at 70 80.08 0) (effects (font (size 1.27 1.27)) hide))
-    (pin "1" (uuid 18fe1d28-ec2d-47ac-9077-22758c9b4409))
+    (pin "1" (uuid 18517924-f2ac-457f-bd0c-b4ece2ca652f))
     (instances
       (project
         "bzzy-led-ring"
-        (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "#PWR03") (unit 1)))))
+        (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "#PWR03") (unit 1)))))
   (symbol
     (lib_id "74xGxx:74AHCT1G125")
     (at 100 60 0)
@@ -715,7 +715,7 @@
     (in_bom yes)
     (on_board yes)
     (dnp no)
-    (uuid 6807840f-d337-460b-9529-3bf89f1ebd11)
+    (uuid 3878c942-0e83-4bf1-b386-0fe49f553b2b)
     (property "Reference" "U1" (at 102.5 56.5 0) (effects (font (size 1.27 1.27)) (justify left)))
     (property "Value" "74AHCT1G125" (at 102.5 63.5 0) (effects (font (size 1.27 1.27)) (justify left)))
     (property
@@ -726,17 +726,17 @@
     (property "Datasheet" "" (at 100 60 0) (effects (font (size 1.27 1.27)) hide))
     (property "MPN" "74AHCT1G125GV,125" (at 100 60 0) (effects (font (size 1.27 1.27)) hide))
     (property "LCSC" "C12494" (at 100 60 0) (effects (font (size 1.27 1.27)) hide))
-    (pin "1" (uuid 927c30bc-2b60-457e-ab0f-564f3e6f0e7d))
-    (pin "2" (uuid 49060f46-424c-4fef-8b1b-af400e2ef71e))
-    (pin "3" (uuid f62b51a6-cbb6-4215-9645-9b208698986b))
-    (pin "4" (uuid 68bdeb98-498d-4ff6-8782-e426cbc7403f))
-    (pin "5" (uuid 983744b8-37ad-4124-a8c9-0d87b30cf738))
+    (pin "1" (uuid c0f5b18b-0636-4eb0-96e4-9fd25127e719))
+    (pin "2" (uuid 51e18fc1-b232-4a24-b1ac-650dbb71499c))
+    (pin "3" (uuid d93e888d-5de9-4f0e-b3a7-6a6f79f82e67))
+    (pin "4" (uuid 2f7a3046-8744-484f-bdfb-d6e9b6e16073))
+    (pin "5" (uuid 0ab15962-0596-472b-a312-8f541c0b5f31))
     (instances
-      (project "bzzy-led-ring" (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "U1") (unit 1)))))
+      (project "bzzy-led-ring" (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "U1") (unit 1)))))
   (wire
     (pts (xy 100 49.84) (xy 100 47.3))
     (stroke (width 0) (type default))
-    (uuid efa57aad-c7cb-47a9-935e-8022085ed72b))
+    (uuid 21bb810c-d8f4-4aa2-a3ef-620581477dc2))
   (symbol
     (lib_id "power:GND")
     (at 100 47.3 0)
@@ -744,7 +744,7 @@
     (in_bom no)
     (on_board no)
     (dnp no)
-    (uuid 578e856c-ea20-4570-b6f8-d8e7613ae1ec)
+    (uuid 52a421a2-d115-46c9-b871-fadeaac0fc95)
     (property
       "Reference"
       "#PWR04"
@@ -753,25 +753,25 @@
     (property "Value" "GND" (at 100 52.3 0) (effects (font (size 1.27 1.27))))
     (property "Footprint" "" (at 100 47.3 0) (effects (font (size 1.27 1.27)) hide))
     (property "Datasheet" "" (at 100 47.3 0) (effects (font (size 1.27 1.27)) hide))
-    (pin "1" (uuid 1922f606-6407-4284-a750-3fc02cb95cdf))
+    (pin "1" (uuid 0fd64386-1085-4ab5-8d4e-6420ccc30aef))
     (instances
       (project
         "bzzy-led-ring"
-        (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "#PWR04") (unit 1)))))
+        (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "#PWR04") (unit 1)))))
   (wire
     (pts (xy 84.76 60) (xy 82.22 60))
     (stroke (width 0) (type default))
-    (uuid ef5f500f-3669-4868-8dd0-fb43d1c740ca))
+    (uuid d78c0a65-e2f4-49bf-a952-0c6a0c29fd3d))
   (label
     "LED_DATA_3V3"
     (at 82.22 60 180)
     (fields_autoplaced)
     (effects (font (size 1.27 1.27)) (justify right bottom))
-    (uuid 1647b8b1-0b1c-422f-9960-d1507f750fa7))
+    (uuid 34d57214-8d23-4ee3-875c-2bd69238eafa))
   (wire
     (pts (xy 94.92 70.16) (xy 94.92 72.7))
     (stroke (width 0) (type default))
-    (uuid 9e524e29-b5cc-40b7-b452-e6ed8ba400e3))
+    (uuid 848c4ea2-3e2c-48de-ab6d-842c5654670d))
   (symbol
     (lib_id "power:GND")
     (at 94.92 72.7 0)
@@ -779,7 +779,7 @@
     (in_bom no)
     (on_board no)
     (dnp no)
-    (uuid aef021df-5b82-40a3-8ad0-ddcb036146a6)
+    (uuid 6fa7f62c-f0f0-488a-a134-3b4d815d5f36)
     (property
       "Reference"
       "#PWR05"
@@ -788,25 +788,25 @@
     (property "Value" "GND" (at 94.92 77.7 0) (effects (font (size 1.27 1.27))))
     (property "Footprint" "" (at 94.92 72.7 0) (effects (font (size 1.27 1.27)) hide))
     (property "Datasheet" "" (at 94.92 72.7 0) (effects (font (size 1.27 1.27)) hide))
-    (pin "1" (uuid 5c72a211-2b7e-41b7-b0e2-b67e8b073303))
+    (pin "1" (uuid c845fb9b-b08b-4844-9347-702fd888a644))
     (instances
       (project
         "bzzy-led-ring"
-        (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "#PWR05") (unit 1)))))
+        (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "#PWR05") (unit 1)))))
   (wire
     (pts (xy 112.7 60) (xy 115.24 60))
     (stroke (width 0) (type default))
-    (uuid 13ac49fc-2371-49ed-a623-08a1e4ef096a))
+    (uuid 7dad9abc-ba2f-4ee7-b92a-501683d1f6c7))
   (label
     "LED_DATA_5V"
     (at 115.24 60 0)
     (fields_autoplaced)
     (effects (font (size 1.27 1.27)) (justify left bottom))
-    (uuid 48bf31af-5104-4102-b49f-605f0e1c59c6))
+    (uuid 9d7ac509-4023-4232-9d78-55210cfcd4c8))
   (wire
     (pts (xy 94.92 49.84) (xy 94.92 47.3))
     (stroke (width 0) (type default))
-    (uuid 23bf3259-2a70-4bf6-ad8f-b91ab0016198))
+    (uuid b6b10404-1fa5-420d-a56a-9acdfc62468c))
   (symbol
     (lib_id "power:+5V")
     (at 94.92 47.3 0)
@@ -814,7 +814,7 @@
     (in_bom no)
     (on_board no)
     (dnp no)
-    (uuid fad58e2c-86bc-4225-8dcc-16090a00d14b)
+    (uuid b2e89436-8f16-4d7a-b9c5-ce81948b40d3)
     (property
       "Reference"
       "#PWR06"
@@ -823,11 +823,11 @@
     (property "Value" "+5V" (at 94.92 43.5 0) (effects (font (size 1.27 1.27))))
     (property "Footprint" "" (at 94.92 47.3 0) (effects (font (size 1.27 1.27)) hide))
     (property "Datasheet" "" (at 94.92 47.3 0) (effects (font (size 1.27 1.27)) hide))
-    (pin "1" (uuid 38a08eae-a6da-403a-8b65-98a6cc75aa3b))
+    (pin "1" (uuid 61c06442-db40-4239-a177-8f81ea30a139))
     (instances
       (project
         "bzzy-led-ring"
-        (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "#PWR06") (unit 1)))))
+        (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "#PWR06") (unit 1)))))
   (symbol
     (lib_id "Device:C_Small")
     (at 100 90 0)
@@ -835,7 +835,7 @@
     (in_bom yes)
     (on_board yes)
     (dnp no)
-    (uuid 64e890cc-4588-41f7-9d84-878bf1c49b6e)
+    (uuid e3244f12-2a83-494a-b877-4ef76ba1b5cf)
     (property "Reference" "C1" (at 102.5 86.5 0) (effects (font (size 1.27 1.27)) (justify left)))
     (property "Value" "100nF" (at 102.5 93.5 0) (effects (font (size 1.27 1.27)) (justify left)))
     (property
@@ -846,14 +846,14 @@
     (property "Datasheet" "" (at 100 90 0) (effects (font (size 1.27 1.27)) hide))
     (property "MPN" "CL05B104KO5NNNC" (at 100 90 0) (effects (font (size 1.27 1.27)) hide))
     (property "LCSC" "C1525" (at 100 90 0) (effects (font (size 1.27 1.27)) hide))
-    (pin "1" (uuid c8931736-53e8-4070-a6f6-ca9fe5f7f9ae))
-    (pin "2" (uuid c6e6d422-8ede-4797-93fc-9b7a5b3755a3))
+    (pin "1" (uuid 4ad75ed8-9254-42e6-adb3-268f519855db))
+    (pin "2" (uuid 9523effd-8922-4b69-9e95-0a2ebcedb8e1))
     (instances
-      (project "bzzy-led-ring" (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "C1") (unit 1)))))
+      (project "bzzy-led-ring" (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "C1") (unit 1)))))
   (wire
     (pts (xy 100 87.46) (xy 100 84.92))
     (stroke (width 0) (type default))
-    (uuid d2242bbf-eec8-4c4a-abf3-e4ca1f20bc7f))
+    (uuid 1b61f3a8-c52d-4f4f-8f82-7d7c703c6e45))
   (symbol
     (lib_id "power:+5V")
     (at 100 84.92 0)
@@ -861,7 +861,7 @@
     (in_bom no)
     (on_board no)
     (dnp no)
-    (uuid b369183c-48c1-4c32-9bf8-b432f3c60b58)
+    (uuid b28efd7d-c8f6-4195-9d1b-efdf4a296520)
     (property
       "Reference"
       "#PWR07"
@@ -870,15 +870,15 @@
     (property "Value" "+5V" (at 100 81.12 0) (effects (font (size 1.27 1.27))))
     (property "Footprint" "" (at 100 84.92 0) (effects (font (size 1.27 1.27)) hide))
     (property "Datasheet" "" (at 100 84.92 0) (effects (font (size 1.27 1.27)) hide))
-    (pin "1" (uuid 5fdf4937-aaf5-4066-bb2f-501708172156))
+    (pin "1" (uuid 03102d8d-c1d3-4263-b772-f5fd239ba1b2))
     (instances
       (project
         "bzzy-led-ring"
-        (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "#PWR07") (unit 1)))))
+        (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "#PWR07") (unit 1)))))
   (wire
     (pts (xy 100 92.54) (xy 100 95.08))
     (stroke (width 0) (type default))
-    (uuid 67a691bc-bc2c-4bbe-ab94-ee653e7ba09a))
+    (uuid aa7cea50-1df7-424a-9949-1d5666df5b74))
   (symbol
     (lib_id "power:GND")
     (at 100 95.08 0)
@@ -886,7 +886,7 @@
     (in_bom no)
     (on_board no)
     (dnp no)
-    (uuid e3c68a72-2e5d-4a23-a86e-4a74f44b145e)
+    (uuid 1547c63d-f3ed-4e3f-87c6-18f6e81eb2c5)
     (property
       "Reference"
       "#PWR08"
@@ -895,11 +895,11 @@
     (property "Value" "GND" (at 100 100.08 0) (effects (font (size 1.27 1.27))))
     (property "Footprint" "" (at 100 95.08 0) (effects (font (size 1.27 1.27)) hide))
     (property "Datasheet" "" (at 100 95.08 0) (effects (font (size 1.27 1.27)) hide))
-    (pin "1" (uuid 80482b7d-b08c-4971-8e92-2a354a63d815))
+    (pin "1" (uuid 724c6b6c-175e-4f8e-8d6f-82d4334dc5e4))
     (instances
       (project
         "bzzy-led-ring"
-        (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "#PWR08") (unit 1)))))
+        (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "#PWR08") (unit 1)))))
   (symbol
     (lib_id "Device:R_Small")
     (at 130 60 0)
@@ -907,7 +907,7 @@
     (in_bom yes)
     (on_board yes)
     (dnp no)
-    (uuid 75889adc-8de2-4677-ac64-f0221847234f)
+    (uuid 6a99b761-6bce-4138-bd35-f8d638d469d0)
     (property "Reference" "R2" (at 132.5 56.5 0) (effects (font (size 1.27 1.27)) (justify left)))
     (property "Value" "33R" (at 132.5 63.5 0) (effects (font (size 1.27 1.27)) (justify left)))
     (property
@@ -918,30 +918,30 @@
     (property "Datasheet" "" (at 130 60 0) (effects (font (size 1.27 1.27)) hide))
     (property "MPN" "0402WGF330JTCE" (at 130 60 0) (effects (font (size 1.27 1.27)) hide))
     (property "LCSC" "C25105" (at 130 60 0) (effects (font (size 1.27 1.27)) hide))
-    (pin "1" (uuid 878fcfd0-fde4-4e5a-90b0-8e4b49f41eb6))
-    (pin "2" (uuid db8eede4-967e-4e92-bebb-7d1fa99584d8))
+    (pin "1" (uuid 5627ff1e-3a5f-44ab-b747-bd8e9f235825))
+    (pin "2" (uuid 4f4bedac-ed1b-4d34-842c-d23e613d1bc3))
     (instances
-      (project "bzzy-led-ring" (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "R2") (unit 1)))))
+      (project "bzzy-led-ring" (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "R2") (unit 1)))))
   (wire
     (pts (xy 130 57.46) (xy 130 54.92))
     (stroke (width 0) (type default))
-    (uuid ee2ca60f-d791-4b56-b950-7d5eaea742eb))
+    (uuid 8db6d650-0410-4c3a-9cb4-e6f0f1c2fb6d))
   (label
     "LED_DATA_5V"
     (at 130 54.92 90)
     (fields_autoplaced)
     (effects (font (size 1.27 1.27)) (justify left bottom))
-    (uuid 56144bb4-afaf-43fa-a06b-fdf493a75046))
+    (uuid 49ce41f0-e562-4ad9-aa3f-4a96ac396baa))
   (wire
     (pts (xy 130 62.54) (xy 130 65.08))
     (stroke (width 0) (type default))
-    (uuid fd5527ef-eb2e-419e-9d2a-ec7f158669b5))
+    (uuid d9990daf-6809-4250-a1a7-acb17456f7f1))
   (label
     "DIN1"
     (at 130 65.08 270)
     (fields_autoplaced)
     (effects (font (size 1.27 1.27)) (justify right bottom))
-    (uuid 840cd19f-78cd-49c4-851c-df97934d34a3))
+    (uuid 3b595468-058d-427b-8a80-9c069ac0fe30))
   (symbol
     (lib_id "Device:C_Small")
     (at 55 90 0)
@@ -949,7 +949,7 @@
     (in_bom yes)
     (on_board yes)
     (dnp no)
-    (uuid 0afa27b3-d00e-4246-af24-b2b3da97a73f)
+    (uuid d785b13f-dbb2-42f0-980f-0a7d20e0edd7)
     (property "Reference" "C2" (at 57.5 86.5 0) (effects (font (size 1.27 1.27)) (justify left)))
     (property "Value" "10uF" (at 57.5 93.5 0) (effects (font (size 1.27 1.27)) (justify left)))
     (property
@@ -960,14 +960,14 @@
     (property "Datasheet" "" (at 55 90 0) (effects (font (size 1.27 1.27)) hide))
     (property "MPN" "CL21A106KAYNNNE" (at 55 90 0) (effects (font (size 1.27 1.27)) hide))
     (property "LCSC" "C15850" (at 55 90 0) (effects (font (size 1.27 1.27)) hide))
-    (pin "1" (uuid b81e9721-b873-45b2-b2d8-f93dc11291f7))
-    (pin "2" (uuid 8d3ed5ea-d487-47dc-9519-baaee741209b))
+    (pin "1" (uuid 5223a432-b459-4c84-b259-c82d83c701e8))
+    (pin "2" (uuid d7e6adea-1d0d-4db6-8e20-65167381ef06))
     (instances
-      (project "bzzy-led-ring" (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "C2") (unit 1)))))
+      (project "bzzy-led-ring" (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "C2") (unit 1)))))
   (wire
     (pts (xy 55 87.46) (xy 55 84.92))
     (stroke (width 0) (type default))
-    (uuid e82cedd6-bfdd-401b-8d86-e004aecb3182))
+    (uuid 36678752-f2db-42b1-9b11-2b6eb01ed659))
   (symbol
     (lib_id "power:+5V")
     (at 55 84.92 0)
@@ -975,7 +975,7 @@
     (in_bom no)
     (on_board no)
     (dnp no)
-    (uuid d86c1df8-09cb-483b-adae-465b14e75ada)
+    (uuid c2bd4c28-7a8d-436d-bc14-ef978841b258)
     (property
       "Reference"
       "#PWR09"
@@ -984,15 +984,15 @@
     (property "Value" "+5V" (at 55 81.12 0) (effects (font (size 1.27 1.27))))
     (property "Footprint" "" (at 55 84.92 0) (effects (font (size 1.27 1.27)) hide))
     (property "Datasheet" "" (at 55 84.92 0) (effects (font (size 1.27 1.27)) hide))
-    (pin "1" (uuid 2dba300f-0ebb-4c1a-82d2-2374fc8bff7e))
+    (pin "1" (uuid d01323df-116f-4b34-a2da-3d1437847904))
     (instances
       (project
         "bzzy-led-ring"
-        (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "#PWR09") (unit 1)))))
+        (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "#PWR09") (unit 1)))))
   (wire
     (pts (xy 55 92.54) (xy 55 95.08))
     (stroke (width 0) (type default))
-    (uuid ff750fa9-39c3-40ac-ad55-bbe2b9d6ac3f))
+    (uuid 8fdb0765-4c6c-4041-93eb-69841cad8050))
   (symbol
     (lib_id "power:GND")
     (at 55 95.08 0)
@@ -1000,7 +1000,7 @@
     (in_bom no)
     (on_board no)
     (dnp no)
-    (uuid 3d91c60d-58b1-4ec1-92e8-c0389ffc4810)
+    (uuid ab692cdc-68e4-48cc-a98d-39bae2d05b25)
     (property
       "Reference"
       "#PWR10"
@@ -1009,11 +1009,11 @@
     (property "Value" "GND" (at 55 100.08 0) (effects (font (size 1.27 1.27))))
     (property "Footprint" "" (at 55 95.08 0) (effects (font (size 1.27 1.27)) hide))
     (property "Datasheet" "" (at 55 95.08 0) (effects (font (size 1.27 1.27)) hide))
-    (pin "1" (uuid 5183f5ae-9bbd-431e-95f3-b9033c8cdb0e))
+    (pin "1" (uuid 5dbdf13d-48ba-4cfc-807c-8912e064447f))
     (instances
       (project
         "bzzy-led-ring"
-        (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "#PWR10") (unit 1)))))
+        (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "#PWR10") (unit 1)))))
   (symbol
     (lib_id "Device:C_Small")
     (at 70 90 0)
@@ -1021,7 +1021,7 @@
     (in_bom yes)
     (on_board yes)
     (dnp no)
-    (uuid d1d28c36-4b6c-4409-95c8-c65ac673ff98)
+    (uuid 9a03ca89-b4ad-4bd0-a36b-38cf3b814bfb)
     (property "Reference" "C3" (at 72.5 86.5 0) (effects (font (size 1.27 1.27)) (justify left)))
     (property "Value" "10uF" (at 72.5 93.5 0) (effects (font (size 1.27 1.27)) (justify left)))
     (property
@@ -1032,14 +1032,14 @@
     (property "Datasheet" "" (at 70 90 0) (effects (font (size 1.27 1.27)) hide))
     (property "MPN" "CL21A106KAYNNNE" (at 70 90 0) (effects (font (size 1.27 1.27)) hide))
     (property "LCSC" "C15850" (at 70 90 0) (effects (font (size 1.27 1.27)) hide))
-    (pin "1" (uuid e70df9f5-b039-4aa5-8c23-661ac0b3de27))
-    (pin "2" (uuid e16540f4-bd2f-4e6f-89ed-15cf699a833e))
+    (pin "1" (uuid b70fbe97-738f-4bd0-b615-b395d533ee27))
+    (pin "2" (uuid bbcd713f-e016-429b-a2d4-2b2701fbadcc))
     (instances
-      (project "bzzy-led-ring" (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "C3") (unit 1)))))
+      (project "bzzy-led-ring" (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "C3") (unit 1)))))
   (wire
     (pts (xy 70 87.46) (xy 70 84.92))
     (stroke (width 0) (type default))
-    (uuid 63a150f9-63fb-4333-a07f-2e4c07dc92cd))
+    (uuid eb0ff6d3-e8ed-481a-9bf8-63a2b49d96f9))
   (symbol
     (lib_id "power:+5V")
     (at 70 84.92 0)
@@ -1047,7 +1047,7 @@
     (in_bom no)
     (on_board no)
     (dnp no)
-    (uuid cc67d700-db05-40d8-ac8f-e97f4da0dbbe)
+    (uuid 8a861d9a-5fae-47d9-b41e-340a5df72fe7)
     (property
       "Reference"
       "#PWR11"
@@ -1056,15 +1056,15 @@
     (property "Value" "+5V" (at 70 81.12 0) (effects (font (size 1.27 1.27))))
     (property "Footprint" "" (at 70 84.92 0) (effects (font (size 1.27 1.27)) hide))
     (property "Datasheet" "" (at 70 84.92 0) (effects (font (size 1.27 1.27)) hide))
-    (pin "1" (uuid 38ad675b-c6d4-4f82-843a-6a468a446c15))
+    (pin "1" (uuid 0cedf9f4-00ae-4358-a454-4d3acb98d4d3))
     (instances
       (project
         "bzzy-led-ring"
-        (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "#PWR11") (unit 1)))))
+        (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "#PWR11") (unit 1)))))
   (wire
     (pts (xy 70 92.54) (xy 70 95.08))
     (stroke (width 0) (type default))
-    (uuid 5e53ae1e-8f64-4834-8979-b77dbc0061ce))
+    (uuid f103635b-77ca-49a2-8c60-7c4198cf017d))
   (symbol
     (lib_id "power:GND")
     (at 70 95.08 0)
@@ -1072,7 +1072,7 @@
     (in_bom no)
     (on_board no)
     (dnp no)
-    (uuid e688c324-8082-4fd0-b527-9f95d4be1b80)
+    (uuid f8abf3ad-976e-452c-bf0d-bdbd477a563d)
     (property
       "Reference"
       "#PWR12"
@@ -1081,11 +1081,11 @@
     (property "Value" "GND" (at 70 100.08 0) (effects (font (size 1.27 1.27))))
     (property "Footprint" "" (at 70 95.08 0) (effects (font (size 1.27 1.27)) hide))
     (property "Datasheet" "" (at 70 95.08 0) (effects (font (size 1.27 1.27)) hide))
-    (pin "1" (uuid 5aebcafc-fa10-4b2b-98a3-414a09e33c81))
+    (pin "1" (uuid a75f0b2a-4e76-4ad1-bf6a-cec188ed8464))
     (instances
       (project
         "bzzy-led-ring"
-        (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "#PWR12") (unit 1)))))
+        (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "#PWR12") (unit 1)))))
   (symbol
     (lib_id "LED:WS2812B-2020")
     (at 40 130 0)
@@ -1093,7 +1093,7 @@
     (in_bom yes)
     (on_board yes)
     (dnp no)
-    (uuid e9a89548-df8f-4225-bcd8-35a14178a60d)
+    (uuid 7b084c5e-33ee-401c-8ff2-de7d043d2762)
     (property "Reference" "D1" (at 42.5 126.5 0) (effects (font (size 1.27 1.27)) (justify left)))
     (property
       "Value"
@@ -1108,26 +1108,26 @@
     (property "Datasheet" "" (at 40 130 0) (effects (font (size 1.27 1.27)) hide))
     (property "MPN" "WS2812B-2020" (at 40 130 0) (effects (font (size 1.27 1.27)) hide))
     (property "LCSC" "C965555" (at 40 130 0) (effects (font (size 1.27 1.27)) hide))
-    (pin "1" (uuid 0c2f389e-871c-45d2-82f8-6ba54ab7bce6))
-    (pin "2" (uuid 35305bf2-f3be-49ee-9f09-40333a865586))
-    (pin "3" (uuid 0b738bcd-7e60-473f-9b83-9e3eb90e883f))
-    (pin "4" (uuid df632d9a-9663-4d4f-b24b-6b077adc8bae))
+    (pin "1" (uuid 19172fc4-a706-4b62-9d1a-6f61ffa9b77c))
+    (pin "2" (uuid 51ac5577-90d8-4d28-800b-e7276523c1b3))
+    (pin "3" (uuid 80feb2c9-a199-47d7-889b-4dca2e36797d))
+    (pin "4" (uuid 4dac8afd-c8c5-4d00-872b-f36d8acfe2ad))
     (instances
-      (project "bzzy-led-ring" (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "D1") (unit 1)))))
+      (project "bzzy-led-ring" (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "D1") (unit 1)))))
   (wire
     (pts (xy 47.62 130) (xy 50.16 130))
     (stroke (width 0) (type default))
-    (uuid 874bb967-aea6-4a38-ac7b-48c7f76a2ad3))
+    (uuid de654e5a-fe0b-497b-9274-3969cc88145c))
   (label
     "DIN2"
     (at 50.16 130 0)
     (fields_autoplaced)
     (effects (font (size 1.27 1.27)) (justify left bottom))
-    (uuid 959111fb-0cbd-46d1-98cb-ced87708aed3))
+    (uuid 23c08db0-3366-455b-815b-2be33f76b5f7))
   (wire
     (pts (xy 40 137.62) (xy 40 140.16))
     (stroke (width 0) (type default))
-    (uuid da5687d9-8dfe-48fb-b212-3a4005253645))
+    (uuid 88aacc1a-42f8-494c-b5d9-d7be0f30e9e9))
   (symbol
     (lib_id "power:GND")
     (at 40 140.16 0)
@@ -1135,7 +1135,7 @@
     (in_bom no)
     (on_board no)
     (dnp no)
-    (uuid 2120d4f6-ea2b-425f-8c12-a65a1046b5ef)
+    (uuid 546d9d23-9846-4e6b-83ed-851bcc16c5a1)
     (property
       "Reference"
       "#PWR13"
@@ -1144,25 +1144,25 @@
     (property "Value" "GND" (at 40 145.16 0) (effects (font (size 1.27 1.27))))
     (property "Footprint" "" (at 40 140.16 0) (effects (font (size 1.27 1.27)) hide))
     (property "Datasheet" "" (at 40 140.16 0) (effects (font (size 1.27 1.27)) hide))
-    (pin "1" (uuid 1265ea4f-fe54-47ef-ab75-2a609325f2a5))
+    (pin "1" (uuid ae27ec10-7f1e-4a11-9cc7-afd97d9277a9))
     (instances
       (project
         "bzzy-led-ring"
-        (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "#PWR13") (unit 1)))))
+        (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "#PWR13") (unit 1)))))
   (wire
     (pts (xy 32.38 130) (xy 29.84 130))
     (stroke (width 0) (type default))
-    (uuid 7bb626b2-d101-4efc-a2f4-ccdc1a2eb6bf))
+    (uuid 733c681b-f8b4-496b-bce7-a7282b5da153))
   (label
     "DIN1"
     (at 29.84 130 180)
     (fields_autoplaced)
     (effects (font (size 1.27 1.27)) (justify right bottom))
-    (uuid 1f062448-dd36-4356-be88-b27c79cfdbdd))
+    (uuid 5be61731-6b77-47a7-87bc-3e62c4a7a44e))
   (wire
     (pts (xy 40 122.38) (xy 40 119.84))
     (stroke (width 0) (type default))
-    (uuid 7fbffcb4-95ac-4bc5-ab10-560e8d148f97))
+    (uuid b8c56056-14ff-4352-a031-29931ccc663e))
   (symbol
     (lib_id "power:+5V")
     (at 40 119.84 0)
@@ -1170,7 +1170,7 @@
     (in_bom no)
     (on_board no)
     (dnp no)
-    (uuid dc419704-0b78-436b-840e-380a66a798fc)
+    (uuid bbf37a2c-42a6-4d3b-9fd0-f30a135e5579)
     (property
       "Reference"
       "#PWR14"
@@ -1179,11 +1179,11 @@
     (property "Value" "+5V" (at 40 116.04 0) (effects (font (size 1.27 1.27))))
     (property "Footprint" "" (at 40 119.84 0) (effects (font (size 1.27 1.27)) hide))
     (property "Datasheet" "" (at 40 119.84 0) (effects (font (size 1.27 1.27)) hide))
-    (pin "1" (uuid ad78d258-af6b-4c9e-a85d-d48e0c285454))
+    (pin "1" (uuid 22d967b1-a759-4456-b973-6b78094bb13f))
     (instances
       (project
         "bzzy-led-ring"
-        (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "#PWR14") (unit 1)))))
+        (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "#PWR14") (unit 1)))))
   (symbol
     (lib_id "Device:C_Small")
     (at 52 115 0)
@@ -1191,7 +1191,7 @@
     (in_bom yes)
     (on_board yes)
     (dnp no)
-    (uuid 21e80fa7-d852-4e58-b691-f6738273341f)
+    (uuid 7be54be3-b4b4-42d7-9c6b-996aea6e9f1d)
     (property "Reference" "C4" (at 54.5 111.5 0) (effects (font (size 1.27 1.27)) (justify left)))
     (property "Value" "100nF" (at 54.5 118.5 0) (effects (font (size 1.27 1.27)) (justify left)))
     (property
@@ -1202,14 +1202,14 @@
     (property "Datasheet" "" (at 52 115 0) (effects (font (size 1.27 1.27)) hide))
     (property "MPN" "CL05B104KO5NNNC" (at 52 115 0) (effects (font (size 1.27 1.27)) hide))
     (property "LCSC" "C1525" (at 52 115 0) (effects (font (size 1.27 1.27)) hide))
-    (pin "1" (uuid 861c189c-cfa3-44a6-b5c9-30b9b78e195f))
-    (pin "2" (uuid 08d163ad-0ef5-4d61-bed2-c77af9bc2a3a))
+    (pin "1" (uuid 5e57eb66-1bf3-436f-9f46-96d490dcca82))
+    (pin "2" (uuid daf84a64-37c2-4f5f-abf4-da33c122463e))
     (instances
-      (project "bzzy-led-ring" (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "C4") (unit 1)))))
+      (project "bzzy-led-ring" (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "C4") (unit 1)))))
   (wire
     (pts (xy 52 112.46) (xy 52 109.92))
     (stroke (width 0) (type default))
-    (uuid b2ab57a5-5d7a-4641-8985-ac50c4bc9091))
+    (uuid 0856d7f8-dfb2-42a5-aa54-20584a50e995))
   (symbol
     (lib_id "power:+5V")
     (at 52 109.92 0)
@@ -1217,7 +1217,7 @@
     (in_bom no)
     (on_board no)
     (dnp no)
-    (uuid 2b736ac2-c40d-435f-8870-cdc1f079f830)
+    (uuid e95fdaeb-4163-4340-92c1-310d0c488b99)
     (property
       "Reference"
       "#PWR15"
@@ -1226,15 +1226,15 @@
     (property "Value" "+5V" (at 52 106.12 0) (effects (font (size 1.27 1.27))))
     (property "Footprint" "" (at 52 109.92 0) (effects (font (size 1.27 1.27)) hide))
     (property "Datasheet" "" (at 52 109.92 0) (effects (font (size 1.27 1.27)) hide))
-    (pin "1" (uuid 3318e734-1de4-4b2f-82c8-b48997926b69))
+    (pin "1" (uuid d5b20bff-d6d2-43af-bc90-40bdb3994986))
     (instances
       (project
         "bzzy-led-ring"
-        (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "#PWR15") (unit 1)))))
+        (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "#PWR15") (unit 1)))))
   (wire
     (pts (xy 52 117.54) (xy 52 120.08))
     (stroke (width 0) (type default))
-    (uuid 53f4cdaf-4b39-4721-a746-141b9f1a1b82))
+    (uuid eaf5de81-d2bd-488b-9ccf-21483cf5caaf))
   (symbol
     (lib_id "power:GND")
     (at 52 120.08 0)
@@ -1242,7 +1242,7 @@
     (in_bom no)
     (on_board no)
     (dnp no)
-    (uuid 9dfa1bd8-ae9e-4f42-9f0e-32971beca217)
+    (uuid c9e17299-723c-4d17-83b5-58791e978015)
     (property
       "Reference"
       "#PWR16"
@@ -1251,11 +1251,11 @@
     (property "Value" "GND" (at 52 125.08 0) (effects (font (size 1.27 1.27))))
     (property "Footprint" "" (at 52 120.08 0) (effects (font (size 1.27 1.27)) hide))
     (property "Datasheet" "" (at 52 120.08 0) (effects (font (size 1.27 1.27)) hide))
-    (pin "1" (uuid 6aaa8c1d-45b9-4a67-998e-eef96f5d537e))
+    (pin "1" (uuid e50a89d7-dca6-4ecf-9b72-c362c5da8484))
     (instances
       (project
         "bzzy-led-ring"
-        (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "#PWR16") (unit 1)))))
+        (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "#PWR16") (unit 1)))))
   (symbol
     (lib_id "LED:WS2812B-2020")
     (at 80 130 0)
@@ -1263,7 +1263,7 @@
     (in_bom yes)
     (on_board yes)
     (dnp no)
-    (uuid 226d44f2-9097-4ebb-9086-afa390358b2c)
+    (uuid d8f52c39-ef0e-4881-bef7-d92404b231b6)
     (property "Reference" "D2" (at 82.5 126.5 0) (effects (font (size 1.27 1.27)) (justify left)))
     (property
       "Value"
@@ -1278,26 +1278,26 @@
     (property "Datasheet" "" (at 80 130 0) (effects (font (size 1.27 1.27)) hide))
     (property "MPN" "WS2812B-2020" (at 80 130 0) (effects (font (size 1.27 1.27)) hide))
     (property "LCSC" "C965555" (at 80 130 0) (effects (font (size 1.27 1.27)) hide))
-    (pin "1" (uuid ebdfb4ca-5369-4efb-a172-c5ca0c888e23))
-    (pin "2" (uuid 9fae152f-35b6-4aa7-8e04-10d8319004d9))
-    (pin "3" (uuid 4d1c9888-2522-4810-8e60-cee711a4cf8b))
-    (pin "4" (uuid 850cef56-2d27-4f88-9fc1-d1ee459ad457))
+    (pin "1" (uuid 2cf06b05-ec65-4a64-9733-7ab75436e5f7))
+    (pin "2" (uuid bb892fc7-2681-405d-93b2-652b6bf0ea55))
+    (pin "3" (uuid b4e9944d-853d-4055-94a8-e7b47cc6c2b0))
+    (pin "4" (uuid b87f6ebe-108c-4035-9aaf-9289bf1dd47a))
     (instances
-      (project "bzzy-led-ring" (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "D2") (unit 1)))))
+      (project "bzzy-led-ring" (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "D2") (unit 1)))))
   (wire
     (pts (xy 87.62 130) (xy 90.16 130))
     (stroke (width 0) (type default))
-    (uuid 11cbbf89-a377-4505-afaa-54067810c4af))
+    (uuid 135c39a1-9d77-4d47-9165-c8990c2a1e53))
   (label
     "DIN3"
     (at 90.16 130 0)
     (fields_autoplaced)
     (effects (font (size 1.27 1.27)) (justify left bottom))
-    (uuid b4ad3c11-ab50-42db-86cf-24cf1086a7d8))
+    (uuid 31d8d6a9-d058-4ffb-9ab7-2565cbcc27bc))
   (wire
     (pts (xy 80 137.62) (xy 80 140.16))
     (stroke (width 0) (type default))
-    (uuid 13797a08-4b5a-4e75-a781-18eac44e43e9))
+    (uuid 2268fcfb-536b-4a20-a86e-8e421b47e86d))
   (symbol
     (lib_id "power:GND")
     (at 80 140.16 0)
@@ -1305,7 +1305,7 @@
     (in_bom no)
     (on_board no)
     (dnp no)
-    (uuid 36703222-b392-46e2-a74d-64328ac463ec)
+    (uuid 35439c16-f708-4069-bc4e-5aa9b5ca7d2e)
     (property
       "Reference"
       "#PWR17"
@@ -1314,25 +1314,25 @@
     (property "Value" "GND" (at 80 145.16 0) (effects (font (size 1.27 1.27))))
     (property "Footprint" "" (at 80 140.16 0) (effects (font (size 1.27 1.27)) hide))
     (property "Datasheet" "" (at 80 140.16 0) (effects (font (size 1.27 1.27)) hide))
-    (pin "1" (uuid 0e4b1d62-f446-42af-9f9a-75bead421d60))
+    (pin "1" (uuid af439726-7c53-4ed0-b7e7-9ced09ad2a73))
     (instances
       (project
         "bzzy-led-ring"
-        (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "#PWR17") (unit 1)))))
+        (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "#PWR17") (unit 1)))))
   (wire
     (pts (xy 72.38 130) (xy 69.84 130))
     (stroke (width 0) (type default))
-    (uuid becfaadd-a354-48b8-8c49-4134bf4f33be))
+    (uuid 170e7a77-b706-452b-9be2-669f623eeba9))
   (label
     "DIN2"
     (at 69.84 130 180)
     (fields_autoplaced)
     (effects (font (size 1.27 1.27)) (justify right bottom))
-    (uuid 7a8d751e-98e9-49a8-8465-62191e7912b1))
+    (uuid e69180ee-a1f3-4045-9d87-f67bef168584))
   (wire
     (pts (xy 80 122.38) (xy 80 119.84))
     (stroke (width 0) (type default))
-    (uuid ae8520e8-13d9-491c-8a8c-ecbadc49792e))
+    (uuid e5b43952-d86b-46cd-81d5-ff5c0c4cc4cc))
   (symbol
     (lib_id "power:+5V")
     (at 80 119.84 0)
@@ -1340,7 +1340,7 @@
     (in_bom no)
     (on_board no)
     (dnp no)
-    (uuid 71429a98-096c-405a-9cb4-b3b21ebf3760)
+    (uuid 0b4e0426-1004-4c66-8a33-7ff991e6e010)
     (property
       "Reference"
       "#PWR18"
@@ -1349,11 +1349,11 @@
     (property "Value" "+5V" (at 80 116.04 0) (effects (font (size 1.27 1.27))))
     (property "Footprint" "" (at 80 119.84 0) (effects (font (size 1.27 1.27)) hide))
     (property "Datasheet" "" (at 80 119.84 0) (effects (font (size 1.27 1.27)) hide))
-    (pin "1" (uuid d7525d74-28a2-4996-b97f-ac7f2c919098))
+    (pin "1" (uuid bd2a4252-cc2d-4f51-a8e9-1d20cd332120))
     (instances
       (project
         "bzzy-led-ring"
-        (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "#PWR18") (unit 1)))))
+        (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "#PWR18") (unit 1)))))
   (symbol
     (lib_id "Device:C_Small")
     (at 92 115 0)
@@ -1361,7 +1361,7 @@
     (in_bom yes)
     (on_board yes)
     (dnp no)
-    (uuid bea464d6-765b-4985-8014-4c11cd33023e)
+    (uuid f1a60ace-4a5a-434b-a153-d6b6de1bc49c)
     (property "Reference" "C5" (at 94.5 111.5 0) (effects (font (size 1.27 1.27)) (justify left)))
     (property "Value" "100nF" (at 94.5 118.5 0) (effects (font (size 1.27 1.27)) (justify left)))
     (property
@@ -1372,14 +1372,14 @@
     (property "Datasheet" "" (at 92 115 0) (effects (font (size 1.27 1.27)) hide))
     (property "MPN" "CL05B104KO5NNNC" (at 92 115 0) (effects (font (size 1.27 1.27)) hide))
     (property "LCSC" "C1525" (at 92 115 0) (effects (font (size 1.27 1.27)) hide))
-    (pin "1" (uuid 0aaf5020-c37e-4c52-b840-fd946b2abbe5))
-    (pin "2" (uuid a3d491d4-6ba0-4fce-b632-173133166005))
+    (pin "1" (uuid f92692ab-8ba4-413d-9f8e-5c2fac3dbda6))
+    (pin "2" (uuid c7e175d2-1376-49f4-8e62-a66b04adc086))
     (instances
-      (project "bzzy-led-ring" (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "C5") (unit 1)))))
+      (project "bzzy-led-ring" (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "C5") (unit 1)))))
   (wire
     (pts (xy 92 112.46) (xy 92 109.92))
     (stroke (width 0) (type default))
-    (uuid c036c387-f3e6-40fb-8da3-b6469ccddb9c))
+    (uuid 250e5efd-4b58-4c82-bc45-a25fa8df210c))
   (symbol
     (lib_id "power:+5V")
     (at 92 109.92 0)
@@ -1387,7 +1387,7 @@
     (in_bom no)
     (on_board no)
     (dnp no)
-    (uuid 528ef8ea-0d54-459c-9c92-3715496b814b)
+    (uuid 76e98c99-116e-4382-812d-2d9832678329)
     (property
       "Reference"
       "#PWR19"
@@ -1396,15 +1396,15 @@
     (property "Value" "+5V" (at 92 106.12 0) (effects (font (size 1.27 1.27))))
     (property "Footprint" "" (at 92 109.92 0) (effects (font (size 1.27 1.27)) hide))
     (property "Datasheet" "" (at 92 109.92 0) (effects (font (size 1.27 1.27)) hide))
-    (pin "1" (uuid ef8bec95-e652-418d-ab6f-e4f160060c3d))
+    (pin "1" (uuid 0537d738-f633-4fb5-a0be-6628e28d1379))
     (instances
       (project
         "bzzy-led-ring"
-        (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "#PWR19") (unit 1)))))
+        (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "#PWR19") (unit 1)))))
   (wire
     (pts (xy 92 117.54) (xy 92 120.08))
     (stroke (width 0) (type default))
-    (uuid b76b5e50-dff1-4743-b2a4-728d297feef3))
+    (uuid 9ccb4af5-be71-47d8-b3d5-38beec5f015c))
   (symbol
     (lib_id "power:GND")
     (at 92 120.08 0)
@@ -1412,7 +1412,7 @@
     (in_bom no)
     (on_board no)
     (dnp no)
-    (uuid a2943584-4190-4039-9044-f901cd258790)
+    (uuid 0cd70f69-5664-4b64-b450-94c3549b3598)
     (property
       "Reference"
       "#PWR20"
@@ -1421,11 +1421,11 @@
     (property "Value" "GND" (at 92 125.08 0) (effects (font (size 1.27 1.27))))
     (property "Footprint" "" (at 92 120.08 0) (effects (font (size 1.27 1.27)) hide))
     (property "Datasheet" "" (at 92 120.08 0) (effects (font (size 1.27 1.27)) hide))
-    (pin "1" (uuid bc604030-972f-46de-ba8a-bf8ee02b7c86))
+    (pin "1" (uuid 35c5b3da-812e-426d-888a-1d31ff8a7745))
     (instances
       (project
         "bzzy-led-ring"
-        (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "#PWR20") (unit 1)))))
+        (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "#PWR20") (unit 1)))))
   (symbol
     (lib_id "LED:WS2812B-2020")
     (at 120 130 0)
@@ -1433,7 +1433,7 @@
     (in_bom yes)
     (on_board yes)
     (dnp no)
-    (uuid 0aad83a0-730d-4500-bb0b-49addf8958b1)
+    (uuid 3fc37d6e-d994-4799-aeb5-899be6ebeeea)
     (property "Reference" "D3" (at 122.5 126.5 0) (effects (font (size 1.27 1.27)) (justify left)))
     (property
       "Value"
@@ -1448,26 +1448,26 @@
     (property "Datasheet" "" (at 120 130 0) (effects (font (size 1.27 1.27)) hide))
     (property "MPN" "WS2812B-2020" (at 120 130 0) (effects (font (size 1.27 1.27)) hide))
     (property "LCSC" "C965555" (at 120 130 0) (effects (font (size 1.27 1.27)) hide))
-    (pin "1" (uuid 1a035463-5ae3-4d40-89c8-1c0714a44292))
-    (pin "2" (uuid e57bc6a4-ba8f-426d-9063-366de0175784))
-    (pin "3" (uuid 4a770eee-12bb-494b-b583-3eccbc675cf4))
-    (pin "4" (uuid da4c18e3-83a5-42ec-8127-8366afaf8c62))
+    (pin "1" (uuid bdb99e9c-453d-42cd-b11c-ee2237e5636f))
+    (pin "2" (uuid 7d24be07-ab70-4cba-9389-3818c9e21016))
+    (pin "3" (uuid 00ff88d4-6c5f-46de-acd6-2aafd9cf9789))
+    (pin "4" (uuid d068dc37-c467-4324-8f4d-4a52f3d9fd57))
     (instances
-      (project "bzzy-led-ring" (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "D3") (unit 1)))))
+      (project "bzzy-led-ring" (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "D3") (unit 1)))))
   (wire
     (pts (xy 127.62 130) (xy 130.16 130))
     (stroke (width 0) (type default))
-    (uuid 563d9a30-f48e-411b-845c-291adf48cb92))
+    (uuid 4ffb71eb-30a6-4d8a-bc4c-d65f4c8c5e38))
   (label
     "DIN4"
     (at 130.16 130 0)
     (fields_autoplaced)
     (effects (font (size 1.27 1.27)) (justify left bottom))
-    (uuid 2221b5e8-c492-42e4-b25c-3b77cbf6f112))
+    (uuid 5ebea85e-1a81-4102-92f8-ae48a0f03bf4))
   (wire
     (pts (xy 120 137.62) (xy 120 140.16))
     (stroke (width 0) (type default))
-    (uuid 18375ff8-f414-473c-8f28-426426cb9c9d))
+    (uuid 8ca7421e-f4e9-4167-83e5-ec2e70412ca1))
   (symbol
     (lib_id "power:GND")
     (at 120 140.16 0)
@@ -1475,7 +1475,7 @@
     (in_bom no)
     (on_board no)
     (dnp no)
-    (uuid be9ee92d-5776-449b-b2f7-6908c8ef254a)
+    (uuid 9c18a3ff-e1f7-46f7-9f77-db11173104c0)
     (property
       "Reference"
       "#PWR21"
@@ -1484,25 +1484,25 @@
     (property "Value" "GND" (at 120 145.16 0) (effects (font (size 1.27 1.27))))
     (property "Footprint" "" (at 120 140.16 0) (effects (font (size 1.27 1.27)) hide))
     (property "Datasheet" "" (at 120 140.16 0) (effects (font (size 1.27 1.27)) hide))
-    (pin "1" (uuid eff2c2ef-294f-4c09-ab4a-f8e96ffc792d))
+    (pin "1" (uuid cb0bb6e0-b971-4f07-a199-014112a50244))
     (instances
       (project
         "bzzy-led-ring"
-        (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "#PWR21") (unit 1)))))
+        (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "#PWR21") (unit 1)))))
   (wire
     (pts (xy 112.38 130) (xy 109.84 130))
     (stroke (width 0) (type default))
-    (uuid 513c6ffb-7981-4418-a216-af0fe8e4a753))
+    (uuid 22425a81-c250-4de5-b42e-2c1a4ce3425f))
   (label
     "DIN3"
     (at 109.84 130 180)
     (fields_autoplaced)
     (effects (font (size 1.27 1.27)) (justify right bottom))
-    (uuid 9d33040d-5235-40a9-8610-36f78e0a38ef))
+    (uuid ff9f71a3-f0af-423c-9b08-a3b44af8e505))
   (wire
     (pts (xy 120 122.38) (xy 120 119.84))
     (stroke (width 0) (type default))
-    (uuid fbe72751-e293-43ab-b92d-ee556438896d))
+    (uuid b9c66298-b374-4a33-8c9d-9066a904a9bd))
   (symbol
     (lib_id "power:+5V")
     (at 120 119.84 0)
@@ -1510,7 +1510,7 @@
     (in_bom no)
     (on_board no)
     (dnp no)
-    (uuid 6dc5576a-3ece-406e-a04f-e96d3f868456)
+    (uuid 184ade64-e0c9-4ef3-84f6-42874b13b9ea)
     (property
       "Reference"
       "#PWR22"
@@ -1519,11 +1519,11 @@
     (property "Value" "+5V" (at 120 116.04 0) (effects (font (size 1.27 1.27))))
     (property "Footprint" "" (at 120 119.84 0) (effects (font (size 1.27 1.27)) hide))
     (property "Datasheet" "" (at 120 119.84 0) (effects (font (size 1.27 1.27)) hide))
-    (pin "1" (uuid 55114376-da38-4908-aa99-fa5902059744))
+    (pin "1" (uuid 9a5a9681-586f-46d9-81c5-d902f9cd7dc7))
     (instances
       (project
         "bzzy-led-ring"
-        (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "#PWR22") (unit 1)))))
+        (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "#PWR22") (unit 1)))))
   (symbol
     (lib_id "Device:C_Small")
     (at 132 115 0)
@@ -1531,7 +1531,7 @@
     (in_bom yes)
     (on_board yes)
     (dnp no)
-    (uuid a65b555a-817a-4811-8d45-dc0e84f91941)
+    (uuid 8ae20ee5-4d68-4dde-b3c0-81142f4fb670)
     (property "Reference" "C6" (at 134.5 111.5 0) (effects (font (size 1.27 1.27)) (justify left)))
     (property "Value" "100nF" (at 134.5 118.5 0) (effects (font (size 1.27 1.27)) (justify left)))
     (property
@@ -1542,14 +1542,14 @@
     (property "Datasheet" "" (at 132 115 0) (effects (font (size 1.27 1.27)) hide))
     (property "MPN" "CL05B104KO5NNNC" (at 132 115 0) (effects (font (size 1.27 1.27)) hide))
     (property "LCSC" "C1525" (at 132 115 0) (effects (font (size 1.27 1.27)) hide))
-    (pin "1" (uuid 8daf7ff0-6455-495c-a88b-8660f2860241))
-    (pin "2" (uuid b908db94-5a45-4bc4-a1de-9a51abea6f12))
+    (pin "1" (uuid 9acaa292-337e-4b0a-9950-99d33f77209f))
+    (pin "2" (uuid 25905e88-3762-4451-979e-de59ddda1837))
     (instances
-      (project "bzzy-led-ring" (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "C6") (unit 1)))))
+      (project "bzzy-led-ring" (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "C6") (unit 1)))))
   (wire
     (pts (xy 132 112.46) (xy 132 109.92))
     (stroke (width 0) (type default))
-    (uuid 6583fd3d-30a1-49a1-aa72-91cbf03e68cc))
+    (uuid 26e50a2c-b2aa-4305-97d2-4308da744de1))
   (symbol
     (lib_id "power:+5V")
     (at 132 109.92 0)
@@ -1557,7 +1557,7 @@
     (in_bom no)
     (on_board no)
     (dnp no)
-    (uuid 01452199-e340-4762-b8bd-583e59bd30cc)
+    (uuid e116f98b-e242-4e55-a03f-a54487f5da37)
     (property
       "Reference"
       "#PWR23"
@@ -1566,15 +1566,15 @@
     (property "Value" "+5V" (at 132 106.12 0) (effects (font (size 1.27 1.27))))
     (property "Footprint" "" (at 132 109.92 0) (effects (font (size 1.27 1.27)) hide))
     (property "Datasheet" "" (at 132 109.92 0) (effects (font (size 1.27 1.27)) hide))
-    (pin "1" (uuid f437d837-bf4a-4185-bc4e-f05daa7a1ff6))
+    (pin "1" (uuid 94139ad0-a6da-4d66-a0a2-d423dc5708d6))
     (instances
       (project
         "bzzy-led-ring"
-        (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "#PWR23") (unit 1)))))
+        (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "#PWR23") (unit 1)))))
   (wire
     (pts (xy 132 117.54) (xy 132 120.08))
     (stroke (width 0) (type default))
-    (uuid fdcafb27-1d19-4c6c-a700-f14a676e52c1))
+    (uuid ea3c3b1a-424a-4abc-9870-0b866f6b96b5))
   (symbol
     (lib_id "power:GND")
     (at 132 120.08 0)
@@ -1582,7 +1582,7 @@
     (in_bom no)
     (on_board no)
     (dnp no)
-    (uuid f3cc884e-1705-4298-973d-13479a2c2c2c)
+    (uuid 51ffa45f-7330-44ab-ab8e-f04d70437fc2)
     (property
       "Reference"
       "#PWR24"
@@ -1591,11 +1591,11 @@
     (property "Value" "GND" (at 132 125.08 0) (effects (font (size 1.27 1.27))))
     (property "Footprint" "" (at 132 120.08 0) (effects (font (size 1.27 1.27)) hide))
     (property "Datasheet" "" (at 132 120.08 0) (effects (font (size 1.27 1.27)) hide))
-    (pin "1" (uuid 444790f9-1341-4e1d-8c4e-b7e3d5be8060))
+    (pin "1" (uuid ec412bde-ff3b-4ae6-84e0-2f831939c7b0))
     (instances
       (project
         "bzzy-led-ring"
-        (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "#PWR24") (unit 1)))))
+        (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "#PWR24") (unit 1)))))
   (symbol
     (lib_id "LED:WS2812B-2020")
     (at 160 130 0)
@@ -1603,7 +1603,7 @@
     (in_bom yes)
     (on_board yes)
     (dnp no)
-    (uuid de350253-e39b-496a-b52c-0019ef62e79c)
+    (uuid b9a14352-6cd1-437d-a1bd-fab54ac79adc)
     (property "Reference" "D4" (at 162.5 126.5 0) (effects (font (size 1.27 1.27)) (justify left)))
     (property
       "Value"
@@ -1618,26 +1618,26 @@
     (property "Datasheet" "" (at 160 130 0) (effects (font (size 1.27 1.27)) hide))
     (property "MPN" "WS2812B-2020" (at 160 130 0) (effects (font (size 1.27 1.27)) hide))
     (property "LCSC" "C965555" (at 160 130 0) (effects (font (size 1.27 1.27)) hide))
-    (pin "1" (uuid 03d842dc-e34a-4bcc-9a1d-2ffdfd6b28ef))
-    (pin "2" (uuid 9d3a0cb7-ce53-450b-8a19-10a43acaf9b0))
-    (pin "3" (uuid 557667e1-29d2-4413-991e-fd17abb97bd0))
-    (pin "4" (uuid f603073a-d0f6-4a62-a369-86eaa39c856e))
+    (pin "1" (uuid e3379f6a-13ff-4513-97de-185e48b59066))
+    (pin "2" (uuid e11aa4e3-fb64-40d0-9719-5775a4a6827d))
+    (pin "3" (uuid 8bfac81a-35e9-4f6b-a558-ae7fd91377ea))
+    (pin "4" (uuid 9a39ec18-9f3d-4c8b-85dc-490b9a201103))
     (instances
-      (project "bzzy-led-ring" (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "D4") (unit 1)))))
+      (project "bzzy-led-ring" (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "D4") (unit 1)))))
   (wire
     (pts (xy 167.62 130) (xy 170.16 130))
     (stroke (width 0) (type default))
-    (uuid 93539979-c311-4333-9532-086e705038eb))
+    (uuid 6e65a25f-b58d-40fa-be47-0c00f8b56e9f))
   (label
     "DIN5"
     (at 170.16 130 0)
     (fields_autoplaced)
     (effects (font (size 1.27 1.27)) (justify left bottom))
-    (uuid a6cdc69f-33c3-4f72-8cae-8a962279a2fc))
+    (uuid 00c741fd-dfc2-43b3-9f9b-7208bdb4489e))
   (wire
     (pts (xy 160 137.62) (xy 160 140.16))
     (stroke (width 0) (type default))
-    (uuid 39722614-0714-44f0-bc38-fa602666e60e))
+    (uuid 8274128c-2c20-406a-a075-f633ed8b07a8))
   (symbol
     (lib_id "power:GND")
     (at 160 140.16 0)
@@ -1645,7 +1645,7 @@
     (in_bom no)
     (on_board no)
     (dnp no)
-    (uuid 5c808365-5bc5-4b2d-86d7-fa0aad536751)
+    (uuid 6fafedda-dbcc-4cc7-816a-0c360a058985)
     (property
       "Reference"
       "#PWR25"
@@ -1654,25 +1654,25 @@
     (property "Value" "GND" (at 160 145.16 0) (effects (font (size 1.27 1.27))))
     (property "Footprint" "" (at 160 140.16 0) (effects (font (size 1.27 1.27)) hide))
     (property "Datasheet" "" (at 160 140.16 0) (effects (font (size 1.27 1.27)) hide))
-    (pin "1" (uuid 97245a0d-2fd6-420d-afd7-c2398f9f4a4b))
+    (pin "1" (uuid ba98323e-088a-4f0f-b754-f12cd57e7ef5))
     (instances
       (project
         "bzzy-led-ring"
-        (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "#PWR25") (unit 1)))))
+        (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "#PWR25") (unit 1)))))
   (wire
     (pts (xy 152.38 130) (xy 149.84 130))
     (stroke (width 0) (type default))
-    (uuid bc5701b5-9728-42f7-b748-ceecd4e7e6b1))
+    (uuid 329d5ea8-7948-4ab7-bf33-3d7bf6c3dbb9))
   (label
     "DIN4"
     (at 149.84 130 180)
     (fields_autoplaced)
     (effects (font (size 1.27 1.27)) (justify right bottom))
-    (uuid 6de9cfc5-4720-4f6d-97b5-bf8983e94a14))
+    (uuid 691c0596-d39e-4801-ae70-efae34ee7340))
   (wire
     (pts (xy 160 122.38) (xy 160 119.84))
     (stroke (width 0) (type default))
-    (uuid d2901426-3a60-4b8f-bebd-b1f58666de8f))
+    (uuid 4f28bc40-9508-4354-949a-1ee099095c4b))
   (symbol
     (lib_id "power:+5V")
     (at 160 119.84 0)
@@ -1680,7 +1680,7 @@
     (in_bom no)
     (on_board no)
     (dnp no)
-    (uuid 66362b91-2ddb-4656-9999-45475b3895eb)
+    (uuid 9279834c-efec-4454-8c66-e1d93ac98034)
     (property
       "Reference"
       "#PWR26"
@@ -1689,11 +1689,11 @@
     (property "Value" "+5V" (at 160 116.04 0) (effects (font (size 1.27 1.27))))
     (property "Footprint" "" (at 160 119.84 0) (effects (font (size 1.27 1.27)) hide))
     (property "Datasheet" "" (at 160 119.84 0) (effects (font (size 1.27 1.27)) hide))
-    (pin "1" (uuid 36de5c8e-5c86-440f-9c93-04bde390b5ba))
+    (pin "1" (uuid c98e0032-efcb-4a04-b760-66d66c00a82e))
     (instances
       (project
         "bzzy-led-ring"
-        (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "#PWR26") (unit 1)))))
+        (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "#PWR26") (unit 1)))))
   (symbol
     (lib_id "Device:C_Small")
     (at 172 115 0)
@@ -1701,7 +1701,7 @@
     (in_bom yes)
     (on_board yes)
     (dnp no)
-    (uuid 72f7a0ce-6c3b-4b68-812b-4d0874c1e070)
+    (uuid af2d4b9c-3bca-4e50-9552-6a4df8c7f69e)
     (property "Reference" "C7" (at 174.5 111.5 0) (effects (font (size 1.27 1.27)) (justify left)))
     (property "Value" "100nF" (at 174.5 118.5 0) (effects (font (size 1.27 1.27)) (justify left)))
     (property
@@ -1712,14 +1712,14 @@
     (property "Datasheet" "" (at 172 115 0) (effects (font (size 1.27 1.27)) hide))
     (property "MPN" "CL05B104KO5NNNC" (at 172 115 0) (effects (font (size 1.27 1.27)) hide))
     (property "LCSC" "C1525" (at 172 115 0) (effects (font (size 1.27 1.27)) hide))
-    (pin "1" (uuid 5a1a91c0-b8e4-4b2c-a15f-e87bed0d5fa8))
-    (pin "2" (uuid 9b3356d5-061e-4783-90b2-3b3064b7ec73))
+    (pin "1" (uuid 32843ab1-5295-4e77-8fba-4ecec72e223a))
+    (pin "2" (uuid 6a1c9111-3ec8-4964-92f4-a7270fee699e))
     (instances
-      (project "bzzy-led-ring" (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "C7") (unit 1)))))
+      (project "bzzy-led-ring" (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "C7") (unit 1)))))
   (wire
     (pts (xy 172 112.46) (xy 172 109.92))
     (stroke (width 0) (type default))
-    (uuid e54f2cd0-d9c4-4264-9285-4756aee54517))
+    (uuid 0ee6c7f0-1049-4970-986f-3cc8c8d56f51))
   (symbol
     (lib_id "power:+5V")
     (at 172 109.92 0)
@@ -1727,7 +1727,7 @@
     (in_bom no)
     (on_board no)
     (dnp no)
-    (uuid fa1b2570-90f7-46d4-a1b0-714ed7a941d3)
+    (uuid d8921bf3-8155-4df5-bee9-09470a00fa04)
     (property
       "Reference"
       "#PWR27"
@@ -1736,15 +1736,15 @@
     (property "Value" "+5V" (at 172 106.12 0) (effects (font (size 1.27 1.27))))
     (property "Footprint" "" (at 172 109.92 0) (effects (font (size 1.27 1.27)) hide))
     (property "Datasheet" "" (at 172 109.92 0) (effects (font (size 1.27 1.27)) hide))
-    (pin "1" (uuid 2efac3aa-1da2-465b-b59e-f4e937a70e5e))
+    (pin "1" (uuid 6a8d6e3c-d55f-444f-ae59-ded2ea700792))
     (instances
       (project
         "bzzy-led-ring"
-        (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "#PWR27") (unit 1)))))
+        (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "#PWR27") (unit 1)))))
   (wire
     (pts (xy 172 117.54) (xy 172 120.08))
     (stroke (width 0) (type default))
-    (uuid 890980ec-4fdf-4216-a719-43364dd939a7))
+    (uuid 1f5c1130-2238-496f-b5dd-e9bb992e62a9))
   (symbol
     (lib_id "power:GND")
     (at 172 120.08 0)
@@ -1752,7 +1752,7 @@
     (in_bom no)
     (on_board no)
     (dnp no)
-    (uuid 97bdf389-93b9-447b-944f-b78084bfd895)
+    (uuid b698d354-ac7f-4be2-ad86-46261a2e2619)
     (property
       "Reference"
       "#PWR28"
@@ -1761,11 +1761,11 @@
     (property "Value" "GND" (at 172 125.08 0) (effects (font (size 1.27 1.27))))
     (property "Footprint" "" (at 172 120.08 0) (effects (font (size 1.27 1.27)) hide))
     (property "Datasheet" "" (at 172 120.08 0) (effects (font (size 1.27 1.27)) hide))
-    (pin "1" (uuid 89743d3c-895f-4991-91b9-04fb5431f199))
+    (pin "1" (uuid 5950d5a2-439c-413d-a009-02b65e32e636))
     (instances
       (project
         "bzzy-led-ring"
-        (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "#PWR28") (unit 1)))))
+        (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "#PWR28") (unit 1)))))
   (symbol
     (lib_id "LED:WS2812B-2020")
     (at 200 130 0)
@@ -1773,7 +1773,7 @@
     (in_bom yes)
     (on_board yes)
     (dnp no)
-    (uuid 59c69c50-0e82-473d-9b3a-b9f5298f3f5e)
+    (uuid 650b7409-2f38-42f6-8901-d113f30d0e83)
     (property "Reference" "D5" (at 202.5 126.5 0) (effects (font (size 1.27 1.27)) (justify left)))
     (property
       "Value"
@@ -1788,26 +1788,26 @@
     (property "Datasheet" "" (at 200 130 0) (effects (font (size 1.27 1.27)) hide))
     (property "MPN" "WS2812B-2020" (at 200 130 0) (effects (font (size 1.27 1.27)) hide))
     (property "LCSC" "C965555" (at 200 130 0) (effects (font (size 1.27 1.27)) hide))
-    (pin "1" (uuid 4f876cd0-5ea1-4632-aa12-4e810311dd52))
-    (pin "2" (uuid 296c5968-eeb5-4429-b54c-24f84f8927b5))
-    (pin "3" (uuid f71c696a-9a40-46b1-9d80-49c28508a9f2))
-    (pin "4" (uuid 1b2fdf4b-d9ec-42ac-90b5-03b3b5351001))
+    (pin "1" (uuid 50c1aed9-06af-4078-9b3b-ab6285f88c85))
+    (pin "2" (uuid 78c25611-9173-43c0-a841-f6ed3468587f))
+    (pin "3" (uuid 24f5e611-2544-43bf-85b2-c091c26b3e2b))
+    (pin "4" (uuid 15f193ec-c468-4405-89c7-ad5e09a71622))
     (instances
-      (project "bzzy-led-ring" (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "D5") (unit 1)))))
+      (project "bzzy-led-ring" (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "D5") (unit 1)))))
   (wire
     (pts (xy 207.62 130) (xy 210.16 130))
     (stroke (width 0) (type default))
-    (uuid 2e4e777e-8dc7-4077-87d5-85651bf2f0cf))
+    (uuid 736356ea-b483-4bff-8ad6-23335e3c9b28))
   (label
     "DIN6"
     (at 210.16 130 0)
     (fields_autoplaced)
     (effects (font (size 1.27 1.27)) (justify left bottom))
-    (uuid 705779c7-230c-414c-a18d-7cc5e52e861a))
+    (uuid b306ba23-bcb4-45ed-b2f0-9e9b8b4d5144))
   (wire
     (pts (xy 200 137.62) (xy 200 140.16))
     (stroke (width 0) (type default))
-    (uuid 93c1dac0-9b6a-454a-9ceb-3ce85b21fd6e))
+    (uuid 4be5dee3-6e46-4d65-a545-f5f77a4723bc))
   (symbol
     (lib_id "power:GND")
     (at 200 140.16 0)
@@ -1815,7 +1815,7 @@
     (in_bom no)
     (on_board no)
     (dnp no)
-    (uuid 07454910-30b0-4574-a633-d906a09496d3)
+    (uuid bc5f2cdd-613b-42b1-a12a-7709563d20a7)
     (property
       "Reference"
       "#PWR29"
@@ -1824,25 +1824,25 @@
     (property "Value" "GND" (at 200 145.16 0) (effects (font (size 1.27 1.27))))
     (property "Footprint" "" (at 200 140.16 0) (effects (font (size 1.27 1.27)) hide))
     (property "Datasheet" "" (at 200 140.16 0) (effects (font (size 1.27 1.27)) hide))
-    (pin "1" (uuid 818dd6e7-f443-4e28-b08e-529075912a62))
+    (pin "1" (uuid 7aa0c57e-c7a0-46b6-931a-f4fd42358ab8))
     (instances
       (project
         "bzzy-led-ring"
-        (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "#PWR29") (unit 1)))))
+        (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "#PWR29") (unit 1)))))
   (wire
     (pts (xy 192.38 130) (xy 189.84 130))
     (stroke (width 0) (type default))
-    (uuid f5a8f5e5-a14c-4f9d-ad4c-0f96f03bac14))
+    (uuid 3c005ff7-b92a-4d84-9303-41aa21bbafc7))
   (label
     "DIN5"
     (at 189.84 130 180)
     (fields_autoplaced)
     (effects (font (size 1.27 1.27)) (justify right bottom))
-    (uuid 4264cb43-62d3-4faa-a37a-2988a2d03aae))
+    (uuid 546becc3-8c29-40b4-8b46-e9739b320032))
   (wire
     (pts (xy 200 122.38) (xy 200 119.84))
     (stroke (width 0) (type default))
-    (uuid 6c70d107-96e1-4c2c-9d9b-39fb87eb12a9))
+    (uuid 5da57270-19d4-4155-9b6f-692cba3887a4))
   (symbol
     (lib_id "power:+5V")
     (at 200 119.84 0)
@@ -1850,7 +1850,7 @@
     (in_bom no)
     (on_board no)
     (dnp no)
-    (uuid b0b589bc-a6fd-491c-8218-5e88e177f59f)
+    (uuid 12927d12-f42d-4a81-9dfc-bd64ce666953)
     (property
       "Reference"
       "#PWR30"
@@ -1859,11 +1859,11 @@
     (property "Value" "+5V" (at 200 116.04 0) (effects (font (size 1.27 1.27))))
     (property "Footprint" "" (at 200 119.84 0) (effects (font (size 1.27 1.27)) hide))
     (property "Datasheet" "" (at 200 119.84 0) (effects (font (size 1.27 1.27)) hide))
-    (pin "1" (uuid b73a95ac-bdbb-4b18-87ce-6a9e1bb65b1a))
+    (pin "1" (uuid 9ad20c0e-42be-4513-9d91-db3b8dad9ff9))
     (instances
       (project
         "bzzy-led-ring"
-        (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "#PWR30") (unit 1)))))
+        (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "#PWR30") (unit 1)))))
   (symbol
     (lib_id "Device:C_Small")
     (at 212 115 0)
@@ -1871,7 +1871,7 @@
     (in_bom yes)
     (on_board yes)
     (dnp no)
-    (uuid e63746da-0cdc-4824-94f8-7f2debc0f4ba)
+    (uuid fee0d7b2-ef2f-42e0-8d39-a481e1710a9a)
     (property "Reference" "C8" (at 214.5 111.5 0) (effects (font (size 1.27 1.27)) (justify left)))
     (property "Value" "100nF" (at 214.5 118.5 0) (effects (font (size 1.27 1.27)) (justify left)))
     (property
@@ -1882,14 +1882,14 @@
     (property "Datasheet" "" (at 212 115 0) (effects (font (size 1.27 1.27)) hide))
     (property "MPN" "CL05B104KO5NNNC" (at 212 115 0) (effects (font (size 1.27 1.27)) hide))
     (property "LCSC" "C1525" (at 212 115 0) (effects (font (size 1.27 1.27)) hide))
-    (pin "1" (uuid 2b4801ad-83d1-4b84-8d4d-f0bbed3f428d))
-    (pin "2" (uuid 4a2210e7-30c1-485d-b8f7-1f4a79bc3786))
+    (pin "1" (uuid bbaec26e-9f78-4b4f-8f45-829ef4730a68))
+    (pin "2" (uuid efc6ee87-be34-4934-904d-60b9f1450e19))
     (instances
-      (project "bzzy-led-ring" (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "C8") (unit 1)))))
+      (project "bzzy-led-ring" (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "C8") (unit 1)))))
   (wire
     (pts (xy 212 112.46) (xy 212 109.92))
     (stroke (width 0) (type default))
-    (uuid e0c968e1-1009-4dd8-a378-51728215b193))
+    (uuid e6a8dbf6-4409-48be-af68-051f98b119e2))
   (symbol
     (lib_id "power:+5V")
     (at 212 109.92 0)
@@ -1897,7 +1897,7 @@
     (in_bom no)
     (on_board no)
     (dnp no)
-    (uuid 8bfdd27e-5b41-43dc-9e45-fb031bc1dc4a)
+    (uuid 56849222-32ad-45be-b659-12fd63b58bf6)
     (property
       "Reference"
       "#PWR31"
@@ -1906,15 +1906,15 @@
     (property "Value" "+5V" (at 212 106.12 0) (effects (font (size 1.27 1.27))))
     (property "Footprint" "" (at 212 109.92 0) (effects (font (size 1.27 1.27)) hide))
     (property "Datasheet" "" (at 212 109.92 0) (effects (font (size 1.27 1.27)) hide))
-    (pin "1" (uuid bbc20cd6-80c4-4106-8608-6a918ca84689))
+    (pin "1" (uuid 74dba614-3689-4bc4-aefb-ef49d917ac62))
     (instances
       (project
         "bzzy-led-ring"
-        (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "#PWR31") (unit 1)))))
+        (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "#PWR31") (unit 1)))))
   (wire
     (pts (xy 212 117.54) (xy 212 120.08))
     (stroke (width 0) (type default))
-    (uuid 30f7bc28-3d46-4098-881c-c39fdfa59163))
+    (uuid eb6364b4-1438-4272-a116-47cdf7bfa81c))
   (symbol
     (lib_id "power:GND")
     (at 212 120.08 0)
@@ -1922,7 +1922,7 @@
     (in_bom no)
     (on_board no)
     (dnp no)
-    (uuid 7f9592e4-1ddb-470c-b588-40ae7464cc0c)
+    (uuid a7a03e31-799b-47e6-b65a-dd1dad0f29a8)
     (property
       "Reference"
       "#PWR32"
@@ -1931,11 +1931,11 @@
     (property "Value" "GND" (at 212 125.08 0) (effects (font (size 1.27 1.27))))
     (property "Footprint" "" (at 212 120.08 0) (effects (font (size 1.27 1.27)) hide))
     (property "Datasheet" "" (at 212 120.08 0) (effects (font (size 1.27 1.27)) hide))
-    (pin "1" (uuid 60b38558-97dc-4fda-adf3-9522dba08d12))
+    (pin "1" (uuid 201cbc6c-1a4b-43bd-879d-1e3a77f6c784))
     (instances
       (project
         "bzzy-led-ring"
-        (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "#PWR32") (unit 1)))))
+        (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "#PWR32") (unit 1)))))
   (symbol
     (lib_id "LED:WS2812B-2020")
     (at 240 130 0)
@@ -1943,7 +1943,7 @@
     (in_bom yes)
     (on_board yes)
     (dnp no)
-    (uuid 4af1b65a-094d-4586-9d0b-663573eb4eaf)
+    (uuid 613dd8fb-be5c-415b-aae9-2888eea251c3)
     (property "Reference" "D6" (at 242.5 126.5 0) (effects (font (size 1.27 1.27)) (justify left)))
     (property
       "Value"
@@ -1958,26 +1958,26 @@
     (property "Datasheet" "" (at 240 130 0) (effects (font (size 1.27 1.27)) hide))
     (property "MPN" "WS2812B-2020" (at 240 130 0) (effects (font (size 1.27 1.27)) hide))
     (property "LCSC" "C965555" (at 240 130 0) (effects (font (size 1.27 1.27)) hide))
-    (pin "1" (uuid 72a0535f-9b58-444e-a9a9-985e70459f01))
-    (pin "2" (uuid 092be581-9e28-4dd4-b91f-587e85cda29e))
-    (pin "3" (uuid d8b158e2-beb1-40ac-91b3-35e0c8ac4a9f))
-    (pin "4" (uuid 3fdc2b7f-0c1f-4532-8963-7deffe73aa5f))
+    (pin "1" (uuid 0d59f81f-894a-4aba-9934-680873c08ebe))
+    (pin "2" (uuid b147dd20-9b4f-4446-9094-a7b9cd925b90))
+    (pin "3" (uuid 4a0d306a-7884-4dfe-bad7-f393df869305))
+    (pin "4" (uuid 2b14e888-ffbd-49f4-8503-9efc1f55dcc6))
     (instances
-      (project "bzzy-led-ring" (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "D6") (unit 1)))))
+      (project "bzzy-led-ring" (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "D6") (unit 1)))))
   (wire
     (pts (xy 247.62 130) (xy 250.16 130))
     (stroke (width 0) (type default))
-    (uuid a5aaee95-bff8-4ccf-bc08-0874854ba0e7))
+    (uuid fc311441-ee0f-4fde-bfc3-a0fcef886849))
   (label
     "DIN7"
     (at 250.16 130 0)
     (fields_autoplaced)
     (effects (font (size 1.27 1.27)) (justify left bottom))
-    (uuid 17bc7b79-4f52-4927-9eb0-a249320287bd))
+    (uuid c5d9b624-b8b1-49a4-bb9e-4555e319d527))
   (wire
     (pts (xy 240 137.62) (xy 240 140.16))
     (stroke (width 0) (type default))
-    (uuid c8023cca-1c27-4717-906a-ad2a7d9fa1f4))
+    (uuid a7f698ba-e0de-47fc-aae8-007790d71ef8))
   (symbol
     (lib_id "power:GND")
     (at 240 140.16 0)
@@ -1985,7 +1985,7 @@
     (in_bom no)
     (on_board no)
     (dnp no)
-    (uuid 9dd46bb9-8b89-4301-bb85-fef4d625c441)
+    (uuid c74f98f7-654b-4bda-9d41-7e6f6e04f09f)
     (property
       "Reference"
       "#PWR33"
@@ -1994,25 +1994,25 @@
     (property "Value" "GND" (at 240 145.16 0) (effects (font (size 1.27 1.27))))
     (property "Footprint" "" (at 240 140.16 0) (effects (font (size 1.27 1.27)) hide))
     (property "Datasheet" "" (at 240 140.16 0) (effects (font (size 1.27 1.27)) hide))
-    (pin "1" (uuid 4b1384dd-cbe0-4aa0-ade4-5e4e0927af89))
+    (pin "1" (uuid e8dbcdd3-2c58-4696-bf65-452e44b40e3c))
     (instances
       (project
         "bzzy-led-ring"
-        (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "#PWR33") (unit 1)))))
+        (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "#PWR33") (unit 1)))))
   (wire
     (pts (xy 232.38 130) (xy 229.84 130))
     (stroke (width 0) (type default))
-    (uuid 8bef3131-fe55-4979-920c-c7af024dddd8))
+    (uuid 4300399e-5ade-457c-ba57-08150a7eae0a))
   (label
     "DIN6"
     (at 229.84 130 180)
     (fields_autoplaced)
     (effects (font (size 1.27 1.27)) (justify right bottom))
-    (uuid 91a95288-56f0-4a70-96fb-970f66872c4b))
+    (uuid 9de9d296-a006-4ea0-b52f-ce418c05b6cc))
   (wire
     (pts (xy 240 122.38) (xy 240 119.84))
     (stroke (width 0) (type default))
-    (uuid 590d53d5-c9ed-4802-8e55-e2a70c49224b))
+    (uuid 45f15149-49e3-4f61-b0da-f4cc51d0952e))
   (symbol
     (lib_id "power:+5V")
     (at 240 119.84 0)
@@ -2020,7 +2020,7 @@
     (in_bom no)
     (on_board no)
     (dnp no)
-    (uuid 9b3443fa-030d-4eed-918f-c6254558699d)
+    (uuid 0680e03a-8477-408e-aeea-d67d09e2492a)
     (property
       "Reference"
       "#PWR34"
@@ -2029,11 +2029,11 @@
     (property "Value" "+5V" (at 240 116.04 0) (effects (font (size 1.27 1.27))))
     (property "Footprint" "" (at 240 119.84 0) (effects (font (size 1.27 1.27)) hide))
     (property "Datasheet" "" (at 240 119.84 0) (effects (font (size 1.27 1.27)) hide))
-    (pin "1" (uuid b1a74ffd-9980-4c34-a76a-9c7846b0ef74))
+    (pin "1" (uuid 739c7437-2be2-4787-931a-d707c794ddcd))
     (instances
       (project
         "bzzy-led-ring"
-        (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "#PWR34") (unit 1)))))
+        (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "#PWR34") (unit 1)))))
   (symbol
     (lib_id "Device:C_Small")
     (at 252 115 0)
@@ -2041,7 +2041,7 @@
     (in_bom yes)
     (on_board yes)
     (dnp no)
-    (uuid 8ccaa73c-c900-4344-a407-a109bc504a8d)
+    (uuid fff49a3e-eb1e-4c8a-aa36-76d3dbd7b5b6)
     (property "Reference" "C9" (at 254.5 111.5 0) (effects (font (size 1.27 1.27)) (justify left)))
     (property "Value" "100nF" (at 254.5 118.5 0) (effects (font (size 1.27 1.27)) (justify left)))
     (property
@@ -2052,14 +2052,14 @@
     (property "Datasheet" "" (at 252 115 0) (effects (font (size 1.27 1.27)) hide))
     (property "MPN" "CL05B104KO5NNNC" (at 252 115 0) (effects (font (size 1.27 1.27)) hide))
     (property "LCSC" "C1525" (at 252 115 0) (effects (font (size 1.27 1.27)) hide))
-    (pin "1" (uuid d256f7d1-80f9-4ff0-ac8c-4b788bd38dde))
-    (pin "2" (uuid 44ba2feb-d785-4f36-9617-154e8eb8dcda))
+    (pin "1" (uuid 22b54c7e-ccc5-45cf-8d3e-716677206d81))
+    (pin "2" (uuid 542fcb5b-8703-44fe-9ff6-a7f91ab22e3b))
     (instances
-      (project "bzzy-led-ring" (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "C9") (unit 1)))))
+      (project "bzzy-led-ring" (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "C9") (unit 1)))))
   (wire
     (pts (xy 252 112.46) (xy 252 109.92))
     (stroke (width 0) (type default))
-    (uuid 493170ec-9d1a-4e86-8c49-aadb9f453d40))
+    (uuid a699759e-1d46-4811-bed2-cb1991c12c82))
   (symbol
     (lib_id "power:+5V")
     (at 252 109.92 0)
@@ -2067,7 +2067,7 @@
     (in_bom no)
     (on_board no)
     (dnp no)
-    (uuid 9f1816c1-cdc4-46d3-a7fc-2871a25a881f)
+    (uuid 71a0908f-4871-4a05-9f8e-f3988f786a99)
     (property
       "Reference"
       "#PWR35"
@@ -2076,15 +2076,15 @@
     (property "Value" "+5V" (at 252 106.12 0) (effects (font (size 1.27 1.27))))
     (property "Footprint" "" (at 252 109.92 0) (effects (font (size 1.27 1.27)) hide))
     (property "Datasheet" "" (at 252 109.92 0) (effects (font (size 1.27 1.27)) hide))
-    (pin "1" (uuid bf4d8c94-66d3-43be-9816-dd9eaf7aa0bb))
+    (pin "1" (uuid 2656b68a-fdd4-4fc2-9a7d-6ae6bb033955))
     (instances
       (project
         "bzzy-led-ring"
-        (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "#PWR35") (unit 1)))))
+        (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "#PWR35") (unit 1)))))
   (wire
     (pts (xy 252 117.54) (xy 252 120.08))
     (stroke (width 0) (type default))
-    (uuid a94b91e8-f5cc-495d-b3fb-204aab22fc7b))
+    (uuid 59af5923-0199-4a64-a80d-6d20122dd40f))
   (symbol
     (lib_id "power:GND")
     (at 252 120.08 0)
@@ -2092,7 +2092,7 @@
     (in_bom no)
     (on_board no)
     (dnp no)
-    (uuid a56265e4-e12e-4988-a47c-526d9511e4c4)
+    (uuid 26d5e62f-4814-464e-b23b-bb74f52ea0e8)
     (property
       "Reference"
       "#PWR36"
@@ -2101,11 +2101,11 @@
     (property "Value" "GND" (at 252 125.08 0) (effects (font (size 1.27 1.27))))
     (property "Footprint" "" (at 252 120.08 0) (effects (font (size 1.27 1.27)) hide))
     (property "Datasheet" "" (at 252 120.08 0) (effects (font (size 1.27 1.27)) hide))
-    (pin "1" (uuid 82207147-3c73-4a78-a703-fff8bbf85e2c))
+    (pin "1" (uuid 2d7f64a0-a679-4819-a492-a92d016a6095))
     (instances
       (project
         "bzzy-led-ring"
-        (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "#PWR36") (unit 1)))))
+        (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "#PWR36") (unit 1)))))
   (symbol
     (lib_id "LED:WS2812B-2020")
     (at 280 130 0)
@@ -2113,7 +2113,7 @@
     (in_bom yes)
     (on_board yes)
     (dnp no)
-    (uuid 2b8b0daf-49e6-4c5c-845e-574987f013cc)
+    (uuid 7aa3b2b9-0af1-4ba4-a489-3b2d68b1d650)
     (property "Reference" "D7" (at 282.5 126.5 0) (effects (font (size 1.27 1.27)) (justify left)))
     (property
       "Value"
@@ -2128,26 +2128,26 @@
     (property "Datasheet" "" (at 280 130 0) (effects (font (size 1.27 1.27)) hide))
     (property "MPN" "WS2812B-2020" (at 280 130 0) (effects (font (size 1.27 1.27)) hide))
     (property "LCSC" "C965555" (at 280 130 0) (effects (font (size 1.27 1.27)) hide))
-    (pin "1" (uuid bbdd87ce-7e90-4a78-808e-596c479a5f81))
-    (pin "2" (uuid a179bd77-b3b2-4525-a4a2-13743325f877))
-    (pin "3" (uuid 97ec48e2-74e3-481a-b10a-1c077bdc030f))
-    (pin "4" (uuid ec86d06c-c1d3-456f-8640-9573dcd9524d))
+    (pin "1" (uuid 02aca6e7-0b18-4943-95a7-c5560cbd1b3a))
+    (pin "2" (uuid 3ed407c1-1ed7-4f82-bd4d-333cad963b8f))
+    (pin "3" (uuid 101d4227-935e-47ae-a023-674d21ff9593))
+    (pin "4" (uuid 49c1b1a6-0d4a-4ed4-93b3-0d1e229e8073))
     (instances
-      (project "bzzy-led-ring" (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "D7") (unit 1)))))
+      (project "bzzy-led-ring" (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "D7") (unit 1)))))
   (wire
     (pts (xy 287.62 130) (xy 290.16 130))
     (stroke (width 0) (type default))
-    (uuid a4441e55-45d2-47fc-8a11-abd2497ec3a0))
+    (uuid 598683f4-8d7e-467b-bccf-52d560f10341))
   (label
     "DIN8"
     (at 290.16 130 0)
     (fields_autoplaced)
     (effects (font (size 1.27 1.27)) (justify left bottom))
-    (uuid f46e907e-70b4-4f68-bc09-90dc0bd67730))
+    (uuid 33b9ca85-447b-4c23-b2a4-b572bec5e537))
   (wire
     (pts (xy 280 137.62) (xy 280 140.16))
     (stroke (width 0) (type default))
-    (uuid 94f6d0e4-ead4-42d2-85b8-d84f89711f3f))
+    (uuid 4bd1b2e1-0b44-4322-aa60-c2b469d57897))
   (symbol
     (lib_id "power:GND")
     (at 280 140.16 0)
@@ -2155,7 +2155,7 @@
     (in_bom no)
     (on_board no)
     (dnp no)
-    (uuid dfc2b9de-0e85-46d4-8947-acb847628128)
+    (uuid b8169029-aa95-43ff-8f44-2a1442508f0f)
     (property
       "Reference"
       "#PWR37"
@@ -2164,25 +2164,25 @@
     (property "Value" "GND" (at 280 145.16 0) (effects (font (size 1.27 1.27))))
     (property "Footprint" "" (at 280 140.16 0) (effects (font (size 1.27 1.27)) hide))
     (property "Datasheet" "" (at 280 140.16 0) (effects (font (size 1.27 1.27)) hide))
-    (pin "1" (uuid e1392ce3-318f-4aa6-8f5e-433ed72d8616))
+    (pin "1" (uuid 235be3ff-85e5-4679-9b89-4e4daa24a84f))
     (instances
       (project
         "bzzy-led-ring"
-        (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "#PWR37") (unit 1)))))
+        (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "#PWR37") (unit 1)))))
   (wire
     (pts (xy 272.38 130) (xy 269.84 130))
     (stroke (width 0) (type default))
-    (uuid 548c589c-50e6-4794-939a-0eff661c63bf))
+    (uuid ba8ef3cc-ac63-4375-a5b7-8dc0efd6c764))
   (label
     "DIN7"
     (at 269.84 130 180)
     (fields_autoplaced)
     (effects (font (size 1.27 1.27)) (justify right bottom))
-    (uuid 0dd9747c-a549-43b6-b418-d88f5a3fd54d))
+    (uuid 60d8dcf0-1422-48b8-b9e9-024b73817eec))
   (wire
     (pts (xy 280 122.38) (xy 280 119.84))
     (stroke (width 0) (type default))
-    (uuid e4a78180-0221-47db-8e0c-0ab600712d64))
+    (uuid ae6480d7-9e4c-4f8d-8971-e5dc21de6ae4))
   (symbol
     (lib_id "power:+5V")
     (at 280 119.84 0)
@@ -2190,7 +2190,7 @@
     (in_bom no)
     (on_board no)
     (dnp no)
-    (uuid af6161b7-b4bb-414a-b55c-585171b2a715)
+    (uuid 32e52295-2509-42fa-9b45-1d3e206814c4)
     (property
       "Reference"
       "#PWR38"
@@ -2199,11 +2199,11 @@
     (property "Value" "+5V" (at 280 116.04 0) (effects (font (size 1.27 1.27))))
     (property "Footprint" "" (at 280 119.84 0) (effects (font (size 1.27 1.27)) hide))
     (property "Datasheet" "" (at 280 119.84 0) (effects (font (size 1.27 1.27)) hide))
-    (pin "1" (uuid ec7e89e6-ffc4-449b-95e9-62c059fd02e5))
+    (pin "1" (uuid 23ce36dc-a7f9-4383-af9c-4a9dfb1b19cd))
     (instances
       (project
         "bzzy-led-ring"
-        (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "#PWR38") (unit 1)))))
+        (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "#PWR38") (unit 1)))))
   (symbol
     (lib_id "Device:C_Small")
     (at 292 115 0)
@@ -2211,7 +2211,7 @@
     (in_bom yes)
     (on_board yes)
     (dnp no)
-    (uuid ee0748bf-b245-4ebe-b8ad-dd1e9c0a5160)
+    (uuid 8c6aecf5-6a6d-4dff-933e-3be04697a29b)
     (property "Reference" "C10" (at 294.5 111.5 0) (effects (font (size 1.27 1.27)) (justify left)))
     (property "Value" "100nF" (at 294.5 118.5 0) (effects (font (size 1.27 1.27)) (justify left)))
     (property
@@ -2222,14 +2222,14 @@
     (property "Datasheet" "" (at 292 115 0) (effects (font (size 1.27 1.27)) hide))
     (property "MPN" "CL05B104KO5NNNC" (at 292 115 0) (effects (font (size 1.27 1.27)) hide))
     (property "LCSC" "C1525" (at 292 115 0) (effects (font (size 1.27 1.27)) hide))
-    (pin "1" (uuid 2c0de413-dcdb-471b-b558-e62414fa34c2))
-    (pin "2" (uuid 583870ac-f44b-46a5-abbb-ed17c29f07ea))
+    (pin "1" (uuid e38b5af5-b361-4984-8f30-52430ed207f1))
+    (pin "2" (uuid 0af65fbe-379c-445c-b0d3-6a0d5cfa72ec))
     (instances
-      (project "bzzy-led-ring" (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "C10") (unit 1)))))
+      (project "bzzy-led-ring" (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "C10") (unit 1)))))
   (wire
     (pts (xy 292 112.46) (xy 292 109.92))
     (stroke (width 0) (type default))
-    (uuid 887cc7f6-d4f5-4f76-bb6c-ccc57dfa3e6d))
+    (uuid ee3287d3-e4a2-4953-b05d-0b1d499baed4))
   (symbol
     (lib_id "power:+5V")
     (at 292 109.92 0)
@@ -2237,7 +2237,7 @@
     (in_bom no)
     (on_board no)
     (dnp no)
-    (uuid 30cec474-4ece-4cc5-9e70-e130cead640b)
+    (uuid 76ca658a-84d2-4481-9330-0e7274d6a997)
     (property
       "Reference"
       "#PWR39"
@@ -2246,15 +2246,15 @@
     (property "Value" "+5V" (at 292 106.12 0) (effects (font (size 1.27 1.27))))
     (property "Footprint" "" (at 292 109.92 0) (effects (font (size 1.27 1.27)) hide))
     (property "Datasheet" "" (at 292 109.92 0) (effects (font (size 1.27 1.27)) hide))
-    (pin "1" (uuid a0e18758-e9f1-4bc3-98dd-97ba866be584))
+    (pin "1" (uuid e63a1b92-f7d4-42e0-b890-5a660d7430e5))
     (instances
       (project
         "bzzy-led-ring"
-        (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "#PWR39") (unit 1)))))
+        (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "#PWR39") (unit 1)))))
   (wire
     (pts (xy 292 117.54) (xy 292 120.08))
     (stroke (width 0) (type default))
-    (uuid e8babe72-d5ae-4642-9e2e-5b3db2c4c60b))
+    (uuid 61809bda-d2bd-4280-8f38-0e8ee0df22c3))
   (symbol
     (lib_id "power:GND")
     (at 292 120.08 0)
@@ -2262,7 +2262,7 @@
     (in_bom no)
     (on_board no)
     (dnp no)
-    (uuid 402e35fc-2273-4e67-ab72-abfdc708b1d1)
+    (uuid e062ac51-21f9-4da0-9925-d1ab91606d7e)
     (property
       "Reference"
       "#PWR40"
@@ -2271,11 +2271,11 @@
     (property "Value" "GND" (at 292 125.08 0) (effects (font (size 1.27 1.27))))
     (property "Footprint" "" (at 292 120.08 0) (effects (font (size 1.27 1.27)) hide))
     (property "Datasheet" "" (at 292 120.08 0) (effects (font (size 1.27 1.27)) hide))
-    (pin "1" (uuid 7d79622d-b178-4de7-89aa-9aadcefa95f8))
+    (pin "1" (uuid bf8d92c4-7d48-4062-ab6d-eba633f419b2))
     (instances
       (project
         "bzzy-led-ring"
-        (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "#PWR40") (unit 1)))))
+        (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "#PWR40") (unit 1)))))
   (symbol
     (lib_id "LED:WS2812B-2020")
     (at 320 130 0)
@@ -2283,7 +2283,7 @@
     (in_bom yes)
     (on_board yes)
     (dnp no)
-    (uuid 333a645a-a23a-44c0-9814-9d37503a6505)
+    (uuid bd4e7370-37f1-463b-84ea-62e3437db484)
     (property "Reference" "D8" (at 322.5 126.5 0) (effects (font (size 1.27 1.27)) (justify left)))
     (property
       "Value"
@@ -2298,26 +2298,26 @@
     (property "Datasheet" "" (at 320 130 0) (effects (font (size 1.27 1.27)) hide))
     (property "MPN" "WS2812B-2020" (at 320 130 0) (effects (font (size 1.27 1.27)) hide))
     (property "LCSC" "C965555" (at 320 130 0) (effects (font (size 1.27 1.27)) hide))
-    (pin "1" (uuid c94a3cef-fa42-47b8-bba1-2b9d2de50cb9))
-    (pin "2" (uuid 450598a2-fec1-441d-b670-6d3f76874543))
-    (pin "3" (uuid 23708455-dbdf-4e1c-965a-b70e86b2a269))
-    (pin "4" (uuid 83cdc2f8-45be-4cc3-870b-d4f248d85c64))
+    (pin "1" (uuid 46037463-bf43-4d2a-a16a-70b45f459349))
+    (pin "2" (uuid 87e2bb67-41d5-4e14-94ba-cdaf5c373df2))
+    (pin "3" (uuid a93f30e0-7d06-48bc-a579-ecd0cca94845))
+    (pin "4" (uuid 69df5762-70c1-42bc-bf1f-9393eb6e476d))
     (instances
-      (project "bzzy-led-ring" (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "D8") (unit 1)))))
+      (project "bzzy-led-ring" (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "D8") (unit 1)))))
   (wire
     (pts (xy 327.62 130) (xy 330.16 130))
     (stroke (width 0) (type default))
-    (uuid e5ed86e8-f1a8-4b28-ae76-f7e062abbd71))
+    (uuid 52b1b57a-e108-4104-aaeb-e8f399019259))
   (label
     "DIN9"
     (at 330.16 130 0)
     (fields_autoplaced)
     (effects (font (size 1.27 1.27)) (justify left bottom))
-    (uuid a1e5bc81-ca1c-419c-a4e6-962fdf34c525))
+    (uuid be5a04ba-a093-41e1-9073-606e9e7ede07))
   (wire
     (pts (xy 320 137.62) (xy 320 140.16))
     (stroke (width 0) (type default))
-    (uuid b41d9044-9104-4148-bacc-0eaf8f07e5be))
+    (uuid e8f359ff-6b84-4662-b1dc-09d8104bd0ec))
   (symbol
     (lib_id "power:GND")
     (at 320 140.16 0)
@@ -2325,7 +2325,7 @@
     (in_bom no)
     (on_board no)
     (dnp no)
-    (uuid 69b710d1-baa2-461d-b43a-8ccf125c0249)
+    (uuid 2b787fc9-2c23-4853-be21-633bd675a195)
     (property
       "Reference"
       "#PWR41"
@@ -2334,25 +2334,25 @@
     (property "Value" "GND" (at 320 145.16 0) (effects (font (size 1.27 1.27))))
     (property "Footprint" "" (at 320 140.16 0) (effects (font (size 1.27 1.27)) hide))
     (property "Datasheet" "" (at 320 140.16 0) (effects (font (size 1.27 1.27)) hide))
-    (pin "1" (uuid 17808b0c-d232-495a-9629-1d0458020fd9))
+    (pin "1" (uuid 288706ab-b846-486b-825a-317ad2ef2e49))
     (instances
       (project
         "bzzy-led-ring"
-        (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "#PWR41") (unit 1)))))
+        (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "#PWR41") (unit 1)))))
   (wire
     (pts (xy 312.38 130) (xy 309.84 130))
     (stroke (width 0) (type default))
-    (uuid 245420f4-7944-42c3-b417-d2e1ee62a99e))
+    (uuid bfcf1f81-e742-4dce-a397-2461a58c3647))
   (label
     "DIN8"
     (at 309.84 130 180)
     (fields_autoplaced)
     (effects (font (size 1.27 1.27)) (justify right bottom))
-    (uuid 4ccef804-ce50-472e-8fdd-1d10cde5cda8))
+    (uuid b2231f3e-6dec-4ffd-a02a-3da270103d92))
   (wire
     (pts (xy 320 122.38) (xy 320 119.84))
     (stroke (width 0) (type default))
-    (uuid f9424505-0cd2-425b-b1dc-5e010ecf2df7))
+    (uuid 7e2ed3b9-dbd5-4eec-9186-69b15cf97a63))
   (symbol
     (lib_id "power:+5V")
     (at 320 119.84 0)
@@ -2360,7 +2360,7 @@
     (in_bom no)
     (on_board no)
     (dnp no)
-    (uuid b189c9c5-5136-4d6b-acfc-28425cc6cdec)
+    (uuid d4e30d3e-65f3-4321-a5da-3b11a5bb7a7c)
     (property
       "Reference"
       "#PWR42"
@@ -2369,11 +2369,11 @@
     (property "Value" "+5V" (at 320 116.04 0) (effects (font (size 1.27 1.27))))
     (property "Footprint" "" (at 320 119.84 0) (effects (font (size 1.27 1.27)) hide))
     (property "Datasheet" "" (at 320 119.84 0) (effects (font (size 1.27 1.27)) hide))
-    (pin "1" (uuid 92629595-c65b-44a4-8cfb-4a593221b3d0))
+    (pin "1" (uuid 4f58699e-134c-436b-8b3c-7786e44bf824))
     (instances
       (project
         "bzzy-led-ring"
-        (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "#PWR42") (unit 1)))))
+        (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "#PWR42") (unit 1)))))
   (symbol
     (lib_id "Device:C_Small")
     (at 332 115 0)
@@ -2381,7 +2381,7 @@
     (in_bom yes)
     (on_board yes)
     (dnp no)
-    (uuid 6e00844c-b4a0-46b7-ad26-8776b9bca414)
+    (uuid 7b1b56f7-2077-4441-8b6e-1a4dec25b21a)
     (property "Reference" "C11" (at 334.5 111.5 0) (effects (font (size 1.27 1.27)) (justify left)))
     (property "Value" "100nF" (at 334.5 118.5 0) (effects (font (size 1.27 1.27)) (justify left)))
     (property
@@ -2392,14 +2392,14 @@
     (property "Datasheet" "" (at 332 115 0) (effects (font (size 1.27 1.27)) hide))
     (property "MPN" "CL05B104KO5NNNC" (at 332 115 0) (effects (font (size 1.27 1.27)) hide))
     (property "LCSC" "C1525" (at 332 115 0) (effects (font (size 1.27 1.27)) hide))
-    (pin "1" (uuid b84127e1-22c7-449d-812d-fa1605783938))
-    (pin "2" (uuid a40d4df9-1c3c-4468-a8f8-25580ef21fe4))
+    (pin "1" (uuid de8ee24e-8df6-4927-b100-01425202292a))
+    (pin "2" (uuid b0f956a6-777a-44d7-9690-057f1a33c73c))
     (instances
-      (project "bzzy-led-ring" (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "C11") (unit 1)))))
+      (project "bzzy-led-ring" (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "C11") (unit 1)))))
   (wire
     (pts (xy 332 112.46) (xy 332 109.92))
     (stroke (width 0) (type default))
-    (uuid 056c5458-3b73-4c07-aef4-ff9d6bced8c9))
+    (uuid 0658b66d-189e-406a-87ab-a22f159c7d30))
   (symbol
     (lib_id "power:+5V")
     (at 332 109.92 0)
@@ -2407,7 +2407,7 @@
     (in_bom no)
     (on_board no)
     (dnp no)
-    (uuid e93b1e01-c69b-4fce-ad0e-2f8697506313)
+    (uuid fdc3e40b-abec-4219-9091-1467095b7d86)
     (property
       "Reference"
       "#PWR43"
@@ -2416,15 +2416,15 @@
     (property "Value" "+5V" (at 332 106.12 0) (effects (font (size 1.27 1.27))))
     (property "Footprint" "" (at 332 109.92 0) (effects (font (size 1.27 1.27)) hide))
     (property "Datasheet" "" (at 332 109.92 0) (effects (font (size 1.27 1.27)) hide))
-    (pin "1" (uuid 4a1a057f-ff06-463a-a7be-3d4e59f38b68))
+    (pin "1" (uuid 8962fa8a-b1f9-492b-ac4a-92a6aa4e9031))
     (instances
       (project
         "bzzy-led-ring"
-        (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "#PWR43") (unit 1)))))
+        (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "#PWR43") (unit 1)))))
   (wire
     (pts (xy 332 117.54) (xy 332 120.08))
     (stroke (width 0) (type default))
-    (uuid 1fdf4811-4a4b-427a-89df-6b153a506803))
+    (uuid ebcc9f69-f041-45f8-a9e7-62c8a6cde8ce))
   (symbol
     (lib_id "power:GND")
     (at 332 120.08 0)
@@ -2432,7 +2432,7 @@
     (in_bom no)
     (on_board no)
     (dnp no)
-    (uuid 0e7b826d-aeae-4897-900d-d3c3c910db75)
+    (uuid 8bc3ea52-3a79-45f1-8005-a266ed74c783)
     (property
       "Reference"
       "#PWR44"
@@ -2441,11 +2441,11 @@
     (property "Value" "GND" (at 332 125.08 0) (effects (font (size 1.27 1.27))))
     (property "Footprint" "" (at 332 120.08 0) (effects (font (size 1.27 1.27)) hide))
     (property "Datasheet" "" (at 332 120.08 0) (effects (font (size 1.27 1.27)) hide))
-    (pin "1" (uuid c863195e-0e26-44ce-83f8-1c0728ac3c9d))
+    (pin "1" (uuid b0db6a2c-340c-4cce-ba09-f05ed674f544))
     (instances
       (project
         "bzzy-led-ring"
-        (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "#PWR44") (unit 1)))))
+        (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "#PWR44") (unit 1)))))
   (symbol
     (lib_id "LED:WS2812B-2020")
     (at 40 180 0)
@@ -2453,7 +2453,7 @@
     (in_bom yes)
     (on_board yes)
     (dnp no)
-    (uuid 2ebd1aad-80bd-4ae6-b242-ca72714efff3)
+    (uuid 0ad3f6ea-96f5-42be-a07a-a67d25a63956)
     (property "Reference" "D9" (at 42.5 176.5 0) (effects (font (size 1.27 1.27)) (justify left)))
     (property
       "Value"
@@ -2468,26 +2468,26 @@
     (property "Datasheet" "" (at 40 180 0) (effects (font (size 1.27 1.27)) hide))
     (property "MPN" "WS2812B-2020" (at 40 180 0) (effects (font (size 1.27 1.27)) hide))
     (property "LCSC" "C965555" (at 40 180 0) (effects (font (size 1.27 1.27)) hide))
-    (pin "1" (uuid 8ee5d8c9-aa11-4f4e-89ee-f9faa1070f8f))
-    (pin "2" (uuid 25dd394c-4a67-4e07-ad0a-b131f573cb0d))
-    (pin "3" (uuid 5eecb3ec-bed7-47be-b440-589949e63c96))
-    (pin "4" (uuid 1f573474-aca2-4cfc-8da1-4337f25fd7e2))
+    (pin "1" (uuid ebf489b7-2f77-4928-a323-641716bb729e))
+    (pin "2" (uuid 3c67f437-dea5-4870-bb8a-fbe8ec6f29bb))
+    (pin "3" (uuid 767d08b1-e3ad-481e-b813-ccfde6520869))
+    (pin "4" (uuid 3d00ab38-aa0b-45c9-b92d-a9e4967132c8))
     (instances
-      (project "bzzy-led-ring" (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "D9") (unit 1)))))
+      (project "bzzy-led-ring" (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "D9") (unit 1)))))
   (wire
     (pts (xy 47.62 180) (xy 50.16 180))
     (stroke (width 0) (type default))
-    (uuid 757b4724-39a7-4762-abf2-a3380afc5b66))
+    (uuid a66c0a14-8c03-40ff-b055-e6b6d447fda2))
   (label
     "DIN10"
     (at 50.16 180 0)
     (fields_autoplaced)
     (effects (font (size 1.27 1.27)) (justify left bottom))
-    (uuid 32bef65a-b8dc-4276-8a4b-8b34dbf710db))
+    (uuid 1aa858d0-7d19-42d3-ad97-eb2bd41d205a))
   (wire
     (pts (xy 40 187.62) (xy 40 190.16))
     (stroke (width 0) (type default))
-    (uuid fa8ca344-0365-476c-8521-81485591bc6a))
+    (uuid aaee8685-65c3-4dab-9ea2-3ee6edb68e37))
   (symbol
     (lib_id "power:GND")
     (at 40 190.16 0)
@@ -2495,7 +2495,7 @@
     (in_bom no)
     (on_board no)
     (dnp no)
-    (uuid c10d00d1-f5c5-4186-823a-3d9e8b1051bb)
+    (uuid d1009017-f806-406a-9d0b-94fe3261e136)
     (property
       "Reference"
       "#PWR45"
@@ -2504,25 +2504,25 @@
     (property "Value" "GND" (at 40 195.16 0) (effects (font (size 1.27 1.27))))
     (property "Footprint" "" (at 40 190.16 0) (effects (font (size 1.27 1.27)) hide))
     (property "Datasheet" "" (at 40 190.16 0) (effects (font (size 1.27 1.27)) hide))
-    (pin "1" (uuid 56344b9e-d4f6-4edf-9754-04a72476cbd4))
+    (pin "1" (uuid 6e44199d-e9ed-4c0a-9673-a904c1c4bac2))
     (instances
       (project
         "bzzy-led-ring"
-        (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "#PWR45") (unit 1)))))
+        (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "#PWR45") (unit 1)))))
   (wire
     (pts (xy 32.38 180) (xy 29.84 180))
     (stroke (width 0) (type default))
-    (uuid 94f80c2d-1eee-4381-89f4-1506ef5ebcce))
+    (uuid 50f21d4a-115b-4378-8c07-290a935ddea0))
   (label
     "DIN9"
     (at 29.84 180 180)
     (fields_autoplaced)
     (effects (font (size 1.27 1.27)) (justify right bottom))
-    (uuid fd35dd4d-e960-4520-8d00-098e38274b9b))
+    (uuid f94c8539-836d-46b3-a09a-b480462713ab))
   (wire
     (pts (xy 40 172.38) (xy 40 169.84))
     (stroke (width 0) (type default))
-    (uuid e3c7af30-3381-4e2f-8dde-cc342451058b))
+    (uuid 0cad61e4-d388-4e33-94ba-e592d62a6436))
   (symbol
     (lib_id "power:+5V")
     (at 40 169.84 0)
@@ -2530,7 +2530,7 @@
     (in_bom no)
     (on_board no)
     (dnp no)
-    (uuid 5d4887d7-a877-49c6-bee9-6b95aadbc8b0)
+    (uuid 5757b34c-ef5b-4c5e-af85-43a70164e0be)
     (property
       "Reference"
       "#PWR46"
@@ -2539,11 +2539,11 @@
     (property "Value" "+5V" (at 40 166.04 0) (effects (font (size 1.27 1.27))))
     (property "Footprint" "" (at 40 169.84 0) (effects (font (size 1.27 1.27)) hide))
     (property "Datasheet" "" (at 40 169.84 0) (effects (font (size 1.27 1.27)) hide))
-    (pin "1" (uuid 6edc6671-6d31-4d35-a853-6d0b2450f4fe))
+    (pin "1" (uuid 79409667-7731-41a8-8695-f94fcec9ed5c))
     (instances
       (project
         "bzzy-led-ring"
-        (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "#PWR46") (unit 1)))))
+        (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "#PWR46") (unit 1)))))
   (symbol
     (lib_id "Device:C_Small")
     (at 52 165 0)
@@ -2551,7 +2551,7 @@
     (in_bom yes)
     (on_board yes)
     (dnp no)
-    (uuid 246479c1-ca7b-4923-a722-d03cd9015965)
+    (uuid 0c190714-e589-41dc-872f-f4c066c155e0)
     (property "Reference" "C12" (at 54.5 161.5 0) (effects (font (size 1.27 1.27)) (justify left)))
     (property "Value" "100nF" (at 54.5 168.5 0) (effects (font (size 1.27 1.27)) (justify left)))
     (property
@@ -2562,14 +2562,14 @@
     (property "Datasheet" "" (at 52 165 0) (effects (font (size 1.27 1.27)) hide))
     (property "MPN" "CL05B104KO5NNNC" (at 52 165 0) (effects (font (size 1.27 1.27)) hide))
     (property "LCSC" "C1525" (at 52 165 0) (effects (font (size 1.27 1.27)) hide))
-    (pin "1" (uuid 3fbb594e-b661-438b-b972-d3e270b64a96))
-    (pin "2" (uuid 913bc933-d72e-4f7e-9305-2d68c5083cae))
+    (pin "1" (uuid 45cebbe4-2b6e-4959-9015-dfc101eac8cf))
+    (pin "2" (uuid 943b5bb0-b6e6-4bdd-8f94-4eb39a212208))
     (instances
-      (project "bzzy-led-ring" (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "C12") (unit 1)))))
+      (project "bzzy-led-ring" (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "C12") (unit 1)))))
   (wire
     (pts (xy 52 162.46) (xy 52 159.92))
     (stroke (width 0) (type default))
-    (uuid f0a18838-bbb8-44e7-adb8-8dd5fb357836))
+    (uuid cc339d17-23da-410c-8577-dbbdf1fb21b8))
   (symbol
     (lib_id "power:+5V")
     (at 52 159.92 0)
@@ -2577,7 +2577,7 @@
     (in_bom no)
     (on_board no)
     (dnp no)
-    (uuid 4a352b86-4f54-46cb-aa3b-50d228075faf)
+    (uuid 933be125-e1a0-4d78-b611-edf0c42182ec)
     (property
       "Reference"
       "#PWR47"
@@ -2586,15 +2586,15 @@
     (property "Value" "+5V" (at 52 156.12 0) (effects (font (size 1.27 1.27))))
     (property "Footprint" "" (at 52 159.92 0) (effects (font (size 1.27 1.27)) hide))
     (property "Datasheet" "" (at 52 159.92 0) (effects (font (size 1.27 1.27)) hide))
-    (pin "1" (uuid 53c42d8a-ca79-4e96-b40c-ba827a86d582))
+    (pin "1" (uuid 92c4d2b7-18de-4da6-9193-ddc609345102))
     (instances
       (project
         "bzzy-led-ring"
-        (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "#PWR47") (unit 1)))))
+        (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "#PWR47") (unit 1)))))
   (wire
     (pts (xy 52 167.54) (xy 52 170.08))
     (stroke (width 0) (type default))
-    (uuid 8f91d438-8745-4291-a7ea-6ff88c5d3bf3))
+    (uuid 618d7468-2753-4f7d-80d4-e0f881e0ab29))
   (symbol
     (lib_id "power:GND")
     (at 52 170.08 0)
@@ -2602,7 +2602,7 @@
     (in_bom no)
     (on_board no)
     (dnp no)
-    (uuid 084b6214-eec3-4c5d-98ad-11a0efdaca02)
+    (uuid df1a454a-edfd-4a33-b1f6-1de711a1b4e0)
     (property
       "Reference"
       "#PWR48"
@@ -2611,11 +2611,11 @@
     (property "Value" "GND" (at 52 175.08 0) (effects (font (size 1.27 1.27))))
     (property "Footprint" "" (at 52 170.08 0) (effects (font (size 1.27 1.27)) hide))
     (property "Datasheet" "" (at 52 170.08 0) (effects (font (size 1.27 1.27)) hide))
-    (pin "1" (uuid 475d7da1-8f4b-4e7a-9db9-87206bbb2ebe))
+    (pin "1" (uuid e3dbafea-bab8-4f11-bcd9-d43e64506b30))
     (instances
       (project
         "bzzy-led-ring"
-        (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "#PWR48") (unit 1)))))
+        (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "#PWR48") (unit 1)))))
   (symbol
     (lib_id "LED:WS2812B-2020")
     (at 80 180 0)
@@ -2623,7 +2623,7 @@
     (in_bom yes)
     (on_board yes)
     (dnp no)
-    (uuid 63580277-5b5e-4bcd-a7d4-13038f109e26)
+    (uuid 1e9b7aff-0861-4d7f-b105-3131cf6ede6a)
     (property "Reference" "D10" (at 82.5 176.5 0) (effects (font (size 1.27 1.27)) (justify left)))
     (property
       "Value"
@@ -2638,26 +2638,26 @@
     (property "Datasheet" "" (at 80 180 0) (effects (font (size 1.27 1.27)) hide))
     (property "MPN" "WS2812B-2020" (at 80 180 0) (effects (font (size 1.27 1.27)) hide))
     (property "LCSC" "C965555" (at 80 180 0) (effects (font (size 1.27 1.27)) hide))
-    (pin "1" (uuid 40adcbd7-72b1-4a2e-8e58-56396761ee03))
-    (pin "2" (uuid 6dc53dcf-ba2b-4276-a052-c8b05721d1d2))
-    (pin "3" (uuid 7e4ffbeb-d865-4c80-a7c4-f92105299104))
-    (pin "4" (uuid 9f2ff0ee-92cd-4dd3-b88f-3a6cd724f753))
+    (pin "1" (uuid 1fec931f-be91-4abf-8a20-58a56b8a3931))
+    (pin "2" (uuid 89548666-047d-4316-b284-90e79763c6df))
+    (pin "3" (uuid f551f72f-8294-4233-83d6-f6e0652b65d8))
+    (pin "4" (uuid 5ae4b930-b266-47e2-9b38-fe608d961977))
     (instances
-      (project "bzzy-led-ring" (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "D10") (unit 1)))))
+      (project "bzzy-led-ring" (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "D10") (unit 1)))))
   (wire
     (pts (xy 87.62 180) (xy 90.16 180))
     (stroke (width 0) (type default))
-    (uuid a8db5b7c-bf10-4d03-93a6-795353888751))
+    (uuid 5b85000b-2a10-4d02-b98e-ab5e7fb9da10))
   (label
     "DIN11"
     (at 90.16 180 0)
     (fields_autoplaced)
     (effects (font (size 1.27 1.27)) (justify left bottom))
-    (uuid e5a91279-80cd-451c-a1dc-a45a9c4448dd))
+    (uuid 02e79bbf-184b-4c00-b684-c25640fdac1b))
   (wire
     (pts (xy 80 187.62) (xy 80 190.16))
     (stroke (width 0) (type default))
-    (uuid 8581bacc-ab46-4b48-9ab6-b4a4f117354f))
+    (uuid 1eed77e6-4c9b-48ce-b40b-485a1a43dc85))
   (symbol
     (lib_id "power:GND")
     (at 80 190.16 0)
@@ -2665,7 +2665,7 @@
     (in_bom no)
     (on_board no)
     (dnp no)
-    (uuid 28f9afd2-860e-43ca-8b3f-10485076f7bd)
+    (uuid 7243f7cb-8203-481f-b467-744c2d540adb)
     (property
       "Reference"
       "#PWR49"
@@ -2674,25 +2674,25 @@
     (property "Value" "GND" (at 80 195.16 0) (effects (font (size 1.27 1.27))))
     (property "Footprint" "" (at 80 190.16 0) (effects (font (size 1.27 1.27)) hide))
     (property "Datasheet" "" (at 80 190.16 0) (effects (font (size 1.27 1.27)) hide))
-    (pin "1" (uuid f98459fa-1b3e-4cb3-8961-613f69aff70a))
+    (pin "1" (uuid 8106e1cc-039b-416a-b60e-6acaa4626240))
     (instances
       (project
         "bzzy-led-ring"
-        (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "#PWR49") (unit 1)))))
+        (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "#PWR49") (unit 1)))))
   (wire
     (pts (xy 72.38 180) (xy 69.84 180))
     (stroke (width 0) (type default))
-    (uuid 9adf2619-10d6-485d-8133-1e344e30eac8))
+    (uuid 7deb171c-b628-48dc-9e8b-963aca5c4e47))
   (label
     "DIN10"
     (at 69.84 180 180)
     (fields_autoplaced)
     (effects (font (size 1.27 1.27)) (justify right bottom))
-    (uuid e3eb988c-da1e-4b74-a0aa-043229b87c6c))
+    (uuid 50ee50fd-f306-48ad-bca7-01007ccfa63b))
   (wire
     (pts (xy 80 172.38) (xy 80 169.84))
     (stroke (width 0) (type default))
-    (uuid aa76666a-8597-4348-9130-0c4007e069a7))
+    (uuid 0ad1c190-0223-447f-85b7-296da6034d31))
   (symbol
     (lib_id "power:+5V")
     (at 80 169.84 0)
@@ -2700,7 +2700,7 @@
     (in_bom no)
     (on_board no)
     (dnp no)
-    (uuid a97fb112-65d3-4112-945c-65899e7e9df0)
+    (uuid 9348b6f1-68da-4b68-8a9c-b404713ade9a)
     (property
       "Reference"
       "#PWR50"
@@ -2709,11 +2709,11 @@
     (property "Value" "+5V" (at 80 166.04 0) (effects (font (size 1.27 1.27))))
     (property "Footprint" "" (at 80 169.84 0) (effects (font (size 1.27 1.27)) hide))
     (property "Datasheet" "" (at 80 169.84 0) (effects (font (size 1.27 1.27)) hide))
-    (pin "1" (uuid 6073f215-ccde-4054-b22f-b4d6173db38d))
+    (pin "1" (uuid 1e34bb90-01b0-439a-b4f3-868b9826d011))
     (instances
       (project
         "bzzy-led-ring"
-        (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "#PWR50") (unit 1)))))
+        (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "#PWR50") (unit 1)))))
   (symbol
     (lib_id "Device:C_Small")
     (at 92 165 0)
@@ -2721,7 +2721,7 @@
     (in_bom yes)
     (on_board yes)
     (dnp no)
-    (uuid 3121c1ec-5229-4332-86fc-5f31fc7d664c)
+    (uuid 5a23a37c-90f8-4aff-ae5a-a582d4244949)
     (property "Reference" "C13" (at 94.5 161.5 0) (effects (font (size 1.27 1.27)) (justify left)))
     (property "Value" "100nF" (at 94.5 168.5 0) (effects (font (size 1.27 1.27)) (justify left)))
     (property
@@ -2732,14 +2732,14 @@
     (property "Datasheet" "" (at 92 165 0) (effects (font (size 1.27 1.27)) hide))
     (property "MPN" "CL05B104KO5NNNC" (at 92 165 0) (effects (font (size 1.27 1.27)) hide))
     (property "LCSC" "C1525" (at 92 165 0) (effects (font (size 1.27 1.27)) hide))
-    (pin "1" (uuid 065005d6-9f4e-4597-bf9d-76e84d592f53))
-    (pin "2" (uuid 9931dff5-7582-4321-a7b1-a27ad453e5a1))
+    (pin "1" (uuid 96e6ced1-4413-4adf-9bfb-4528ef75b5c2))
+    (pin "2" (uuid 3d431f75-96f8-4c0d-a49e-17dd6189a03d))
     (instances
-      (project "bzzy-led-ring" (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "C13") (unit 1)))))
+      (project "bzzy-led-ring" (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "C13") (unit 1)))))
   (wire
     (pts (xy 92 162.46) (xy 92 159.92))
     (stroke (width 0) (type default))
-    (uuid 87b3c823-3273-4f4c-be7e-8415f9f47f6b))
+    (uuid eee65730-bd05-4dc3-be00-ba9daba6f84e))
   (symbol
     (lib_id "power:+5V")
     (at 92 159.92 0)
@@ -2747,7 +2747,7 @@
     (in_bom no)
     (on_board no)
     (dnp no)
-    (uuid c4ce7f5a-7f6d-4b07-9c17-eae9305058ca)
+    (uuid afc5a959-7fdb-41e6-9147-aca5fbb65975)
     (property
       "Reference"
       "#PWR51"
@@ -2756,15 +2756,15 @@
     (property "Value" "+5V" (at 92 156.12 0) (effects (font (size 1.27 1.27))))
     (property "Footprint" "" (at 92 159.92 0) (effects (font (size 1.27 1.27)) hide))
     (property "Datasheet" "" (at 92 159.92 0) (effects (font (size 1.27 1.27)) hide))
-    (pin "1" (uuid 19ae132b-b95a-41c4-8775-554ea56e4ee4))
+    (pin "1" (uuid 915cbc61-fcc1-4f72-af9a-069ffd3f7d9b))
     (instances
       (project
         "bzzy-led-ring"
-        (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "#PWR51") (unit 1)))))
+        (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "#PWR51") (unit 1)))))
   (wire
     (pts (xy 92 167.54) (xy 92 170.08))
     (stroke (width 0) (type default))
-    (uuid 8baec89e-21f0-4750-9cc4-fff0a476793b))
+    (uuid 89843b23-9cd5-4630-b808-184bb351ec48))
   (symbol
     (lib_id "power:GND")
     (at 92 170.08 0)
@@ -2772,7 +2772,7 @@
     (in_bom no)
     (on_board no)
     (dnp no)
-    (uuid f0e74422-2698-40bb-9598-0cec7e46d3ca)
+    (uuid 15774565-c2a9-45b9-87c1-a4618ef50ceb)
     (property
       "Reference"
       "#PWR52"
@@ -2781,11 +2781,11 @@
     (property "Value" "GND" (at 92 175.08 0) (effects (font (size 1.27 1.27))))
     (property "Footprint" "" (at 92 170.08 0) (effects (font (size 1.27 1.27)) hide))
     (property "Datasheet" "" (at 92 170.08 0) (effects (font (size 1.27 1.27)) hide))
-    (pin "1" (uuid fb6481ff-5b9c-45ef-82b1-95e43565f019))
+    (pin "1" (uuid d08e145c-cfe9-4c90-88c9-d3de7365be13))
     (instances
       (project
         "bzzy-led-ring"
-        (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "#PWR52") (unit 1)))))
+        (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "#PWR52") (unit 1)))))
   (symbol
     (lib_id "LED:WS2812B-2020")
     (at 120 180 0)
@@ -2793,7 +2793,7 @@
     (in_bom yes)
     (on_board yes)
     (dnp no)
-    (uuid a5932931-b442-4d77-8e2b-d715a9010e0d)
+    (uuid 9e6b9093-080e-481a-85eb-65612cefbc45)
     (property "Reference" "D11" (at 122.5 176.5 0) (effects (font (size 1.27 1.27)) (justify left)))
     (property
       "Value"
@@ -2808,26 +2808,26 @@
     (property "Datasheet" "" (at 120 180 0) (effects (font (size 1.27 1.27)) hide))
     (property "MPN" "WS2812B-2020" (at 120 180 0) (effects (font (size 1.27 1.27)) hide))
     (property "LCSC" "C965555" (at 120 180 0) (effects (font (size 1.27 1.27)) hide))
-    (pin "1" (uuid edb1d49b-c97a-4972-b519-9cdd6b6ecb0e))
-    (pin "2" (uuid 56ffea19-7bb7-4568-8a1b-23f61d3019c0))
-    (pin "3" (uuid 84d09b0c-5c46-44fa-a3b4-ffe264afc5f2))
-    (pin "4" (uuid b8edda37-33ec-43b3-bfbe-6c24b2780640))
+    (pin "1" (uuid 6fe744f2-5783-4097-9d83-da8a065d5448))
+    (pin "2" (uuid 43058e61-b330-4bfe-b834-e4f3f00a419e))
+    (pin "3" (uuid 72060d40-e8cb-4248-af54-8a3b67839e50))
+    (pin "4" (uuid 4c809be8-736f-4d2d-9614-e6e9c5443247))
     (instances
-      (project "bzzy-led-ring" (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "D11") (unit 1)))))
+      (project "bzzy-led-ring" (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "D11") (unit 1)))))
   (wire
     (pts (xy 127.62 180) (xy 130.16 180))
     (stroke (width 0) (type default))
-    (uuid 9634bf94-3b3f-4593-96e0-75ce269d0441))
+    (uuid 519aa73b-ca53-4e2a-9877-cc69b51100ce))
   (label
     "DIN12"
     (at 130.16 180 0)
     (fields_autoplaced)
     (effects (font (size 1.27 1.27)) (justify left bottom))
-    (uuid dadf5603-a5d4-467f-9648-8d64fbecfc60))
+    (uuid 21cd877d-130e-4baa-b026-13567925d500))
   (wire
     (pts (xy 120 187.62) (xy 120 190.16))
     (stroke (width 0) (type default))
-    (uuid d82f4ab9-d999-41f4-9d3d-34cc3e1409d3))
+    (uuid 69d390da-5479-4e51-ad7f-f1c3b90d7e18))
   (symbol
     (lib_id "power:GND")
     (at 120 190.16 0)
@@ -2835,7 +2835,7 @@
     (in_bom no)
     (on_board no)
     (dnp no)
-    (uuid c4f094b8-852c-4d07-bcd6-514cb9a50456)
+    (uuid 34ceae22-2df5-41de-b8df-eea89a80de74)
     (property
       "Reference"
       "#PWR53"
@@ -2844,25 +2844,25 @@
     (property "Value" "GND" (at 120 195.16 0) (effects (font (size 1.27 1.27))))
     (property "Footprint" "" (at 120 190.16 0) (effects (font (size 1.27 1.27)) hide))
     (property "Datasheet" "" (at 120 190.16 0) (effects (font (size 1.27 1.27)) hide))
-    (pin "1" (uuid 84bff2bc-3591-4bfa-95fd-958eb860ccbe))
+    (pin "1" (uuid 9071a77b-8ff0-40ff-a9e0-2124bf6083f3))
     (instances
       (project
         "bzzy-led-ring"
-        (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "#PWR53") (unit 1)))))
+        (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "#PWR53") (unit 1)))))
   (wire
     (pts (xy 112.38 180) (xy 109.84 180))
     (stroke (width 0) (type default))
-    (uuid 7d8ba812-99f5-407a-af12-8e98894349a2))
+    (uuid 3b1cbc5d-73af-414d-95a0-bc49d47a2c79))
   (label
     "DIN11"
     (at 109.84 180 180)
     (fields_autoplaced)
     (effects (font (size 1.27 1.27)) (justify right bottom))
-    (uuid 3d6d377d-8e2c-4676-a62a-a43fca8c3d73))
+    (uuid 37f84f1b-d2ce-491f-a91f-8f722726f748))
   (wire
     (pts (xy 120 172.38) (xy 120 169.84))
     (stroke (width 0) (type default))
-    (uuid 0e75d376-ade6-4b8a-9f46-696ab453f735))
+    (uuid 72eaf836-4039-4354-b9cf-e0da32acf096))
   (symbol
     (lib_id "power:+5V")
     (at 120 169.84 0)
@@ -2870,7 +2870,7 @@
     (in_bom no)
     (on_board no)
     (dnp no)
-    (uuid 4b9cbd6d-8d40-44f9-9fe2-18a544d8a46a)
+    (uuid eec37433-e7e0-4f04-b158-7348ded8ed4a)
     (property
       "Reference"
       "#PWR54"
@@ -2879,11 +2879,11 @@
     (property "Value" "+5V" (at 120 166.04 0) (effects (font (size 1.27 1.27))))
     (property "Footprint" "" (at 120 169.84 0) (effects (font (size 1.27 1.27)) hide))
     (property "Datasheet" "" (at 120 169.84 0) (effects (font (size 1.27 1.27)) hide))
-    (pin "1" (uuid 6a22598b-cb6e-432c-a854-b842a4a29e29))
+    (pin "1" (uuid 6f500277-d70d-41fa-86ea-d7e4eb464141))
     (instances
       (project
         "bzzy-led-ring"
-        (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "#PWR54") (unit 1)))))
+        (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "#PWR54") (unit 1)))))
   (symbol
     (lib_id "Device:C_Small")
     (at 132 165 0)
@@ -2891,7 +2891,7 @@
     (in_bom yes)
     (on_board yes)
     (dnp no)
-    (uuid fd9887b0-d084-4c34-a27e-562744ecf289)
+    (uuid 176f0d43-445c-4146-882a-8940c339d671)
     (property "Reference" "C14" (at 134.5 161.5 0) (effects (font (size 1.27 1.27)) (justify left)))
     (property "Value" "100nF" (at 134.5 168.5 0) (effects (font (size 1.27 1.27)) (justify left)))
     (property
@@ -2902,14 +2902,14 @@
     (property "Datasheet" "" (at 132 165 0) (effects (font (size 1.27 1.27)) hide))
     (property "MPN" "CL05B104KO5NNNC" (at 132 165 0) (effects (font (size 1.27 1.27)) hide))
     (property "LCSC" "C1525" (at 132 165 0) (effects (font (size 1.27 1.27)) hide))
-    (pin "1" (uuid 934e6253-66e0-4cff-bdd0-5de776abca17))
-    (pin "2" (uuid 701251b3-3242-4fb3-b7a6-ffe0751637f2))
+    (pin "1" (uuid 76a5a993-85d2-4aa8-8365-ec7abf97b39d))
+    (pin "2" (uuid 9221e34d-b9f3-4891-8418-5e74c7c0b367))
     (instances
-      (project "bzzy-led-ring" (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "C14") (unit 1)))))
+      (project "bzzy-led-ring" (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "C14") (unit 1)))))
   (wire
     (pts (xy 132 162.46) (xy 132 159.92))
     (stroke (width 0) (type default))
-    (uuid 60e23db6-664b-43de-a5d9-867e35c58dff))
+    (uuid 096810ce-f33f-4917-a625-811e511763bf))
   (symbol
     (lib_id "power:+5V")
     (at 132 159.92 0)
@@ -2917,7 +2917,7 @@
     (in_bom no)
     (on_board no)
     (dnp no)
-    (uuid 4a1b9b4a-3758-4145-870b-c6535a71b66d)
+    (uuid 22cf13ce-9fe3-4ae5-8825-fad4a101e22a)
     (property
       "Reference"
       "#PWR55"
@@ -2926,15 +2926,15 @@
     (property "Value" "+5V" (at 132 156.12 0) (effects (font (size 1.27 1.27))))
     (property "Footprint" "" (at 132 159.92 0) (effects (font (size 1.27 1.27)) hide))
     (property "Datasheet" "" (at 132 159.92 0) (effects (font (size 1.27 1.27)) hide))
-    (pin "1" (uuid d824104c-b7d3-474c-87f5-3d9a49d51d45))
+    (pin "1" (uuid 8020405a-cf87-491f-ad66-d0c3937f055a))
     (instances
       (project
         "bzzy-led-ring"
-        (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "#PWR55") (unit 1)))))
+        (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "#PWR55") (unit 1)))))
   (wire
     (pts (xy 132 167.54) (xy 132 170.08))
     (stroke (width 0) (type default))
-    (uuid ae23fa5a-5801-494c-9cab-c69fd64f491a))
+    (uuid acd2a057-561d-4693-88c1-2d0d555d130a))
   (symbol
     (lib_id "power:GND")
     (at 132 170.08 0)
@@ -2942,7 +2942,7 @@
     (in_bom no)
     (on_board no)
     (dnp no)
-    (uuid 38190f1a-ef64-47a2-994a-671a167491c4)
+    (uuid 417a96a3-4542-47a4-b82e-a630fb312f31)
     (property
       "Reference"
       "#PWR56"
@@ -2951,11 +2951,11 @@
     (property "Value" "GND" (at 132 175.08 0) (effects (font (size 1.27 1.27))))
     (property "Footprint" "" (at 132 170.08 0) (effects (font (size 1.27 1.27)) hide))
     (property "Datasheet" "" (at 132 170.08 0) (effects (font (size 1.27 1.27)) hide))
-    (pin "1" (uuid 24a1bdca-1b6a-41c9-b3e7-3ee1e86b8e01))
+    (pin "1" (uuid 6fa5f81b-4c38-4e04-9c6a-07d626d46ea7))
     (instances
       (project
         "bzzy-led-ring"
-        (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "#PWR56") (unit 1)))))
+        (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "#PWR56") (unit 1)))))
   (symbol
     (lib_id "LED:WS2812B-2020")
     (at 160 180 0)
@@ -2963,7 +2963,7 @@
     (in_bom yes)
     (on_board yes)
     (dnp no)
-    (uuid 162ff896-7236-4e03-998b-995d14d508ca)
+    (uuid 13fc1cdc-421c-4bde-a0a8-e3008747c37b)
     (property "Reference" "D12" (at 162.5 176.5 0) (effects (font (size 1.27 1.27)) (justify left)))
     (property
       "Value"
@@ -2978,26 +2978,26 @@
     (property "Datasheet" "" (at 160 180 0) (effects (font (size 1.27 1.27)) hide))
     (property "MPN" "WS2812B-2020" (at 160 180 0) (effects (font (size 1.27 1.27)) hide))
     (property "LCSC" "C965555" (at 160 180 0) (effects (font (size 1.27 1.27)) hide))
-    (pin "1" (uuid 88a46c06-f264-4c44-9345-ef956fa15de2))
-    (pin "2" (uuid 2b2e863e-f816-4be9-9732-e1c6b3755cd0))
-    (pin "3" (uuid b4e02493-fc3d-4713-ad9e-5172d18fd727))
-    (pin "4" (uuid 7a8feeee-c69b-482d-a99d-71f81b66172d))
+    (pin "1" (uuid 9916124e-d4cc-4958-b73c-079253130502))
+    (pin "2" (uuid b2c7a48c-e1a4-458a-9e98-f1aa5a772e8b))
+    (pin "3" (uuid 6a3f168f-af63-4157-9bd4-8ed563d23ae8))
+    (pin "4" (uuid d853238f-f11d-4339-9c00-5c00f95b00a6))
     (instances
-      (project "bzzy-led-ring" (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "D12") (unit 1)))))
+      (project "bzzy-led-ring" (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "D12") (unit 1)))))
   (wire
     (pts (xy 167.62 180) (xy 170.16 180))
     (stroke (width 0) (type default))
-    (uuid 17881cff-861e-45f8-bad9-4feb48f6396b))
+    (uuid 9b0b3a13-dcec-48c7-a08d-245a061d7408))
   (label
     "DIN13"
     (at 170.16 180 0)
     (fields_autoplaced)
     (effects (font (size 1.27 1.27)) (justify left bottom))
-    (uuid 38936575-f0a1-4cd8-a2da-cbf01ac1bb38))
+    (uuid 082c9a8a-be1e-4211-9608-4b9fa98dad7f))
   (wire
     (pts (xy 160 187.62) (xy 160 190.16))
     (stroke (width 0) (type default))
-    (uuid 43043dfc-3a2d-46f7-a034-55f4411d7eb9))
+    (uuid 9b933103-3c16-4eb1-abc6-170ce313e84d))
   (symbol
     (lib_id "power:GND")
     (at 160 190.16 0)
@@ -3005,7 +3005,7 @@
     (in_bom no)
     (on_board no)
     (dnp no)
-    (uuid 72980f2d-b7e1-467b-b720-3c0671912310)
+    (uuid b08290d1-89cb-49f3-80e6-45317c3141e4)
     (property
       "Reference"
       "#PWR57"
@@ -3014,25 +3014,25 @@
     (property "Value" "GND" (at 160 195.16 0) (effects (font (size 1.27 1.27))))
     (property "Footprint" "" (at 160 190.16 0) (effects (font (size 1.27 1.27)) hide))
     (property "Datasheet" "" (at 160 190.16 0) (effects (font (size 1.27 1.27)) hide))
-    (pin "1" (uuid 33551201-6360-45ed-8b6a-8fa6b7266bd6))
+    (pin "1" (uuid bf535d3b-4e82-444a-b31f-4495347082b5))
     (instances
       (project
         "bzzy-led-ring"
-        (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "#PWR57") (unit 1)))))
+        (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "#PWR57") (unit 1)))))
   (wire
     (pts (xy 152.38 180) (xy 149.84 180))
     (stroke (width 0) (type default))
-    (uuid 6ceb34b3-de0b-4e1e-8a6a-115d7090e33b))
+    (uuid b26e60f3-0433-45b3-92b1-37c4af7d2c9a))
   (label
     "DIN12"
     (at 149.84 180 180)
     (fields_autoplaced)
     (effects (font (size 1.27 1.27)) (justify right bottom))
-    (uuid 53c94f5a-8c76-43d1-a62a-b971f5b7ac2f))
+    (uuid dbddb39d-fed5-4a34-abbd-d07fa2e84ab8))
   (wire
     (pts (xy 160 172.38) (xy 160 169.84))
     (stroke (width 0) (type default))
-    (uuid 97c15751-9fdb-4749-9d3c-c81bfba2e8c1))
+    (uuid a506661e-0cc8-464f-a3c7-1fd569bc3a28))
   (symbol
     (lib_id "power:+5V")
     (at 160 169.84 0)
@@ -3040,7 +3040,7 @@
     (in_bom no)
     (on_board no)
     (dnp no)
-    (uuid bde33cdb-c0b7-4ecd-9bf2-5ab8bcaca5a4)
+    (uuid 60f2dd2b-d2e9-4395-80c9-9d1f50152901)
     (property
       "Reference"
       "#PWR58"
@@ -3049,11 +3049,11 @@
     (property "Value" "+5V" (at 160 166.04 0) (effects (font (size 1.27 1.27))))
     (property "Footprint" "" (at 160 169.84 0) (effects (font (size 1.27 1.27)) hide))
     (property "Datasheet" "" (at 160 169.84 0) (effects (font (size 1.27 1.27)) hide))
-    (pin "1" (uuid dfba309f-af0a-4e5e-9227-7bfcb88fd56f))
+    (pin "1" (uuid 2a6c4868-1a45-43e0-8cc6-33d4740c320f))
     (instances
       (project
         "bzzy-led-ring"
-        (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "#PWR58") (unit 1)))))
+        (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "#PWR58") (unit 1)))))
   (symbol
     (lib_id "Device:C_Small")
     (at 172 165 0)
@@ -3061,7 +3061,7 @@
     (in_bom yes)
     (on_board yes)
     (dnp no)
-    (uuid b90b9cd4-415d-4146-bd4e-7176ad96b301)
+    (uuid 126f32be-0f49-4e2c-8a4c-3bf7d5d15529)
     (property "Reference" "C15" (at 174.5 161.5 0) (effects (font (size 1.27 1.27)) (justify left)))
     (property "Value" "100nF" (at 174.5 168.5 0) (effects (font (size 1.27 1.27)) (justify left)))
     (property
@@ -3072,14 +3072,14 @@
     (property "Datasheet" "" (at 172 165 0) (effects (font (size 1.27 1.27)) hide))
     (property "MPN" "CL05B104KO5NNNC" (at 172 165 0) (effects (font (size 1.27 1.27)) hide))
     (property "LCSC" "C1525" (at 172 165 0) (effects (font (size 1.27 1.27)) hide))
-    (pin "1" (uuid d1e43642-105c-4558-a84c-46614aee32ab))
-    (pin "2" (uuid 3aa8d73d-7b26-41ef-822a-65aaf1d5af7c))
+    (pin "1" (uuid e69012a2-5d7b-4aba-a9d8-cb5e96aa78d7))
+    (pin "2" (uuid da2b92ca-b28b-4485-8e7d-12f5162d06f0))
     (instances
-      (project "bzzy-led-ring" (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "C15") (unit 1)))))
+      (project "bzzy-led-ring" (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "C15") (unit 1)))))
   (wire
     (pts (xy 172 162.46) (xy 172 159.92))
     (stroke (width 0) (type default))
-    (uuid 274afc0d-9e91-4e2d-a550-39b6be5c1e0a))
+    (uuid b9a88ad8-72ba-495c-964c-7896c102bef0))
   (symbol
     (lib_id "power:+5V")
     (at 172 159.92 0)
@@ -3087,7 +3087,7 @@
     (in_bom no)
     (on_board no)
     (dnp no)
-    (uuid 926620c2-34a7-4c8d-91ef-fa0deb946965)
+    (uuid 083b54fd-b411-47c9-94f9-67f42d50450d)
     (property
       "Reference"
       "#PWR59"
@@ -3096,15 +3096,15 @@
     (property "Value" "+5V" (at 172 156.12 0) (effects (font (size 1.27 1.27))))
     (property "Footprint" "" (at 172 159.92 0) (effects (font (size 1.27 1.27)) hide))
     (property "Datasheet" "" (at 172 159.92 0) (effects (font (size 1.27 1.27)) hide))
-    (pin "1" (uuid 634ef69e-4b9a-41f6-b5c2-9f4c8ba9b67d))
+    (pin "1" (uuid f19139e9-e5ea-4327-99c1-eecc5a96d24b))
     (instances
       (project
         "bzzy-led-ring"
-        (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "#PWR59") (unit 1)))))
+        (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "#PWR59") (unit 1)))))
   (wire
     (pts (xy 172 167.54) (xy 172 170.08))
     (stroke (width 0) (type default))
-    (uuid fff375fd-0c06-4505-be63-158738e031d5))
+    (uuid aa446e2d-80ee-4dd9-ac3f-ae0b57e8dd53))
   (symbol
     (lib_id "power:GND")
     (at 172 170.08 0)
@@ -3112,7 +3112,7 @@
     (in_bom no)
     (on_board no)
     (dnp no)
-    (uuid 65261e9d-5ffc-42ec-9b3c-e8726c54ffdb)
+    (uuid b03b7503-4176-4e60-b86c-254235711a1c)
     (property
       "Reference"
       "#PWR60"
@@ -3121,11 +3121,11 @@
     (property "Value" "GND" (at 172 175.08 0) (effects (font (size 1.27 1.27))))
     (property "Footprint" "" (at 172 170.08 0) (effects (font (size 1.27 1.27)) hide))
     (property "Datasheet" "" (at 172 170.08 0) (effects (font (size 1.27 1.27)) hide))
-    (pin "1" (uuid 51800b35-63c8-48fd-a738-44812afeb1a1))
+    (pin "1" (uuid 3c971369-1e93-4e80-9332-59484fdb5ceb))
     (instances
       (project
         "bzzy-led-ring"
-        (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "#PWR60") (unit 1)))))
+        (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "#PWR60") (unit 1)))))
   (symbol
     (lib_id "LED:WS2812B-2020")
     (at 200 180 0)
@@ -3133,7 +3133,7 @@
     (in_bom yes)
     (on_board yes)
     (dnp no)
-    (uuid 79d7a559-20a4-477e-a40b-0274e9a7928b)
+    (uuid efc6f2d3-70be-4a09-88d1-3ab2bfad735f)
     (property "Reference" "D13" (at 202.5 176.5 0) (effects (font (size 1.27 1.27)) (justify left)))
     (property
       "Value"
@@ -3148,26 +3148,26 @@
     (property "Datasheet" "" (at 200 180 0) (effects (font (size 1.27 1.27)) hide))
     (property "MPN" "WS2812B-2020" (at 200 180 0) (effects (font (size 1.27 1.27)) hide))
     (property "LCSC" "C965555" (at 200 180 0) (effects (font (size 1.27 1.27)) hide))
-    (pin "1" (uuid eafdcbd5-252c-48c9-8912-a2b3c2e7329f))
-    (pin "2" (uuid 37690bb9-101a-478b-a40f-8c1e91ebc186))
-    (pin "3" (uuid 0588b072-b66f-4ff4-967a-e0a6c9b6a05a))
-    (pin "4" (uuid d87d79a8-e1f0-4cd4-a12e-a89addfaea19))
+    (pin "1" (uuid dc93b723-91de-41f7-937d-8efe889a0877))
+    (pin "2" (uuid 85f5f1a7-8618-44d7-9595-684001f41b8c))
+    (pin "3" (uuid 155ddac2-0a89-4694-9b1d-8172df0f6503))
+    (pin "4" (uuid a8998927-0e30-447c-ad1e-2ca3a130f26d))
     (instances
-      (project "bzzy-led-ring" (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "D13") (unit 1)))))
+      (project "bzzy-led-ring" (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "D13") (unit 1)))))
   (wire
     (pts (xy 207.62 180) (xy 210.16 180))
     (stroke (width 0) (type default))
-    (uuid ed2f823e-0bf4-4b81-a55f-48ee989d6b5e))
+    (uuid dc3814fa-d00b-4853-b44f-578476124b89))
   (label
     "DIN14"
     (at 210.16 180 0)
     (fields_autoplaced)
     (effects (font (size 1.27 1.27)) (justify left bottom))
-    (uuid 31c91308-7271-4585-90f2-5fb4fabb120d))
+    (uuid a8d57411-000e-4351-b86f-a6e59f498ea5))
   (wire
     (pts (xy 200 187.62) (xy 200 190.16))
     (stroke (width 0) (type default))
-    (uuid b9e323a8-6471-41ff-aebc-3a53fe074413))
+    (uuid d2a411ca-43d6-4cc4-ad0b-a1b20d50e33d))
   (symbol
     (lib_id "power:GND")
     (at 200 190.16 0)
@@ -3175,7 +3175,7 @@
     (in_bom no)
     (on_board no)
     (dnp no)
-    (uuid 8def3053-4531-4623-abee-74df23579170)
+    (uuid cd2a4fec-eda6-4232-a4e4-750c29fbae8c)
     (property
       "Reference"
       "#PWR61"
@@ -3184,25 +3184,25 @@
     (property "Value" "GND" (at 200 195.16 0) (effects (font (size 1.27 1.27))))
     (property "Footprint" "" (at 200 190.16 0) (effects (font (size 1.27 1.27)) hide))
     (property "Datasheet" "" (at 200 190.16 0) (effects (font (size 1.27 1.27)) hide))
-    (pin "1" (uuid 169e3146-e8c4-4c6a-8aa4-42cc24a6e98e))
+    (pin "1" (uuid 45fb8ac9-8698-435f-8306-b4145d4bb47f))
     (instances
       (project
         "bzzy-led-ring"
-        (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "#PWR61") (unit 1)))))
+        (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "#PWR61") (unit 1)))))
   (wire
     (pts (xy 192.38 180) (xy 189.84 180))
     (stroke (width 0) (type default))
-    (uuid a17486a3-85bc-4b4f-b186-e8fe44e90523))
+    (uuid c5d84867-31a8-4146-86c9-21d61677a6fe))
   (label
     "DIN13"
     (at 189.84 180 180)
     (fields_autoplaced)
     (effects (font (size 1.27 1.27)) (justify right bottom))
-    (uuid 44de33b0-03a8-4af3-89a0-22f36aefb76c))
+    (uuid 8086c233-bb9d-4417-b2b3-9266db503a84))
   (wire
     (pts (xy 200 172.38) (xy 200 169.84))
     (stroke (width 0) (type default))
-    (uuid 8ccb9b04-b7bc-4c6b-9102-e0f36171641b))
+    (uuid cfeee54a-653f-48c2-b3e0-4f71815e2915))
   (symbol
     (lib_id "power:+5V")
     (at 200 169.84 0)
@@ -3210,7 +3210,7 @@
     (in_bom no)
     (on_board no)
     (dnp no)
-    (uuid 6965c06e-5ddd-46c2-9a6b-872d4c011067)
+    (uuid e2ec5aea-4a3c-45a6-bbf9-44061ec658ff)
     (property
       "Reference"
       "#PWR62"
@@ -3219,11 +3219,11 @@
     (property "Value" "+5V" (at 200 166.04 0) (effects (font (size 1.27 1.27))))
     (property "Footprint" "" (at 200 169.84 0) (effects (font (size 1.27 1.27)) hide))
     (property "Datasheet" "" (at 200 169.84 0) (effects (font (size 1.27 1.27)) hide))
-    (pin "1" (uuid e8c7cd53-c21a-4622-aaab-3ed72e919b44))
+    (pin "1" (uuid ae8cf1d1-ad92-454e-a698-e34a72c4c9c8))
     (instances
       (project
         "bzzy-led-ring"
-        (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "#PWR62") (unit 1)))))
+        (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "#PWR62") (unit 1)))))
   (symbol
     (lib_id "Device:C_Small")
     (at 212 165 0)
@@ -3231,7 +3231,7 @@
     (in_bom yes)
     (on_board yes)
     (dnp no)
-    (uuid 550b8991-aee5-41d7-b9d1-dc534a2fde8c)
+    (uuid c3045607-0d6e-4f2f-aa87-f8b12531dde0)
     (property "Reference" "C16" (at 214.5 161.5 0) (effects (font (size 1.27 1.27)) (justify left)))
     (property "Value" "100nF" (at 214.5 168.5 0) (effects (font (size 1.27 1.27)) (justify left)))
     (property
@@ -3242,14 +3242,14 @@
     (property "Datasheet" "" (at 212 165 0) (effects (font (size 1.27 1.27)) hide))
     (property "MPN" "CL05B104KO5NNNC" (at 212 165 0) (effects (font (size 1.27 1.27)) hide))
     (property "LCSC" "C1525" (at 212 165 0) (effects (font (size 1.27 1.27)) hide))
-    (pin "1" (uuid dcd3c4fa-b939-4a50-a87d-edeab4ec0aa7))
-    (pin "2" (uuid 881a309a-38be-4c26-80c9-c0a160993825))
+    (pin "1" (uuid f4c14937-1807-46e6-9616-1bbc3789f855))
+    (pin "2" (uuid 4d34c735-ce65-472f-877f-7a686733d85c))
     (instances
-      (project "bzzy-led-ring" (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "C16") (unit 1)))))
+      (project "bzzy-led-ring" (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "C16") (unit 1)))))
   (wire
     (pts (xy 212 162.46) (xy 212 159.92))
     (stroke (width 0) (type default))
-    (uuid 51c290ea-f0be-4c99-a10f-ae03de967151))
+    (uuid 95db7947-9523-4355-a7b1-4b698df6ae1d))
   (symbol
     (lib_id "power:+5V")
     (at 212 159.92 0)
@@ -3257,7 +3257,7 @@
     (in_bom no)
     (on_board no)
     (dnp no)
-    (uuid 14a8fa26-8919-4967-ae0b-d9331231f0dc)
+    (uuid 37e3d657-e3f3-45d0-ab57-8a857c1b730c)
     (property
       "Reference"
       "#PWR63"
@@ -3266,15 +3266,15 @@
     (property "Value" "+5V" (at 212 156.12 0) (effects (font (size 1.27 1.27))))
     (property "Footprint" "" (at 212 159.92 0) (effects (font (size 1.27 1.27)) hide))
     (property "Datasheet" "" (at 212 159.92 0) (effects (font (size 1.27 1.27)) hide))
-    (pin "1" (uuid 8ab63df9-81e6-4b99-8586-c5e610446244))
+    (pin "1" (uuid a129b398-330c-4437-ab87-938fe8f98795))
     (instances
       (project
         "bzzy-led-ring"
-        (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "#PWR63") (unit 1)))))
+        (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "#PWR63") (unit 1)))))
   (wire
     (pts (xy 212 167.54) (xy 212 170.08))
     (stroke (width 0) (type default))
-    (uuid f0a2c855-e8b2-4b36-87e1-bdfe95aea3ac))
+    (uuid 90032fcd-7e5e-44b1-993e-b5d285e3a6e8))
   (symbol
     (lib_id "power:GND")
     (at 212 170.08 0)
@@ -3282,7 +3282,7 @@
     (in_bom no)
     (on_board no)
     (dnp no)
-    (uuid f197bdc7-6290-4aaf-ae87-97c71ccbe977)
+    (uuid f3f4e06e-dfe1-43e6-af7e-bfd6ef85fb68)
     (property
       "Reference"
       "#PWR64"
@@ -3291,11 +3291,11 @@
     (property "Value" "GND" (at 212 175.08 0) (effects (font (size 1.27 1.27))))
     (property "Footprint" "" (at 212 170.08 0) (effects (font (size 1.27 1.27)) hide))
     (property "Datasheet" "" (at 212 170.08 0) (effects (font (size 1.27 1.27)) hide))
-    (pin "1" (uuid 3dcad968-ef6f-42cf-9d9b-d153570b21c4))
+    (pin "1" (uuid 42201b74-f27f-4ac6-8c5c-daf9240ab747))
     (instances
       (project
         "bzzy-led-ring"
-        (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "#PWR64") (unit 1)))))
+        (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "#PWR64") (unit 1)))))
   (symbol
     (lib_id "LED:WS2812B-2020")
     (at 240 180 0)
@@ -3303,7 +3303,7 @@
     (in_bom yes)
     (on_board yes)
     (dnp no)
-    (uuid 71f4e61c-9e14-49bb-a359-8a79c56b498c)
+    (uuid 140e2a1d-76dc-4522-88bc-792db04f828b)
     (property "Reference" "D14" (at 242.5 176.5 0) (effects (font (size 1.27 1.27)) (justify left)))
     (property
       "Value"
@@ -3318,26 +3318,26 @@
     (property "Datasheet" "" (at 240 180 0) (effects (font (size 1.27 1.27)) hide))
     (property "MPN" "WS2812B-2020" (at 240 180 0) (effects (font (size 1.27 1.27)) hide))
     (property "LCSC" "C965555" (at 240 180 0) (effects (font (size 1.27 1.27)) hide))
-    (pin "1" (uuid b7bc41f9-cbc7-4741-aa9f-a17339c3c309))
-    (pin "2" (uuid 0e5400a8-cda0-4dcd-91cd-6b58eab37b9f))
-    (pin "3" (uuid 1e599c90-2087-43c6-8e3f-1e38c1c399b5))
-    (pin "4" (uuid ff435c8a-a168-4356-a1e9-c03357801a25))
+    (pin "1" (uuid ea99e21f-9c85-45c0-9ce7-3c72c2b3aa7e))
+    (pin "2" (uuid 53f716f8-6b29-460a-a90d-41d371856e59))
+    (pin "3" (uuid b52f7a2d-992b-4377-bbfc-40119be57c1d))
+    (pin "4" (uuid aa3c6538-01ac-4dca-a16c-834fda43bcd4))
     (instances
-      (project "bzzy-led-ring" (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "D14") (unit 1)))))
+      (project "bzzy-led-ring" (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "D14") (unit 1)))))
   (wire
     (pts (xy 247.62 180) (xy 250.16 180))
     (stroke (width 0) (type default))
-    (uuid f085b227-9ef2-41c4-9dde-defdf54b73bc))
+    (uuid 9e5ab7c2-61d0-4b1d-ba02-ed262a75a295))
   (label
     "DIN15"
     (at 250.16 180 0)
     (fields_autoplaced)
     (effects (font (size 1.27 1.27)) (justify left bottom))
-    (uuid 1361005e-658d-4930-9b83-f06fdfdc292f))
+    (uuid b5c92f84-df62-4080-b27f-d535a37abc7e))
   (wire
     (pts (xy 240 187.62) (xy 240 190.16))
     (stroke (width 0) (type default))
-    (uuid 7ecdefff-42a3-4622-847d-e7ee3e97f6b3))
+    (uuid a5f56a7f-d0a8-4def-bb5b-daf3f3e916c5))
   (symbol
     (lib_id "power:GND")
     (at 240 190.16 0)
@@ -3345,7 +3345,7 @@
     (in_bom no)
     (on_board no)
     (dnp no)
-    (uuid 47309e61-1345-4986-b9c4-c26293a6eb48)
+    (uuid 952709d8-a972-4886-91ca-7c5d11876b78)
     (property
       "Reference"
       "#PWR65"
@@ -3354,25 +3354,25 @@
     (property "Value" "GND" (at 240 195.16 0) (effects (font (size 1.27 1.27))))
     (property "Footprint" "" (at 240 190.16 0) (effects (font (size 1.27 1.27)) hide))
     (property "Datasheet" "" (at 240 190.16 0) (effects (font (size 1.27 1.27)) hide))
-    (pin "1" (uuid 54646bbe-a19c-4bf2-ae61-b0ac395ba70f))
+    (pin "1" (uuid 9b09b0df-cb98-4f3e-913e-5ccc47a1c0d4))
     (instances
       (project
         "bzzy-led-ring"
-        (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "#PWR65") (unit 1)))))
+        (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "#PWR65") (unit 1)))))
   (wire
     (pts (xy 232.38 180) (xy 229.84 180))
     (stroke (width 0) (type default))
-    (uuid 185113a2-60d1-4ee7-bd04-4452ca556d6d))
+    (uuid 913f0947-5395-41d2-b8ca-463d937aa950))
   (label
     "DIN14"
     (at 229.84 180 180)
     (fields_autoplaced)
     (effects (font (size 1.27 1.27)) (justify right bottom))
-    (uuid fef26359-b29a-43b7-8bef-87052010b4ee))
+    (uuid 7a08bf48-de95-4763-bf35-0c18db0916f1))
   (wire
     (pts (xy 240 172.38) (xy 240 169.84))
     (stroke (width 0) (type default))
-    (uuid 80f58735-f68e-4101-ae2c-ca84378add87))
+    (uuid d52a101e-c0ce-4a9a-a2f6-37e3428beaef))
   (symbol
     (lib_id "power:+5V")
     (at 240 169.84 0)
@@ -3380,7 +3380,7 @@
     (in_bom no)
     (on_board no)
     (dnp no)
-    (uuid bee39e27-8d5a-4b04-90d3-3fedc851da58)
+    (uuid bf04d935-fb1d-4257-9db9-8ca11bee253c)
     (property
       "Reference"
       "#PWR66"
@@ -3389,11 +3389,11 @@
     (property "Value" "+5V" (at 240 166.04 0) (effects (font (size 1.27 1.27))))
     (property "Footprint" "" (at 240 169.84 0) (effects (font (size 1.27 1.27)) hide))
     (property "Datasheet" "" (at 240 169.84 0) (effects (font (size 1.27 1.27)) hide))
-    (pin "1" (uuid 12e21cce-ce9b-495e-87e1-d1ae221f6e16))
+    (pin "1" (uuid f156f14e-223b-4fe1-83ee-eeb87e31e55e))
     (instances
       (project
         "bzzy-led-ring"
-        (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "#PWR66") (unit 1)))))
+        (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "#PWR66") (unit 1)))))
   (symbol
     (lib_id "Device:C_Small")
     (at 252 165 0)
@@ -3401,7 +3401,7 @@
     (in_bom yes)
     (on_board yes)
     (dnp no)
-    (uuid 7371c59b-1716-4ed7-9e4c-65296a8d7672)
+    (uuid be2ac6a9-17ab-4125-b11d-43c6ba855ea8)
     (property "Reference" "C17" (at 254.5 161.5 0) (effects (font (size 1.27 1.27)) (justify left)))
     (property "Value" "100nF" (at 254.5 168.5 0) (effects (font (size 1.27 1.27)) (justify left)))
     (property
@@ -3412,14 +3412,14 @@
     (property "Datasheet" "" (at 252 165 0) (effects (font (size 1.27 1.27)) hide))
     (property "MPN" "CL05B104KO5NNNC" (at 252 165 0) (effects (font (size 1.27 1.27)) hide))
     (property "LCSC" "C1525" (at 252 165 0) (effects (font (size 1.27 1.27)) hide))
-    (pin "1" (uuid 6b54c72c-ca9c-4d0a-aec7-73f841219a01))
-    (pin "2" (uuid 9553b765-457b-40d7-8f28-b510aa67ca8a))
+    (pin "1" (uuid 73d1bf7c-9c25-43b2-9694-1fd91392c747))
+    (pin "2" (uuid ea0e5a62-0711-458a-ad36-83840ad193f9))
     (instances
-      (project "bzzy-led-ring" (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "C17") (unit 1)))))
+      (project "bzzy-led-ring" (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "C17") (unit 1)))))
   (wire
     (pts (xy 252 162.46) (xy 252 159.92))
     (stroke (width 0) (type default))
-    (uuid db797f66-132c-4bc5-84b4-d6ab38685e54))
+    (uuid 1096abb5-63bf-47d3-973f-cc7e0d55e386))
   (symbol
     (lib_id "power:+5V")
     (at 252 159.92 0)
@@ -3427,7 +3427,7 @@
     (in_bom no)
     (on_board no)
     (dnp no)
-    (uuid e1e9572e-293e-4347-bc9c-7cfededc9556)
+    (uuid 955f957b-9048-49e4-a2cf-0ff84250a269)
     (property
       "Reference"
       "#PWR67"
@@ -3436,15 +3436,15 @@
     (property "Value" "+5V" (at 252 156.12 0) (effects (font (size 1.27 1.27))))
     (property "Footprint" "" (at 252 159.92 0) (effects (font (size 1.27 1.27)) hide))
     (property "Datasheet" "" (at 252 159.92 0) (effects (font (size 1.27 1.27)) hide))
-    (pin "1" (uuid e4c6f01d-dd6c-46d5-b26b-70c8df67f421))
+    (pin "1" (uuid 72fb8117-fa7f-4a06-9c7c-89ed1fba8dfc))
     (instances
       (project
         "bzzy-led-ring"
-        (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "#PWR67") (unit 1)))))
+        (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "#PWR67") (unit 1)))))
   (wire
     (pts (xy 252 167.54) (xy 252 170.08))
     (stroke (width 0) (type default))
-    (uuid 903ec445-7b01-4428-b667-af6e3f312dfe))
+    (uuid dd8bffe2-a797-4065-a061-078af32ad9c2))
   (symbol
     (lib_id "power:GND")
     (at 252 170.08 0)
@@ -3452,7 +3452,7 @@
     (in_bom no)
     (on_board no)
     (dnp no)
-    (uuid 309651c7-bd02-4c09-a2dc-7741b9c2cc66)
+    (uuid 29ac9572-6404-4778-9658-f4e37dfa7b88)
     (property
       "Reference"
       "#PWR68"
@@ -3461,11 +3461,11 @@
     (property "Value" "GND" (at 252 175.08 0) (effects (font (size 1.27 1.27))))
     (property "Footprint" "" (at 252 170.08 0) (effects (font (size 1.27 1.27)) hide))
     (property "Datasheet" "" (at 252 170.08 0) (effects (font (size 1.27 1.27)) hide))
-    (pin "1" (uuid 19dff1fb-65a8-444b-a497-a6d3120e8caf))
+    (pin "1" (uuid 5ee6d104-187e-4953-9503-e6f3447e46ce))
     (instances
       (project
         "bzzy-led-ring"
-        (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "#PWR68") (unit 1)))))
+        (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "#PWR68") (unit 1)))))
   (symbol
     (lib_id "LED:WS2812B-2020")
     (at 280 180 0)
@@ -3473,7 +3473,7 @@
     (in_bom yes)
     (on_board yes)
     (dnp no)
-    (uuid af9f45be-babd-420a-9760-5017a0419716)
+    (uuid fdfa7f9d-9b7b-45c3-8b25-abc340f50bd6)
     (property "Reference" "D15" (at 282.5 176.5 0) (effects (font (size 1.27 1.27)) (justify left)))
     (property
       "Value"
@@ -3488,26 +3488,26 @@
     (property "Datasheet" "" (at 280 180 0) (effects (font (size 1.27 1.27)) hide))
     (property "MPN" "WS2812B-2020" (at 280 180 0) (effects (font (size 1.27 1.27)) hide))
     (property "LCSC" "C965555" (at 280 180 0) (effects (font (size 1.27 1.27)) hide))
-    (pin "1" (uuid e434b416-54bb-43f7-b083-a0697c5f4671))
-    (pin "2" (uuid 026d7b5a-add4-4fa6-ae4d-829af9ca4c44))
-    (pin "3" (uuid e49642de-3bdb-4efd-b588-36a7c74c7a1a))
-    (pin "4" (uuid 6412e914-0735-468f-9949-abe703cf7e20))
+    (pin "1" (uuid fd031ba2-e44e-4199-ba88-46d3961ea2b7))
+    (pin "2" (uuid 19a66864-902d-4ec7-a662-663f5b620b09))
+    (pin "3" (uuid 57da5da1-29ae-4bde-be42-779bba419179))
+    (pin "4" (uuid 76fc5ab8-ec15-4092-af5a-c49f665473f1))
     (instances
-      (project "bzzy-led-ring" (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "D15") (unit 1)))))
+      (project "bzzy-led-ring" (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "D15") (unit 1)))))
   (wire
     (pts (xy 287.62 180) (xy 290.16 180))
     (stroke (width 0) (type default))
-    (uuid e4b31492-7247-4d68-be16-8c7991c90d50))
+    (uuid 9ff964eb-2781-4caf-80a8-af06c6aaf8d1))
   (label
     "DIN16"
     (at 290.16 180 0)
     (fields_autoplaced)
     (effects (font (size 1.27 1.27)) (justify left bottom))
-    (uuid e89323b4-405f-40ac-be50-047be76fa47d))
+    (uuid 6485db00-e57b-4518-ae36-7052969dcafa))
   (wire
     (pts (xy 280 187.62) (xy 280 190.16))
     (stroke (width 0) (type default))
-    (uuid e68cd1d0-37b4-42db-86c5-c9c3ac2302fa))
+    (uuid e37b1f3a-2ecd-4449-9be9-b3a8526b3440))
   (symbol
     (lib_id "power:GND")
     (at 280 190.16 0)
@@ -3515,7 +3515,7 @@
     (in_bom no)
     (on_board no)
     (dnp no)
-    (uuid a7d170e6-8f98-40df-b78b-596cf8a067ed)
+    (uuid a40dd0f0-3ebf-4a2a-a6c2-8de3103d602d)
     (property
       "Reference"
       "#PWR69"
@@ -3524,25 +3524,25 @@
     (property "Value" "GND" (at 280 195.16 0) (effects (font (size 1.27 1.27))))
     (property "Footprint" "" (at 280 190.16 0) (effects (font (size 1.27 1.27)) hide))
     (property "Datasheet" "" (at 280 190.16 0) (effects (font (size 1.27 1.27)) hide))
-    (pin "1" (uuid 54d09d86-1c07-442e-8ccb-e1d19e0c1ade))
+    (pin "1" (uuid 39d0dd95-c920-4329-8266-5d9d677dfd81))
     (instances
       (project
         "bzzy-led-ring"
-        (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "#PWR69") (unit 1)))))
+        (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "#PWR69") (unit 1)))))
   (wire
     (pts (xy 272.38 180) (xy 269.84 180))
     (stroke (width 0) (type default))
-    (uuid 2c42701f-0989-4a73-9be8-2fb75a36b74b))
+    (uuid 2dfac98e-6526-45b4-b5dd-fe1f91cbc2f7))
   (label
     "DIN15"
     (at 269.84 180 180)
     (fields_autoplaced)
     (effects (font (size 1.27 1.27)) (justify right bottom))
-    (uuid 49190d1b-9efc-45d6-ba22-f747750ff48d))
+    (uuid 94ea6b55-3e8d-4f09-b434-6b9b88236249))
   (wire
     (pts (xy 280 172.38) (xy 280 169.84))
     (stroke (width 0) (type default))
-    (uuid 4342d5e7-ee3e-4203-b911-97c4b2a6867a))
+    (uuid 4c6289f1-949e-4844-b922-726b589bf844))
   (symbol
     (lib_id "power:+5V")
     (at 280 169.84 0)
@@ -3550,7 +3550,7 @@
     (in_bom no)
     (on_board no)
     (dnp no)
-    (uuid 2683bd7d-4175-4676-ab52-a9d91985b70f)
+    (uuid dce356f0-74cd-45e7-a38e-d3e0e2a9db9d)
     (property
       "Reference"
       "#PWR70"
@@ -3559,11 +3559,11 @@
     (property "Value" "+5V" (at 280 166.04 0) (effects (font (size 1.27 1.27))))
     (property "Footprint" "" (at 280 169.84 0) (effects (font (size 1.27 1.27)) hide))
     (property "Datasheet" "" (at 280 169.84 0) (effects (font (size 1.27 1.27)) hide))
-    (pin "1" (uuid b6e36bb7-ba24-49ca-896a-0a303dd32156))
+    (pin "1" (uuid 8689dbfb-5705-43ce-a29e-b38e1fcc0095))
     (instances
       (project
         "bzzy-led-ring"
-        (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "#PWR70") (unit 1)))))
+        (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "#PWR70") (unit 1)))))
   (symbol
     (lib_id "Device:C_Small")
     (at 292 165 0)
@@ -3571,7 +3571,7 @@
     (in_bom yes)
     (on_board yes)
     (dnp no)
-    (uuid 66e71700-3e4a-40cd-8b9e-d8a458a5f90d)
+    (uuid 148fee4e-8084-4458-93c9-a22dcf96d351)
     (property "Reference" "C18" (at 294.5 161.5 0) (effects (font (size 1.27 1.27)) (justify left)))
     (property "Value" "100nF" (at 294.5 168.5 0) (effects (font (size 1.27 1.27)) (justify left)))
     (property
@@ -3582,14 +3582,14 @@
     (property "Datasheet" "" (at 292 165 0) (effects (font (size 1.27 1.27)) hide))
     (property "MPN" "CL05B104KO5NNNC" (at 292 165 0) (effects (font (size 1.27 1.27)) hide))
     (property "LCSC" "C1525" (at 292 165 0) (effects (font (size 1.27 1.27)) hide))
-    (pin "1" (uuid 21f9187f-4ef8-43ce-8755-6a57748509db))
-    (pin "2" (uuid 8634b3c1-15a4-46ff-b4e2-dee6ea869289))
+    (pin "1" (uuid b58711dc-e460-4a55-961c-3a24f80f69dd))
+    (pin "2" (uuid 1466a9ea-9f04-4cf6-a3e4-484eb224caa4))
     (instances
-      (project "bzzy-led-ring" (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "C18") (unit 1)))))
+      (project "bzzy-led-ring" (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "C18") (unit 1)))))
   (wire
     (pts (xy 292 162.46) (xy 292 159.92))
     (stroke (width 0) (type default))
-    (uuid 8b8746ed-3546-4c0e-9e7d-b8478985bc71))
+    (uuid bd4a1715-16a9-43df-990e-f5ce2d142b62))
   (symbol
     (lib_id "power:+5V")
     (at 292 159.92 0)
@@ -3597,7 +3597,7 @@
     (in_bom no)
     (on_board no)
     (dnp no)
-    (uuid 65057704-5392-4d90-9b51-f1b3d2bd7201)
+    (uuid 53cdeae6-8295-41b0-9e8e-d82ead00ad2d)
     (property
       "Reference"
       "#PWR71"
@@ -3606,15 +3606,15 @@
     (property "Value" "+5V" (at 292 156.12 0) (effects (font (size 1.27 1.27))))
     (property "Footprint" "" (at 292 159.92 0) (effects (font (size 1.27 1.27)) hide))
     (property "Datasheet" "" (at 292 159.92 0) (effects (font (size 1.27 1.27)) hide))
-    (pin "1" (uuid 52cfabd7-dc03-41c7-946a-c3873030fcf5))
+    (pin "1" (uuid 7fda9d15-fccd-4995-ae36-57823e933a4f))
     (instances
       (project
         "bzzy-led-ring"
-        (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "#PWR71") (unit 1)))))
+        (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "#PWR71") (unit 1)))))
   (wire
     (pts (xy 292 167.54) (xy 292 170.08))
     (stroke (width 0) (type default))
-    (uuid f650c33a-65a4-4355-9320-0b24eca23334))
+    (uuid f5c021d7-9241-4978-a793-d96d3e8ff1a7))
   (symbol
     (lib_id "power:GND")
     (at 292 170.08 0)
@@ -3622,7 +3622,7 @@
     (in_bom no)
     (on_board no)
     (dnp no)
-    (uuid 78cb3992-5f03-458d-854b-701f441096c7)
+    (uuid 6f700825-e751-4b90-af24-467945445a7e)
     (property
       "Reference"
       "#PWR72"
@@ -3631,11 +3631,11 @@
     (property "Value" "GND" (at 292 175.08 0) (effects (font (size 1.27 1.27))))
     (property "Footprint" "" (at 292 170.08 0) (effects (font (size 1.27 1.27)) hide))
     (property "Datasheet" "" (at 292 170.08 0) (effects (font (size 1.27 1.27)) hide))
-    (pin "1" (uuid 3350b376-c1b8-40f2-8f1f-23b93343746d))
+    (pin "1" (uuid 2c14d076-a507-4476-b608-cd0eac19bf3a))
     (instances
       (project
         "bzzy-led-ring"
-        (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "#PWR72") (unit 1)))))
+        (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "#PWR72") (unit 1)))))
   (symbol
     (lib_id "LED:WS2812B-2020")
     (at 320 180 0)
@@ -3643,7 +3643,7 @@
     (in_bom yes)
     (on_board yes)
     (dnp no)
-    (uuid 674a4b1e-98cd-4a04-9e21-7183af08235d)
+    (uuid ed4b7394-1524-4ce1-b57d-84543ecc93cd)
     (property "Reference" "D16" (at 322.5 176.5 0) (effects (font (size 1.27 1.27)) (justify left)))
     (property
       "Value"
@@ -3658,26 +3658,26 @@
     (property "Datasheet" "" (at 320 180 0) (effects (font (size 1.27 1.27)) hide))
     (property "MPN" "WS2812B-2020" (at 320 180 0) (effects (font (size 1.27 1.27)) hide))
     (property "LCSC" "C965555" (at 320 180 0) (effects (font (size 1.27 1.27)) hide))
-    (pin "1" (uuid f97f7638-079f-4042-9d45-918cf96b02eb))
-    (pin "2" (uuid 3fe3a934-c996-4988-9242-9a886904ab38))
-    (pin "3" (uuid aabade06-4f7d-4289-a6c6-1095a9d00794))
-    (pin "4" (uuid fb16a624-cf2c-49cb-ad50-843a097396a5))
+    (pin "1" (uuid a130d80f-b32a-451a-a386-55eb86f1a112))
+    (pin "2" (uuid 146b8958-1c1e-45f0-b2ed-86144ccdfa18))
+    (pin "3" (uuid 03734420-35e4-400c-bcfa-513bd894b629))
+    (pin "4" (uuid 9a007485-5c3a-4f3c-bf46-ae377fef6ed6))
     (instances
-      (project "bzzy-led-ring" (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "D16") (unit 1)))))
+      (project "bzzy-led-ring" (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "D16") (unit 1)))))
   (wire
     (pts (xy 327.62 180) (xy 330.16 180))
     (stroke (width 0) (type default))
-    (uuid 97f3cd8d-0248-459b-bc99-135c0d39b952))
+    (uuid ca3e339e-fcc1-45a7-8391-173e5287cc91))
   (label
     "LED_DOUT"
     (at 330.16 180 0)
     (fields_autoplaced)
     (effects (font (size 1.27 1.27)) (justify left bottom))
-    (uuid f91aedff-49a3-47a6-9db9-9b215b246bd5))
+    (uuid c451ba1a-f1fc-41e6-97aa-2a2f591bdab1))
   (wire
     (pts (xy 320 187.62) (xy 320 190.16))
     (stroke (width 0) (type default))
-    (uuid fe1ec185-f4a0-45a5-8f88-2f19f71de6fd))
+    (uuid 13a47108-65c9-4cc6-81d8-4abfd855fa4b))
   (symbol
     (lib_id "power:GND")
     (at 320 190.16 0)
@@ -3685,7 +3685,7 @@
     (in_bom no)
     (on_board no)
     (dnp no)
-    (uuid 0b11910a-6dc9-43b5-a8ec-e3b42ad1d4c9)
+    (uuid 3c977ce2-dda4-4ed1-87b0-7f727b79e0ea)
     (property
       "Reference"
       "#PWR73"
@@ -3694,25 +3694,25 @@
     (property "Value" "GND" (at 320 195.16 0) (effects (font (size 1.27 1.27))))
     (property "Footprint" "" (at 320 190.16 0) (effects (font (size 1.27 1.27)) hide))
     (property "Datasheet" "" (at 320 190.16 0) (effects (font (size 1.27 1.27)) hide))
-    (pin "1" (uuid a854d333-1ef2-4fbd-b989-2bce008762e3))
+    (pin "1" (uuid e99d597c-87a9-4e9c-ac68-f8ef08d188c6))
     (instances
       (project
         "bzzy-led-ring"
-        (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "#PWR73") (unit 1)))))
+        (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "#PWR73") (unit 1)))))
   (wire
     (pts (xy 312.38 180) (xy 309.84 180))
     (stroke (width 0) (type default))
-    (uuid 597f2c5f-c99e-40d4-8e43-7b3e7cb34f72))
+    (uuid 558cbb71-45fd-4c62-a988-a36f2787888e))
   (label
     "DIN16"
     (at 309.84 180 180)
     (fields_autoplaced)
     (effects (font (size 1.27 1.27)) (justify right bottom))
-    (uuid f846106e-3583-44f2-a052-9dff8604d636))
+    (uuid a2aeaa70-5291-401a-ad6e-0868f7ccab5f))
   (wire
     (pts (xy 320 172.38) (xy 320 169.84))
     (stroke (width 0) (type default))
-    (uuid 4821eccd-a274-4c15-aa42-8e91453545a1))
+    (uuid dd7cf59f-3788-4337-85b1-4d15a7d9c6f2))
   (symbol
     (lib_id "power:+5V")
     (at 320 169.84 0)
@@ -3720,7 +3720,7 @@
     (in_bom no)
     (on_board no)
     (dnp no)
-    (uuid 3f74026e-c5c9-4b26-a69f-638664fda25c)
+    (uuid 57b2c0ab-8ffa-47e6-8413-61219f11c8dd)
     (property
       "Reference"
       "#PWR74"
@@ -3729,11 +3729,11 @@
     (property "Value" "+5V" (at 320 166.04 0) (effects (font (size 1.27 1.27))))
     (property "Footprint" "" (at 320 169.84 0) (effects (font (size 1.27 1.27)) hide))
     (property "Datasheet" "" (at 320 169.84 0) (effects (font (size 1.27 1.27)) hide))
-    (pin "1" (uuid cf6f5a91-6158-4b6f-b36b-b288e3eb9774))
+    (pin "1" (uuid ae27587b-baee-45a7-bdd5-25047cabf184))
     (instances
       (project
         "bzzy-led-ring"
-        (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "#PWR74") (unit 1)))))
+        (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "#PWR74") (unit 1)))))
   (symbol
     (lib_id "Device:C_Small")
     (at 332 165 0)
@@ -3741,7 +3741,7 @@
     (in_bom yes)
     (on_board yes)
     (dnp no)
-    (uuid c3057adc-3768-4693-82ff-d4e04f89963e)
+    (uuid 9ef80fb2-cc05-482f-ae61-73c9b0789979)
     (property "Reference" "C19" (at 334.5 161.5 0) (effects (font (size 1.27 1.27)) (justify left)))
     (property "Value" "100nF" (at 334.5 168.5 0) (effects (font (size 1.27 1.27)) (justify left)))
     (property
@@ -3752,14 +3752,14 @@
     (property "Datasheet" "" (at 332 165 0) (effects (font (size 1.27 1.27)) hide))
     (property "MPN" "CL05B104KO5NNNC" (at 332 165 0) (effects (font (size 1.27 1.27)) hide))
     (property "LCSC" "C1525" (at 332 165 0) (effects (font (size 1.27 1.27)) hide))
-    (pin "1" (uuid eb74965c-f0b3-40ba-920e-daae82a3d763))
-    (pin "2" (uuid 5a96315f-5500-41a5-b006-b87da1e02e84))
+    (pin "1" (uuid cd36d25a-a3ae-4df1-a646-9b383d7e49ba))
+    (pin "2" (uuid 21e1c190-bcba-4727-a4e1-bc07eef7bf06))
     (instances
-      (project "bzzy-led-ring" (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "C19") (unit 1)))))
+      (project "bzzy-led-ring" (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "C19") (unit 1)))))
   (wire
     (pts (xy 332 162.46) (xy 332 159.92))
     (stroke (width 0) (type default))
-    (uuid 68e2ce0e-43df-4e11-b164-502e323deffe))
+    (uuid da1f9adc-f257-4ca7-9d74-5ba6a2539676))
   (symbol
     (lib_id "power:+5V")
     (at 332 159.92 0)
@@ -3767,7 +3767,7 @@
     (in_bom no)
     (on_board no)
     (dnp no)
-    (uuid afcad7e1-637a-4d1e-952c-b7b182ee0697)
+    (uuid 1b71f1b9-8cdc-44c9-98ca-7a1b6f510854)
     (property
       "Reference"
       "#PWR75"
@@ -3776,15 +3776,15 @@
     (property "Value" "+5V" (at 332 156.12 0) (effects (font (size 1.27 1.27))))
     (property "Footprint" "" (at 332 159.92 0) (effects (font (size 1.27 1.27)) hide))
     (property "Datasheet" "" (at 332 159.92 0) (effects (font (size 1.27 1.27)) hide))
-    (pin "1" (uuid 544e6070-09bf-4a19-a0be-c4f36d2f5318))
+    (pin "1" (uuid cb88f27c-cabc-42b0-a570-52716a1eb161))
     (instances
       (project
         "bzzy-led-ring"
-        (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "#PWR75") (unit 1)))))
+        (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "#PWR75") (unit 1)))))
   (wire
     (pts (xy 332 167.54) (xy 332 170.08))
     (stroke (width 0) (type default))
-    (uuid 77b39d21-8973-4c1e-9be8-5660baa1ad09))
+    (uuid a65511f7-8caa-4be4-8ee3-5a514084d960))
   (symbol
     (lib_id "power:GND")
     (at 332 170.08 0)
@@ -3792,7 +3792,7 @@
     (in_bom no)
     (on_board no)
     (dnp no)
-    (uuid 6616e391-2e95-4562-a3fb-582568ad4252)
+    (uuid d7dd1d29-180a-49be-8dc9-839626d247b2)
     (property
       "Reference"
       "#PWR76"
@@ -3801,11 +3801,11 @@
     (property "Value" "GND" (at 332 175.08 0) (effects (font (size 1.27 1.27))))
     (property "Footprint" "" (at 332 170.08 0) (effects (font (size 1.27 1.27)) hide))
     (property "Datasheet" "" (at 332 170.08 0) (effects (font (size 1.27 1.27)) hide))
-    (pin "1" (uuid 9f3de313-d87d-48f0-8e1e-d80cac263a66))
+    (pin "1" (uuid c1611a0b-ce78-41c4-98cc-345fd33db67f))
     (instances
       (project
         "bzzy-led-ring"
-        (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "#PWR76") (unit 1)))))
+        (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "#PWR76") (unit 1)))))
   (symbol
     (lib_id "Connector:TestPoint")
     (at 200 75 0)
@@ -3813,7 +3813,7 @@
     (in_bom yes)
     (on_board yes)
     (dnp no)
-    (uuid e60af1b3-27a5-495b-b931-fde1c6302bc4)
+    (uuid 5e5e60ee-ff20-4867-9232-088551b8f135)
     (property "Reference" "TP1" (at 202.5 71.5 0) (effects (font (size 1.27 1.27)) (justify left)))
     (property "Value" "DOUT" (at 202.5 78.5 0) (effects (font (size 1.27 1.27)) (justify left)))
     (property
@@ -3822,19 +3822,19 @@
       (at 200 75 0)
       (effects (font (size 1.27 1.27)) hide))
     (property "Datasheet" "" (at 200 75 0) (effects (font (size 1.27 1.27)) hide))
-    (pin "1" (uuid 8e443fbe-7fa8-475a-99ef-f0ea33095282))
+    (pin "1" (uuid e77225e9-b4f1-4e96-b11e-1520b2871626))
     (instances
-      (project "bzzy-led-ring" (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "TP1") (unit 1)))))
+      (project "bzzy-led-ring" (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "TP1") (unit 1)))))
   (wire
     (pts (xy 200 75) (xy 200 77.54))
     (stroke (width 0) (type default))
-    (uuid 56d837f3-b880-44d1-a740-97f590991f13))
+    (uuid f0b67724-96ae-4704-8355-3693e48095bc))
   (label
     "LED_DOUT"
     (at 200 77.54 270)
     (fields_autoplaced)
     (effects (font (size 1.27 1.27)) (justify right bottom))
-    (uuid e137a0af-35ae-4c51-b1ac-f667b9b951a6))
+    (uuid ba3e3554-7b6d-423c-8eb3-3dfa39f6f266))
   (symbol
     (lib_id "Switch:SW_Push")
     (at 150 60 0)
@@ -3842,7 +3842,7 @@
     (in_bom yes)
     (on_board yes)
     (dnp no)
-    (uuid 19fb70b5-fbd1-4918-8566-fb419cf8bbfb)
+    (uuid 7b6affe0-d1aa-4adf-b4a2-2cd287caf560)
     (property "Reference" "SW1" (at 152.5 56.5 0) (effects (font (size 1.27 1.27)) (justify left)))
     (property "Value" "Top button" (at 152.5 63.5 0) (effects (font (size 1.27 1.27)) (justify left)))
     (property
@@ -3853,14 +3853,14 @@
     (property "Datasheet" "" (at 150 60 0) (effects (font (size 1.27 1.27)) hide))
     (property "MPN" "SKRTLAE010" (at 150 60 0) (effects (font (size 1.27 1.27)) hide))
     (property "LCSC" "C110293" (at 150 60 0) (effects (font (size 1.27 1.27)) hide))
-    (pin "1" (uuid 3174563a-ae26-4cbc-a16b-5bfc1d420217))
-    (pin "2" (uuid 9675eabd-bcec-4f99-ad58-2aba1689720e))
+    (pin "1" (uuid 5ef0c38f-0a62-48a0-b650-5846e099a04f))
+    (pin "2" (uuid 877878db-58ec-4cc4-a23e-cbd568ba2aa5))
     (instances
-      (project "bzzy-led-ring" (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "SW1") (unit 1)))))
+      (project "bzzy-led-ring" (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "SW1") (unit 1)))))
   (wire
     (pts (xy 144.92 60) (xy 142.38 60))
     (stroke (width 0) (type default))
-    (uuid 43b94c9c-64a5-4165-bbe0-21092c407b2b))
+    (uuid 7723257c-84fe-4b73-b2ac-b3d67d218634))
   (symbol
     (lib_id "power:GND")
     (at 142.38 60 0)
@@ -3868,7 +3868,7 @@
     (in_bom no)
     (on_board no)
     (dnp no)
-    (uuid a74556ff-099d-4a20-ad6f-a6af742b5f01)
+    (uuid 2fcf7ba0-6f62-4bfd-ac40-a88826a09138)
     (property
       "Reference"
       "#PWR77"
@@ -3877,21 +3877,21 @@
     (property "Value" "GND" (at 142.38 65 0) (effects (font (size 1.27 1.27))))
     (property "Footprint" "" (at 142.38 60 0) (effects (font (size 1.27 1.27)) hide))
     (property "Datasheet" "" (at 142.38 60 0) (effects (font (size 1.27 1.27)) hide))
-    (pin "1" (uuid f042307e-5941-47e8-9938-be32c8fcb28f))
+    (pin "1" (uuid 0c96eb8a-2d5d-42c5-86c3-6268935bf93e))
     (instances
       (project
         "bzzy-led-ring"
-        (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "#PWR77") (unit 1)))))
+        (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "#PWR77") (unit 1)))))
   (wire
     (pts (xy 155.08 60) (xy 157.62 60))
     (stroke (width 0) (type default))
-    (uuid 67254cc3-24ce-4bc9-adb9-ad7279e2a126))
+    (uuid 63b71794-d1d9-49bc-891e-327b857b887b))
   (label
     "BTN"
     (at 157.62 60 0)
     (fields_autoplaced)
     (effects (font (size 1.27 1.27)) (justify left bottom))
-    (uuid d0784d41-4f5e-4322-ad65-8ae9272c91e2))
+    (uuid 004e2256-b56a-409f-8b6d-619b1d178a6e))
   (symbol
     (lib_id "Mechanical:MountingHole")
     (at 162 95 0)
@@ -3899,7 +3899,7 @@
     (in_bom yes)
     (on_board yes)
     (dnp no)
-    (uuid ba4834d0-6394-434a-941f-4befe5707a54)
+    (uuid d5112c5a-f374-4c07-8dc8-f50ca53b63d0)
     (property "Reference" "H1" (at 164.5 91.5 0) (effects (font (size 1.27 1.27)) (justify left)))
     (property "Value" "M2" (at 164.5 98.5 0) (effects (font (size 1.27 1.27)) (justify left)))
     (property
@@ -3909,7 +3909,7 @@
       (effects (font (size 1.27 1.27)) hide))
     (property "Datasheet" "" (at 162 95 0) (effects (font (size 1.27 1.27)) hide))
     (instances
-      (project "bzzy-led-ring" (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "H1") (unit 1)))))
+      (project "bzzy-led-ring" (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "H1") (unit 1)))))
   (symbol
     (lib_id "Mechanical:MountingHole")
     (at 174 95 0)
@@ -3917,7 +3917,7 @@
     (in_bom yes)
     (on_board yes)
     (dnp no)
-    (uuid 1f2186df-ac89-479b-ba95-894d8b295e0a)
+    (uuid 474e821e-69a9-48eb-a4bd-f591751fd739)
     (property "Reference" "H2" (at 176.5 91.5 0) (effects (font (size 1.27 1.27)) (justify left)))
     (property "Value" "M2" (at 176.5 98.5 0) (effects (font (size 1.27 1.27)) (justify left)))
     (property
@@ -3927,7 +3927,7 @@
       (effects (font (size 1.27 1.27)) hide))
     (property "Datasheet" "" (at 174 95 0) (effects (font (size 1.27 1.27)) hide))
     (instances
-      (project "bzzy-led-ring" (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "H2") (unit 1)))))
+      (project "bzzy-led-ring" (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "H2") (unit 1)))))
   (symbol
     (lib_id "Mechanical:MountingHole")
     (at 186 95 0)
@@ -3935,7 +3935,7 @@
     (in_bom yes)
     (on_board yes)
     (dnp no)
-    (uuid 7a6ee119-f063-4d91-97c8-9baa1e2385c0)
+    (uuid dfd7cec6-feed-4b65-b15e-147c0836fc9f)
     (property "Reference" "H3" (at 188.5 91.5 0) (effects (font (size 1.27 1.27)) (justify left)))
     (property "Value" "M2" (at 188.5 98.5 0) (effects (font (size 1.27 1.27)) (justify left)))
     (property
@@ -3945,7 +3945,7 @@
       (effects (font (size 1.27 1.27)) hide))
     (property "Datasheet" "" (at 186 95 0) (effects (font (size 1.27 1.27)) hide))
     (instances
-      (project "bzzy-led-ring" (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "H3") (unit 1)))))
+      (project "bzzy-led-ring" (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "H3") (unit 1)))))
   (symbol
     (lib_id "Mechanical:MountingHole")
     (at 198 95 0)
@@ -3953,7 +3953,7 @@
     (in_bom yes)
     (on_board yes)
     (dnp no)
-    (uuid d89873a5-96d0-404c-8c53-e821c151e432)
+    (uuid 82f4546f-318a-43f3-916b-0f3c0014b381)
     (property "Reference" "H4" (at 200.5 91.5 0) (effects (font (size 1.27 1.27)) (justify left)))
     (property "Value" "M2" (at 200.5 98.5 0) (effects (font (size 1.27 1.27)) (justify left)))
     (property
@@ -3963,7 +3963,7 @@
       (effects (font (size 1.27 1.27)) hide))
     (property "Datasheet" "" (at 198 95 0) (effects (font (size 1.27 1.27)) hide))
     (instances
-      (project "bzzy-led-ring" (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "H4") (unit 1)))))
+      (project "bzzy-led-ring" (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "H4") (unit 1)))))
   (symbol
     (lib_id "power:PWR_FLAG")
     (at 200 45 0)
@@ -3971,7 +3971,7 @@
     (in_bom no)
     (on_board no)
     (dnp no)
-    (uuid 4103d3bb-ebf7-42bf-ac3b-9941b1113f83)
+    (uuid fbb97583-ec08-462c-84ef-5fe87edef707)
     (property
       "Reference"
       "#FLG01"
@@ -3980,11 +3980,11 @@
     (property "Value" "PWR_FLAG" (at 200 40.5 0) (effects (font (size 1.27 1.27))))
     (property "Footprint" "" (at 200 45 0) (effects (font (size 1.27 1.27)) hide))
     (property "Datasheet" "" (at 200 45 0) (effects (font (size 1.27 1.27)) hide))
-    (pin "1" (uuid c818f6fa-ed27-4948-b23d-ceed256ac8f2))
+    (pin "1" (uuid 3a483440-53fa-4f34-8882-c0e169ac65ad))
     (instances
       (project
         "bzzy-led-ring"
-        (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "#FLG01") (unit 1)))))
+        (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "#FLG01") (unit 1)))))
   (symbol
     (lib_id "power:+5V")
     (at 200 45 0)
@@ -3992,7 +3992,7 @@
     (in_bom no)
     (on_board no)
     (dnp no)
-    (uuid a7c60b66-5f92-4d73-aa2c-03c7b18ae487)
+    (uuid e088bd4b-df94-4a9b-b27a-6b6304079f8c)
     (property
       "Reference"
       "#PWR78"
@@ -4001,11 +4001,11 @@
     (property "Value" "+5V" (at 200 41.2 0) (effects (font (size 1.27 1.27))))
     (property "Footprint" "" (at 200 45 0) (effects (font (size 1.27 1.27)) hide))
     (property "Datasheet" "" (at 200 45 0) (effects (font (size 1.27 1.27)) hide))
-    (pin "1" (uuid 83fa141b-95fe-4402-a5ae-85c69fb54a86))
+    (pin "1" (uuid cd4fc6b7-171f-4957-b58f-f91e0fc8eb12))
     (instances
       (project
         "bzzy-led-ring"
-        (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "#PWR78") (unit 1)))))
+        (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "#PWR78") (unit 1)))))
   (symbol
     (lib_id "power:PWR_FLAG")
     (at 220 45 0)
@@ -4013,7 +4013,7 @@
     (in_bom no)
     (on_board no)
     (dnp no)
-    (uuid 0feacbc0-af87-40c0-869c-0cae5e256efe)
+    (uuid fbfb4ec9-f589-41c9-aa86-1eecefaad3cb)
     (property
       "Reference"
       "#FLG02"
@@ -4022,11 +4022,11 @@
     (property "Value" "PWR_FLAG" (at 220 40.5 0) (effects (font (size 1.27 1.27))))
     (property "Footprint" "" (at 220 45 0) (effects (font (size 1.27 1.27)) hide))
     (property "Datasheet" "" (at 220 45 0) (effects (font (size 1.27 1.27)) hide))
-    (pin "1" (uuid 7cd799c0-9304-44d1-b64b-6892a4bdc979))
+    (pin "1" (uuid fcb15543-ce27-4d41-9973-52e2f8f6f69c))
     (instances
       (project
         "bzzy-led-ring"
-        (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "#FLG02") (unit 1)))))
+        (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "#FLG02") (unit 1)))))
   (symbol
     (lib_id "power:GND")
     (at 220 45 0)
@@ -4034,7 +4034,7 @@
     (in_bom no)
     (on_board no)
     (dnp no)
-    (uuid 39867614-8c22-474c-bf69-6c3e07911520)
+    (uuid b2222ecf-c9f8-49d9-8c2b-241c4da89b96)
     (property
       "Reference"
       "#PWR79"
@@ -4043,29 +4043,29 @@
     (property "Value" "GND" (at 220 50 0) (effects (font (size 1.27 1.27))))
     (property "Footprint" "" (at 220 45 0) (effects (font (size 1.27 1.27)) hide))
     (property "Datasheet" "" (at 220 45 0) (effects (font (size 1.27 1.27)) hide))
-    (pin "1" (uuid fd79a7e5-2308-4d24-82f4-47dcadea9d65))
+    (pin "1" (uuid bafcb346-4517-43e3-b1fa-f395b53660ec))
     (instances
       (project
         "bzzy-led-ring"
-        (path "/cbb7fb5f-db68-470b-8207-fa71c04df42c" (reference "#PWR79") (unit 1)))))
+        (path "/270acf66-9461-4e87-bbaf-b89af8aecb6c" (reference "#PWR79") (unit 1)))))
   (text
     "bzzy LED ring: 16 x WS2812B-2020 around the Waveshare ESP32-S3-Touch-LCD-1.69"
     (at 25 20 0)
     (effects (font (size 2.5 2.5)) (justify left bottom))
-    (uuid 2a6faa52-232e-4289-9078-360ed0478158))
+    (uuid c40d0216-95ac-4105-9236-0e1b9a0a04db))
   (text
     "J1 is four wire holes on the left side (GPIO18, 5V, GND, GPIO17). Wire them to the Waveshare board's pads."
     (at 25 25 0)
     (effects (font (size 1.27 1.27)) (justify left bottom))
-    (uuid 978e59b9-f6f3-46c2-b04a-313e5c0cb447))
+    (uuid bd696727-01ea-4898-99d2-3de90abfdcd5))
   (text
     "U1 lifts the 3.3 V data to 5 V logic. R1 keeps the line low while the ESP32 boots. R3 limits ESD current into GPIO18."
     (at 25 45 0)
     (effects (font (size 1.27 1.27)) (justify left bottom))
-    (uuid 4f1b8b23-68bb-490d-8c7e-c681ee331627))
+    (uuid 5bafbc55-c932-478f-aa08-f73804b49325))
   (text
     "LED chain: D1 (bottom, left of centre) runs clockwise to D16. TP1 is the chain's DOUT, for adding more LEDs later."
     (at 25 108 0)
     (effects (font (size 1.27 1.27)) (justify left bottom))
-    (uuid c5a80248-f2d8-4664-924c-18990184d502))
+    (uuid 22227c70-7a86-43df-8b2e-a856c3c6fe5b))
   (sheet_instances (path "/" (page "1"))))

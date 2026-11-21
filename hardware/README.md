@@ -49,7 +49,7 @@ Files are in [led-ring/](led-ring/). Open `bzzy-led-ring.kicad_pro` in KiCad 7 o
 
 | | |
 |---|---|
-| Size | 52 × 61 mm, 2 layers, 1.6 mm. The 34.3 × 45.3 mm cutout fits the Waveshare board's 33.1 × 44.1 mm glass. No copper within 2.7 mm of the M2 holes, so screw heads sit on bare board |
+| Size | 52 × 61 mm, 2 layers, 1.6 mm. The 34.3 × 42.3 mm cutout fits the Waveshare board's 33.1 × 41.1 mm glass with 0.6 mm all round (checked on a 1:1 paper print, 2026-11-21). No copper within 2.7 mm of the M2 holes, so screw heads sit on bare board |
 | Depth | The ring's front face sits 2.3 mm behind the front of the Waveshare glass. The USB-C plug comes in from the left behind the Waveshare PCB, so it passes behind the ring. That works for plug grips up to about 7.4 mm thick |
 | LEDs | 16 × WS2812B-2020 (2 × 2 mm), 4 on each side, evenly spaced: every 10 mm along the top and bottom, every 12 mm down the sides. Chained clockwise from just left of the bottom middle |
 | Data | GPIO17 (3.3 V), then a 74AHCT1G125 buffer to 5 V logic, then 33 Ω to the first LED. A 10 kΩ pull-down keeps the LEDs dark while the ESP32 boots |
@@ -164,13 +164,13 @@ The rail is built from `RAIL_W`, `RAIL_T`, `RAIL_FIT` and `RAIL_L` in `case/bzzy
 
 ## Before you order
 
-Rev D uses caliper measurements of a real Waveshare board (2026-11-21): the 33.1 × 44.1 mm glass, 10.5 mm total thickness, 1.8 mm glass, 5.4 mm from the front of the glass to the front of its PCB, the 27.7 × 32.2 mm lit area and its 2.4 / 5.6 mm top and bottom borders, the USB-C socket's size and depth (centre 7.9 mm behind the glass front), and the side buttons' depth (7.1 mm). Two positions along the edges still come from photos, so they're **estimates**. With calipers, measuring from the top edge of the glass:
+Rev D uses caliper measurements of a real Waveshare board (2026-11-21): the 33.1 × 41.1 mm glass (nothing overhangs it, not even the ribbon), 10.5 mm total thickness, 1.8 mm glass, 5.4 mm from the front of the glass to the front of its PCB, the 27.7 × 32.2 mm lit area and its 2.4 / 5.6 mm top and bottom borders, the USB-C socket's size and depth (centre 7.9 mm behind the glass front), and the side buttons' depth (7.1 mm). Two positions along the edges still come from photos, so they're **estimates**. With calipers, measuring from the top edge of the glass:
 
 1. **USB-C socket centre** (`USB_Y` in the case). It only moves the opening in the case's left wall.
 2. **PWR, BOOT and RST button centres** (`SIDE_BTNS`). Pinholes in the right wall.
 3. **Your cable's plug grip.** The ring clears grips up to about 7.4 mm thick, and the case opening is 12.5 × 7.4 mm.
 
-The screen window's offset (`SCREEN_DY = 1.6`) splits a 3.9 mm disagreement: the lit height (32.2 mm) plus the two borders comes to 40.2 mm, not the glass's 44.1 mm. If the window looks off-centre on the first print, measure from the glass's top edge to the first lit pixel and adjust it.
+The screen window's offset (`SCREEN_DY = 1.6`) splits a 0.9 mm disagreement: the lit height (32.2 mm) plus the two borders comes to 40.2 mm, against 41.1 mm of glass. If the window looks off-centre on the first print, measure from the glass's top edge to the first lit pixel and adjust it.
 
 Checked on a real board:
 
@@ -181,7 +181,7 @@ Then print the frame, light ring and back once in cheap PLA to check the fit bef
 
 ## Ordering from JLCPCB
 
-1. Run `./render.sh`, which writes `led-ring/fab/gerbers.zip`. Or, in KiCad, export Gerbers and drill files (File, Fabrication Outputs) with JLCPCB's KiCad settings, and zip the folder.
+1. Use `led-ring/fab/gerbers.zip`, which is committed. `./render.sh` regenerates it. Or, in KiCad, export Gerbers and drill files (File, Fabrication Outputs) with JLCPCB's KiCad settings, and zip the folder.
 2. Upload the zip at jlcpcb.com. Defaults are fine: 2 layers, 1.6 mm, HASL lead-free or ENIG, any colour. Black or white looks best behind a translucent frame.
 3. Turn on **PCB Assembly**, top side, and upload `fab/bom-jlcpcb.csv` and `fab/cpl-jlcpcb.csv`.
 4. In the parts-matching step, confirm the LCSC part on each line. In the placement preview, **check every LED, U1 and SW1**: the pin 1 dot should match the KiCad drawing. U1 matters most: placed backwards, it gets 5 V on its GND pin. The rev C review found two public rotation tables that disagree for SOT-23-5 (+180° vs −90°), and wasn't sure of the LEDs' +90°, so check them rather than trusting the CPL. Fix any rotation in the preview if needed.
