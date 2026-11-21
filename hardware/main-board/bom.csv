@@ -8,7 +8,7 @@ Piezo,BZ1,Buzzer_Murata_PKMCS0909E,PKMCS0909E4000-R1,1,TBD,no,"Footprint only, f
 WS2812B-2020,"D1,D2,D3,D4,D5,D6,D7,D8,D9,D10,D11,D12,D13,D14,D15,D16",LED_WS2812B-2020_PLCC4_2.0x2.0mm,WS2812B-2020-V6,16,C52917434,yes,"Addressable RGB LED, 2 x 2 mm, front side"
 SMF5.0A,D17,D_SOD-123F,SMF5.0A,1,C19077497,yes,5 V TVS on the fused rail
 BAT54WS,D18,D_SOD-323,BAT54WS,1,C7502694,yes,Feeds VRTC from 3.3 V; blocks the supercap from back-feeding the board (check part)
-750mA,F1,Fuse_1206_3216Metric,,1,TBD,yes,"Resettable PTC fuse, 1206, ~750 mA hold: pick an in-stock one at JLC (not a glass fuse)"
+PTC 0.75A 1206,F1,Fuse_1206_3216Metric,1206L075/13.2WR,1,TBD,yes,"Resettable PTC (polyfuse), 1206, 750 mA hold, 6 V+. Any in-stock equivalent (e.g. SMD1206P075TF). NOT a glass fuse: JLC's tool suggested C3166845 (0251.750MAT1L), which is wrong"
 100R@100MHz,FB1,L_0805_2012Metric,GZ2012D101TF,1,C1015,yes,Keeps 3.3 V regulator noise off the 5 V rail (emissions)
 USB-C,J1,USB_C_Receptacle_HRO_TYPE-C-31-M-12,TYPE-C-31-M-12,1,C165948,yes,"USB 2.0 Type-C receptacle, 16 pin, at the bottom edge"
 Screen FPC,J3,Hirose_FH12-18S-0.5SH_1x18-1MP_P0.50mm_Horizontal,FH12-18S-0.5SH(55),1,TBD,yes,"18-pin 0.5 mm FPC, behind the screen. Contact side to confirm with a real panel"

@@ -85,8 +85,8 @@ part("U3", "Power_Protection:USBLC6-2SC6", "USBLC6-2SC6", "Package_TO_SOT_SMD:SO
      {"1": "USB_DP", "6": "USB_DP", "3": "USB_DN", "4": "USB_DN", "5": VBUS, "2": GND},
      (52, 26), "USBLC6-2SC6", "C7519", "USB ESD array, right at J1")
 C("C29", "100nF", VBUS, GND, (62, 28), *C100N, note="VBUS decoupling at U3, as its datasheet asks")
-part("F1", "Device:Polyfuse_Small", "750mA", "Fuse:Fuse_1206_3216Metric", {"1": VBUS, "2": P5},
-     (66, 24), "", "", "Resettable PTC fuse, 1206, ~750 mA hold: pick an in-stock one at JLC (not a glass fuse)")
+part("F1", "Device:Polyfuse_Small", "PTC 0.75A 1206", "Fuse:Fuse_1206_3216Metric", {"1": VBUS, "2": P5},
+     (66, 24), "1206L075/13.2WR", "", "Resettable PTC (polyfuse), 1206, 750 mA hold, 6 V+. Any in-stock equivalent (e.g. SMD1206P075TF). NOT a glass fuse: JLC's tool suggested C3166845 (0251.750MAT1L), which is wrong")
 part("D17", "Device:D_TVS", "SMF5.0A", "Diode_SMD:D_SOD-123F", {"1": P5, "2": GND},
      (74, 28), "SMF5.0A", "C19077497", "5 V TVS on the fused rail")
 part("FB1", "Device:FerriteBead_Small", "100R@100MHz", "Inductor_SMD:L_0805_2012Metric", {"1": P5, "2": "5V_LDO"},
