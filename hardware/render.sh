@@ -41,4 +41,8 @@ done
 for part in light frame back trim button clip; do
   openscad -q -D "PART=\"$part\"" -o "case/stl/$part.stl" case/bzzy_case.scad
 done
+# Mounts (black), each turned the way it prints best.
+for mount in stand tripod magnet; do
+  openscad -q -D "MOUNT=\"$mount\"" -o "case/stl/mount-$mount.stl" case/bzzy_mounts.scad
+done
 echo "done: img/, case/stl/, led-ring/fab/gerbers.zip"

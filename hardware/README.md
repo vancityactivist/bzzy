@@ -102,7 +102,7 @@ To change something, edit the script and run `./render.sh` (needs KiCad 7+ and O
 
 ## Case
 
-[`case/bzzy_case.scad`](case/bzzy_case.scad) is parametric OpenSCAD. The case is black, with the screen in the middle of a frosted white border about 1 cm wide (9.2 mm at the sides, 8.2 mm top and bottom). The LEDs sit under the border. Overall it's about 58 × 67 × 17.5 mm, plus the clip.
+[`case/bzzy_case.scad`](case/bzzy_case.scad) is parametric OpenSCAD. The case is black, with the screen in the middle of a frosted white border about 1 cm wide (9.2 mm at the sides, 8.2 mm top and bottom). The LEDs sit under the border. Overall it's about 58 × 67 × 17.5 mm, plus whichever mount it sits on (see [Mounts](#mounts)).
 
 Looking at the front, from the middle out: the screen, set 2.5 mm deep behind a black trim over the Waveshare board's own glass edge (the window opens out at 45° so it doesn't shade the screen), the frosted border, then a 1.4 mm black rim. The border starts at the Waveshare board's edge, not at the lit screen, because no LED can sit under the board. The ring board didn't need to change for this.
 
@@ -161,6 +161,49 @@ Every mount fits the case the same way: it slides onto a dovetail rail down the 
 | Direction | The device drops down onto the mount, so the slot is open at the top and closed at the bottom. That closed end is the stop, and gravity holds the device on it |
 
 The rail is built from `RAIL_W`, `RAIL_T`, `RAIL_FIT` and `RAIL_L` in `case/bzzy_case.scad`. A mount design should read those rather than copying the numbers.
+
+## Mounts
+
+[`case/bzzy_mounts.scad`](case/bzzy_mounts.scad) holds the mounts. Each one is built on the same carriage: a block with a slot that fits the rail above, so they all fit every case. Swap mounts by lifting the device off one and dropping it onto another.
+
+| Stand | Tripod adapter | Magnet plate |
+|---|---|---|
+| ![Desk stand](img/mount-stand.png) | ![Tripod adapter](img/mount-tripod.png) | ![Magnet plate](img/mount-magnet.png) |
+
+| Mount | What it's for | Extra parts |
+|---|---|---|
+| `stand` | Desk stand. Leans the device back 15° (`STAND_TILT`) on a 52 × 50 mm base. The USB-C cable comes out the left side, clear of the base | Four small rubber feet, if you like |
+| `tripod` | A 1/4"-20 camera thread under a block behind the device. Fits mini tripods, phone clamp arms, monitor-arm camera mounts and suction-cup mounts | One 1/4"-20 hex nut (7/16" across flats). Press it into the pocket from the top. A drop of glue if it's loose |
+| `magnet` | Flat plate with four magnet pockets in its back. Sticks to a filing cabinet, steel cubicle panel, whiteboard or fridge. Without magnets, stick it to a wall with double-sided tape | Four 10 × 3 mm disc magnets (N42 or N52). Glue them in flush with CA or epoxy |
+
+Export one with:
+
+```sh
+openscad -D 'MOUNT="stand"' -o stand.stl case/bzzy_mounts.scad   # or tripod, magnet
+```
+
+`MOUNT = "show_stand"` (or `show_tripod`, `show_magnet`) shows it with the device on it. Print them in black, like the case. MJF nylon (PA12) or PETG suit the snap best; PLA works but the snap wears sooner. None needs supports in the orientation it's exported in.
+
+### The snap
+
+The rail standard only needs gravity, but a knock could lift the device off a mount. So each carriage has a small sprung tongue, 6 × 10 mm, in the floor of its slot, with a bump at its tip. As the device drops in, the bump rides on the rail's outer face (0.35 mm of interference), then clicks over the rail's top end when the device is home. The bump's catching face is 45°, so a firm lift (roughly half a kilogram) still pulls the device off. Set `SNAP_H` smaller for a softer click, or larger for a firmer one.
+
+The tongue is thinner than the floor behind it, so it can flex even when the magnet plate's back is flat on a wall. A new mount that adds anything behind the carriage must keep that space clear: subtract `tongue_relief()`, as the stand and tripod adapter do.
+
+The snap is all in the mount, so the rail and the case don't change. The monitor clip (`PART = "clip"` in the case file) still uses the plain slot without a snap. It's on hold until the monitor is measured.
+
+### Designing your own mount
+
+Include the mounts file, call `carriage(width)`, and add your mount behind it (towards −z). The carriage sits where it fits on the device, in the case's coordinates: `CAR_Z0` is its back face and `CAR_Y0` and `CAR_Y1` its bottom and top. Cut `device_keepout()` and `tongue_relief(depth)` out of whatever you add. Set `PART` and `MOUNT` so the included files draw nothing:
+
+```openscad
+include <bzzy_mounts.scad>
+MOUNT = "none";
+difference() {
+  union() { carriage(26); /* your mount, behind CAR_Z0 */ }
+  device_keepout(); tongue_relief(3);
+}
+```
 
 ## Before you order
 
