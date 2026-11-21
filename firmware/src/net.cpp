@@ -5,7 +5,7 @@
 #include <LittleFS.h>
 #include <Preferences.h>
 #include <WiFi.h>
-#include <WiFiClientSecure.h>
+#include "tls_client.h"
 #include <WiFiManager.h>
 #include <sys/time.h>
 
@@ -146,7 +146,7 @@ static bool httpRequest(const char* method, const String& u, const String& body,
                         const char* bearer = nullptr) {
   // TODO(step 2): pin the companion app's certificate instead of skipping
   // verification. Fine for a prototype on test data; not for real calendars.
-  WiFiClientSecure client;
+  TlsClient client;
   client.setInsecure();
   HTTPClient http;
   http.setTimeout(cfg::kHttpTimeoutMs);
@@ -194,7 +194,7 @@ static size_t gifFreeBytes() { return LittleFS.totalBytes() - LittleFS.usedBytes
 static size_t g_noRoomNeed = 0;
 
 static bool downloadTo(const char* u, const char* path) {
-  WiFiClientSecure client;
+  TlsClient client;
   client.setInsecure();  // see the TODO in httpRequest
   HTTPClient http;
   http.setTimeout(cfg::kHttpTimeoutMs * 2);
