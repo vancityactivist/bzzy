@@ -3,7 +3,7 @@
 #include <HTTPClient.h>
 #include <Preferences.h>
 #include <Update.h>
-#include <WiFiClientSecure.h>
+#include "tls_client.h"
 #include <esp_ota_ops.h>
 #include <mbedtls/base64.h>
 #include <mbedtls/pk.h>
@@ -169,7 +169,7 @@ bool install(const Offer& o, const char* appBase, const char* token) {
 
   // The app answers with a short-lived redirect to the file. Follow it by hand so the
   // device token only ever goes to the app.
-  WiFiClientSecure appClient, fileClient;
+  TlsClient appClient, fileClient;
   appClient.setInsecure();   // the signature and hash are what we trust, not the connection
   fileClient.setInsecure();
   HTTPClient http;
