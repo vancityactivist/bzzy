@@ -3,7 +3,8 @@
 //
 // Printed parts, by material:
 //   light    FROSTED WHITE. The glowing border. Translucent white PETG or resin.
-//   frame    BLACK. Front rim and the four side walls. USB-C, BOOT and top-button holes.
+//   frame    BLACK. Front rim and the four side walls. USB-C opening (left), pinholes
+//            for the Waveshare's PWR, BOOT and RST buttons (right), top-button hole.
 //   back     BLACK. Back plate with screw posts and the dovetail rail for the clip.
 //   trim     BLACK. Sleeve round the Waveshare board and the thin trim round the
 //            screen. Keeps LED light off the display.
@@ -21,8 +22,9 @@
 // light ring back, and its outer lip clamps the frame's front rim against the
 // back plate. No glue.
 //
-// MEASURE BEFORE PRINTING: WS_W / WS_H / WS_T (in gen_led_ring.py), and below
-// GLASS_Z, SCREEN_*, USB_* and BOOT_* against your Waveshare board.
+// Measured from a real Waveshare board (2026-11-21): WS_* and RING_Z in gen_led_ring.py,
+// SCREEN_W/H, the USB-C plug size. Still ESTIMATES, from photos: USB_Y, SIDE_BTNS and
+// SCREEN_DY. Check them against your board before printing the frame.
 
 include <board_dims.scad>
 
@@ -34,24 +36,31 @@ WALL = 2.6;          // black side walls
 FIT = 0.3;           // gap between printed parts and the ring board
 SLIDE = 0.15;        // gap between two printed parts that slide together
 
-GLASS_Z = 3.6;       // front of the Waveshare glass, measured from the ring board's front face
-TRIM_T = 1.2;        // black trim over the edge of the glass
+GLASS_Z = RING_Z;    // front of the Waveshare glass, measured from the ring board's front face
+// Rev D moved the ring board forward so the USB-C plug passes behind it. The trim is
+// thicker to match, so the frosted front stays as far from the LEDs as before
+// (the screen sits 2.5 mm deep in the case; its window is chamfered).
+TRIM_T = 4.8 - GLASS_Z;
 LIGHT_T = 1.6;       // frosted front: thin enough to glow, thick enough to hide the LEDs
 LIP = 1.0;           // the light ring's lip over the frame's front rim (width and depth)
 
-SCREEN_W = 28.6;     // visible screen window (1.69" panel active area is about 28 x 32.6)
-SCREEN_H = 33.2;
+SCREEN_W = 28.3;     // visible screen window (measured lit area: 27.7 x 32.2)
+SCREEN_H = 32.8;
 SCREEN_R = 3.0;
-SCREEN_DY = 0.0;     // window offset if the panel isn't centred on the Waveshare board
+SCREEN_DY = 0.0;     // ESTIMATE: window offset (up) if the lit area isn't centred on the glass
 
-USB_W = 12.0;        // opening for the USB-C plug's overmould
-USB_H = 6.5;
-USB_X = 0.0;         // centre of the Waveshare board's USB-C socket
-USB_Z = -3.5;        // ... and its height relative to the ring board's front face
+// The Waveshare's USB-C socket is on the back of its PCB, halfway up the LEFT edge
+// (seen from the front). The plug comes in through the left wall, behind the ring board.
+USB_W = 12.5;        // opening for the plug's grip, along the edge (Adam's cable: 11.5)
+USB_H = 7.4;         // ... and front to back (Adam's cable: 6.4)
+USB_Y = 0.2;         // ESTIMATE: socket centre, up from the screen centre
+USB_Z = GLASS_Z - WS_PCB_Z - WS_PCB_T - 1.55;   // socket centre: 3.1 mm tall on the PCB's back
 
-BOOT_D = 2.2;        // pinhole for the BOOT button (hold at power-up for Wi-Fi setup)
-BOOT_X = -8.0;       // ESTIMATE: set from your board
-BOOT_Z = -3.5;
+// The PWR, BOOT and RST buttons are on the RIGHT edge, on the back of the Waveshare PCB.
+// Pinholes through the right wall: press with a paper clip. BOOT held at power-up opens setup.
+SIDE_BTN_D = 2.2;
+SIDE_BTNS = [13.5, 3.3, -5.9];   // ESTIMATES: PWR, BOOT, RST centres, up from the screen centre
+SIDE_BTN_Z = GLASS_Z - WS_PCB_Z - WS_PCB_T - 0.8;
 
 TOP_BTN_Z = 0.8;     // height of the top button's plunger above the ring board (Alps SKRT: about 0.8)
 BTN_W = 6.0;         // button cap, as seen from above
@@ -105,7 +114,6 @@ RAIL_Y = -OUT_H / 2 + 5 + RAIL_L / 2;
 BORDER_X = (LIGHT_W - SLV_W) / 2;            // visible width of the frosted border
 BORDER_Y = (LIGHT_H - SLV_H) / 2;
 holes = [for (h = RING_HOLES) [h[0], -h[1]]];   // KiCad y is down; OpenSCAD y is up
-NOTCH = is_undef(NOTCH_W) ? 0 : NOTCH_W;        // rev C board: open at the bottom for the USB-C plug
 POST_D = is_undef(HOLE_KEEPOUT_R) ? BOSS_D + 1 : min(BOSS_D + 1, 2 * HOLE_KEEPOUT_R);  // back posts sit on bare board
 
 $fn = 48;
@@ -139,7 +147,6 @@ module ring_pcb() {
   color("#1b1b1b") difference() {
     rbox(RING_W, RING_H, RING_R, -PCB_T, 0);
     rbox(CUT_W, CUT_H, CUT_R, -PCB_T - 1, 1);
-    if (NOTCH > 0) translate([-NOTCH / 2, -RING_H / 2 - 1, -PCB_T - 1]) cube([NOTCH, RING_H / 2, PCB_T + 2]);
     for (h = holes) translate([h[0], h[1], -5]) cylinder(d = 2.2, h = 10);
   }
   for (l = RING_LEDS) color("white") translate([l[0], -l[1], 0.4]) cube([2, 2, 0.8], center = true);
@@ -147,12 +154,12 @@ module ring_pcb() {
 }
 
 // USB-C plug in the Waveshare socket, for checking clearances: metal shell plus
-// a USB_W x USB_H overmould from 6.5 mm out from the board edge to past the case.
+// a (USB_W - 1) x (USB_H - 1) grip from 6.5 mm out from the glass edge to past the case.
 module usb_plug() {
-  y_edge = -WS_H / 2;
-  translate([USB_X, y_edge - 3.3, USB_Z]) cube([8.3, 6.6, 2.5], center = true);
-  translate([USB_X - USB_W / 2 + 0.3, -OUT_H / 2 - CHIN_H - 10, USB_Z - USB_H / 2 + 0.3])
-    cube([USB_W - 0.6, (y_edge - 6.5) + OUT_H / 2 + CHIN_H + 10, USB_H - 0.6]);
+  x_edge = -WS_W / 2;
+  translate([x_edge - 3.3, USB_Y, USB_Z]) cube([6.6, 8.3, 2.5], center = true);
+  translate([-OUT_W / 2 - 10, USB_Y - (USB_W - 1) / 2, USB_Z - (USB_H - 1) / 2])
+    cube([(x_edge - 6.5) + OUT_W / 2 + 10, USB_W - 1, USB_H - 1]);
 }
 
 module waveshare() {
@@ -193,11 +200,10 @@ module frame() {
     case_box(SEAM_Z, FRONT_Z);
     rbox(IN_W, IN_H, IN_R, SEAM_Z - 1, FRONT_Z - LIP);                                  // inside
     rbox(LIGHT_W + 2 * SLIDE, LIGHT_H + 2 * SLIDE, IN_R + LIP + SLIDE, FRONT_Z - LIP - 0.01, FRONT_Z + 1);  // light ring's lip
-    // USB-C, bottom edge (straight through the chin, if there is one)
-    translate([USB_X, -OUT_H / 2 - CHIN_H / 2, USB_Z]) cube([USB_W, 4 * WALL + CHIN_H + 2, USB_H], center = true);
-    // BOOT pinhole, bottom edge
-    translate([BOOT_X, -OUT_H / 2 - CHIN_H / 2, BOOT_Z]) rotate([90, 0, 0])
-      cylinder(d = BOOT_D, h = 4 * WALL + CHIN_H + 2, center = true);
+    usb_cut();
+    // PWR, BOOT and RST pinholes, right wall
+    for (y = SIDE_BTNS) translate([OUT_W / 2, y, SIDE_BTN_Z]) rotate([0, 90, 0])
+      cylinder(d = SIDE_BTN_D, h = 4 * WALL, center = true);
     // Top button: a hole through the top wall, and a pocket inside for the cap's flange.
     translate([TOP_BUTTON_X, y_top + WALL / 2, TOP_BTN_Z])
       cube([BTN_W + 2 * SLIDE, WALL + 2, BTN_D + 2 * SLIDE], center = true);
@@ -206,6 +212,11 @@ module frame() {
     if (LOGO == "top") logo_top_cut();
     if (LOGO == "chin") logo_chin_cut();
   }
+}
+
+// USB-C opening, left wall. The back plate's locating lip is cut away here too.
+module usb_cut() {
+  translate([-OUT_W / 2 + WALL, USB_Y, USB_Z]) cube([4 * WALL + 2, USB_W, USB_H], center = true);
 }
 
 // On the top face, right of the button. Reads correctly from in front of the device.
@@ -237,7 +248,11 @@ module trim() {
       rbox(SLV_W + 1.6, SLV_H + 1.6, SLV_R + 0.8, PLATE_Z - 0.8, PLATE_Z);   // ledge under the light ring (clear of parts)
     }
     rbox(CUT_W + 0.4, CUT_H + 0.4, CUT_R, -1, GLASS_Z);                     // the Waveshare board
-    translate([0, SCREEN_DY, 0]) rbox(SCREEN_W, SCREEN_H, SCREEN_R, -1, FRONT_Z + 1);   // screen window
+    // screen window, opening out 45 degrees towards the front so the deeper trim doesn't shade it
+    translate([0, SCREEN_DY, 0]) hull() {
+      rbox(SCREEN_W, SCREEN_H, SCREEN_R, -1, GLASS_Z + 0.4);
+      rbox(SCREEN_W + 2 * (TRIM_T - 0.4), SCREEN_H + 2 * (TRIM_T - 0.4), SCREEN_R + TRIM_T - 0.4, FRONT_Z, FRONT_Z + 0.01);
+    }
   }
 }
 
@@ -255,6 +270,7 @@ module back() {
       // dovetail rail for the clip, down the back
       translate([0, RAIL_Y, SHELL_Z]) rotate([90, 0, 0]) linear_extrude(RAIL_L, center = true) dovetail(14, 3);
     }
+    usb_cut();
     for (h = holes) translate([h[0], h[1], SHELL_Z - 5]) {
       cylinder(d = SCREW_CLEAR, h = 20);
       cylinder(d = 4.2, h = 5 + 1.5);                                         // screw head pocket
@@ -280,8 +296,8 @@ module button() {
   translate([TOP_BUTTON_X, (BTN_Y0 + BTN_Y1) / 2, 0]) btn_flange2d(0, BTN_Y1 - BTN_Y0);
 }
 
-// Hooks over the top of the monitor: the device stands on the monitor's top edge.
-// Two legs, so the USB-C plug in the middle of the bottom edge stays clear.
+// Hooks over the top of the monitor: the device stands on the monitor's top edge on
+// two legs.
 module clip() {
   t = 2.4;
   leg_w = 8;
@@ -296,7 +312,6 @@ module clip() {
     translate([-OUT_W / 2 + 4, y0 - t, plate_z - t]) cube([OUT_W - 8, rail_y0 - y0 + plate_h + t, t + 3]);
     translate([0, rail_y0 + plate_h / 2, SHELL_Z]) rotate([90, 0, 0])
       linear_extrude(plate_h + 0.01, center = true) offset(delta = 0.25) dovetail(14, 3);
-    translate([USB_X, y0, plate_z]) cube([USB_W + 6, 30, 20], center = true);
   }
   for (sx = [-1, 1]) translate([sx * (OUT_W / 2 - 4 - leg_w / 2) - leg_w / 2, 0, 0]) {
     translate([0, y0 - t, shelf_back]) cube([leg_w, t, FRONT_Z - shelf_back]);             // shelf

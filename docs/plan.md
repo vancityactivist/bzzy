@@ -30,8 +30,8 @@ Building your own stays possible and cheap: a Waveshare ESP32-S3-Touch-LCD-1.69,
 
 | Step | Status |
 |---|---|
-| Measure a Waveshare board with calipers (size, thickness, glass height, USB-C and BOOT positions, antenna edge, 5V pad) | Board in hand; overlaps with hardware step 1 |
-| Rev D of the ring: rev C review fixes plus the measurements, and the firmware LED cap 400 → 250 mA | After measuring |
+| Measure a Waveshare board with calipers (size, thickness, glass height, USB-C and BOOT positions, antenna edge, 5V pad) | Mostly done 2026-11-21: size, depths, screen and USB-C plug measured. Still to come: antenna edge, 5V pad voltage, exact USB-C and side-button positions |
+| Rev D of the ring: rev C review fixes plus the measurements, and the firmware LED cap 400 → 250 mA | Drawn 2026-11-21 (closed ring, USB-C plug passes behind it); a few case positions still estimates |
 | Order a few ring boards from JLCPCB, print the case in PLA, build and test one | |
 | Update the build guide with photos once one works | |
 

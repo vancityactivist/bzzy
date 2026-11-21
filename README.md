@@ -27,7 +27,7 @@ The companion app runs at **[bzzy.ca](https://bzzy.ca)**.
 |---|---|
 | [app/](app/README.md) | The companion app: Next.js on Vercel, Postgres on Neon (Drizzle), GIFs in Vercel Blob, sign-in with GitHub or a passkey |
 | [firmware/](firmware/) | PlatformIO firmware for ESP32-S3 boards: the Waveshare development board today, the bzzy main board next, plus cheap test builds |
-| [hardware/](hardware/README.md) | The custom main board (in design), and the DIY build: LED ring board (KiCad, rev C, not built yet) and printed case (OpenSCAD) |
+| [hardware/](hardware/README.md) | The custom main board (in design), and the DIY build: LED ring board (KiCad, rev D, not built yet) and printed case (OpenSCAD) |
 | [docs/](docs/README.md) | All the docs, indexed. Start with [docs/plan.md](docs/plan.md) for what's next |
 | [docs/protocol.md](docs/protocol.md) | How the device and the app talk |
 | [docs/ota.md](docs/ota.md) | Firmware updates over Wi-Fi |
@@ -64,7 +64,7 @@ Done:
 1. Breadboard prototype firmware
 2. Companion app with sign-in, teams, status, device API, GIFs, show now and the live preview
 3. Calendar sync from an ICS link
-4. DIY build designed: a custom LED ring board (rev C) for the Waveshare board, and a black case with a frosted light border, button cap and bzzy wordmark ([hardware/](hardware/README.md)). Not built or tested yet
+4. DIY build designed: a custom LED ring board (rev D, drawn from a measured Waveshare board) for the Waveshare board, and a black case with a frosted light border, button cap and bzzy wordmark ([hardware/](hardware/README.md)). Not built or tested yet
 5. Signed firmware updates over Wi-Fi from GitHub Releases ([docs/ota.md](docs/ota.md))
 6. Setup on the light's own screen: QR codes for Wi-Fi, then pairing with the app
 
@@ -83,7 +83,7 @@ Next (the full list is in [docs/plan.md](docs/plan.md)):
 ### Later
 
 - **Pre-built lights.** Sell assembled and tested bzzys in small batches, built on the main board. The landing page already says they're coming. The ordering spec is in draft PR #81.
-- **DIY side stream.** Keep the Waveshare + ring board + printed case build working for people building their own: measure a Waveshare board, order and test a rev C ring, fold its review fixes into a rev D ([hardware/](hardware/README.md)).
+- **DIY side stream.** Keep the Waveshare + ring board + printed case build working for people building their own: order and test a rev D ring, which is drawn from a measured Waveshare board and has the rev C review fixes ([hardware/](hardware/README.md)).
 - **Landing page photos.** The signed-out home page (`app/src/components/landing.tsx`) uses a concept picture and illustrations. Swap them for photos of a real bzzy once one is built.
 
 ## Build log
@@ -110,7 +110,7 @@ Change of plan. To sell built bzzys in Canada, anything with a radio needs ISED 
 
 So the sellable bzzy gets **its own board**: Espressif's pre-certified ESP32-S3-WROOM-1U module with a small antenna stuck inside the case, the same 1.69" 240x280 touch screen bought bare (BuyDisplay ER-TFT1.69-4), USB-C, a clock and the ring of 16 LEDs, all on one PCB. Because the radio certification comes with the module, bzzy itself only needs an ICES-003 emissions test. It's the same chip, memory and pins as the Waveshare board, so the firmware only needs a new build target. The spec is in [docs/hardware/main-board.md](docs/hardware/main-board.md).
 
-The DIY build doesn't go away. Anyone building their own can still buy a Waveshare board, order the LED ring board and get the case printed; that stays as a side stream, so the barrier to building one stays low. The ring board (rev C) hasn't been ordered or tested yet, and the main board reuses its outline, LED layout and button, so the case fits both. The Waveshare board is also the development board. Screen samples, FPC breakouts and two ESP32-S3 DevKits are on order for a bench test on Saturday. The plan from here is in [docs/plan.md](docs/plan.md).
+The DIY build doesn't go away. Anyone building their own can still buy a Waveshare board, order the LED ring board and get the case printed; that stays as a side stream, so the barrier to building one stays low. The ring board (rev D) hasn't been ordered or tested yet, and the main board reuses its outline, corner holes and button, so the case fits both. The Waveshare board is also the development board. Screen samples, FPC breakouts and two ESP32-S3 DevKits are on order for a bench test on Saturday. The plan from here is in [docs/plan.md](docs/plan.md).
 
 ## Hardware
 
@@ -128,7 +128,7 @@ Until it exists, the **Waveshare ESP32-S3-Touch-LCD-1.69** is the development bo
 | Capacitor | 470 µF, 10 V or higher, electrolytic | Across LED 5 V / GND, near the LEDs |
 | RTC backup cell (optional) | Rechargeable ML1220 with an SH1.0 2-pin lead | Keeps the clock through power cuts. Without it, the clock comes back from NTP once Wi-Fi does |
 
-**Wiring (touch board):** LED data to **GPIO17**, LED 5 V to the board's 5 V pin, GND to GND. The free pins on this board are 2, 3, 17 and 18. Avoid 3, which is a strapping pin. LED current is capped at 400 mA in firmware. The top button goes from **GPIO18** to GND (the firmware turns on the pull-up).
+**Wiring (touch board):** LED data to **GPIO17**, LED 5 V to the board's 5 V pin, GND to GND. The free pins on this board are 2, 3, 17 and 18. Avoid 3, which is a strapping pin. LED current is capped at 250 mA in firmware. The top button goes from **GPIO18** to GND (the firmware turns on the pull-up).
 
 On the non-touch board the LED data pin is GPIO16. On a generic ESP32 it's GPIO13, and a cheap ESP32 with a 16x2 character LCD can run the whole thing for testing: see [docs/esp32-test-build.md](docs/esp32-test-build.md). The Waveshare ESP32-C6-LCD-1.47 runs it with no wiring at all: see [docs/esp32-c6-test-build.md](docs/esp32-c6-test-build.md).
 
