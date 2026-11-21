@@ -184,7 +184,7 @@ Then print the frame, light ring and back once in cheap PLA to check the fit bef
 1. Use `led-ring/fab/gerbers.zip`, which is committed. `./render.sh` regenerates it. Or, in KiCad, export Gerbers and drill files (File, Fabrication Outputs) with JLCPCB's KiCad settings, and zip the folder.
 2. Upload the zip at jlcpcb.com. Defaults are fine: 2 layers, 1.6 mm, HASL lead-free or ENIG, any colour. Black or white looks best behind a translucent frame.
 3. Turn on **PCB Assembly**, top side, and upload `fab/bom-jlcpcb.csv` and `fab/cpl-jlcpcb.csv`.
-4. In the parts-matching step, confirm the LCSC part on each line. In the placement preview, **check every LED, U1 and SW1**: the pin 1 dot should match the KiCad drawing. U1 matters most: placed backwards, it gets 5 V on its GND pin. The rev C review found two public rotation tables that disagree for SOT-23-5 (+180° vs −90°), and wasn't sure of the LEDs' +90°, so check them rather than trusting the CPL. Fix any rotation in the preview if needed.
+4. In the parts-matching step, confirm the LCSC part on each line. In the placement preview, **check every LED, U1 and SW1**: the pin 1 dot should match the KiCad drawing. U1 matters most: placed backwards, it gets 5 V on its GND pin. Checked in JLC's preview on 2026-11-21: U1 (C7484) is right with the SOT-23 +180° offset, and the LEDs (C52917434) need no offset; the old +90° put their terminals across the pads. Still glance at every part, since JLC's footprint for a given LCSC part is what counts. Fix any rotation in the preview if needed.
 
 ## The main board
 

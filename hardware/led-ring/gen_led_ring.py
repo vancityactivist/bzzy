@@ -678,9 +678,11 @@ LCSC = {
 # JLC's library footprints aren't always oriented like KiCad's, so the CPL needs these
 # offsets (from KiBot's JLC rotation table). Still check every part in JLC's placement
 # preview before ordering: their footprint for a given LCSC part is what counts.
+# Checked in JLC's placement preview on 2026-11-21: SOT-23-5 (C7484) needs +180, and the
+# WS2812B-2020-V6 (C52917434) needs 0. With +90 its terminals sat across the pads.
 JLC_ROT_OFFSET = [
     (r"^SOT-23", 180),
-    (r"^LED_WS2812B-2020", 90),
+    (r"^LED_WS2812B-2020", 0),
 ]
 
 
