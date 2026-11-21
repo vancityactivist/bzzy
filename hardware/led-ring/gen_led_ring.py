@@ -32,7 +32,7 @@ KICAD_FP = "/usr/share/kicad/footprints"
 # The Waveshare ESP32-S3-Touch-LCD-1.69, measured with calipers (2026-11-21).
 # Seen from the front: USB-C halfway up the LEFT edge, on the back of its PCB;
 # PWR, BOOT and RST side buttons on the RIGHT edge; header pads along the bottom.
-WS_W, WS_H = 33.1, 44.1      # glass footprint (the PCB sits inside it), mm
+WS_W, WS_H = 33.1, 41.1      # glass footprint (the PCB and its ribbon sit inside it), mm
 WS_T = 10.5                  # front of glass to back of tallest part, mm
 WS_GLASS_T = 1.8             # cover glass
 WS_PCB_Z = 5.4               # front of glass to the front face of its PCB
