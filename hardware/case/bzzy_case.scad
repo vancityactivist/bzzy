@@ -110,7 +110,12 @@ SEAM_Z = -BACK_SPACE;                        // frame meets back plate here
 SHELL_Z = SEAM_Z - BACK_T;                   // back face of the device
 DEPTH = FRONT_Z - SHELL_Z;
 CHIN_H = LOGO == "chin" ? CHIN : 0;
-RAIL_L = OUT_H - 10 - (LOGO == "back" ? 14 : 0);   // dovetail rail on the back
+// Mount rail: the one fitting every mount slides onto (a standard, see hardware/README.md).
+// A 45-degree dovetail down the back, 8 mm wide at the back face, 14 mm at its outer face.
+RAIL_W = 14;         // width at the rail's outer face
+RAIL_T = 3;          // how far it stands off the back
+RAIL_FIT = 0.25;     // a mount's slot is this much bigger all round
+RAIL_L = OUT_H - 10 - (LOGO == "back" ? 14 : 0);   // runs from 5 mm above the bottom edge
 RAIL_Y = -OUT_H / 2 + 5 + RAIL_L / 2;
 BORDER_X = (LIGHT_W - SLV_W) / 2;            // visible width of the frosted border
 BORDER_Y = (LIGHT_H - SLV_H) / 2;
@@ -268,8 +273,8 @@ module back() {
         rbox(IN_W - 2 * SLIDE - 2 * lip, IN_H - 2 * SLIDE - 2 * lip, IN_R - SLIDE - lip, SEAM_Z - 1, SEAM_Z + 2);
       }
       for (h = holes) translate([h[0], h[1], SEAM_Z - 0.01]) cylinder(d = POST_D, h = -PCB_T - SEAM_Z);
-      // dovetail rail for the clip, down the back
-      translate([0, RAIL_Y, SHELL_Z]) rotate([90, 0, 0]) linear_extrude(RAIL_L, center = true) dovetail(14, 3);
+      // mount rail, down the back
+      translate([0, RAIL_Y, SHELL_Z]) rotate([90, 0, 0]) linear_extrude(RAIL_L, center = true) dovetail(RAIL_W, RAIL_T);
     }
     usb_cut();
     for (h = holes) translate([h[0], h[1], SHELL_Z - 5]) {
@@ -312,7 +317,7 @@ module clip() {
     // plate that slides up onto the rail; the closed bottom end is the stop
     translate([-OUT_W / 2 + 4, y0 - t, plate_z - t]) cube([OUT_W - 8, rail_y0 - y0 + plate_h + t, t + 3]);
     translate([0, rail_y0 + plate_h / 2, SHELL_Z]) rotate([90, 0, 0])
-      linear_extrude(plate_h + 0.01, center = true) offset(delta = 0.25) dovetail(14, 3);
+      linear_extrude(plate_h + 0.01, center = true) offset(delta = RAIL_FIT) dovetail(RAIL_W, RAIL_T);
   }
   for (sx = [-1, 1]) translate([sx * (OUT_W / 2 - 4 - leg_w / 2) - leg_w / 2, 0, 0]) {
     translate([0, y0 - t, shelf_back]) cube([leg_w, t, FRONT_Z - shelf_back]);             // shelf

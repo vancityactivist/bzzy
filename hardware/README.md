@@ -149,6 +149,19 @@ The switch only travels 0.2 mm, and its plunger tip sits on the board's routed e
 | `"back"` | Back plate, above the clip rail. Hidden when the device is on the monitor |
 | `"none"` | No wordmark |
 
+## Mount rail (standard)
+
+Every mount fits the case the same way: it slides onto a dovetail rail down the middle of the back plate. Keep these numbers fixed so any mount fits any case.
+
+| | |
+|---|---|
+| Profile | Dovetail with 45° flanks: **8.0 mm** wide where it meets the back face, **14.0 mm** wide at its outer face, standing **3.0 mm** off the back |
+| Length | **56.8 mm**, centred on the case, starting 5 mm above the bottom edge and ending 5 mm below the top (shorter, 42.8 mm, with `LOGO = "back"`) |
+| Mount slot | The rail's profile grown by **0.25 mm** all round (`RAIL_FIT`): 8.5 mm at the mouth, 14.5 mm inside, 3.25 mm deep |
+| Direction | The device drops down onto the mount, so the slot is open at the top and closed at the bottom. That closed end is the stop, and gravity holds the device on it |
+
+The rail is built from `RAIL_W`, `RAIL_T`, `RAIL_FIT` and `RAIL_L` in `case/bzzy_case.scad`. A mount design should read those rather than copying the numbers.
+
 ## Before you order
 
 Rev D uses caliper measurements of a real Waveshare board (2026-11-21): the 33.1 × 44.1 mm glass, 10.5 mm total thickness, 1.8 mm glass, 5.4 mm from the front of the glass to the front of its PCB, the 27.7 × 32.2 mm lit area and its 2.4 / 5.6 mm top and bottom borders, the USB-C socket's size and depth (centre 7.9 mm behind the glass front), and the side buttons' depth (7.1 mm). Two positions along the edges still come from photos, so they're **estimates**. With calipers, measuring from the top edge of the glass:
