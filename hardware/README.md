@@ -2,7 +2,7 @@
 
 bzzy hardware now runs on two tracks:
 
-- **Main track: the bzzy main board** (being designed). One custom board with a certified ESP32-S3-WROOM-1U module, the bare 1.69" touch screen and the 16 LEDs. This is what built bzzys will be sold on, because the Waveshare board has no ISED radio certification and can't be sold inside one. Spec: [docs/hardware/main-board.md](../docs/hardware/main-board.md). Plan: [docs/plan.md](../docs/plan.md). Placement study: [main-board/](main-board/).
+- **Main track: the bzzy main board** (being designed). One custom board with a certified ESP32-S3-WROOM-1U module, the bare 1.69" touch screen and the 16 LEDs. This is what built bzzys will be sold on, because the Waveshare board has no ISED radio certification and can't be sold inside one. Spec: [docs/hardware/main-board.md](../docs/hardware/main-board.md). Plan: [docs/plan.md](../docs/plan.md). Schematic (rev A, not laid out yet): [main-board/](main-board/README.md).
 - **DIY side stream: Waveshare + LED ring board + printed case** (this page). For people building their own: buy a Waveshare board, order the ring board, get the case printed. It keeps the barrier to building one low, and work on it continues on the side.
 
 > **Not built yet.** No LED ring board (rev B, B2, C or D) has been ordered, built or tested. Rev D is drawn from a real, caliper-measured Waveshare board and passes KiCad's design-rule check, but treat it as unproven until someone builds one. See [Before you order](#before-you-order).
