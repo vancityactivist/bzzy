@@ -57,9 +57,11 @@ def C(ref, value, a, b, at, mpn, lcsc="", note="", fp=C0402):
     part(ref, "Device:C_Small", value, fp, {"1": a, "2": b}, at, mpn, lcsc, note)
 
 
-# Common parts. LCSC numbers are JLCPCB basic/extended parts as remembered, not looked
-# up (the cloud session can't reach LCSC): check every one in JLC's parts search
-# before ordering. bom.csv marks them.
+# LCSC numbers: the ones in CONFIRMED were matched by JLCPCB's BOM tool on 2026-11-21
+# (Adam ran bom.csv through it). Any other number is from memory and says "(check)".
+CONFIRMED = {"C1015", "C110293", "C11702", "C1525", "C15850", "C165948", "C19077497", "C20917", "C25076",
+             "C25092", "C25105", "C25741", "C25744", "C25900", "C25905", "C3013946", "C32346", "C45783",
+             "C52917434", "C52923", "C6186", "C7484", "C7502694", "C7519", "C404360"}
 R10K = ("0402WGF1002TCE", "C25744")
 R1K = ("0402WGF1001TCE", "C11702")
 R4K7 = ("0402WGF4701TCE", "C25900")
@@ -84,11 +86,11 @@ part("U3", "Power_Protection:USBLC6-2SC6", "USBLC6-2SC6", "Package_TO_SOT_SMD:SO
      (52, 26), "USBLC6-2SC6", "C7519", "USB ESD array, right at J1")
 C("C29", "100nF", VBUS, GND, (62, 28), *C100N, note="VBUS decoupling at U3, as its datasheet asks")
 part("F1", "Device:Polyfuse_Small", "750mA", "Fuse:Fuse_1206_3216Metric", {"1": VBUS, "2": P5},
-     (66, 24), "1206L075THYR", "", "Resettable fuse, ~750 mA hold (check part)")
+     (66, 24), "", "", "Resettable PTC fuse, 1206, ~750 mA hold: pick an in-stock one at JLC (not a glass fuse)")
 part("D17", "Device:D_TVS", "SMF5.0A", "Diode_SMD:D_SOD-123F", {"1": P5, "2": GND},
-     (74, 28), "SMF5.0A", "", "5 V TVS on the fused rail (check part)")
-part("FB1", "Device:FerriteBead_Small", "600R@100MHz", "Inductor_SMD:L_0603_1608Metric", {"1": P5, "2": "5V_LDO"},
-     (82, 24), "GZ1608D601TF", "C1015", "Keeps 3.3 V regulator noise off the 5 V rail (emissions)")
+     (74, 28), "SMF5.0A", "C19077497", "5 V TVS on the fused rail")
+part("FB1", "Device:FerriteBead_Small", "100R@100MHz", "Inductor_SMD:L_0805_2012Metric", {"1": P5, "2": "5V_LDO"},
+     (82, 24), "GZ2012D101TF", "C1015", "Keeps 3.3 V regulator noise off the 5 V rail (emissions)")
 C("C1", "22uF", "5V_LDO", GND, (90, 28), *C22U, note="LDO input", fp=C0805)
 part("U2", "Regulator_Linear:AMS1117-3.3", "AMS1117-3.3", "Package_TO_SOT_SMD:SOT-223-3_TabPin2",
      {"3": "5V_LDO", "2": P3, "1": GND}, (100, 26), "AMS1117-3.3", "C6186", "3.3 V LDO, 1 A")
@@ -108,16 +110,16 @@ MOD = {
     "28": NC, "29": NC, "30": NC, "31": NC, "32": NC, "33": NC, "34": NC, "35": NC,
 }
 part("U1", "RF_Module:ESP32-S3-WROOM-1", "ESP32-S3-WROOM-1U-N16R8", "RF_Module:ESP32-S3-WROOM-1U", MOD,
-     (30, 72), "ESP32-S3-WROOM-1U-N16R8", "", "Pre-certified module (IC 21098-ESPS3WROOMU), u.FL antenna socket. Check LCSC number")
+     (30, 72), "ESP32-S3-WROOM-1U-N16R8", "C3013946", "Pre-certified module (IC 21098-ESPS3WROOMU), u.FL antenna socket")
 C("C3", "10uF", P3, GND, (54, 54), *C10U, note="Module 3V3, at pin 2", fp=C0805)
 C("C4", "100nF", P3, GND, (60, 54), *C100N, note="Module 3V3, at pin 2")
 R("R3", "10k", P3, "EN", (54, 66), *R10K, note="EN pull-up (RC reset delay with C5)")
 C("C5", "1uF", "EN", GND, (60, 66), *C1U, note="EN delay")
-part("SW2", "Switch:SW_Push", "RESET", "Button_Switch_SMD:SW_SPST_PTS810", {"1": "EN", "2": GND},
-     (70, 66), "PTS810 SJM 250 SMTR LFS", "", "Reset, on the back behind a pinhole (check part)")
+part("SW2", "Switch:SW_Push", "RESET", "Button_Switch_SMD:SW_Push_1P1T_XKB_TS-1187A", {"1": "EN", "2": GND},
+     (70, 66), "TS-1187A-B-A-B", "C318884", "Reset, on the back behind a pinhole")
 R("R4", "10k", P3, "IO0", (54, 80), *R10K, note="GPIO0 pull-up: normal boot")
-part("SW3", "Switch:SW_Push", "BOOT", "Button_Switch_SMD:SW_SPST_PTS810", {"1": "IO0", "2": GND},
-     (70, 80), "PTS810 SJM 250 SMTR LFS", "", "Hold at reset for the ROM flasher (rescue only)")
+part("SW3", "Switch:SW_Push", "BOOT", "Button_Switch_SMD:SW_Push_1P1T_XKB_TS-1187A", {"1": "IO0", "2": GND},
+     (70, 80), "TS-1187A-B-A-B", "C318884", "Hold at reset for the ROM flasher (rescue only)")
 
 # Test pads: the UART (where bootloader errors print), spare GPIOs and the rails.
 for n, (net, x) in enumerate([("TXD0", 8), ("RXD0", 14), ("IO1", 20), ("IO2", 26),
@@ -151,12 +153,12 @@ R("R10", "4.7k", P3, "I2C_SCL", (128, 72), *R4K7, note="I2C pull-up (touch + clo
 # Schottky while powered, the supercap through R12 when not.
 part("U4", "Timer_RTC:PCF85063ATL", "PCF85063ATL", "Package_DFN_QFN:DFN-10-1EP_2.6x2.6mm_P0.5mm_EP1.3x2.2mm",
      {"1": "XTAL_I", "2": "XTAL_O", "3": GND, "4": "RTC_INT", "5": GND, "6": "I2C_SDA", "7": "I2C_SCL",
-      "8": NC, "9": NC, "10": "VRTC"}, (146, 118), "PCF85063ATL/1", "", "RTC. CLKOE tied low (no clock out). Check LCSC number")
+      "8": NC, "9": NC, "10": "VRTC"}, (146, 118), "PCF85063ATL/1,118", "C404360", "RTC. CLKOE tied low (no clock out). Out of stock at JLC on 2026-11-21 (pre-order, MOQ 15)")
 part("Y1", "Device:Crystal_Small", "32.768kHz", "Crystal:Crystal_SMD_3215-2Pin_3.2x1.5mm",
      {"1": "XTAL_I", "2": "XTAL_O"}, (126, 118), "Q13FC1350000400", "C32346",
      "12.5 pF load: set the PCF85063 CAP_SEL bit in firmware")
 part("D18", "Device:D_Schottky_Small", "BAT54WS", "Diode_SMD:D_SOD-323", {"1": "VRTC", "2": P3},
-     (164, 114), "BAT54WS", "", "Feeds VRTC from 3.3 V; blocks the supercap from back-feeding the board (check part)")
+     (164, 114), "BAT54WS", "C7502694", "Feeds VRTC from 3.3 V; blocks the supercap from back-feeding the board (check part)")
 C("C8", "100nF", "VRTC", GND, (172, 120), *C100N, note="RTC decoupling")
 R("R11", "1k", "VRTC", "VCAP", (178, 120), *R1K, note="Limits the supercap's charging current")
 part("C9", "Device:C_Polarized_Small", "0.22F 3.3V", "Capacitor_SMD:CP_Elec_6.3x5.4",
@@ -371,16 +373,24 @@ def write_bom():
         key = (p["value"], p["fp"].split(":")[-1], p["mpn"], p["lcsc"], p["dnp"])
         groups.setdefault(key, []).append(p)
     rows = sorted(groups.items(), key=lambda kv: kv[1][0]["ref"])
+    jlc = []
     with open(os.path.join(HERE, "bom.csv"), "w", newline="") as f:
         w = csv.writer(f)
         w.writerow(["Comment", "Designator", "Footprint", "MPN", "Qty", "LCSC Part #", "Fitted", "Notes"])
         for (value, fp, mpn, lcsc, dnp), ps in rows:
             refs = ",".join(sorted((q["ref"] for q in ps), key=lambda r: (r.rstrip("0123456789"), int(r.lstrip("ABCDEFGHIJKLMNOPQRSTUVWXYZ") or 0))))
             notes = "; ".join(dict.fromkeys(q["note"] for q in ps if q["note"]))
-            w.writerow([value, refs, fp, mpn, len(ps), (lcsc + " (check)") if lcsc else "TBD",
-                        "no" if dnp else "yes", notes])
+            code = lcsc if lcsc in CONFIRMED else (lcsc + " (check)") if lcsc else "TBD"
+            w.writerow([value, refs, fp, mpn, len(ps), code, "no" if dnp else "yes", notes])
+            if not dnp:
+                jlc.append([value, refs, fp, lcsc])
         for ref, desc, lcsc, note in EXTRA_BOM:
             w.writerow([desc, ref, "(off board)", "", 1, lcsc or "n/a", "yes", note])
+    # For JLCPCB's BOM upload: fitted, on-board parts only, in its four columns.
+    with open(os.path.join(HERE, "bom-jlcpcb.csv"), "w", newline="") as f:
+        w = csv.writer(f)
+        w.writerow(["Comment", "Designator", "Footprint", "LCSC Part #"])
+        w.writerows(jlc)
 
 
 def netlist():

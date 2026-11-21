@@ -8,7 +8,8 @@ The custom board that built bzzys will be sold on: an ESP32-S3-WROOM-1U-N16R8 mo
 |---|---|
 | [`bzzy-main-board.pdf`](bzzy-main-board.pdf) | The schematic, to read |
 | `bzzy-main-board.kicad_sch` | The same, for KiCad 7+ |
-| [`bom.csv`](bom.csv) | Parts list, grouped, with MPN and LCSC numbers |
+| [`bom.csv`](bom.csv) | Parts list, grouped, with MPN, LCSC numbers and notes |
+| [`bom-jlcpcb.csv`](bom-jlcpcb.csv) | The same for JLCPCB's BOM upload: fitted, on-board parts only |
 | `gen_main_board.py` | **The source.** Writes the schematic and BOM |
 | `placement.py` / `.png` / `.svg` | The earlier placement study (spec section 7.2) |
 
@@ -23,7 +24,7 @@ The schematic is drawn as blocks joined by net labels, so the netlist is exactly
 
 ## Blocks
 
-1. **USB-C and power.** HRO TYPE-C-31-M-12 receptacle, 5.1 kΩ on each CC pin, USBLC6-2SC6 ESD array (with 100 nF on its VBUS pin), 750 mA polyfuse, 5 V TVS, a ferrite bead, then an AMS1117-3.3 with 22 µF in and out. The LEDs run off the fused 5 V rail.
+1. **USB-C and power.** HRO TYPE-C-31-M-12 receptacle, 5.1 kΩ on each CC pin, USBLC6-2SC6 ESD array (with 100 nF on its VBUS pin), 750 mA polyfuse, 5 V TVS, a 100 Ω ferrite bead, then an AMS1117-3.3 with 22 µF in and out. The LEDs run off the fused 5 V rail.
 2. **ESP32-S3 module.** WROOM-1U-N16R8 (same memory as the Waveshare, so the firmware partitions don't change). EN has 10 kΩ + 1 µF (Espressif's reset delay) and a RESET switch; GPIO0 has 10 kΩ and a BOOT switch. Both switches go on the back behind pinholes. Test pads: TXD0 and RXD0 (where bootloader errors print, as the DevKit clone showed), GPIO1, GPIO2 and the rails.
 3. **Screen.** 18-pin 0.5 mm FPC (J3) with the ER-TFT1.69-4 pinout from the East Rising datasheet. 22 Ω on the SPI clock. The panel's VCC is both its logic supply and the backlight anode, so Q1 (AO3400A) switches the backlight cathode K through R6, with PWM on GPIO15 (not inverted, like the Waveshare). I2C pull-ups for the touch chip and clock.
 4. **Clock.** PCF85063A (same chip and driver as the Waveshare) with a 32.768 kHz crystal. It runs from VRTC: 3.3 V through a Schottky while plugged in, a 0.22 F supercap through 1 kΩ when not. Its interrupt goes to GPIO21 in case alarms are wanted later.
@@ -47,7 +48,7 @@ Same as the Waveshare and the `s3_devkit_tft169` bench build, so the firmware fo
 
 ## Before layout: still to check
 
-- **LCSC numbers.** They're from memory: the cloud session can't reach LCSC. Every one says "(check)" in `bom.csv`, and the parts marked TBD still need picking (module, polyfuse, TVS, Schottky, supercap, FPC connector, PCF85063, BOOT/RESET switches). Check them in JLCPCB's parts search before ordering.
+- **LCSC numbers.** 25 were matched by JLCPCB's BOM tool on 2026-11-21 (no "(check)" in `bom.csv`). Still to pick: the polyfuse (JLC's tool suggested a glass fuse, which is wrong), R6 (no 4.7 Ω 0402 match), the supercap, the FPC connector, and a check of C318884 for the BOOT/RESET switches. The PCF85063ATL (C404360) is out of stock at JLC: pre-order (MOQ 15) or switch package. Upload `bom-jlcpcb.csv` to JLC: it has only the fitted, on-board parts in JLC's columns.
 - **FPC contact side.** J3 uses the Hirose FH12 footprint as a placeholder. Which side the contacts face, and so the connector, depends on how the tail folds behind the screen: test-fold a real panel first.
 - **Backlight current.** R6 = 4.7 Ω gives about 60 mA at the datasheet's 3.0 V forward voltage, but it's sensitive to the real forward voltage. Measure on the bench with the panel samples.
 - **Supercap footprint.** C9's footprint is a 6.3 mm placeholder for an Elna DSK-series 0.22 F part. Pick the real part and its footprint at layout. Hold time is a few days if leakage is as the datasheet says.
