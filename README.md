@@ -64,7 +64,7 @@ Done:
 1. Breadboard prototype firmware
 2. Companion app with sign-in, teams, status, device API, GIFs, show now and the live preview
 3. Calendar sync from an ICS link
-4. DIY build designed: a custom LED ring board (rev D, drawn from a measured Waveshare board) for the Waveshare board, and a black case with a frosted light border, button cap and bzzy wordmark ([hardware/](hardware/README.md)). Not built or tested yet
+4. DIY build designed: a custom LED ring board (rev D, drawn from a measured Waveshare board) for the Waveshare board, and a black case with a frosted light border, button cap and bzzy wordmark ([hardware/](hardware/README.md)). Five assembled ring boards ordered from JLCPCB on 2026-11-21; not tested yet
 5. Signed firmware updates over Wi-Fi from GitHub Releases ([docs/ota.md](docs/ota.md))
 6. Setup on the light's own screen: QR codes for Wi-Fi, then pairing with the app
 
@@ -83,7 +83,7 @@ Next (the full list is in [docs/plan.md](docs/plan.md)):
 ### Later
 
 - **Pre-built lights.** Sell assembled and tested bzzys in small batches, built on the main board. The landing page already says they're coming. The ordering spec is in draft PR #81.
-- **DIY side stream.** Keep the Waveshare + ring board + printed case build working for people building their own: order and test a rev D ring, which is drawn from a measured Waveshare board and has the rev C review fixes ([hardware/](hardware/README.md)).
+- **DIY side stream.** Keep the Waveshare + ring board + printed case build working for people building their own: test the rev D ring boards (ordered 2026-11-21), which are drawn from a measured Waveshare board and have the rev C review fixes ([hardware/](hardware/README.md)).
 - **Landing page photos.** The signed-out home page (`app/src/components/landing.tsx`) uses a concept picture and illustrations. Swap them for photos of a real bzzy once one is built.
 
 ## Build log
@@ -111,6 +111,16 @@ Change of plan. To sell built bzzys in Canada, anything with a radio needs ISED 
 So the sellable bzzy gets **its own board**: Espressif's pre-certified ESP32-S3-WROOM-1U module with a small antenna stuck inside the case, the same 1.69" 240x280 touch screen bought bare (BuyDisplay ER-TFT1.69-4), USB-C, a clock and the ring of 16 LEDs, all on one PCB. Because the radio certification comes with the module, bzzy itself only needs an ICES-003 emissions test. It's the same chip, memory and pins as the Waveshare board, so the firmware only needs a new build target. The spec is in [docs/hardware/main-board.md](docs/hardware/main-board.md).
 
 The DIY build doesn't go away. Anyone building their own can still buy a Waveshare board, order the LED ring board and get the case printed; that stays as a side stream, so the barrier to building one stays low. The ring board (rev D) hasn't been ordered or tested yet, and the main board reuses its outline, corner holes and button, so the case fits both. The Waveshare board is also the development board. Screen samples, FPC breakouts and two ESP32-S3 DevKits are on order for a bench test on Saturday. The plan from here is in [docs/plan.md](docs/plan.md).
+
+### 2026-11-21: first ring boards ordered
+
+The first real bzzy hardware is on order: five LED ring boards (rev D) from JLCPCB, fully assembled with 16 LEDs, the level shifter and the top button.
+
+Getting there took a day with calipers. Measuring a real Waveshare board turned up a surprise: its USB-C socket is halfway up the **left** edge, not on the bottom where rev C had a notch for it. So rev D is a closed ring that sits a little further forward, and the cable slides in behind it. The board also clears its ground copper away from the Wi-Fi antenna, which sits at the top edge.
+
+Before ordering, a 1:1 paper print of the board caught one more thing: the screen glass is 41.1 mm tall, not 44.1, so the cutout shrank to match. The printer was printing at 96%, so the paper needed a pre-scaled copy to check it. In JLC's checkout two parts were out of stock and were swapped for equivalents: a newer WS2812B-2020 LED and TI's version of the level shifter. The LEDs also turned out to need a quarter-turn in the placement file. Everything is in [hardware/](hardware/README.md).
+
+Next: light all 16 LEDs, test the button, compare Wi-Fi signal with and without the ring, and fit the printed case.
 
 ## Hardware
 
