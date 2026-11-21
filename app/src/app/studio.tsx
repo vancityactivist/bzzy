@@ -16,8 +16,10 @@ import { Badge, Button, buttonClass, cx, Field, Input, Select, StatusDot } from 
 import { parseGifLink } from "@/lib/gif-link";
 import { type Status, STATUSES, TEXT_MAX } from "@/lib/protocol";
 import { type RingChoice, RingPicker } from "@/components/ring-picker";
+import { type ShowColorDraft, ShowColorPicker } from "@/components/show-color-picker";
 import { type LedStyle, PUSH_COLORS, PUSH_FLASHES, pushLeds } from "@/lib/push-rules";
 import { allowedRing } from "@/lib/ring";
+import { AUTO_TEXT, parseShowColors, type ShowColors } from "@/lib/show-colors";
 import { LED_RGB, screenText, statusCut, type ScreenView, viewFor, withShow, wrapBar, wrapMessage } from "@/lib/screen";
 
 import { clearShowAction, type SaveGifResult, saveShowGifAction, setStatus, showNowAction, type ShowNowResult } from "./actions";
@@ -44,6 +46,7 @@ export type LiveShow = {
   // A team push, rather than the person's own show now. They dismiss it on the light.
   push?: { team: string; leds: LedStyle | null } | null;
   leds?: LedStyle | null; // their own show's ring
+  colors?: ShowColors | null; // its screen colours; null: white on black
 };
 
 // builtin: one of the GIFs that come with bzzy; the pickers list them after your own,
@@ -78,6 +81,8 @@ type ShowDraft = {
   text: string;
   minutes: number;
   ring: RingChoice;
+  colors: ShowColorDraft; // the screen's background and text
+  colorHover: Partial<ShowColorDraft> | null; // a swatch under the pointer
 };
 
 const EMPTY_SHOW: ShowDraft = {
@@ -90,7 +95,16 @@ const EMPTY_SHOW: ShowDraft = {
   minutes: 60,
   // A show is the person's own and can last hours, so a pattern plays the whole time.
   ring: { flash: "none", color: "", speed: 2, flashFor: 0 },
+  // White on black, what lights have always shown.
+  colors: { bg: "#000000", fg: AUTO_TEXT },
+  colorHover: null,
 };
+
+// The colours a draft would send (and the preview draws), hovered swatch included.
+function draftColors(show: ShowDraft): ShowColors | null {
+  const c = { ...show.colors, ...show.colorHover };
+  return parseShowColors(c.bg, c.fg === AUTO_TEXT ? "" : c.fg);
+}
 
 type Ctx = {
   library: LibraryGif[];
@@ -256,6 +270,7 @@ export function StudioPreview({
       text: live.text,
       until: live.until,
       gif: !!live.gifSrc,
+      colors: live.colors ?? null,
     });
     if (view.layout === "show-gif") gif = live.gifSrc;
   };
@@ -275,7 +290,7 @@ export function StudioPreview({
     // A GIF or message picked for "show now" stays on the preview until it's sent or
     // cleared, so you can look at it while choosing how long.
     const src = draftShowGif(show, library);
-    view = withShow(device.view, { text: screenText(show.text.trim()), until: minutesFromNow(show.minutes), gif: !!src });
+    view = withShow(device.view, { text: screenText(show.text.trim()), until: minutesFromNow(show.minutes), gif: !!src, colors: draftColors(show) });
     gif = view.layout === "show-gif" ? src : null;
     ring = draftRing(device, show) ?? device.baseRing ?? null;
     draft = true;
@@ -614,7 +629,17 @@ const SHOW_DURATIONS = [
 const MAX_UPLOAD = 4 * 1024 * 1024;
 const TEXT_ONLY = "none";
 
-export function ShowNowControls({ className, flashOff = false }: { className?: string; flashOff?: boolean }) {
+export function ShowNowControls({
+  className,
+  flashOff = false,
+  screenStatus = "free",
+  oldColors = false,
+}: {
+  className?: string;
+  flashOff?: boolean;
+  screenStatus?: ScreenView["status"]; // what "Status colour" fills the screen with now
+  oldColors?: boolean; // a light's firmware doesn't know Show now colours yet
+}) {
   const { library, live, setFocus, show, setShow, resetShow, lightsLabel } = useStudio();
   const form = useRef<HTMLFormElement>(null);
   const file = useRef<HTMLInputElement>(null);
@@ -929,6 +954,23 @@ export function ShowNowControls({ className, flashOff = false }: { className?: s
             />
           </Field>
         ) : null}
+
+        {writing && (
+          // The message's colours, under it. With a GIF the background fills the bar
+          // under it (and round a small GIF).
+          <div onMouseEnter={() => setFocus("show")}>
+            <ShowColorPicker
+              value={show.colors}
+              status={screenStatus}
+              onChange={(v) => {
+                setFocus("show");
+                setShow({ colors: { ...show.colors, ...v }, colorHover: null });
+              }}
+              onHover={(v) => setShow({ colorHover: v })}
+            />
+            {oldColors && <p className="mt-2 text-xs text-muted">A light on older firmware shows white on black until it updates.</p>}
+          </div>
+        )}
 
         {ringing && (
           <fieldset className="min-w-0" onMouseEnter={() => setFocus("show")}>

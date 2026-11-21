@@ -6,6 +6,7 @@
 // side, change the other.
 
 import { type Block, clipText, type Presence, type Status } from "./protocol";
+import { bgHex, type ShowColors } from "./show-colors";
 
 export type ScreenStatus = Status | "unknown";
 
@@ -19,6 +20,7 @@ export type ScreenView = {
   until: number; // unix seconds; 0 = no time line
   online: boolean; // false draws the small offline ring in the corner
   notice: string | null; // black strip along the bottom, e.g. "No recent calendar data"
+  colors?: ShowColors | null; // a show's background and text colours; null: white on black
 };
 
 export type ScreenSource = "manual" | "calendar" | "default" | "fallback";
@@ -35,6 +37,21 @@ export const SCREEN_BG: Record<ScreenStatus, string> = {
   away: "rgb(210 120 0)",
   unknown: "rgb(60 60 60)",
 };
+
+// The same, as "#rrggbb" (for contrast maths and colour pickers).
+export const SCREEN_HEX: Record<ScreenStatus, string> = {
+  free: "#008c32",
+  busy: "#c81414",
+  dnd: "#6e00aa",
+  away: "#d27800",
+  unknown: "#3c3c3c",
+};
+
+// A show's colours as the screen draws them: [background, text], "#rrggbb".
+export function showPaint(view: ScreenView): [string, string] {
+  const c = view.colors;
+  return c ? [bgHex(c.bg, SCREEN_HEX[view.status]), c.fg] : ["#000000", "#ffffff"];
+}
 
 // leds.cpp colorFor()
 export const LED_RGB: Record<ScreenStatus, [number, number, number]> = {
@@ -91,15 +108,19 @@ export function viewFor(r: { status: ScreenStatus; text: string; until: number }
   };
 }
 
-// main.cpp: "show now" replaces the screen but keeps the status's colours. Without a
+// main.cpp: "show now" replaces the screen, in its own colours (white on black unless
+// picked), while the ring keeps the status's. Without a
 // GIF (or before it has downloaded) a message gets its own card; with neither, the
 // screen stays as it was.
-export function withShow(view: ScreenView, show: { text: string; until: number; gif: boolean } | null): ScreenView {
+export function withShow(
+  view: ScreenView,
+  show: { text: string; until: number; gif: boolean; colors?: ShowColors | null } | null,
+): ScreenView {
   if (!show) return view;
   const text = screenText(show.text.trim()); // the app saves it trimmed
   const layout: ScreenLayout = show.gif ? "show-gif" : text ? "show-text" : "status";
   if (layout === "status") return view;
-  return { ...view, layout, text, until: show.until };
+  return { ...view, layout, text, until: show.until, colors: show.colors ?? null };
 }
 
 // The view the device falls back to when its calendar copy is over 24 hours old.

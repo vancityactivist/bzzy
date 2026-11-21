@@ -27,6 +27,7 @@ import type { AdapterAccountType } from "next-auth/adapters";
 import type { ReleaseManifest } from "../lib/firmware";
 import type { LedStyle } from "../lib/push-rules";
 import type { LedStyles, MeetingWarn } from "../lib/ring";
+import type { ShowColors } from "../lib/show-colors";
 import type { CachedEvent } from "../lib/ics";
 import type { Delivery } from "../lib/webhook-rules";
 import type { WorkHours } from "../lib/work-hours";
@@ -398,6 +399,7 @@ export const lightShow = pgTable("light_show", {
   builtin: text("builtin"),
   text: text("text").notNull().default(""),
   leds: jsonb("leds").$type<LedStyle>(),
+  colors: jsonb("colors").$type<ShowColors>(),
   until: integer("until").notNull().default(0),
   updatedAt: integer("updated_at").notNull().default(0),
 });
@@ -436,6 +438,8 @@ export const showNow = pgTable("show_now", {
   // How the ring moves while it's up (docs/protocol.md, "LED styles"). null: the
   // status's own style.
   leds: jsonb("leds").$type<LedStyle>(),
+  // The screen's background and text colours (lib/show-colors.ts). null: white on black.
+  colors: jsonb("colors").$type<ShowColors>(),
   // Unix seconds, matching the device protocol. 0 = until cleared.
   until: integer("until").notNull().default(0),
   updatedAt: integer("updated_at").notNull().default(0),

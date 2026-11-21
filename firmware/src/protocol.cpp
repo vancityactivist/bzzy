@@ -70,6 +70,11 @@ bool parseState(const char* json, size_t len, State& out) {
     st.show.hasGif = *sha != '\0';
     strlcpy(st.show.gifSha, sha, sizeof(st.show.gifSha));
     st.show.leds = parseStyle(sh["leds"]);
+    // Colours: "#rrggbb", or "status" for the background. Missing or odd: white on black.
+    const char* bg = sh["bg"] | "";
+    st.show.bgStatus = strcmp(bg, "status") == 0;
+    if (st.show.bgStatus || !parseColor(bg, st.show.bg)) st.show.bg = 0x000000;
+    if (!parseColor(sh["fg"] | "", st.show.fg)) st.show.fg = 0xFFFFFF;
   }
 
   for (JsonObjectConst b : doc["schedule"].as<JsonArrayConst>()) {
@@ -144,6 +149,17 @@ String serializeState(const State& st) {
     s["updatedAt"] = st.show.updatedAt;
     if (st.show.hasGif) s["gifSha"] = st.show.gifSha;
     if (st.show.leds.set) writeStyle(s["leds"].to<JsonObject>(), st.show.leds);
+    char hex[8];
+    if (st.show.bgStatus) {
+      s["bg"] = "status";
+    } else if (st.show.bg != 0x000000) {
+      snprintf(hex, sizeof(hex), "#%06lx", static_cast<unsigned long>(st.show.bg & 0xFFFFFF));
+      s["bg"] = hex;
+    }
+    if (st.show.fg != 0xFFFFFF) {
+      snprintf(hex, sizeof(hex), "#%06lx", static_cast<unsigned long>(st.show.fg & 0xFFFFFF));
+      s["fg"] = hex;
+    }
   }
   JsonArray arr = doc["schedule"].to<JsonArray>();
   for (size_t i = 0; i < st.blockCount; ++i) {

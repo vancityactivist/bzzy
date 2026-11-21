@@ -48,6 +48,11 @@ struct Show {
   uint32_t until = 0;       // unix seconds; 0 = until cleared
   uint32_t updatedAt = 0;   // unix seconds
   LedStyle leds;            // how the ring moves while it's up; unset: the status's own
+  // The screen's colours behind and for its message (0xRRGGBB): white on black unless
+  // the app picked others. bgStatus: the background is the status's own screen colour.
+  uint32_t bg = 0x000000;
+  uint32_t fg = 0xFFFFFF;
+  bool bgStatus = false;
 };
 
 // A team push (docs/protocol.md): an admin's message and/or GIF. Its content arrives in

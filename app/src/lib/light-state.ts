@@ -7,6 +7,7 @@ import { db, schema } from "@/db";
 import { expire, tag } from "./cache";
 import type { Presence } from "./protocol";
 import type { LedStyle } from "./push-rules";
+import type { ShowColors } from "./show-colors";
 import { type CurrentShow, currentShow } from "./show";
 
 // The status and Show now of a light that doesn't follow its owner (device.follows_owner
@@ -42,9 +43,17 @@ export async function getLightShow(deviceId: string): Promise<CurrentShow | null
 
 export async function setLightShow(
   deviceId: string,
-  values: { assetId: string | null; builtin: string | null; text: string; leds: LedStyle | null; until: number; updatedAt: number },
+  values: {
+    assetId: string | null;
+    builtin: string | null;
+    text: string;
+    leds: LedStyle | null;
+    colors?: ShowColors | null;
+    until: number;
+    updatedAt: number;
+  },
 ) {
-  const row = { active: true, ...values };
+  const row = { active: true, ...values, colors: values.colors ?? null };
   await db()
     .insert(schema.lightShow)
     .values({ deviceId, ...row })

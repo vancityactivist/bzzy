@@ -95,7 +95,7 @@ export async function GET(req: NextRequest, ctx: RouteContext<"/api/device/[id]/
 }
 
 function ownShow(show: CurrentShow, allowFlash: boolean, ref: (g: ResolvedGif) => GifRef | null): ShowState {
-  const { gif, leds, ...rest } = show;
+  const { gif, leds, colors, ...rest } = show;
   const allowed = allowedRing(leds, allowFlash);
-  return { ...rest, gif: ref(gif), ...(allowed ? { leds: allowed } : {}) };
+  return { ...rest, gif: ref(gif), ...(allowed ? { leds: allowed } : {}), ...(colors ? { bg: colors.bg, fg: colors.fg } : {}) };
 }

@@ -120,6 +120,13 @@
       "when": 1795125768159,
       "tag": "0016_lights_follow",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1795278993720,
+      "tag": "0017_show_colors",
+      "breakpoints": true
     }
   ]
 }
