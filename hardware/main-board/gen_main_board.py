@@ -61,7 +61,7 @@ def C(ref, value, a, b, at, mpn, lcsc="", note="", fp=C0402):
 # (Adam ran bom.csv through it). Any other number is from memory and says "(check)".
 CONFIRMED = {"C1015", "C110293", "C11702", "C1525", "C15850", "C165948", "C19077497", "C20917", "C25076",
              "C25092", "C25105", "C25741", "C25744", "C25900", "C25905", "C3013946", "C32346", "C45783",
-             "C52917434", "C52923", "C6186", "C7484", "C7502694", "C7519", "C404360"}
+             "C52917434", "C52923", "C6186", "C20987", "C7484", "C7502694", "C7519", "C404360"}
 R10K = ("0402WGF1002TCE", "C25744")
 R1K = ("0402WGF1001TCE", "C11702")
 R4K7 = ("0402WGF4701TCE", "C25900")
@@ -86,7 +86,7 @@ part("U3", "Power_Protection:USBLC6-2SC6", "USBLC6-2SC6", "Package_TO_SOT_SMD:SO
      (52, 26), "USBLC6-2SC6", "C7519", "USB ESD array, right at J1")
 C("C29", "100nF", VBUS, GND, (62, 28), *C100N, note="VBUS decoupling at U3, as its datasheet asks")
 part("F1", "Device:Polyfuse_Small", "PTC 0.75A 1206", "Fuse:Fuse_1206_3216Metric", {"1": VBUS, "2": P5},
-     (66, 24), "1206L075/13.2WR", "", "Resettable PTC (polyfuse), 1206, 750 mA hold, 6 V+. Any in-stock equivalent (e.g. SMD1206P075TF). NOT a glass fuse: JLC's tool suggested C3166845 (0251.750MAT1L), which is wrong")
+     (66, 24), "SMD1206P075TF", "C20987", "Resettable PTC (polyfuse), 1206, 750 mA hold (RUILON; picked by Adam at JLC 2026-11-21). Not 350 mA (C20985, too small). NOT a glass fuse: JLC's tool suggested C3166845 (0251.750MAT1L), which is wrong")
 part("D17", "Device:D_TVS", "SMF5.0A", "Diode_SMD:D_SOD-123F", {"1": P5, "2": GND},
      (74, 28), "SMF5.0A", "C19077497", "5 V TVS on the fused rail")
 part("FB1", "Device:FerriteBead_Small", "100R@100MHz", "Inductor_SMD:L_0805_2012Metric", {"1": P5, "2": "5V_LDO"},
