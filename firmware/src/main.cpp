@@ -329,6 +329,9 @@ void loop() {
     if (view.layout == display::Layout::ShowGif || view.layout == display::Layout::ShowText) {
       view.text = show.text;
       view.until = show.until;
+      view.showBg = show.bg;
+      view.showFg = show.fg;
+      view.showBgStatus = show.bgStatus;
     }
   }
   // A status whose new GIF is downloading, with no old one to show meanwhile.

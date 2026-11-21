@@ -54,7 +54,7 @@ Every request also says which firmware the device runs, so the app can offer upd
 | `X-Bzzy-Board` | `waveshare_s3_touch_lcd169` | the PlatformIO env |
 | `X-Bzzy-Update-Failed` | `0.3.0` | only after an update rolled back |
 | `X-Bzzy-Update-Now` | `1762891100` | the last "Update now" press it acted on |
-| `X-Bzzy-Features` | `hours,leds,push` | comma-separated extras this firmware understands: `hours` (working hours and `poll`), `leds` (LED styles), `push` (team pushes) |
+| `X-Bzzy-Features` | `colors,hours,leds,push` | comma-separated extras this firmware understands: `colors` (show now colours), `hours` (working hours and `poll`), `leds` (LED styles), `push` (team pushes) |
 
 ```json
 {
@@ -74,7 +74,9 @@ Every request also says which firmware the device runs, so the app can offer upd
     "until": 1762894800,
     "updatedAt": 1762891150,
     "gif": { "url": "https://bzzy.ca/api/device/bz-ab12cd/gif/9a7e…", "sha": "41d0c2e9b7a3f615" },
-    "leds": { "pattern": "spin", "color": "#d500f9", "speed": 2 }
+    "leds": { "pattern": "spin", "color": "#d500f9", "speed": 2 },
+    "bg": "#ffd400",
+    "fg": "#000000"
   },
   "schedule": [
     { "start": 1762898400, "end": 1762902000, "status": "busy", "text": "Council meeting" }
@@ -96,7 +98,7 @@ Every request also says which firmware the device runs, so the app can offer upd
 - Times are unix seconds (UTC).
 - `status` is one of `free`, `busy`, `dnd`, `away`.
 - `manual` may be `null`. `until: 0` means "until cleared". Send `active: false` with an `updatedAt` when an override is cleared, so the device can tell old from new.
-- `show` is "show now": a GIF and/or message someone put on their screen from the app, on top of whatever the status is. It may be `null`. `gif` is `{ "url", "sha" }` like the entries in `gifs`, or `null` for a message on its own. `until: 0` means "until cleared". An expired or cleared one is sent as `active: false` with no GIF, so the device frees the file. The device downloads the GIF to `/gif/show.tmp` (before any status GIF, since someone just asked for it) and swaps it in as `/gif/show.gif`. `leds` (optional) is how the ring moves while the show is on screen, timed from its `updatedAt` (see **LED styles**); missing, the ring does what it would anyway. Firmware from before it ignores it.
+- `show` is "show now": a GIF and/or message someone put on their screen from the app, on top of whatever the status is. It may be `null`. `gif` is `{ "url", "sha" }` like the entries in `gifs`, or `null` for a message on its own. `until: 0` means "until cleared". An expired or cleared one is sent as `active: false` with no GIF, so the device frees the file. The device downloads the GIF to `/gif/show.tmp` (before any status GIF, since someone just asked for it) and swaps it in as `/gif/show.gif`. `leds` (optional) is how the ring moves while the show is on screen, timed from its `updatedAt` (see **LED styles**); missing, the ring does what it would anyway. Firmware from before it ignores it. `bg` and `fg` (optional) are the screen's background and message colours while the show is up, `#rrggbb`; `bg` may also be `status`, the status's own screen colour, which matches the ring. Missing, it's white on black. Firmware without the `colors` feature ignores them and shows white on black.
 - `schedule` covers the next 24 hours, at most 32 blocks, already expanded from the ICS feeds (recurring events resolved). The device does no ICS parsing. The app's rules: cancelled and free events are ignored, out of office is `away` (all-day too), other timed events (busy, tentative) are `busy`, other all-day events are ignored. Back-to-back blocks of the same status are joined. `text` is "In a meeting" / "Out of office" unless the person turned on meeting titles for that calendar.
 - `gifs` maps each status to `{ "url": "...", "sha": "..." }`, or `null` for no GIF (the plain colour card). The device downloads a GIF only when its `sha` changes, to `/gif/<status>.tmp`, then swaps it in. URLs on the app itself need the device's bearer token; the device never sends the token anywhere else. Built-in GIFs are static files; uploaded ones come from `GET {api}/api/device/{deviceId}/gif/{assetId}`. Responses without `gifs` (older apps) leave the device's GIFs alone.
 - `firmware` is only there when the device should update: `{ "version": "0.3.0", "url": "{api}/api/device/{deviceId}/firmware/0.3.0", "size": 1234567, "sha256": "<hex>", "sig": "<base64>", "now": 0 }`. `now` is the time someone pressed "Update now" (install right away), or 0 for an automatic update. The `url` answers with a redirect to the file; the device follows it without its token. See [ota.md](ota.md).
@@ -171,9 +173,9 @@ If the last successful sync is more than 24 hours old (or the clock isn't set ye
 
 The status sets the LED colour and, normally, the screen's colours. On top of that, **show now** replaces the screen's content while it's live (not expired) and its `updatedAt` is at least the manual override's `updatedAt` (or, for a team push, until it's dismissed). So a later button press, long press or status change from the app hides it, and a calendar change doesn't.
 
-It takes over the whole screen, on black, with no status label or time (the LEDs still show the status):
+It takes over the whole screen, on its background colour (`show.bg`, black by default) with its message in `show.fg` (white by default), and no status label or time (the LEDs still show the status):
 
-- With a GIF that has finished downloading: the GIF centred on the screen, or, with a message, centred in the top 200 rows with the message (wrapped to 2 lines) in the bar under it.
+- With a GIF that has finished downloading: the GIF centred on the screen, or, with a message, centred in the top 200 rows with the message (wrapped to 2 lines) in the bar under it. The background fills the bar and any space round a GIF smaller than the screen.
 - Otherwise, with a message: the message big and word-wrapped in the middle of the screen (18 pt up to 4 lines, else 12 pt up to 6).
 - With neither yet (a GIF still downloading and no message): the normal status screen.
 

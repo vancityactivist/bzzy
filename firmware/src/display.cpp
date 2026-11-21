@@ -287,10 +287,10 @@ static void drawLinesAt(const char* text, const bzzy::Wrapped& w, int y, int gap
 }
 
 // Wrapped lines, centred, the first one's top at y.
-static void drawLines(const char* text, const bzzy::Wrapped& w, int y, uint16_t bg) {
+static void drawLines(const char* text, const bzzy::Wrapped& w, int y, uint16_t bg, uint16_t fg = TFT_WHITE) {
   g_lcd.setTextDatum(lgfx::top_center);
   g_lcd.setFont(fontFor(w.font));
-  g_lcd.setTextColor(TFT_WHITE, bg);
+  g_lcd.setTextColor(fg, bg);
   char line[bzzy::kTextMax];
   for (size_t i = 0; i < w.count; ++i) {
     const size_t len = w.lines[i].len < sizeof(line) - 1 ? w.lines[i].len : sizeof(line) - 1;
@@ -300,13 +300,24 @@ static void drawLines(const char* text, const bzzy::Wrapped& w, int y, uint16_t 
   }
 }
 
-// "Show now" takes over the screen: black, with only what was asked for on it. The
-// LEDs still show the status.
+// "Show now" colours: what the app picked (white on black by default). A "status"
+// background is the status's own screen colour, so it matches the ring.
+static uint16_t showBg(const View& v) {
+  if (v.showBgStatus) return bgFor(v.status);
+  return g_lcd.color888(v.showBg >> 16, (v.showBg >> 8) & 0xff, v.showBg & 0xff);
+}
+static uint16_t showFg(const View& v) {
+  return g_lcd.color888(v.showFg >> 16, (v.showFg >> 8) & 0xff, v.showFg & 0xff);
+}
+
+// "Show now" takes over the screen: its background colour, with only what was asked
+// for on it. The LEDs still show the status.
 static void drawShowText(const View& v) {
-  g_lcd.fillScreen(TFT_BLACK);
+  const uint16_t bg = showBg(v);
+  g_lcd.fillScreen(bg);
   const bzzy::Wrapped w = bzzy::wrapMessage(v.text, kTextW);
   const int block = (int)w.count * bzzy::lineHeight(w.font);
-  drawLines(v.text, w, (kH - block) / 2, TFT_BLACK);
+  drawLines(v.text, w, (kH - block) / 2, bg, showFg(v));
 }
 
 static bool g_dark = false;
@@ -351,12 +362,14 @@ static void redraw(const View& v) {
     closeGif();
     drawShowText(v);
   } else if (v.layout == Layout::ShowGif && openGif("show", showMessage ? kGifH : kH)) {
-    g_lcd.fillScreen(TFT_BLACK);
+    // The background fills round a GIF smaller than the screen and the bar under it.
+    const uint16_t sbg = showBg(v);
+    g_lcd.fillScreen(sbg);
     if (showMessage) {
       // The message under the GIF, centred in the bar.
       const bzzy::Wrapped w = bzzy::wrapBar(v.text, kTextW);
       const int block = (int)w.count * bzzy::lineHeight(w.font);
-      drawLines(v.text, w, kGifH + (kH - kGifH - block) / 2, TFT_BLACK);
+      drawLines(v.text, w, kGifH + (kH - kGifH - block) / 2, sbg, showFg(v));
     }
   } else if (v.layout != Layout::Loading && openGif(bzzy::statusName(v.status))) {
     // Clear the GIF area too: a GIF smaller than 240x200 doesn't cover all of it.
@@ -539,15 +552,16 @@ void show(const View& v) {
   g_inSetup = false;
   const char* text = v.text ? v.text : "";
   const char* notice = v.notice ? v.notice : "";
+  const bool sameColours = v.showBg == g_last.showBg && v.showFg == g_last.showFg && v.showBgStatus == g_last.showBgStatus;
   if (g_drawn && v.layout == g_last.layout && v.status == g_last.status && v.until == g_last.until &&
-      v.online == g_last.online && strcmp(text, g_lastText) == 0 &&
+      v.online == g_last.online && sameColours && strcmp(text, g_lastText) == 0 &&
       strcmp(notice, g_lastNotice) == 0) {
     return;
   }
   // Only the notice's wording changed (the update's percentage ticking up): redraw just
   // its bar, not the whole screen, which flickered on every percent.
   const bool onlyNotice = g_drawn && v.layout == g_last.layout && v.status == g_last.status &&
-                          v.until == g_last.until && v.online == g_last.online &&
+                          v.until == g_last.until && v.online == g_last.online && sameColours &&
                           strcmp(text, g_lastText) == 0 && *notice && *g_lastNotice;
   g_last = v;
   strlcpy(g_lastText, text, sizeof(g_lastText));

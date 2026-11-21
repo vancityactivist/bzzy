@@ -12,8 +12,8 @@ namespace display {
 
 enum class Layout : uint8_t {
   Status,    // the status's GIF and label (or its colour card)
-  ShowGif,   // the "show now" GIF on black, full screen (or above its message)
-  ShowText,  // the "show now" message, big, on black
+  ShowGif,   // the "show now" GIF on its background colour, full screen (or above its message)
+  ShowText,  // the "show now" message, big, on its background colour (black by default)
   Loading,   // the status's colour card while the GIF it needs downloads (notice says so)
   Off,       // outside working hours: backlight off
 };
@@ -26,6 +26,11 @@ struct View {
   bool online;
   const char* notice;  // one-off line such as "Updating firmware 40%"; may be nullptr
   int8_t progress = -1;  // 0-100: a bar along the notice; -1 = no bar
+  // "Show now" colours (0xRRGGBB) behind and for its message; bgStatus: the status's
+  // own screen colour. Only ShowGif and ShowText use them.
+  uint32_t showBg = 0x000000;
+  uint32_t showFg = 0xFFFFFF;
+  bool showBgStatus = false;
 };
 
 // A setup screen (lib/core setup_flow.h): the step's QR code and a few lines of text,

@@ -9,10 +9,12 @@ import { expire, tag } from "./cache";
 import { builtinGif, type ResolvedGif } from "./gifs";
 import type { Show } from "./protocol";
 import type { LedStyle } from "./push-rules";
+import type { ShowColors } from "./show-colors";
 
 // "Show now": what a person has put on their lights' screens, if anything, and how
-// the ring moves while it's up (null: the status's own style).
-export type CurrentShow = Show & { gif: ResolvedGif; leds: LedStyle | null };
+// the ring moves while it's up (null: the status's own style), and its screen colours
+// (null: white on black).
+export type CurrentShow = Show & { gif: ResolvedGif; leds: LedStyle | null; colors: ShowColors | null };
 
 export async function getShow(userId: string): Promise<CurrentShow | null> {
   const rows = await db()
@@ -25,7 +27,16 @@ export async function getShow(userId: string): Promise<CurrentShow | null> {
   return r ? currentShow(r.show, r.asset) : null;
 }
 
-type ShowRow = { active: boolean; assetId: string | null; builtin: string | null; text: string; leds: LedStyle | null; until: number; updatedAt: number };
+type ShowRow = {
+  active: boolean;
+  assetId: string | null;
+  builtin: string | null;
+  text: string;
+  leds: LedStyle | null;
+  colors?: ShowColors | null;
+  until: number;
+  updatedAt: number;
+};
 
 // A show_now or light_show row (with its upload, if any) as the app and lights use it.
 export function currentShow(show: ShowRow, asset: { id: string; name: string; sha: string } | null): CurrentShow {
@@ -41,6 +52,7 @@ export function currentShow(show: ShowRow, asset: { id: string; name: string; sh
     updatedAt: show.updatedAt,
     gif,
     leds: show.leds ?? null,
+    colors: show.colors ?? null,
   };
 }
 
@@ -51,11 +63,12 @@ export async function setShow(
     builtin: string | null;
     text: string;
     leds: LedStyle | null;
+    colors?: ShowColors | null;
     until: number;
     updatedAt: number;
   },
 ) {
-  const row = { active: true, ...values };
+  const row = { active: true, ...values, colors: values.colors ?? null };
   await db()
     .insert(schema.showNow)
     .values({ userId, ...row })

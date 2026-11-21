@@ -38,7 +38,9 @@ export type Show = {
 };
 // `leds`: how the ring moves while it's on screen; left out, the status's own style.
 // Firmware from before it ignores it.
-export type ShowState = Show & { gif: GifRef | null; leds?: LedStyle };
+// `bg`/`fg`: the screen's colours, "#rrggbb" (bg may be "status"); left out, white on
+// black. Firmware from before them ignores them.
+export type ShowState = Show & { gif: GifRef | null; leds?: LedStyle; bg?: string; fg?: string };
 
 // A team push. Its GIF and message travel in `show`, so firmware from before pushes
 // still shows it; this says that `show` is a push, for firmware with the "push"

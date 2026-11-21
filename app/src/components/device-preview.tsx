@@ -15,6 +15,7 @@ import {
   SCREEN_LABEL,
   SCREEN_W,
   type ScreenView,
+  showPaint,
   STATUS_LINE_GAP,
   statusLines,
   untilLabel,
@@ -29,13 +30,13 @@ const em = (pt: number) => (pt * 141) / 72;
 const topBaseline = (y: number, pt: number) => y + 0.8 * em(pt);
 const middleBaseline = (y: number, pt: number) => y + 0.275 * em(pt);
 
-function Line({ y, pt, bold, children }: { y: number; pt: number; bold?: boolean; children: string }) {
+function Line({ y, pt, bold, fill = "#fff", children }: { y: number; pt: number; bold?: boolean; fill?: string; children: string }) {
   return (
     <text
       x={SCREEN_W / 2}
       y={y}
       textAnchor="middle"
-      fill="#fff"
+      fill={fill}
       fontFamily={FONT}
       fontSize={em(pt)}
       fontWeight={bold ? 700 : 400}
@@ -138,7 +139,11 @@ export function DevicePreview({
             style={{ width: SCREEN_W, height: SCREEN_H, transform: `scale(${scale})`, transformOrigin: "0 0" }}
           >
             {gif && (
-              <div className="absolute left-0 top-0 flex overflow-hidden bg-black" style={{ width: SCREEN_W, height: gifArea }}>
+              <div
+                className="absolute left-0 top-0 flex overflow-hidden bg-black"
+                // A show's background fills round a GIF smaller than the screen (display.cpp).
+                style={{ width: SCREEN_W, height: gifArea, ...(view.layout === "show-gif" ? { background: showPaint(view)[0] } : {}) }}
+              >
                 {/* The firmware draws each frame at its own size, centred in the area (or from
                     the top-left corner when it's bigger, which auto margins also do). */}
                 {/* eslint-disable-next-line @next/next/no-img-element -- animated GIF at native size */}
@@ -331,16 +336,17 @@ function hexRgb(hex: string): [number, number, number] {
 }
 
 // display.cpp drawShowText(): "show now" takes over the screen, so just the message,
-// big, on black.
+// big, in its colours (white on black unless picked).
 function ShowText({ view }: { view: ScreenView }) {
   const { font, lines } = wrapMessage(view.text);
   const lh = LINE_HEIGHT[font];
   const top = Math.floor((SCREEN_H - lines.length * lh) / 2);
+  const [bg, fg] = showPaint(view);
   return (
     <>
-      <rect width={SCREEN_W} height={SCREEN_H} fill="#000" />
+      <rect width={SCREEN_W} height={SCREEN_H} fill={bg} />
       {lines.map((l, i) => (
-        <Line key={i} y={topBaseline(top + i * lh, FONT_PT[font])} pt={FONT_PT[font]} bold>
+        <Line key={i} y={topBaseline(top + i * lh, FONT_PT[font])} pt={FONT_PT[font]} bold fill={fg}>
           {l}
         </Line>
       ))}
@@ -348,17 +354,18 @@ function ShowText({ view }: { view: ScreenView }) {
   );
 }
 
-// display.cpp redraw(), Layout::ShowGif: the GIF on black, and its message (if any)
-// centred in the bar under it.
+// display.cpp redraw(), Layout::ShowGif: the GIF on the show's background, and its
+// message (if any) centred in the bar under it.
 function ShowBar({ view }: { view: ScreenView }) {
   if (!view.text) return null;
   const lines = wrapBar(view.text);
   const top = GIF_H + Math.floor((SCREEN_H - GIF_H - lines.length * LINE_HEIGHT.bold12) / 2);
+  const [bg, fg] = showPaint(view);
   return (
     <>
-      <rect x={0} y={GIF_H} width={SCREEN_W} height={SCREEN_H - GIF_H} fill="#000" />
+      <rect x={0} y={GIF_H} width={SCREEN_W} height={SCREEN_H - GIF_H} fill={bg} />
       {lines.map((l, i) => (
-        <Line key={i} y={topBaseline(top + i * LINE_HEIGHT.bold12, 12)} pt={12} bold>
+        <Line key={i} y={topBaseline(top + i * LINE_HEIGHT.bold12, 12)} pt={12} bold fill={fg}>
           {l}
         </Line>
       ))}

@@ -163,6 +163,7 @@ async function HomeContent({ searchParams }: { searchParams: PageProps<"/">["sea
           gifSrc: previewSrc(show.gif),
           gifName: show.gif?.name ?? null,
           leds: allowedRing(show.leds, shown.some((d) => d.ring.allowFlash)),
+          colors: show.colors,
         }
       : null;
   const current = schedule.find((b) => b.start <= now && now < b.end);
@@ -340,7 +341,14 @@ async function HomeContent({ searchParams }: { searchParams: PageProps<"/">["sea
                 }
                 showHint={`A GIF or message on ${target ? target.name : names.length === 1 ? names[0] : "your lights"} right now. A press of ${target || names.length === 1 ? "its" : "a"} button takes it down.`}
                 status={<StatusControls active={active} />}
-                show={<ShowNowControls flashOff={shown.length > 0 && shown.every((d) => !d.ring.allowFlash)} />}
+                show={
+                  <ShowNowControls
+                    flashOff={shown.length > 0 && shown.every((d) => !d.ring.allowFlash)}
+                    screenStatus={previews[0]?.view.status ?? "free"}
+                    // Lights that have checked in with firmware from before Show now colours.
+                    oldColors={shown.some((d) => !hasFeature(d.features, "colors"))}
+                  />
+                }
               />
             </Card>
           </div>

@@ -45,6 +45,7 @@ import { lookRingFromInput, type LookRingInput, lookRingInput } from "@/lib/ring
 import { setDeviceTeam, TeamError } from "@/lib/teams";
 import { requireUser } from "@/lib/session";
 import { clearShow, setShow } from "@/lib/show";
+import { parseShowColors } from "@/lib/show-colors";
 import { webhookInput } from "@/lib/webhook-rules";
 import { createWebhook, deleteWebhook, noticeChanges, sendTest, updateWebhook, WebhookError } from "@/lib/webhooks";
 import { parseClock, parseWorkHours } from "@/lib/work-hours";
@@ -202,7 +203,14 @@ export async function showNowAction(_prev: ShowNowResult, formData: FormData): P
   const now = nowSeconds();
   const shown = choice.assetId ? `asset:${choice.assetId}` : choice.builtin ? `builtin:${choice.builtin}` : null;
   if (shown) await noteShown(user.id, shown, now);
-  const values = { ...choice, text, leds: pushLeds(input.data), until: minutes > 0 ? now + minutes * 60 : 0, updatedAt: now };
+  const values = {
+    ...choice,
+    text,
+    leds: pushLeds(input.data),
+    colors: parseShowColors(formData.get("bg"), formData.get("fg")),
+    until: minutes > 0 ? now + minutes * 60 : 0,
+    updatedAt: now,
+  };
   if (light) {
     await setLightShow(light, values);
   } else {

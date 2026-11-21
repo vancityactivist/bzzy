@@ -79,7 +79,7 @@ export async function putShow(snap: ApiSnapshot, token: AuthedToken, body: ShowB
   await setShow(token.userId, { ...choice, text, leds: body.ring, until, updatedAt: now });
   notice(token, { status: false, show: true });
   return {
-    snap: { ...snap, show: { active: true, text, until, updatedAt: now, gif, leds: body.ring } },
+    snap: { ...snap, show: { active: true, text, until, updatedAt: now, gif, leds: body.ring, colors: null } },
     changed: true,
   };
 }
