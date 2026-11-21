@@ -45,8 +45,18 @@ PCB_T = 1.6
 # Rev D: no notch. The USB-C plug enters from the left side, behind the Waveshare
 # PCB, so the ring sits far enough forward that the plug passes behind it. The case
 # puts the ring's front face RING_Z mm behind the front of the glass; that clears a
-# plug grip up to about 7.7 mm thick (Adam's cable: 6.4 mm).
+# plug grip up to about 7.4 mm thick (Adam's cable: 6.4 mm). The socket's centre is
+# 7.9 mm behind the front of the glass (measured).
 RING_Z = 2.3
+# The Waveshare's chip antenna sits at the top edge, right of centre (seen from the
+# front). No ground pour in this strip between the cutout and the BTN lane, on
+# either layer: x from -1 to 12.5 mm, y from the cutout edge to the lane.
+ANTENNA_KEEPOUT = [(-1.0, -24.05), (12.5, -24.05), (12.5, -CUT_H / 2), (-1.0, -CUT_H / 2)]
+
+
+def in_antenna_keepout(pt):
+    xs, ys = [p[0] for p in ANTENNA_KEEPOUT], [p[1] for p in ANTENNA_KEEPOUT]
+    return min(xs) <= pt[0] <= max(xs) and min(ys) <= pt[1] <= max(ys)
 # Keep copper this far from each M2 hole centre, so a screw head or washer
 # can't sit on +5V or GND.
 HOLE_KEEPOUT_R = 2.7
@@ -387,6 +397,26 @@ def write_pcb():
                 ol.Append(V(hx + HOLE_KEEPOUT_R * math.cos(a), hy + HOLE_KEEPOUT_R * math.sin(a)))
             board.Add(ka)
 
+    # No ground pour next to the Waveshare's chip antenna (top edge, right of
+    # centre, confirmed on a real board 2026-11-21). The strip between the
+    # cutout and the BTN lane would otherwise be solid copper 0.6 mm from it.
+    ka = pcbnew.ZONE(board)
+    ka.SetIsRuleArea(True)
+    ka.SetDoNotAllowCopperPour(True)
+    ka.SetDoNotAllowTracks(False)
+    ka.SetDoNotAllowVias(False)
+    ka.SetDoNotAllowPads(False)
+    ka.SetDoNotAllowFootprints(False)
+    ls = pcbnew.LSET()
+    ls.AddLayer(pcbnew.F_Cu); ls.AddLayer(pcbnew.B_Cu)
+    ka.SetLayerSet(ls)
+    ka.SetZoneName("keepout_antenna")
+    ol = ka.Outline()
+    ol.NewOutline()
+    for x, y in ANTENNA_KEEPOUT:
+        ol.Append(V(x, y))
+    board.Add(ka)
+
     route(board, V)
 
     path = os.path.join(HERE, NAME + ".kicad_pcb")
@@ -470,8 +500,11 @@ def route(board, V):
         c1, c2 = pad(cap.GetReference(), "1"), pad(cap.GetReference(), "2")
         track([c1, v5], P5, 0.4)
         cg = (c2[0] + nx * 1.1, c2[1] + ny * 1.1)
-        via(cg, GND)
-        track([c2, cg], GND, 0.4)
+        # In the antenna keep-out there's no pour to stitch to; the pad still
+        # meets the front pour just outside it.
+        if not in_antenna_keepout(cg):
+            via(cg, GND)
+            track([c2, cg], GND, 0.4)
 
         # Data: DOUT of this LED to DIN of the next.
         if i == len(leds):

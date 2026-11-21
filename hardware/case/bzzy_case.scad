@@ -23,8 +23,9 @@
 // back plate. No glue.
 //
 // Measured from a real Waveshare board (2026-11-21): WS_* and RING_Z in gen_led_ring.py,
-// SCREEN_W/H, the USB-C plug size. Still ESTIMATES, from photos: USB_Y, SIDE_BTNS and
-// SCREEN_DY. Check them against your board before printing the frame.
+// SCREEN_W/H and SCREEN_DY, the USB-C plug size, and the depths of the USB-C socket and side
+// buttons. Still ESTIMATES, from photos: USB_Y and SIDE_BTNS (positions along the edge).
+// Check them against your board before printing the frame.
 
 include <board_dims.scad>
 
@@ -47,20 +48,20 @@ LIP = 1.0;           // the light ring's lip over the frame's front rim (width a
 SCREEN_W = 28.3;     // visible screen window (measured lit area: 27.7 x 32.2)
 SCREEN_H = 32.8;
 SCREEN_R = 3.0;
-SCREEN_DY = 0.0;     // ESTIMATE: window offset (up) if the lit area isn't centred on the glass
+SCREEN_DY = 1.6;     // window offset up: glass border measured 2.4 mm at the top, 5.6 mm at the bottom
 
 // The Waveshare's USB-C socket is on the back of its PCB, halfway up the LEFT edge
 // (seen from the front). The plug comes in through the left wall, behind the ring board.
 USB_W = 12.5;        // opening for the plug's grip, along the edge (Adam's cable: 11.5)
 USB_H = 7.4;         // ... and front to back (Adam's cable: 6.4)
 USB_Y = 0.2;         // ESTIMATE: socket centre, up from the screen centre
-USB_Z = GLASS_Z - WS_PCB_Z - WS_PCB_T - 1.55;   // socket centre: 3.1 mm tall on the PCB's back
+USB_Z = GLASS_Z - 7.9;   // socket centre, measured: 9.5 mm from the glass front to its far side, 3.2 mm thick
 
 // The PWR, BOOT and RST buttons are on the RIGHT edge, on the back of the Waveshare PCB.
 // Pinholes through the right wall: press with a paper clip. BOOT held at power-up opens setup.
 SIDE_BTN_D = 2.2;
 SIDE_BTNS = [13.5, 3.3, -5.9];   // ESTIMATES: PWR, BOOT, RST centres, up from the screen centre
-SIDE_BTN_Z = GLASS_Z - WS_PCB_Z - WS_PCB_T - 0.8;
+SIDE_BTN_Z = GLASS_Z - 7.1;   // measured: button centres 7.1 mm behind the glass front
 
 TOP_BTN_Z = 0.8;     // height of the top button's plunger above the ring board (Alps SKRT: about 0.8)
 BTN_W = 6.0;         // button cap, as seen from above

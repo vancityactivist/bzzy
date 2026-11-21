@@ -50,7 +50,7 @@ Files are in [led-ring/](led-ring/). Open `bzzy-led-ring.kicad_pro` in KiCad 7 o
 | | |
 |---|---|
 | Size | 52 × 61 mm, 2 layers, 1.6 mm. The 34.3 × 45.3 mm cutout fits the Waveshare board's 33.1 × 44.1 mm glass. No copper within 2.7 mm of the M2 holes, so screw heads sit on bare board |
-| Depth | The ring's front face sits 2.3 mm behind the front of the Waveshare glass. The USB-C plug comes in from the left behind the Waveshare PCB, so it passes behind the ring. That works for plug grips up to about 7.7 mm thick |
+| Depth | The ring's front face sits 2.3 mm behind the front of the Waveshare glass. The USB-C plug comes in from the left behind the Waveshare PCB, so it passes behind the ring. That works for plug grips up to about 7.4 mm thick |
 | LEDs | 16 × WS2812B-2020 (2 × 2 mm), 4 on each side, evenly spaced: every 10 mm along the top and bottom, every 12 mm down the sides. Chained clockwise from just left of the bottom middle |
 | Data | GPIO17 (3.3 V), then a 74AHCT1G125 buffer to 5 V logic, then 33 Ω to the first LED. A 10 kΩ pull-down keeps the LEDs dark while the ESP32 boots |
 | Power | 5 V from the Waveshare board's 5V pad. A 0.8 mm power ring on the back, a 100 nF cap per LED, and 2 × 10 µF bulk caps. Firmware caps the LEDs at 250 mA |
@@ -151,18 +151,18 @@ The switch only travels 0.2 mm, and its plunger tip sits on the board's routed e
 
 ## Before you order
 
-Rev D uses caliper measurements of a real Waveshare board (2026-11-21): the 33.1 × 44.1 mm glass, 10.5 mm total thickness, 1.8 mm glass, 5.4 mm from the front of the glass to the front of its PCB, the 27.7 × 32.2 mm lit area, and the USB-C socket's size and depth. A few positions still come from photos, so they're **estimates**. With calipers, measuring from the top edge of the glass:
+Rev D uses caliper measurements of a real Waveshare board (2026-11-21): the 33.1 × 44.1 mm glass, 10.5 mm total thickness, 1.8 mm glass, 5.4 mm from the front of the glass to the front of its PCB, the 27.7 × 32.2 mm lit area and its 2.4 / 5.6 mm top and bottom borders, the USB-C socket's size and depth (centre 7.9 mm behind the glass front), and the side buttons' depth (7.1 mm). Two positions along the edges still come from photos, so they're **estimates**. With calipers, measuring from the top edge of the glass:
 
 1. **USB-C socket centre** (`USB_Y` in the case). It only moves the opening in the case's left wall.
 2. **PWR, BOOT and RST button centres** (`SIDE_BTNS`). Pinholes in the right wall.
-3. **Top of the lit screen area** (`SCREEN_DY`), if the screen isn't centred on the glass.
-4. **Your monitor's top edge thickness** (`MONITOR_T`), for the clip.
-5. **Your cable's plug grip.** The ring clears grips up to about 7.7 mm thick, and the case opening is 12.5 × 7.4 mm.
+3. **Your cable's plug grip.** The ring clears grips up to about 7.4 mm thick, and the case opening is 12.5 × 7.4 mm.
 
-Two checks on a real board could still change the ring itself:
+The screen window's offset (`SCREEN_DY = 1.6`) splits a 3.9 mm disagreement: the lit height (32.2 mm) plus the two borders comes to 40.2 mm, not the glass's 44.1 mm. If the window looks off-centre on the first print, measure from the glass's top edge to the first lit pixel and adjust it.
 
-- **The Wi-Fi antenna.** If the ESP32's chip antenna sits right next to the ring, the ring's ground copper there may need clearing. Compare the Wi-Fi signal (RSSI) with and without the ring.
-- **The 5V pad's voltage.** The 74AHCT1G125 needs at least 4.5 V. Measure the 5V pad with Wi-Fi running on the USB port you'll use.
+Checked on a real board:
+
+- **The Wi-Fi antenna** is the small chip at the top edge, right of centre. The ring has no ground pour on either layer in the strip next to it (`ANTENNA_KEEPOUT`). Once it's built, compare the Wi-Fi signal (RSSI) of the bare board with the same board inside the ring.
+- **The 5V pad** reads 5.12 V on a MacBook Air's USB-C port, comfortably above the 74AHCT1G125's 4.5 V minimum.
 
 Then print the frame, light ring and back once in cheap PLA to check the fit before ordering boards.
 
