@@ -94,7 +94,7 @@ To change something, edit the script and run `./render.sh` (needs KiCad 7+ and O
 | J1 | – | 4 plated holes, 2.0 mm | – | Wires, hand-soldered |
 | Screws | 4 | M2 × 8 self-tapping (or M2 × 8 with heat-set inserts in the light ring) | | |
 
-`fab/bom-jlcpcb.csv` has an LCSC part number for every line (set in `gen_led_ring.py`, and also written into the schematic as an `LCSC` field). Check each match in JLCPCB's BOM step, and swap in a Basic part where one fits, since each Extended part adds a small fee. The WS2812B-2020, the 74AHCT1G125 and the SKRTLAE010 are probably Extended. The LED's stock was unclear at review time (C965555). If it's out, C52917434 (WS2812B-2020-V6) has the same pins; check its rotation in the preview too. A WS2812B-2020 is only placed with Standard assembly, not Economic.
+`fab/bom-jlcpcb.csv` has an LCSC part number for every line (set in `gen_led_ring.py`, and also written into the schematic as an `LCSC` field). Check each match in JLCPCB's BOM step, and swap in a Basic part where one fits, since each Extended part adds a small fee. The WS2812B-2020, the 74AHCT1G125 and the SKRTLAE010 are Extended. On 2026-11-21 the original LED (C965555) and Nexperia's 74AHCT1G125GV (C12494) were out of stock at JLC, so the BOM now uses C52917434 (WS2812B-2020-V6, same package and pins) and C7484 (TI SN74AHCT1G125DBVR, same SOT-23-5 pinout). Either original is fine if it's back in stock. A WS2812B-2020 is only placed with Standard assembly, not Economic.
 
 `fab/cpl-jlcpcb.csv` uses the same coordinates as the Gerbers, and its rotations already include JLCPCB's usual offsets (+180° for SOT-23-5, +90° for the WS2812B-2020). JLCPCB's own footprint decides the real orientation, so still check the preview.
 
