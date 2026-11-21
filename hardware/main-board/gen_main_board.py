@@ -140,7 +140,8 @@ R("R5", "22R", "LCD_SCK_MCU", "LCD_SCK", (122, 56), "0402WGF220JTCE", "C25092",
   note="Softens SPI clock edges (emissions)")
 C("C6", "10uF", P3, GND, (172, 54), *C10U, note="Panel supply, at J3", fp=C0805)
 C("C7", "100nF", P3, GND, (178, 54), *C100N, note="Panel supply, at J3")
-R("R6", "4.7R", "LCD_K", "BL_SW", (172, 70), "", "", note="Backlight current limit (~60 mA at Vf 3.0 V; check on the bench)")
+part("R6", "Device:R_Small", "4.7R", "Resistor_SMD:R_0603_1608Metric", {"1": "LCD_K", "2": "BL_SW"}, (172, 70), "", "",
+     note="Backlight current limit (~60 mA at Vf 3.0 V; check on the bench). 0603: JLC has no 4.7R 0402")
 part("Q1", "Transistor_FET:AO3400A", "AO3400A", "Package_TO_SOT_SMD:SOT-23", {"1": "BL_GATE", "2": GND, "3": "BL_SW"},
      (186, 84), "AO3400A", "C20917", "Backlight low-side switch, PWM from GPIO15")
 R("R7", "100R", "LCD_BL", "BL_GATE", (172, 84), "0402WGF1000TCE", "C25076", note="Gate resistor")

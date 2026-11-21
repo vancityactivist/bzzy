@@ -48,7 +48,7 @@ Same as the Waveshare and the `s3_devkit_tft169` bench build, so the firmware fo
 
 ## Before layout: still to check
 
-- **LCSC numbers.** 25 were matched by JLCPCB's BOM tool on 2026-11-21 (no "(check)" in `bom.csv`). Still to pick: the polyfuse (JLC's tool suggested a glass fuse, which is wrong), R6 (no 4.7 Ω 0402 match), the supercap, the FPC connector, and a check of C318884 for the BOOT/RESET switches. The PCF85063ATL (C404360) is out of stock at JLC: pre-order (MOQ 15) or switch package. Upload `bom-jlcpcb.csv` to JLC: it has only the fitted, on-board parts in JLC's columns.
+- **LCSC numbers.** 25 were matched by JLCPCB's BOM tool on 2026-11-21 (no "(check)" in `bom.csv`). Still to pick: the polyfuse (JLC's tool suggested a glass fuse, which is wrong), R6 (moved to 0603, since JLC has no 4.7 Ω 0402; needs a re-match), the supercap, the FPC connector, and a check of C318884 for the BOOT/RESET switches. The PCF85063ATL (C404360) is out of stock at JLC: pre-order (MOQ 15) or switch package. Upload `bom-jlcpcb.csv` to JLC: it has only the fitted, on-board parts in JLC's columns.
 - **FPC contact side.** J3 uses the Hirose FH12 footprint as a placeholder. Which side the contacts face, and so the connector, depends on how the tail folds behind the screen: test-fold a real panel first.
 - **Backlight current.** R6 = 4.7 Ω gives about 60 mA at the datasheet's 3.0 V forward voltage, but it's sensitive to the real forward voltage. Measure on the bench with the panel samples.
 - **Supercap footprint.** C9's footprint is a 6.3 mm placeholder for an Elna DSK-series 0.22 F part. Pick the real part and its footprint at layout. Hold time is a few days if leakage is as the datasheet says.
