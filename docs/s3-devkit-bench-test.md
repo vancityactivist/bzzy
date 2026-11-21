@@ -76,6 +76,15 @@ pio device monitor
 
 On Windows, use the full path to `pio` as in [esp32-c6-test-build.md](esp32-c6-test-build.md) if it isn't on your PATH. If the upload can't find the board, hold **BOOT**, tap **RESET**, release BOOT, and upload again.
 
+### Clone DevKits that boot-loop
+
+Some cheap "N16R8" DevKitC clones have no PSRAM and XMC flash with the ID `20 70 18`. esptool warns about it when it connects (`XMC flash chip boot-up failure detected ... boot-up fix failed`). The stock bootloader doesn't recognise that chip, so it resets before the app starts, and the USB port shows the ROM banner over and over with `rst:0x3 (RTC_SW_SYS_RST)`. The bootloader's own error only shows up on the **UART** port.
+
+The `s3_devkit_tft169` env handles this already:
+
+- `scripts/xmc_bootloader.py` builds a copy of the bootloader with the XMC check skipped.
+- The env uses DIO flash with no PSRAM (`memory_type = dio_qspi`). With QIO, LittleFS couldn't mount or format on this chip.
+
 It then behaves like any bzzy: the logo, the `bzzy-XXXX` Wi-Fi setup QR code, pairing at `/pair`, statuses and GIFs.
 
 ## What to check and report back
