@@ -70,13 +70,15 @@ Done:
 
 7. Proof of life on a test build (see the build log below)
 8. Spec for the custom main board ([docs/hardware/main-board.md](docs/hardware/main-board.md))
+9. Firmware running on the Waveshare touch board, with the screen glass measured
+10. Main board schematic (rev A) and parts list, with every fitted part matched at JLCPCB except the supercap and the screen connector ([hardware/main-board/](hardware/main-board/README.md))
 
 Next (the full list is in [docs/plan.md](docs/plan.md)):
 
-1. **Waveshare test**, with a few LEDs on GPIO17, and caliper the screen glass.
-2. **Screen bench test**: the main board's ER-TFT1.69-4 panel on an ESP32-S3 DevKit ([docs/s3-devkit-bench-test.md](docs/s3-devkit-bench-test.md)).
-3. **Main board in KiCad**, schematic then layout, and the case redesigned to match.
-4. **Prototypes** from JLCPCB (5 to 10), including a Wi-Fi range test. Expect a second spin.
+1. **Screen bench test**: the main board's ER-TFT1.69-4 panel on an ESP32-S3 DevKit, once the panels arrive ([docs/s3-devkit-bench-test.md](docs/s3-devkit-bench-test.md)). The DevKit itself already runs bzzy.
+2. **Main board layout** in KiCad, once a real panel's ribbon has been folded to place the screen connector. Then the case redesigned to match.
+3. **Ring board test**: light the five rev D ring boards when they arrive (early December).
+4. **Prototypes** of the main board from JLCPCB (5 to 10), including a Wi-Fi range test. Expect a second spin.
 5. **ICES-003** emissions test: quotes, a pre-scan, the test.
 6. **First batch** of built bzzys.
 
@@ -121,6 +123,18 @@ Getting there took a day with calipers. Measuring a real Waveshare board turned 
 Before ordering, a 1:1 paper print of the board caught one more thing: the screen glass is 41.1 mm tall, not 44.1, so the cutout shrank to match. The printer was printing at 96%, so the paper needed a pre-scaled copy to check it. In JLC's checkout two parts were out of stock and were swapped for equivalents: a newer WS2812B-2020 LED and TI's version of the level shifter. The LEDs also turned out to need a quarter-turn in the placement file. Everything is in [hardware/](hardware/README.md).
 
 Next: light all 16 LEDs, test the button, compare Wi-Fi signal with and without the ring, and fit the printed case.
+
+### 2026-11-21: the main board on paper
+
+The same day the ring boards went in, the main board got its schematic.
+
+First the bench. The two ESP32-S3 DevKits from Amazon, sold as "N16R8", turned out to be clones with no PSRAM and a flash chip (XMC) that Espressif's bootloader didn't recognise, so they rebooted in a loop before bzzy even started. A small patch to the bootloader at build time fixed it ([docs/s3-devkit-bench-test.md](docs/s3-devkit-bench-test.md)). With that, the DevKit joined Wi-Fi, paired with the app and played GIFs, even without PSRAM. At the same desk, its Wi-Fi signal matched the Waveshare board's (−37 vs −35 dBm). The real range test waits for prototypes with the external antenna.
+
+Then the schematic, rev A, drawn from a script so it's easy to change ([hardware/main-board/](hardware/main-board/README.md)): USB-C with ESD protection and a resettable fuse, the ESP32-S3-WROOM-1U module, the screen on an 18-pin ribbon connector with a switched backlight, a clock kept alive by a supercap, and the 16-LED ring with its level shifter and the top button. The pins match the Waveshare board, so the firmware carries over.
+
+Running the parts list through JLCPCB's BOM tool caught a few things: it wanted to fit a glass fuse where a resettable one belongs, and it had no 4.7 Ω resistor in the smallest size. Both are fixed, and every fitted part is now matched and in stock, except the clock chip, which is pre-order only (15 minimum, about US$9).
+
+Next: when the screens arrive, fold a real ribbon behind the glass to see where the connector goes, pick the connector and supercap, and lay out the board.
 
 ## Hardware
 
