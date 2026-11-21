@@ -302,13 +302,11 @@ static void drawLines(const char* text, const bzzy::Wrapped& w, int y, uint16_t 
 
 // "Show now" colours: what the app picked (white on black by default). A "status"
 // background is the status's own screen colour, so it matches the ring.
-static uint16_t showBg(const View& v) {
-  if (v.showBgStatus) return bgFor(v.status);
-  return g_lcd.color888(v.showBg >> 16, (v.showBg >> 8) & 0xff, v.showBg & 0xff);
-}
-static uint16_t showFg(const View& v) {
-  return g_lcd.color888(v.showFg >> 16, (v.showFg >> 8) & 0xff, v.showFg & 0xff);
-}
+// color565, not color888: color888 is a 24-bit value, and cut to 16 bits it keeps only
+// green and blue (red came out blue).
+static uint16_t rgb565(uint32_t rgb) { return g_lcd.color565(rgb >> 16, (rgb >> 8) & 0xff, rgb & 0xff); }
+static uint16_t showBg(const View& v) { return v.showBgStatus ? bgFor(v.status) : rgb565(v.showBg); }
+static uint16_t showFg(const View& v) { return rgb565(v.showFg); }
 
 // "Show now" takes over the screen: its background colour, with only what was asked
 // for on it. The LEDs still show the status.
