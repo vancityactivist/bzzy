@@ -68,7 +68,7 @@ A **batch** is one production run with a size, a price and a promised ship date.
 | Per order | 1 to 3 lights | Keeps one buyer from taking a batch. |
 | Products | one: "bzzy, built" | A batch can offer several products/variants later, each with its own capacity and price (8, `batch_item`). |
 
-Lead-time budget behind "close + 6 weeks": Waveshare boards 1 to 3 weeks, JLCPCB ring PCBA 1 to 2 weeks, printed case parts 1 to 2 weeks (all ordered the day the batch is charged, in parallel), then a week for build, flash, burn-in and pairing, then Canada Post (2 to 7 business days). Adam should tune this after batch 1.
+Lead-time budget behind "close + 6 weeks": JLCPCB main board PCBA (module, LEDs) 1 to 2 weeks, display panels 1 to 3 weeks, printed case parts 1 to 2 weeks (all ordered the day the batch is charged, in parallel), then a week for build, flash, burn-in and pairing, then Canada Post (2 to 7 business days). Adam should tune this after batch 1.
 
 ### Batch states
 
@@ -373,7 +373,7 @@ All under `/admin` (superadmin only, existing `lib/admin.ts` check).
 
 ### 10.2 Parts list
 
-On a funded batch: lights to build = sum of paid quantities, plus a spare setting (default +2). The page multiplies a per-unit BOM (Waveshare board, ring PCBA, case parts by STL, button cap, cable, box, insert card) and links to each supplier, so ordering is a checklist. The BOM lives in `app/src/lib/commerce/bom.ts`, not the database, since it changes with hardware revisions (rev C, rev D).
+On a funded batch: lights to build = sum of paid quantities, plus a spare setting (default +2). The page multiplies a per-unit BOM (main board PCBA, display panel, antenna, case parts by STL, button cap, cable, box, insert card) and links to each supplier, so ordering is a checklist. The BOM lives in `app/src/lib/commerce/bom.ts`, not the database, since it changes with hardware revisions (main board rev A, B, ...).
 
 ### 10.3 Build station
 
@@ -485,23 +485,22 @@ Pay-at-close helps: until the charge, nothing has been paid, and the reservation
 
 - **Canada Consumer Product Safety Act:** general duty not to sell a product that's a danger to health or safety; **report incidents** to Health Canada within 2 days of learning of one; keep records of where parts came from and who you sold to. The order system covers the "sold to" part.
 - **Consumer Packaging and Labelling Act:** prepackaged consumer products need product identity in **English and French** and the dealer's name and address. A bilingual box label/insert card handles it.
-- **Electrical safety:** the light runs on 5 V USB. Low-voltage USB devices are generally outside provincial electrical-approval rules; don't ship a wall adapter (or ship a certified one). LED current is capped in firmware (rev D plan: 250 mA). Battery: none.
+- **Electrical safety:** the light runs on 5 V USB. Low-voltage USB devices are generally outside provincial electrical-approval rules; don't ship a wall adapter (or ship a certified one). LED current is capped in firmware (250 mA cap planned). Battery: none.
 
-### 13.4 Radio certification (ISED, and FCC for the US) — biggest open risk
+### 13.4 Radio certification (ISED, and FCC for the US)
 
 Selling a Wi-Fi device in Canada needs the radio to be **ISED-certified and listed on ISED's Radio Equipment List**. No small-quantity exemption was found. There are two cases:
 
 1. **The radio part is already certified** (a certified module or board). Then the host product can rely on it if used per the grant's conditions (same antenna, no firmware power changes beyond limits), with a label "Contains IC: XXXXX-YYYY". The host still needs **ICES-003** (digital apparatus emissions) compliance, which is a self-declaration backed by testing, and the label statement.
 2. **It isn't.** Then the whole product needs certification by an ISED-recognised certification body. Expect several thousand dollars and weeks.
 
-What we know: the Waveshare ESP32-S3 1.69" boards use a bare **ESP32-S3R8 chip** with an onboard antenna, not an Espressif pre-certified module. An FCC grant exists under Waveshare's maker (FCC ID `2BNXN-2502ESP32`, listed for the **non-touch** ESP32-S3-LCD-1.69). Whether it covers the touch variant, and whether there is a matching **ISED** certification, isn't confirmed (the FCC database site was blocked from this session).
+**Decided (2026-11-19):** Adam confirmed the Waveshare ESP32-S3-Touch-LCD-1.69 has **no ISED certification**, so it stays a dev/DIY board and is never sold built. Sold lights use the **custom bzzy main board** (spec in `docs/hardware/main-board.md`, PR #82) on the certified **ESP32-S3-WROOM-1U-N16R8** module (IC `21098-ESPS3WROOMU`, FCC ID `2AC7Z-ESPS3WROOM1U`) with an antenna of the certified type and gain. That is case 1 above.
 
-Actions (Q5):
+What's left before batch 1:
 
-- Ask Waveshare support for the **IC/ISED certification number and FCC ID for SKU 27350** (the touch board) and whether host integration (inside a plastic case, ring board nearby) is within the grant.
-- If yes: label + ICES-003 test at a local lab (often under $2k) and we're done.
-- If no: either certify the product, or bring forward **v2 (full custom board) built on a certified Espressif module** (ESP32-S3-WROOM-1 / MINI-1 have ISED and FCC IDs). That was already the long-term plan; this may make it the first commercial board.
-- Talk to a test lab before batch 1 either way; this is the item most likely to change the timeline.
+- **ICES-003 Class B** emissions test of the finished light at a lab (estimate CA$2k to 5k; get quotes), then the product label: "Contains IC: 21098-ESPS3WROOMU" and the ICES-003 statement, bilingual.
+- US later: FCC Part 15B SDoC (needs a US responsible party) and "Contains FCC ID" label.
+- Batch 1 therefore waits on main board rev A prototypes and the lab test. The batch system can be built and tested in Stripe test mode meanwhile.
 
 ### 13.5 Warranty
 
@@ -574,7 +573,7 @@ Still open. Each has the default this spec uses.
 | # | Question | Default in this spec |
 | --- | --- | --- |
 | Q1b | Deposit: refundable until the batch charges (as written), and should batch 1 have one? | Refundable; batch 1 with no deposit |
-| Q5 | Radio certification: ask Waveshare for the touch board's ISED/FCC IDs, then a lab quote? This may gate everything | Yes, before batch 1 (13.4) |
+| Q5 | Radio certification: resolved by the custom main board on WROOM-1U (13.4). Remaining: get ICES-003 lab quotes | Quotes once rev A prototypes exist |
 | Q7 | Cancellation and returns: full refund any time before shipping, 30-day change-of-mind returns? | Yes to both |
 | Q8 | Buyer sign-up: email magic link (new), or passkey via reservation token? | Magic link |
 | Q9 | Gifts / transferring a light to someone else: needed in v1? | Gift address yes, transfer later |
@@ -584,7 +583,7 @@ Still open. Each has the default this spec uses.
 | Q13 | Ship-by budget: close + 6 weeks realistic for parts and building? | Yes, tune after batch 1 |
 | Q14 | Warranty length | 1 year limited |
 | Q15 | Should company orders (several lights into one team, e.g. your office) be in v1? | No, contact form; field reserved |
-| Q16 | Which rev ships in batch 1: rev C ring, or wait for rev D? | Rev D (LED current cap, review fixes) |
+| Q16 | Which hardware ships in batch 1? | Custom main board rev A or later (Waveshare + ring stays DIY only) |
 | Q17 | Who sends marketing: you from the Resend dashboard, or Claude through the Resend connector on your say-so? | Either; always with a Topic |
 | Q18 | Insurance: get a quote before launch? | Yes |
 
