@@ -94,7 +94,7 @@ To change something, edit the script and run `./render.sh` (needs KiCad 7+ and O
 | J1 | – | 4 plated holes, 2.0 mm | – | Wires, hand-soldered |
 | Screws | 4 | M2 × 8 self-tapping (or M2 × 8 with heat-set inserts in the light ring) | | |
 
-`fab/bom-jlcpcb.csv` has an LCSC part number for every line (set in `gen_led_ring.py`, and also written into the schematic as an `LCSC` field). Check each match in JLCPCB's BOM step, and swap in a Basic part where one fits, since each Extended part adds a small fee. The WS2812B-2020, the 74AHCT1G125 and the SKRTLAE010 are probably Extended. The LED's stock was unclear at review time (C965555). If it's out, C52917434 (WS2812B-2020-V6) has the same pins; check its rotation in the preview too. A WS2812B-2020 is only placed with Standard assembly, not Economic.
+`fab/bom-jlcpcb.csv` has an LCSC part number for every line (set in `gen_led_ring.py`, and also written into the schematic as an `LCSC` field). Check each match in JLCPCB's BOM step, and swap in a Basic part where one fits, since each Extended part adds a small fee. The WS2812B-2020, the 74AHCT1G125 and the SKRTLAE010 are Extended. On 2026-11-21 the original LED (C965555) and Nexperia's 74AHCT1G125GV (C12494) were out of stock at JLC, so the BOM now uses C52917434 (WS2812B-2020-V6, same package and pins) and C7484 (TI SN74AHCT1G125DBVR, same SOT-23-5 pinout). Either original is fine if it's back in stock. A WS2812B-2020 is only placed with Standard assembly, not Economic.
 
 `fab/cpl-jlcpcb.csv` uses the same coordinates as the Gerbers, and its rotations already include JLCPCB's usual offsets (+180° for SOT-23-5, +90° for the WS2812B-2020). JLCPCB's own footprint decides the real orientation, so still check the preview.
 
@@ -184,7 +184,7 @@ Then print the frame, light ring and back once in cheap PLA to check the fit bef
 1. Use `led-ring/fab/gerbers.zip`, which is committed. `./render.sh` regenerates it. Or, in KiCad, export Gerbers and drill files (File, Fabrication Outputs) with JLCPCB's KiCad settings, and zip the folder.
 2. Upload the zip at jlcpcb.com. Defaults are fine: 2 layers, 1.6 mm, HASL lead-free or ENIG, any colour. Black or white looks best behind a translucent frame.
 3. Turn on **PCB Assembly**, top side, and upload `fab/bom-jlcpcb.csv` and `fab/cpl-jlcpcb.csv`.
-4. In the parts-matching step, confirm the LCSC part on each line. In the placement preview, **check every LED, U1 and SW1**: the pin 1 dot should match the KiCad drawing. U1 matters most: placed backwards, it gets 5 V on its GND pin. The rev C review found two public rotation tables that disagree for SOT-23-5 (+180° vs −90°), and wasn't sure of the LEDs' +90°, so check them rather than trusting the CPL. Fix any rotation in the preview if needed.
+4. In the parts-matching step, confirm the LCSC part on each line. In the placement preview, **check every LED, U1 and SW1**: the pin 1 dot should match the KiCad drawing. U1 matters most: placed backwards, it gets 5 V on its GND pin. Checked in JLC's preview on 2026-11-21: U1 (C7484) is right with the SOT-23 +180° offset, and the LEDs (C52917434) need no offset; the old +90° put their terminals across the pads. Still glance at every part, since JLC's footprint for a given LCSC part is what counts. Fix any rotation in the preview if needed.
 
 ## The main board
 

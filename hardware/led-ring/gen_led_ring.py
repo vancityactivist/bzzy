@@ -119,7 +119,7 @@ part("R1", "Device:R_Small", "10k", "Resistor_SMD:R_0402_1005Metric",
      note="Holds data low while the ESP32 boots", sch=(70, 75))
 part("U1", "74xGxx:74AHCT1G125", "74AHCT1G125", "Package_TO_SOT_SMD:SOT-23-5",
      {"1": GND, "2": "LED_DATA_3V3", "3": GND, "4": "LED_DATA_5V", "5": P5}, (-0.4, 25.6, 180),
-     mpn="74AHCT1G125GV,125", note="3.3 V to 5 V level shifter for the LED data line", sch=(100, 60))
+     mpn="SN74AHCT1G125DBVR", note="3.3 V to 5 V level shifter for the LED data line", sch=(100, 60))
 part("C1", "Device:C_Small", "100nF", "Capacitor_SMD:C_0402_1005Metric",
      {"1": P5, "2": GND}, (-1.3, 28.1, 0), mpn="CL05B104KO5NNNC", note="U1 decoupling", sch=(100, 90))
 part("R2", "Device:R_Small", "33R", "Resistor_SMD:R_0402_1005Metric",
@@ -134,7 +134,7 @@ for i, (x, y, rot) in enumerate(led_positions(), start=1):
     dout = f"DIN{i + 1}" if i < 16 else "LED_DOUT"
     col, row = (i - 1) % 8, (i - 1) // 8
     part(f"D{i}", "LED:WS2812B-2020", "WS2812B-2020", "LED_SMD:LED_WS2812B-2020_PLCC4_2.0x2.0mm",
-         {"1": dout, "2": GND, "3": f"DIN{i}", "4": P5}, (x, y, rot), mpn="WS2812B-2020",
+         {"1": dout, "2": GND, "3": f"DIN{i}", "4": P5}, (x, y, rot), mpn="WS2812B-2020-V6",
          note="Addressable RGB LED, 2x2 mm", sch=(40 + col * 40, 130 + row * 50))
     cx, cy, crot = cap_position(x, y, rot)
     part(f"C{i + 3}", "Device:C_Small", "100nF", "Capacitor_SMD:C_0402_1005Metric",
@@ -667,20 +667,22 @@ def route(board, V):
 LCSC = {
     "0402WGF1002TCE": "C25744",
     "0402WGF1001TCE": "C11702",
-    "74AHCT1G125GV,125": "C12494",
+    "SN74AHCT1G125DBVR": "C7484",     # TI; Nexperia 74AHCT1G125GV (C12494) was out of stock 2026-11-21
     "CL05B104KO5NNNC": "C1525",
     "0402WGF330JTCE": "C25105",
     "CL21A106KAYNNNE": "C15850",
-    "WS2812B-2020": "C965555",
+    "WS2812B-2020-V6": "C52917434",   # C965555 (original WS2812B-2020) was out of stock 2026-11-21
     "SKRTLAE010": "C110293",
 }
 
 # JLC's library footprints aren't always oriented like KiCad's, so the CPL needs these
 # offsets (from KiBot's JLC rotation table). Still check every part in JLC's placement
 # preview before ordering: their footprint for a given LCSC part is what counts.
+# Checked in JLC's placement preview on 2026-11-21: SOT-23-5 (C7484) needs +180, and the
+# WS2812B-2020-V6 (C52917434) needs 0. With +90 its terminals sat across the pads.
 JLC_ROT_OFFSET = [
     (r"^SOT-23", 180),
-    (r"^LED_WS2812B-2020", 90),
+    (r"^LED_WS2812B-2020", 0),
 ]
 
 
