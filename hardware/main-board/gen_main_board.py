@@ -61,7 +61,7 @@ def C(ref, value, a, b, at, mpn, lcsc="", note="", fp=C0402):
 # (Adam ran bom.csv through it). Any other number is from memory and says "(check)".
 CONFIRMED = {"C1015", "C110293", "C11702", "C1525", "C15850", "C165948", "C19077497", "C20917", "C25076",
              "C25092", "C25105", "C25741", "C25744", "C25900", "C25905", "C3013946", "C32346", "C45783",
-             "C52917434", "C52923", "C6186", "C20987", "C7484", "C7502694", "C7519", "C404360"}
+             "C52917434", "C52923", "C6186", "C20987", "C23164", "C318884", "C7484", "C7502694", "C7519", "C404360"}
 R10K = ("0402WGF1002TCE", "C25744")
 R1K = ("0402WGF1001TCE", "C11702")
 R4K7 = ("0402WGF4701TCE", "C25900")
@@ -140,7 +140,7 @@ R("R5", "22R", "LCD_SCK_MCU", "LCD_SCK", (122, 56), "0402WGF220JTCE", "C25092",
   note="Softens SPI clock edges (emissions)")
 C("C6", "10uF", P3, GND, (172, 54), *C10U, note="Panel supply, at J3", fp=C0805)
 C("C7", "100nF", P3, GND, (178, 54), *C100N, note="Panel supply, at J3")
-part("R6", "Device:R_Small", "4.7R", "Resistor_SMD:R_0603_1608Metric", {"1": "LCD_K", "2": "BL_SW"}, (172, 70), "", "",
+part("R6", "Device:R_Small", "4.7R", "Resistor_SMD:R_0603_1608Metric", {"1": "LCD_K", "2": "BL_SW"}, (172, 70), "0603WAF470KT5E", "C23164",
      note="Backlight current limit (~60 mA at Vf 3.0 V; check on the bench). 0603: JLC has no 4.7R 0402")
 part("Q1", "Transistor_FET:AO3400A", "AO3400A", "Package_TO_SOT_SMD:SOT-23", {"1": "BL_GATE", "2": GND, "3": "BL_SW"},
      (186, 84), "AO3400A", "C20917", "Backlight low-side switch, PWM from GPIO15")
