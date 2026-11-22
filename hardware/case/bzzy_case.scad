@@ -95,9 +95,19 @@ MONITOR_T = 14;      // thickness of your monitor's top edge
 CLIP_DROP = 22;      // how far the clip reaches down the back of the monitor
 FRONT_LIP = 3;       // small hook down the front of the monitor
 
-SCREW_D = 1.8;       // M2 self-tapping screw pilot (into the light ring's bosses)
+// Screws: 4 x M2 x 12 socket or button head, in from the back, through the back plate's
+// posts and the ring board into threaded inserts in the front cap's bosses. Resin (the
+// cap's material) cracks round self-tapping screws and can't take heat-set inserts, so
+// the inserts are knurled brass, glued in. In a PETG cap, heat-set them instead, or set
+// INSERT = "selftap" to drive the screws straight into the plastic.
+INSERT = "brass";    // brass | selftap
+INSERT_D = 3.2;      // hole for an M2 x 3 mm knurled brass insert (3.2 to 3.5 mm OD: check yours)
+INSERT_L = 3.0;
+SCREW_D = 1.8;       // M2 self-tapping pilot, for INSERT = "selftap"
+SCREW_L = 12;        // screw length under the head
 SCREW_CLEAR = 2.4;   // M2 clearance through the back plate
-BOSS_D = 4.6;
+SCREW_HEAD_D = 4.2;  // head pocket (DIN 912 head 3.8 mm, ISO 7380 button head 3.5 mm)
+BOSS_D = 5.4;        // the cap's bosses. Bare board under them: no copper within 2.7 mm of a hole
 BACK_T = 2.0;        // back plate
 
 use <fonts/Geist-SemiBold.ttf>
@@ -133,7 +143,9 @@ RAIL_Y = -OUT_H / 2 + 5 + RAIL_L / 2;
 BORDER_X = (OUT_W - SLV_W) / 2;              // visible width of the frosted front, edge included
 BORDER_Y = (OUT_H - SLV_H) / 2;
 holes = [for (h = RING_HOLES) [h[0], -h[1]]];   // KiCad y is down; OpenSCAD y is up
-POST_D = is_undef(HOLE_KEEPOUT_R) ? BOSS_D + 1 : min(BOSS_D + 1, 2 * HOLE_KEEPOUT_R);  // back posts sit on bare board
+POST_D = is_undef(HOLE_KEEPOUT_R) ? BOSS_D : min(BOSS_D, 2 * HOLE_KEEPOUT_R);  // back posts sit on bare board
+SCREW_TIP_Z = PLATE_Z - 0.2;                 // screw tip, just short of the frosted front
+SCREW_HEAD_Z = SCREW_TIP_Z - SCREW_L;        // underside of the head, in its pocket in the back plate's post
 
 $fn = 48;
 
@@ -216,7 +228,8 @@ module light() {
       for (h = holes) translate([h[0], h[1], 0]) cylinder(d = BOSS_D, h = PLATE_Z + 0.01);
     }
     rbox(SLV_W + 2 * SLIDE, SLV_H + 2 * SLIDE, SLV_R + SLIDE, -1, FRONT_Z + 1);   // the screen trim fits here
-    for (h = holes) translate([h[0], h[1], -1]) cylinder(d = SCREW_D, h = PLATE_Z);
+    // insert (or pilot) hole from the board side, stopping at the back of the frosted front
+    for (h = holes) translate([h[0], h[1], -1]) cylinder(d = INSERT == "brass" ? INSERT_D : SCREW_D, h = PLATE_Z + 1);
     wall_cuts();
     if (LOGO == "chin") logo_chin_cut();
   }
@@ -310,7 +323,7 @@ module back() {
     usb_cut();
     for (h = holes) translate([h[0], h[1], SHELL_Z - 5]) {
       cylinder(d = SCREW_CLEAR, h = 20);
-      cylinder(d = 4.2, h = 5 + 1.5);                                         // screw head pocket
+      cylinder(d = SCREW_HEAD_D, h = SCREW_HEAD_Z - (SHELL_Z - 5));            // screw head pocket, sets how far the screw reaches
     }
     if (LOGO == "back")   // reads from behind
       translate([0, OUT_H / 2 - 8, SHELL_Z - 1]) mirror([1, 0, 0]) linear_extrude(LOGO_DEPTH + 1) wordmark();
@@ -387,5 +400,8 @@ else if (PART == "clip") rotate([0, -90, 0]) clip();
 echo(str("bzzy case: ", OUT_W, " x ", OUT_H + CHIN_H, " x ", DEPTH, " mm (w x h x d), plus the mount. ",
          "Frosted front: ", BORDER_X, " mm at the sides, ", BORDER_Y, " mm top and bottom, ",
          "wrapping ", BAND, " mm onto the sides"));
+assert(SCREW_HEAD_Z > SHELL_Z + 0.5 && SCREW_HEAD_Z < -PCB_T - 2, "SCREW_L doesn't suit this case: the head pocket would go through the back or the post");
+assert(SCREW_TIP_Z - 0 >= (INSERT == "brass" ? INSERT_L - 0.5 : 2.5), "the screw doesn't reach far enough into the cap's boss");
+echo(str("Screws: 4 x M2 x ", SCREW_L, ", ", SCREW_TIP_Z, " mm of thread in the cap; head pocket ", SCREW_HEAD_Z - SHELL_Z, " mm deep"));
 assert(BAND_Z > USB_Z + USB_H / 2 + 1, "BAND is too deep: the frosted band would reach the USB-C opening");
 assert(BAND_Z > SIDE_BTN_Z + SIDE_BTN_D / 2 + 1, "BAND is too deep: the frosted band would reach the side pinholes");

@@ -92,7 +92,8 @@ To change something, edit the script and run `./render.sh` (needs KiCad 7+ and O
 | R3 | 1 | 1 kΩ | 0402 | Button line, ESD |
 | SW1 | 1 | Alps SKRTLAE010 | SMD side-push | Top button |
 | J1 | – | 4 plated holes, 2.0 mm | – | Wires, hand-soldered |
-| Screws | 4 | M2 × 8 self-tapping (or M2 × 8 with heat-set inserts in the light ring) | | |
+| Screws | 4 | M2 × 12 socket head (DIN 912) or button head (ISO 7380) | | Longer than they look: they reach from the back plate through the ring board into the front cap |
+| Threaded inserts | 4 | M2 × 3 mm knurled brass, 3.2 to 3.5 mm OD | | Glued into the front cap's bosses (resin can't take heat-set inserts or self-tapping screws). In a PETG cap, heat-set them |
 
 `fab/bom-jlcpcb.csv` has an LCSC part number for every line (set in `gen_led_ring.py`, and also written into the schematic as an `LCSC` field). Check each match in JLCPCB's BOM step, and swap in a Basic part where one fits, since each Extended part adds a small fee. The WS2812B-2020, the 74AHCT1G125 and the SKRTLAE010 are Extended. On 2026-11-21 the original LED (C965555) and Nexperia's 74AHCT1G125GV (C12494) were out of stock at JLC, so the BOM now uses C52917434 (WS2812B-2020-V6, same package and pins) and C7484 (TI SN74AHCT1G125DBVR, same SOT-23-5 pinout). Either original is fine if it's back in stock. A WS2812B-2020 is only placed with Standard assembly, not Economic.
 
@@ -129,12 +130,27 @@ openscad -D 'PART="light"' -o light.stl case/bzzy_case.scad   # or frame, back, 
 
 ### How it goes together
 
-1. Put the front cap face down on the table. Put the button cap into its hole in the cap's top band, from the inside.
-2. Put the trim in from the back, face down, through the cap's middle.
-3. Put the ring board, LEDs down, onto the cap's bosses, then the Waveshare board into the trim. The button cap now rests just off the switch.
-4. Lower the body over everything, front edge down, so its lip drops into the step inside the cap. The other half of the button's pocket closes round its flange.
-5. Put a square of 3 mm foam tape on the back of the Waveshare board, then put the back plate on and do up the four M2 screws. They pull the cap back onto the body, which clamps the body against the back plate. No glue.
-6. Drop it onto a mount.
+1. Glue the four brass inserts into the front cap's bosses with a little epoxy, flush with the bosses' tops, and let it cure. Keep glue out of the threads (a screw dipped in oil and turned in while the glue sets keeps them clean). If your insert's OD isn't 3.2 mm, set `INSERT_D` to match before printing.
+2. Put the front cap face down on the table. Put the button cap into its hole in the cap's top band, from the inside.
+3. Put the trim in from the back, face down, through the cap's middle.
+4. Put the ring board, LEDs down, onto the cap's bosses, then the Waveshare board into the trim. The button cap now rests just off the switch.
+5. Lower the body over everything, front edge down, so its lip drops into the step inside the cap. The other half of the button's pocket closes round its flange.
+6. Put a square of 3 mm foam tape on the back of the Waveshare board, then put the back plate on and do up the four M2 × 12 screws, snug, not tight. They pull the cap back onto the body, which clamps the body against the back plate.
+7. Drop it onto a mount.
+
+### What holds each part
+
+| Part | Held by |
+|---|---|
+| Front cap | Four M2 × 12 screws from the back into brass inserts in its bosses |
+| Body | Clamped between the cap and the back plate by those screws. Lined up by its lip in the cap's step at the front and the back plate's locating lip at the back |
+| Ring board | Clamped between the cap's bosses (front) and the back plate's posts (back), on the same four screws |
+| Waveshare board | Located sideways by the trim's sleeve. Pushed forward against the trim's front lip by the foam pad, which the back plate compresses about 0.5 mm. Plugging in USB-C pushes it into the sleeve wall, so it can't move |
+| Trim | Its ledge is held against the back of the cap's front by the Waveshare board |
+| Button cap | Its flange is trapped in a pocket split between the cap and the body |
+| Back plate and mounts | The dovetail rail and the mount's snap tongue |
+
+The brass inserts sit in the frosted cap's corners, behind 1.6 mm of frosted front. They may show as faint dark spots when it's lit. Check this in the first light test; if they show, the fix is white inserts (nylon) or moving the screws out of the light path.
 
 ### The top button
 
