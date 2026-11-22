@@ -6,10 +6,19 @@ import { after } from "next/server";
 import { db, schema } from "@/db";
 
 import { cacheGet, cacheSet, expire, tag } from "./cache";
-import { blocksForDevice, type CachedEvent, eventsFromIcs, IcsError } from "./ics";
+import {
+  type CachedEvent,
+  eventsFromIcs,
+  IcsError,
+  mergeSchedule,
+} from "./ics";
 import type { Block } from "./protocol";
 import { sameEvents } from "./poll-writes";
-import { FetchRefused, fetchPublicText, normalizeCalendarUrl } from "./safe-fetch";
+import {
+  FetchRefused,
+  fetchPublicText,
+  normalizeCalendarUrl,
+} from "./safe-fetch";
 import { parseWorkHours, type WorkHours } from "./work-hours";
 
 // Feeds are re-read when a device or page needs them and the copy is older than this.
@@ -31,7 +40,9 @@ async function noteChecked(calendarId: string, atMs: number) {
 // The rows with `lastFetchedAt` brought up to the latest check, including checks that
 // found nothing new and so never reached the database.
 async function withLastCheck(cals: CalendarRow[]): Promise<CalendarRow[]> {
-  const checks = await Promise.all(cals.map((c) => cacheGet<number>(checkedKey(c.id))));
+  const checks = await Promise.all(
+    cals.map((c) => cacheGet<number>(checkedKey(c.id))),
+  );
   return cals.map((c, i) => {
     const checked = checks[i];
     if (typeof checked !== "number") return c;
@@ -51,7 +62,10 @@ export async function userClock(userId: string) {
     .from(schema.users)
     .where(eq(schema.users.id, userId))
     .limit(1);
-  return { timeZone: rows[0]?.tz ?? "America/Vancouver", workHours: parseWorkHours(rows[0]?.workHours) };
+  return {
+    timeZone: rows[0]?.tz ?? "America/Vancouver",
+    workHours: parseWorkHours(rows[0]?.workHours),
+  };
 }
 
 export function validTimeZone(tz: string) {
@@ -65,42 +79,72 @@ export function validTimeZone(tz: string) {
 
 // Saves the owner's time zone and working hours (null = always on). Their lights pick
 // it up on the next poll.
-export async function saveUserClock(userId: string, timeZone: string, workHours: WorkHours | null) {
-  await db().update(schema.users).set({ timezone: timeZone, workHours }).where(eq(schema.users.id, userId));
+export async function saveUserClock(
+  userId: string,
+  timeZone: string,
+  workHours: WorkHours | null,
+) {
+  await db()
+    .update(schema.users)
+    .set({ timezone: timeZone, workHours })
+    .where(eq(schema.users.id, userId));
   await expire(tag.user(userId));
 }
 
 function friendlyError(err: unknown) {
-  if (err instanceof FetchRefused || err instanceof IcsError) return err.message;
-  if (err instanceof Error && (err.name === "TimeoutError" || err.name === "AbortError")) {
+  if (err instanceof FetchRefused || err instanceof IcsError)
+    return err.message;
+  if (
+    err instanceof Error &&
+    (err.name === "TimeoutError" || err.name === "AbortError")
+  ) {
     return "The calendar server took too long to answer.";
   }
   return "Couldn't read that calendar.";
 }
 
 // Fetch and parse without saving: used to check a link before it's added.
-export async function loadFeed(rawUrl: string, timeZone: string): Promise<{ url: string; events: CachedEvent[] }> {
+export async function loadFeed(
+  rawUrl: string,
+  timeZone: string,
+): Promise<{ url: string; events: CachedEvent[] }> {
   const url = normalizeCalendarUrl(rawUrl);
   const body = await fetchPublicText(url);
-  return { url: url.toString(), events: eventsFromIcs(body, new Date(), timeZone) };
+  return {
+    url: url.toString(),
+    events: eventsFromIcs(body, new Date(), timeZone),
+  };
 }
 
 // Re-read a feed. The database is only written when something changed (new events, or
 // an error appearing, changing or clearing); otherwise the check is noted in the cache.
-export async function refreshCalendar(cal: CalendarRow, timeZone?: string): Promise<string | null> {
+export async function refreshCalendar(
+  cal: CalendarRow,
+  timeZone?: string,
+): Promise<string | null> {
   const now = new Date();
   let patch: Partial<CalendarRow> | null;
   let message: string | null = null;
+  // Only ICS links can be read so far; connected accounts come in a later step.
+  if (cal.source !== "ics" || !cal.icsUrl) return null;
   try {
-    const { events } = await loadFeed(cal.icsUrl, timeZone ?? (await userTimezone(cal.userId)));
-    patch = sameEvents(events, cal.events) && cal.lastError === null ? null : { events, lastError: null };
+    const { events } = await loadFeed(
+      cal.icsUrl,
+      timeZone ?? (await userTimezone(cal.userId)),
+    );
+    patch =
+      sameEvents(events, cal.events) && cal.lastError === null
+        ? null
+        : { events, lastError: null };
   } catch (err) {
     message = friendlyError(err);
     // Keep the last good events: a short outage at the calendar end shouldn't blank the device.
     patch = message === cal.lastError ? null : { lastError: message };
   }
   if (patch) {
-    console.info(`[db] calendar ${cal.id}: saved ${"events" in patch ? "new events" : "an error change"}`);
+    console.info(
+      `[db] calendar ${cal.id}: saved ${"events" in patch ? "new events" : "an error change"}`,
+    );
     await db()
       .update(schema.calendars)
       .set({ ...patch, lastFetchedAt: now })
@@ -112,41 +156,68 @@ export async function refreshCalendar(cal: CalendarRow, timeZone?: string): Prom
 }
 
 export async function calendarsForUser(userId: string) {
-  const rows = await db().select().from(schema.calendars).where(eq(schema.calendars.userId, userId)).orderBy(asc(schema.calendars.createdAt));
+  const rows = await db()
+    .select()
+    .from(schema.calendars)
+    .where(eq(schema.calendars.userId, userId))
+    .orderBy(asc(schema.calendars.createdAt));
   return withLastCheck(rows);
 }
 
 export function isStale(cal: CalendarRow, now = Date.now()) {
-  return !cal.lastFetchedAt || now - cal.lastFetchedAt.getTime() > REFRESH_AFTER_MS;
+  return (
+    !cal.lastFetchedAt || now - cal.lastFetchedAt.getTime() > REFRESH_AFTER_MS
+  );
 }
 
-// The device's schedule from saved calendar copies.
-export function scheduleFromCalendars(cals: CalendarRow[], nowSec: number): Block[] {
-  const blocks = cals.flatMap((c) => blocksForDevice(c.events, nowSec, c.showTitles));
-  // Each calendar is joined already; re-sort the mix. Different calendars can overlap,
-  // and the device shows whichever block it finds first, so earlier starts win.
-  blocks.sort((a, b) => a.start - b.start || a.end - b.end);
-  return blocks;
+// The device's schedule from saved calendar copies: every calendar that sets status,
+// merged so the strongest status wins where they overlap and a meeting that's on two
+// calendars shows once (mergeSchedule). Rows cached before `setsStatus` existed count as on.
+export function scheduleFromCalendars(
+  cals: CalendarRow[],
+  nowSec: number,
+): Block[] {
+  return mergeSchedule(
+    cals
+      .filter((c) => c.setsStatus !== false)
+      .map((c) => ({ events: c.events, showTitles: c.showTitles })),
+    nowSec,
+  );
 }
 
 // Which of these (possibly cached) rows are due a re-read, counting checks that only
 // reached the cache.
-export async function staleCalendars(cals: CalendarRow[], now = Date.now()): Promise<CalendarRow[]> {
+export async function staleCalendars(
+  cals: CalendarRow[],
+  now = Date.now(),
+): Promise<CalendarRow[]> {
   return (await withLastCheck(cals)).filter((c) => isStale(c, now));
 }
 
 // The device's schedule, from the saved copies. Returns the stale calendars too, so the
 // caller can refresh them after responding instead of making the device wait.
-export async function scheduleForUser(userId: string, nowSec: number): Promise<{ schedule: Block[]; stale: CalendarRow[] }> {
+export async function scheduleForUser(
+  userId: string,
+  nowSec: number,
+): Promise<{ schedule: Block[]; stale: CalendarRow[] }> {
   const cals = await calendarsForUser(userId);
-  return { schedule: scheduleFromCalendars(cals, nowSec), stale: cals.filter((c) => isStale(c)) };
+  return {
+    schedule: scheduleFromCalendars(cals, nowSec),
+    stale: cals.filter((c) => isStale(c)),
+  };
 }
 
-export async function addCalendar(userId: string, name: string, rawUrl: string): Promise<string | null> {
+export async function addCalendar(
+  userId: string,
+  name: string,
+  rawUrl: string,
+): Promise<string | null> {
   try {
     const tz = await userTimezone(userId);
     const { url, events } = await loadFeed(rawUrl, tz);
-    await db().insert(schema.calendars).values({ userId, name, icsUrl: url, events, lastFetchedAt: new Date() });
+    await db()
+      .insert(schema.calendars)
+      .values({ userId, name, icsUrl: url, events, lastFetchedAt: new Date() });
     await expire(tag.user(userId));
     return null;
   } catch (err) {
@@ -158,13 +229,32 @@ export async function ownCalendar(userId: string, id: string) {
   const rows = await db()
     .select()
     .from(schema.calendars)
-    .where(and(eq(schema.calendars.id, id), eq(schema.calendars.userId, userId)))
+    .where(
+      and(eq(schema.calendars.id, id), eq(schema.calendars.userId, userId)),
+    )
     .limit(1);
   return rows[0] ?? null;
 }
 
-export async function setShowTitles(cal: Pick<CalendarRow, "id" | "userId">, showTitles: boolean) {
-  await db().update(schema.calendars).set({ showTitles }).where(eq(schema.calendars.id, cal.id));
+export async function setShowTitles(
+  cal: Pick<CalendarRow, "id" | "userId">,
+  showTitles: boolean,
+) {
+  await db()
+    .update(schema.calendars)
+    .set({ showTitles })
+    .where(eq(schema.calendars.id, cal.id));
+  await expire(tag.user(cal.userId));
+}
+
+export async function setSetsStatus(
+  cal: Pick<CalendarRow, "id" | "userId">,
+  setsStatus: boolean,
+) {
+  await db()
+    .update(schema.calendars)
+    .set({ setsStatus })
+    .where(eq(schema.calendars.id, cal.id));
   await expire(tag.user(cal.userId));
 }
 
