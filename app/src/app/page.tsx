@@ -3,6 +3,7 @@ import { Suspense } from "react";
 
 import { AppShell } from "@/components/app-shell";
 import { Landing } from "@/components/landing";
+import { shopBatch } from "@/lib/shop-batch";
 import Link from "next/link";
 
 import { Button, Card, Container, cx, StatusDot } from "@/components/ui";
@@ -96,7 +97,7 @@ export default function Home({ searchParams }: PageProps<"/">) {
 
 async function HomeContent({ searchParams }: { searchParams: PageProps<"/">["searchParams"] }) {
   const user = await getCurrentUser();
-  if (!user) return <Landing />;
+  if (!user) return <Landing batch={await shopBatch()} />;
 
   const now = nowSeconds();
   await refreshStaleCalendars(user.id);
