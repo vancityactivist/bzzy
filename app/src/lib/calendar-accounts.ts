@@ -16,7 +16,17 @@ import {
   revokeGoogle,
 } from "./google-calendar";
 import { eventsFromGoogle } from "./google-events";
-import { type CachedEvent, fetchWindow } from "./ics";
+import { type CachedEvent, eventsFromIcs, fetchWindow } from "./ics";
+import {
+  basicAuth,
+  CalDavAuthFailed,
+  calDavCtag,
+  CalDavError,
+  calDavObjects,
+  discoverCalDav,
+  listCalDav,
+} from "./caldav";
+import { FetchRefused } from "./safe-fetch";
 
 // Connected calendar accounts (Google for now; CalDAV later). Secrets are sealed with
 // lib/calendar-secret.ts and only ever opened here, on the server.
@@ -25,7 +35,7 @@ export type CalendarAccountRow = typeof schema.calendarAccounts.$inferSelect;
 // What pages may see: never the secret.
 export type CalendarAccountInfo = Pick<
   CalendarAccountRow,
-  "id" | "provider" | "label" | "state" | "lastError"
+  "id" | "provider" | "label" | "state" | "lastError" | "serverUrl"
 >;
 
 export const RECONNECT_MESSAGE =
@@ -41,6 +51,7 @@ export async function accountsForUser(
       label: schema.calendarAccounts.label,
       state: schema.calendarAccounts.state,
       lastError: schema.calendarAccounts.lastError,
+      serverUrl: schema.calendarAccounts.serverUrl,
     })
     .from(schema.calendarAccounts)
     .where(eq(schema.calendarAccounts.userId, userId))
@@ -288,4 +299,146 @@ export async function removeAccount(
     .where(eq(schema.calendarAccounts.id, account.id));
   await cacheSet(accessKey(account.id), null, 1);
   await expire(tag.user(account.userId));
+}
+
+// --- CalDAV (iCloud, Fastmail, Nextcloud, ...) ---------------------------------------
+
+export const CALDAV_RECONNECT_MESSAGE =
+  "The calendar server stopped accepting the password. Make a new app-specific password and update it here.";
+
+function calDavAuth(account: CalendarAccountRow): string {
+  const pw = openSecret(account.secret, account.keyId, account.id);
+  if (!pw) throw new CalDavAuthFailed(CALDAV_RECONNECT_MESSAGE);
+  return basicAuth(account.username ?? "", pw.plain);
+}
+
+// Runs a CalDAV call, marking the account for a new password if the login is refused.
+async function withCalDav<T>(account: CalendarAccountRow, run: (auth: string) => Promise<T>): Promise<T> {
+  try {
+    return await run(calDavAuth(account));
+  } catch (err) {
+    if (err instanceof CalDavAuthFailed) {
+      await markAccount(account, "needs_reconnect", CALDAV_RECONNECT_MESSAGE);
+      throw new CalDavAuthFailed(CALDAV_RECONNECT_MESSAGE);
+    }
+    throw err;
+  }
+}
+
+// Connects a CalDAV account: finds the calendars with this login (which also proves the
+// password works), saves the account, and adds its event calendars. Every calendar
+// starts on: unlike Google, CalDAV servers don't list holiday or birthday calendars.
+// Connecting the same login again updates the password instead.
+export async function connectCalDav(
+  userId: string,
+  input: { server: URL; username: string; password: string },
+): Promise<CalendarAccountRow> {
+  const found = await discoverCalDav(input.server, basicAuth(input.username, input.password));
+  if (found.calendars.length === 0) throw new CalDavError("That account has no calendars with events.");
+  const existing = await db()
+    .select()
+    .from(schema.calendarAccounts)
+    .where(
+      and(
+        eq(schema.calendarAccounts.userId, userId),
+        eq(schema.calendarAccounts.provider, "caldav"),
+        eq(schema.calendarAccounts.externalId, found.principalUrl),
+      ),
+    )
+    .limit(1);
+  const id = existing[0]?.id ?? crypto.randomUUID();
+  const values = {
+    label: input.username,
+    serverUrl: found.homeUrl,
+    username: input.username,
+    state: "ok" as const,
+    lastError: null,
+    ...sealSecret(input.password, id),
+  };
+  let row: CalendarAccountRow;
+  if (existing[0]) {
+    [row] = await db().update(schema.calendarAccounts).set(values).where(eq(schema.calendarAccounts.id, id)).returning();
+  } else {
+    [row] = await db()
+      .insert(schema.calendarAccounts)
+      .values({ id, userId, provider: "caldav", externalId: found.principalUrl, ...values })
+      .returning();
+  }
+  await addCalDavCalendars(row, found.calendars);
+  return row;
+}
+
+async function addCalDavCalendars(account: CalendarAccountRow, remote: { url: string; name: string }[]) {
+  const local = await db().select().from(schema.calendars).where(eq(schema.calendars.accountId, account.id));
+  const byExt = new Map(local.map((c) => [c.externalId, c]));
+  const fresh = remote.filter((r) => !byExt.has(r.url));
+  if (fresh.length > 0) {
+    await db()
+      .insert(schema.calendars)
+      .values(
+        fresh.map((r) => ({
+          userId: account.userId,
+          name: r.name,
+          source: "caldav" as const,
+          accountId: account.id,
+          externalId: r.url,
+          setsStatus: true,
+        })),
+      );
+  }
+  for (const r of remote) {
+    const c = byExt.get(r.url);
+    if (c && c.name !== r.name) await db().update(schema.calendars).set({ name: r.name }).where(eq(schema.calendars.id, c.id));
+  }
+  await expire(tag.user(account.userId));
+}
+
+// A new password for a CalDAV account. Checked against the server before it's saved.
+export async function updateCalDavPassword(account: CalendarAccountRow, password: string): Promise<void> {
+  if (account.provider !== "caldav" || !account.serverUrl) throw new CalDavError("That isn't a CalDAV account.");
+  const remote = await listCalDav(new URL(account.serverUrl), basicAuth(account.username ?? "", password));
+  await db()
+    .update(schema.calendarAccounts)
+    .set({ ...sealSecret(password, account.id), state: "ok", lastError: null })
+    .where(eq(schema.calendarAccounts.id, account.id));
+  await addCalDavCalendars({ ...account, state: "ok" }, remote);
+}
+
+// Whether the calendar changed since the last read is asked first (its ctag): a full read
+// only happens when it did, or when the week moved on. The marker lives in the runtime
+// cache; if it's lost, the calendar is simply read again.
+const ctagKey = (calendarId: string) => `ctag:${calendarId}`;
+
+export async function calDavEventsFor(
+  cal: { id: string; accountId: string | null; externalId: string | null; events: CachedEvent[] },
+  timeZone: string,
+): Promise<CachedEvent[]> {
+  const account = cal.accountId ? await accountRow(cal.accountId) : null;
+  if (!account || !cal.externalId) throw new CalDavError("This calendar's account was removed.");
+  if (account.state === "needs_reconnect") throw new CalDavAuthFailed(CALDAV_RECONNECT_MESSAGE);
+  const url = new URL(cal.externalId);
+  const window = fetchWindow(new Date(), timeZone);
+  return withCalDav(account, async (auth) => {
+    const ctag = await calDavCtag(url, auth).catch((err) => {
+      if (err instanceof CalDavAuthFailed || err instanceof FetchRefused) throw err;
+      return null; // no ctag support: just read
+    });
+    const marker = ctag ? `${ctag}|${window.from.toISOString()}` : null;
+    if (marker && (await cacheGet<string>(ctagKey(cal.id))) === marker) return cal.events;
+    const from = new Date(window.from.getTime() - 86_400_000);
+    const to = new Date(window.to.getTime() + 86_400_000);
+    const objects = await calDavObjects(url, auth, from, to);
+    const now = new Date();
+    const events = objects
+      .flatMap((ics) => {
+        try {
+          return eventsFromIcs(ics, now, timeZone);
+        } catch {
+          return []; // one broken event shouldn't sink the calendar
+        }
+      })
+      .sort((a, b) => a.start - b.start || a.end - b.end);
+    if (marker) await cacheSet(ctagKey(cal.id), marker, 24 * 3600);
+    return events;
+  });
 }

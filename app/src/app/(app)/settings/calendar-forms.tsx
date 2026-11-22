@@ -1,14 +1,16 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { useActionState, useEffect, useId, useRef, useTransition } from "react";
+import { useActionState, useEffect, useId, useRef, useState, useTransition } from "react";
 
 import { PlusIcon, RefreshIcon, TrashIcon } from "@/components/icons";
-import { Button, Field, Input } from "@/components/ui";
+import { Button, Field, Input, Select } from "@/components/ui";
 
 import {
   addCalendarAction,
   type CalendarFormResult,
+  connectCalDavAction,
+  updateCalDavPasswordAction,
   refreshCalendarAction,
   removeCalendarAccountAction,
   removeCalendarAction,
@@ -216,5 +218,102 @@ export function CalendarNotice() {
     >
       {n.text}
     </p>
+  );
+}
+
+// Connect iCloud, Fastmail or any other CalDAV server with an app-specific password.
+export function ConnectCalDavForm() {
+  const [state, action, pending] = useActionState<CalendarFormResult, FormData>(connectCalDavAction, null);
+  const [preset, setPreset] = useState("icloud");
+  const form = useRef<HTMLFormElement>(null);
+  const id = useId();
+  useEffect(() => {
+    if (state?.ok) form.current?.reset();
+  }, [state]);
+  const icloud = preset === "icloud";
+  return (
+    <form ref={form} action={action} className="space-y-3 rounded-xl border border-line p-4">
+      <p className="font-medium">Connect iCloud or another calendar server</p>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
+        <Field label="Service" htmlFor={`${id}-preset`} className="sm:w-40">
+          <Select id={`${id}-preset`} name="preset" value={preset} onChange={(e) => setPreset(e.target.value)}>
+            <option value="icloud">iCloud</option>
+            <option value="fastmail">Fastmail</option>
+            <option value="other">Other (CalDAV)</option>
+          </Select>
+        </Field>
+        {preset === "other" && (
+          <Field label="Server address" htmlFor={`${id}-server`} className="min-w-0 flex-1">
+            <Input
+              id={`${id}-server`}
+              name="server"
+              required
+              inputMode="url"
+              autoComplete="off"
+              spellCheck={false}
+              placeholder="https://cloud.example.com/remote.php/dav"
+              className="font-mono text-[13px]"
+            />
+          </Field>
+        )}
+      </div>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
+        <Field label={icloud ? "Apple ID email" : "Login"} htmlFor={`${id}-user`} className="min-w-0 flex-1">
+          <Input id={`${id}-user`} name="username" required autoComplete="off" spellCheck={false} />
+        </Field>
+        <Field label="App-specific password" htmlFor={`${id}-pw`} className="min-w-0 flex-1">
+          <Input id={`${id}-pw`} name="password" type="password" required autoComplete="new-password" />
+        </Field>
+      </div>
+      <p className="text-xs text-muted">
+        {icloud ? (
+          <>
+            Make one at{" "}
+            <a className="underline underline-offset-2" href="https://account.apple.com" target="_blank" rel="noreferrer">
+              account.apple.com
+            </a>{" "}
+            under Sign-In and Security, App-Specific Passwords. Apple doesn&apos;t let it be limited to calendars (it
+            also opens iCloud mail and contacts), but bzzy only ever reads your calendars, keeps the password
+            encrypted, and you can revoke it there any time.
+          </>
+        ) : (
+          <>Use an app password if your service offers one. bzzy only reads your calendars and keeps the password encrypted.</>
+        )}
+      </p>
+      <div className="flex items-center gap-3">
+        <Button type="submit" variant="primary" size="sm" disabled={pending}>
+          <PlusIcon />
+          {pending ? "Connecting…" : "Connect"}
+        </Button>
+        {state && !state.ok && (
+          <p className="text-sm text-danger" role="alert">
+            {state.error}
+          </p>
+        )}
+      </div>
+    </form>
+  );
+}
+
+// A new app-specific password for a CalDAV account whose old one stopped working.
+export function UpdatePasswordForm({ accountId }: { accountId: string }) {
+  const [state, action, pending] = useActionState<CalendarFormResult, FormData>(updateCalDavPasswordAction, null);
+  const id = useId();
+  if (state?.ok) return <p className="text-sm text-muted">Password updated.</p>;
+  return (
+    <form action={action} className="flex flex-col gap-2 sm:flex-row sm:items-end">
+      <input type="hidden" name="account" value={accountId} />
+      <Field label="New app-specific password" htmlFor={`${id}-pw`} className="min-w-0 flex-1">
+        <Input id={`${id}-pw`} name="password" type="password" required autoComplete="new-password" />
+      </Field>
+      <Button type="submit" size="sm" disabled={pending}>
+        {pending ? "Checking…" : "Update password"}
+      </Button>
+      {state && !state.ok && (
+        <p className="text-sm text-danger" role="alert">
+          {state.error}
+        </p>
+      )}
+    </form>
   );
 }

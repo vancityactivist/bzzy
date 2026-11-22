@@ -33,6 +33,7 @@ import { tokensForUser } from "@/lib/api-tokens";
 import { blocksForDevice } from "@/lib/ics";
 import { accountsForUser } from "@/lib/calendar-accounts";
 import { googleConfigured } from "@/lib/google-calendar";
+import { calendarKeyConfigured } from "@/lib/calendar-secret";
 import { passkeysForUser } from "@/lib/passkeys";
 import { nowSeconds } from "@/lib/protocol";
 import { getCurrentUser } from "@/lib/session";
@@ -51,7 +52,9 @@ import {
   CalendarActions,
   CalendarNotice,
   CalendarSwitch,
+  ConnectCalDavForm,
   RemoveAccountButton,
+  UpdatePasswordForm,
 } from "./calendar-forms";
 import { DefaultStatusForm } from "./default-status-form";
 import { PasskeyActions } from "./passkey-forms";
@@ -138,13 +141,13 @@ async function SettingsContent() {
               <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line p-4">
                 <div className="min-w-0">
                   <p className="truncate font-medium">{a.label}</p>
-                  <p className="text-sm text-muted">Google Calendar</p>
+                  <p className="text-sm text-muted">{providerName(a)}</p>
                   {a.state !== "ok" && a.lastError && (
                     <p className="mt-1 text-sm text-danger">{a.lastError}</p>
                   )}
                 </div>
                 <span className="flex gap-2">
-                  {googleOn && (
+                  {googleOn && a.provider === "google" && (
                     <a
                       href={`/api/calendar/google/connect?hint=${encodeURIComponent(a.label)}`}
                       className={buttonClass(a.state === "ok" ? "secondary" : "primary", "sm")}
@@ -155,6 +158,11 @@ async function SettingsContent() {
                   <RemoveAccountButton id={a.id} label={a.label} />
                 </span>
               </div>
+              {a.provider === "caldav" && a.state !== "ok" && (
+                <div className="border-b border-line p-4">
+                  <UpdatePasswordForm accountId={a.id} />
+                </div>
+              )}
               {on.length > 0 && (
                 <ul className="divide-y divide-line">
                   {on.map((c) => (
@@ -197,6 +205,7 @@ async function SettingsContent() {
               <span className="text-sm text-muted">Read-only. Or add an ICS link below.</span>
             </div>
           )}
+          {calendarKeyConfigured() && <ConnectCalDavForm />}
           {calendars.length > 0 && <OutlookHelp />}
           <AddCalendarForm first={calendars.length === 0} />
           <p className="text-xs text-muted">
@@ -549,6 +558,15 @@ const SECTIONS = [
 ];
 
 // Where Outlook hides the ICS link: open for a first calendar, folded once you have one.
+// "Google Calendar", "iCloud", "Fastmail", or the server's host name.
+function providerName(a: { provider: string; serverUrl: string | null }) {
+  if (a.provider === "google") return "Google Calendar";
+  const host = a.serverUrl ? new URL(a.serverUrl).hostname : "";
+  if (host.endsWith("icloud.com")) return "iCloud";
+  if (host.endsWith("fastmail.com")) return "Fastmail";
+  return host || "Calendar server";
+}
+
 function CalendarItem({
   c,
   now,
