@@ -30,6 +30,7 @@ import {
   setLightDefault,
 } from "@/lib/devices";
 import { isAdmin, setSuperadmin } from "@/lib/admin";
+import { ownAccount, removeAccount } from "@/lib/calendar-accounts";
 import { newTokenInput } from "@/lib/api-rules";
 import { takeLimit } from "@/lib/api-limits";
 import { createApiToken, revokeApiToken, setApiBlocked, TokenError } from "@/lib/api-tokens";
@@ -316,6 +317,16 @@ export async function setCalendarSetsStatusAction(id: string, setsStatus: boolea
   const cal = await ownCalendar(user.id, id);
   if (!cal) return;
   await setSetsStatus(cal, setsStatus);
+  // A connected calendar that was off has no events saved yet: read it now.
+  if (setsStatus) await refreshCalendar({ ...cal, setsStatus });
+  refresh();
+}
+
+export async function removeCalendarAccountAction(id: string) {
+  const user = await requireUser();
+  const account = await ownAccount(user.id, id);
+  if (!account) return;
+  await removeAccount(account);
   refresh();
 }
 
