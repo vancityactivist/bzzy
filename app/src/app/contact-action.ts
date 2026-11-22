@@ -7,10 +7,12 @@ import { takeLimit } from "@/lib/api-limits";
 import { hashToken } from "@/lib/device-token";
 import { mailConfigured, sendMail } from "@/lib/mail";
 import { contactEmail } from "@/lib/mail-templates";
+import { verifyTurnstile } from "@/lib/turnstile";
 
 // The contact form on the landing page. Mail goes to hello@bzzy.ca, which Cloudflare
 // Email Routing forwards on (docs/email.md). Spam guards: a hidden field people don't
-// fill in, a few messages a minute per address, and length caps.
+// fill in, a few messages a minute per address, length caps, and a Cloudflare Turnstile
+// check (lib/turnstile.ts) once its keys are set.
 
 export type ContactResult = { ok: true } | { ok: false; error: string } | null;
 
@@ -43,6 +45,13 @@ export async function sendContactAction(_prev: ContactResult, formData: FormData
   const ip = h.get("x-real-ip") || h.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
   const limit = await takeLimit("contact", hashToken(ip).slice(0, 16));
   if (!limit.ok) return { ok: false, error: "That's a few messages in a row. Try again in a minute." };
+
+  const token = formData.get("cf-turnstile-response");
+  const human = await verifyTurnstile(typeof token === "string" ? token : "", ip, "contact");
+  if (!human.ok) {
+    if (human.reason === "unreachable") return { ok: false, error: "We couldn't check you're human. Try again, or email hello@bzzy.ca." };
+    return { ok: false, error: "The human check didn't pass. Give it a moment and send again." };
+  }
 
   const sent = await sendMail(CONTACT_TO, contactEmail(parsed.data), { replyTo: parsed.data.email });
   if (!sent.ok) return { ok: false, error: "That didn't send. Try again, or email hello@bzzy.ca." };
