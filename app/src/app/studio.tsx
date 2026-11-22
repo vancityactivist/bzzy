@@ -316,7 +316,7 @@ export function StudioPreview({
   return (
     <section
       aria-label="Your light"
-      className="sticky top-14 z-20 -mx-4 border-b border-line bg-background/90 px-4 py-3 backdrop-blur-lg backdrop-saturate-150 sm:-mx-6 sm:px-6 lg:top-20 lg:mx-0 lg:rounded-2xl lg:border lg:bg-card lg:p-0 lg:shadow-card lg:backdrop-blur-none"
+      className="sticky top-14 z-20 -mx-4 border-b border-line bg-background px-4 py-3 sm:-mx-6 sm:px-6 lg:top-20 lg:mx-0 lg:rounded-2xl lg:border lg:bg-card lg:p-0 lg:shadow-card"
     >
       <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-4 gap-y-2 lg:grid-cols-1 lg:gap-0">
         {/* What you're looking at: the screen as it is, or a draft. */}
@@ -1073,7 +1073,7 @@ function Tile({ name, gif, checked, onPick }: { name: string; gif?: LibraryGif; 
       onClick={onPick}
       onMouseEnter={() => setShow({ hover: gif ?? null })}
       className={cx(
-        "relative flex aspect-square items-center justify-center overflow-hidden rounded-xl bg-[#0b0b0c] transition-[box-shadow,transform] duration-150 hover:ring-2 hover:ring-line-strong motion-safe:hover:scale-[1.03]",
+        "relative flex aspect-square items-center justify-center overflow-hidden rounded-xl bg-device transition-[box-shadow,transform] duration-150 hover:ring-2 hover:ring-line-strong motion-safe:hover:scale-[1.03]",
         checked && "ring-2 ring-foreground ring-offset-2 ring-offset-card hover:ring-foreground",
       )}
     >

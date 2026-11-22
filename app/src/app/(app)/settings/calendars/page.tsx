@@ -289,7 +289,7 @@ function ActiveRow({
             </span>
           </p>
           <div className="text-sm">
-            <p className="text-xs font-medium tracking-wide text-muted uppercase">This calendar, next 24 hours</p>
+            <p className="text-[13px] font-medium text-muted">This calendar, next 24 hours</p>
             {upcoming.length === 0 ? (
               <p className="mt-1 text-muted">Nothing that makes you busy.</p>
             ) : (

@@ -55,7 +55,7 @@ function Stat({ label, value, note }: { label: string; value: number; note?: str
   );
 }
 
-const TH = "px-3 py-2.5 text-xs font-medium tracking-wide whitespace-nowrap text-muted uppercase first:pl-5 last:pr-5 sm:first:pl-6 sm:last:pr-6";
+const TH = "px-3 py-2.5 text-[13px] font-medium whitespace-nowrap text-muted first:pl-5 last:pr-5 sm:first:pl-6 sm:last:pr-6";
 const TD = "px-3 py-3 first:pl-5 last:pr-5 sm:first:pl-6 sm:last:pr-6";
 
 async function AdminContent() {

@@ -163,7 +163,7 @@ export function LookEditor({
                 onMouseEnter={() => setPreview(s)}
                 onFocus={() => setPreview(s)}
               >
-                <div className="flex h-12 w-14 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-[#0b0b0c]">
+                <div className="flex h-12 w-14 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-device">
                   {opt?.src ? (
                     // eslint-disable-next-line @next/next/no-img-element -- animated GIF preview
                     <img src={opt.src} alt="" className="max-h-full max-w-full" />

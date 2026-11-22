@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import type { ComponentType } from "react";
 
 import { DeviceIcon, type IconProps, ImageIcon, SlidersIcon, StatusIcon, UsersIcon } from "./icons";
-import { cx } from "./ui";
+import { buttonClass, cx } from "./ui";
 
 // The signed-in app's sections: pills in the header from sm up, a bottom tab bar on phones.
 
@@ -33,8 +33,8 @@ export function NavLinks({ className }: { className?: string }) {
             href={href}
             aria-current={active ? "page" : undefined}
             className={cx(
-              "flex h-8 items-center rounded-full px-3 text-sm font-medium transition-colors duration-150",
-              active ? "bg-subtle text-foreground" : "text-muted hover:text-foreground",
+              "flex h-8 items-center rounded-lg px-3 text-sm font-medium transition-colors duration-150",
+              active ? "bg-subtle text-foreground" : "text-muted hover:bg-subtle/60 hover:text-foreground",
             )}
           >
             {label}
@@ -53,7 +53,7 @@ export function TabBar() {
       <div aria-hidden className="h-[calc(4rem+env(safe-area-inset-bottom))] shrink-0 sm:hidden" />
       <nav
         aria-label="Main"
-        className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-background/80 pb-[env(safe-area-inset-bottom)] backdrop-blur-lg backdrop-saturate-150 sm:hidden"
+        className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-background pb-[env(safe-area-inset-bottom)] sm:hidden"
       >
         <ul className="mx-auto grid h-16 max-w-md grid-cols-5">
           {SECTIONS.map(({ href, label, icon: Icon }) => {
@@ -70,7 +70,7 @@ export function TabBar() {
                 >
                   <span
                     className={cx(
-                      "flex h-7 w-12 items-center justify-center rounded-full transition-colors duration-150",
+                      "flex h-7 w-12 items-center justify-center rounded-lg transition-colors duration-150",
                       active && "bg-subtle",
                     )}
                   >
@@ -84,5 +84,16 @@ export function TabBar() {
         </ul>
       </nav>
     </>
+  );
+}
+
+// Signed out: the header's Sign in button, except on the sign-in page itself.
+export function SignInLink() {
+  const pathname = usePathname();
+  if (pathname === "/sign-in") return null;
+  return (
+    <Link href="/sign-in" className={buttonClass("secondary", "sm", "ml-auto")}>
+      Sign in
+    </Link>
   );
 }

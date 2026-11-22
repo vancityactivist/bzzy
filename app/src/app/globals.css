@@ -1,75 +1,86 @@
+/* Hallmark · shape: Narrative Workflow (/), app screen (the signed-in app) · genre: modern-minimal · theme: Console (deal 1/3, seed open-hardware-desk-status-light-bef4·9d70031b·2026-11-22·r0) · redesign: full · draw: b206fa
+ * hero: Banner (/) · nav: edge-aligned, the wordmark, four anchors and one action (swapped from search-led: nothing to search) · footer: statement · imagery: the product (the case render, the exploded case, the light built live) · signature: the light itself, tapped through its four statuses · console: graphite, paper when the system is light
+ * axes: dark/grotesk-sans/chromatic-amber · posture: restrained · contrast: pass · fold: pass · v2.0.0 */
+/* Hallmark · pre-emit critique: P4 H4 E3 S4 R4 V4 · weakest: E, the hero is a render of the case CAD and not a photograph of a built light; the slot keeps the render until one exists */
+/* Hallmark · waive 64 · "every 20 s" and "bzzy.ca" in the trail are what the device protocol measures and calls; Console sets those in its mono face
+ * waive 7b · --color-swatch-black is the light's own black in the colour pickers, a value the LEDs and screen show, not a ground
+ * waive 44c · the hero is a Banner by the draw: the render of the light on a monitor starts at 712px, above the fold, as the first section
+ * waive 67 · uppercase only on avatar initials (admin, teams, the account menu) and on pairing codes, which people type and read letter by letter
+ * waive 72 · /docs/api's code blocks scroll sideways inside a padded figure; the overflow is the scroll, not crowding
+ * answered 26b · the controls' :active and :disabled states live in components/ui.tsx (active:, disabled:, aria-disabled:) */
+/* Hallmark · dropped /assets/backgrounds/backgrounds.js · it belonged to the retired template kit (public/assets), which this redesign replaces */
 @import "tailwindcss";
-
-/* The landing page uses the taste kit's own class names, and some of them are also Tailwind
-   utilities (its column-start classes would become inset offsets): keep Tailwind off it. */
-@source not "../components/landing.tsx";
-@source not "../../public/assets";
-@source not "../../public/landing.css";
+@import "./tokens.css";
+@import "./base.css" layer(base);
 
 /*
- * Design tokens. Calm neutrals everywhere; the four status colours are the only colour.
- * Every token has a light and a dark value; the dark ones follow prefers-color-scheme.
+ * One system for the whole site: Console (tokens.css). The app's role names below point at it,
+ * so every Tailwind utility the screens already use (bg-card, text-muted, border-line…) follows.
  *
- *   background   page                         card          raised surfaces (cards, menus, inputs)
- *   subtle       hovers, insets, active pills foreground    text, primary buttons
- *   muted        secondary text (AA on background, card and subtle)
- *   line         hairline borders              line-strong   hovered / emphasised borders
- *   ring         focus ring                    danger        destructive text (busy red, AA-tuned)
- *   shadow-card  resting cards and controls    shadow-pop    menus and popovers
- *
- * Not on the signed-out landing page (html[data-type]): it loads its own design system
- * (public/assets, from the taste skill), which uses some of the same token names.
+ *   background   the ground (paper)            card          panels, menus, inputs (paper-2)
+ *   inset        the deepest step: code, logs, wells (paper-3)
+ *   subtle       hovers, active pills          foreground    ink
+ *   muted        secondary text                line / line-strong   1px rules
+ *   signal       amber: the one primary action, the current choice
+ *   instrument   cool blue: what the light or the server measured
  */
-:root:not([data-type]) {
-  color-scheme: light;
-  --background: #f8f8f7;
-  --foreground: #171717;
-  --card: #ffffff;
-  --subtle: #f0f0ee;
-  --muted: #62625f;
-  --line: #e6e6e3;
-  --line-strong: #d3d3cf;
-  --ring: rgb(23 23 23 / 0.45);
-  --danger: #c81e1e;
-  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.04), 0 1px 1px rgb(0 0 0 / 0.02);
-  --shadow-pop: 0 12px 32px -8px rgb(0 0 0 / 0.14), 0 2px 6px rgb(0 0 0 / 0.05);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root:not([data-type]) {
-    color-scheme: dark;
-    --background: #0a0a0a;
-    --foreground: #ededed;
-    --card: #141414;
-    --subtle: #1d1d1d;
-    --muted: #a3a3a3;
-    --line: #262626;
-    --line-strong: #383838;
-    --ring: rgb(237 237 237 / 0.5);
-    --danger: #f87171;
-    --shadow-card: 0 1px 2px rgb(0 0 0 / 0.5);
-    --shadow-pop: 0 16px 40px -8px rgb(0 0 0 / 0.7), 0 0 0 1px rgb(255 255 255 / 0.03);
-  }
+:root {
+  --font-display: var(--font-host), ui-sans-serif, system-ui, sans-serif;
+  --font-body: var(--font-display);
+  --font-outlier: var(--font-atkinson-mono), ui-monospace, monospace;
+  --background: var(--color-paper);
+  --foreground: var(--color-ink);
+  --card: var(--color-paper-2);
+  --inset: var(--color-paper-3);
+  --subtle: color-mix(in oklab, var(--color-paper-2) 55%, var(--color-rule));
+  --muted: var(--color-muted);
+  --line: var(--color-rule);
+  --line-strong: var(--color-rule-2);
+  /* A field's edge: 3:1 or better against the ground and the inset it holds (WCAG 1.4.11). */
+  --field-edge: color-mix(in oklab, var(--color-rule-2) 35%, var(--color-muted));
+  --ring: var(--color-focus);
+  --danger: var(--color-bad);
+  --shadow-card: none;
+  --shadow-pop: 0 0 0 1px var(--color-rule), 0 16px 40px -12px color-mix(in oklab, var(--color-paper-3) 70%, transparent);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
+  --color-inset: var(--inset);
   --color-subtle: var(--subtle);
   --color-muted: var(--muted);
   --color-line: var(--line);
   --color-line-strong: var(--line-strong);
+  --color-field: var(--field-edge);
   --color-ring: var(--ring);
   --color-danger: var(--danger);
-  --color-free: #16a34a;
-  --color-busy: #dc2626;
-  --color-dnd: #7c3aed;
-  --color-away: #ea580c;
+  --color-signal: var(--color-accent);
+  --color-signal-ink: var(--color-accent-ink);
+  --color-signal-soft: var(--color-accent-soft);
+  --color-signal-text: var(--color-accent-text);
+  --color-instrument: var(--color-cool);
+  --color-instrument-soft: var(--color-cool-soft);
+  --color-free: var(--color-status-free);
+  --color-busy: var(--color-status-busy);
+  --color-dnd: var(--color-status-dnd);
+  --color-away: var(--color-status-away);
+  --color-device: var(--color-device-screen);
+  --color-device-body: var(--color-device-body);
   --shadow-card: var(--shadow-card);
   --shadow-pop: var(--shadow-pop);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-display);
+  --font-mono: var(--font-outlier);
+  /* Console's radii: 4px chips, 6px controls, 10px panels. rounded-full stays for dots and avatars. */
+  --radius-sm: 4px;
+  --radius-md: 4px;
+  --radius-lg: 6px;
+  --radius-xl: 6px;
+  --radius-2xl: 10px;
+  --radius-3xl: 12px;
+  /* Heads are one weight in Console: 500, never bold. */
+  --font-weight-semibold: 500;
 }
 
 @layer base {
@@ -85,7 +96,22 @@
   body {
     background: var(--background);
     color: var(--foreground);
-    font-family: var(--font-sans), system-ui, sans-serif;
+    font-family: var(--font-body);
+  }
+
+  h1,
+  h2,
+  h3 {
+    overflow-wrap: break-word;
+    min-width: 0;
+  }
+
+  /* What an instrument wrote (a pin, a time, a size) is set in the mono face with tabular figures. */
+  code,
+  kbd,
+  samp,
+  .font-mono {
+    font-variant-numeric: tabular-nums slashed-zero;
   }
 
   ::selection {
@@ -96,6 +122,7 @@
   :focus-visible {
     outline: 2px solid var(--ring);
     outline-offset: 2px;
+    transition: none;
   }
 }
 

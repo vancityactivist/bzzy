@@ -476,7 +476,7 @@ export function ShowsOn({
   const save = (next: string[] | null) => start(() => setCalendarLightsAction(id, next));
   return (
     <fieldset className="space-y-1.5 text-sm" disabled={pending}>
-      <legend className="text-xs font-medium tracking-wide text-muted uppercase">Shows on</legend>
+      <legend className="text-[13px] font-medium text-muted">Shows on</legend>
       <label className="flex cursor-pointer items-center gap-2 pt-1">
         <input type="radio" className="size-4 accent-foreground" checked={lightIds === null} onChange={() => save(null)} />
         Every light that follows me

@@ -177,7 +177,7 @@ function Tile({ name, src, checked, onPick }: { name: string; src?: string; chec
       title={name}
       onClick={onPick}
       className={cx(
-        "relative flex aspect-square items-center justify-center overflow-hidden rounded-xl bg-[#0b0b0c] transition-shadow hover:ring-2 hover:ring-line-strong",
+        "relative flex aspect-square items-center justify-center overflow-hidden rounded-xl bg-device transition-shadow hover:ring-2 hover:ring-line-strong",
         checked && "ring-2 ring-foreground ring-offset-2 ring-offset-card hover:ring-foreground",
       )}
     >

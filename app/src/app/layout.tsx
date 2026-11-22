@@ -1,16 +1,21 @@
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Atkinson_Hyperlegible_Mono, Host_Grotesk } from "next/font/google";
 
 import { SITE_NAME, SITE_URL } from "@/lib/site";
 
 import "./globals.css";
 
-// Not preloaded: the signed-out landing page uses its own fonts (SUSE, JetBrains Mono), and a
-// preload would fetch Geist there too. The app's pages fetch it as soon as text uses it.
-const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"], preload: false });
-const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"], preload: false });
+// One pair of faces for the whole site (Console, app/tokens.css): Host Grotesk for what a person
+// reads, Atkinson Hyperlegible Mono for what the light or the server measured.
+const hostGrotesk = Host_Grotesk({ variable: "--font-host", subsets: ["latin"], weight: ["400", "500"] });
+const atkinsonMono = Atkinson_Hyperlegible_Mono({
+  variable: "--font-atkinson-mono",
+  subsets: ["latin"],
+  weight: ["400", "500"],
+  preload: false,
+});
 
 const TITLE = "bzzy: a desk status light for heads-down work";
 const DESCRIPTION =
@@ -30,8 +35,9 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#f8f8f7" },
-    { media: "(prefers-color-scheme: dark)", color: "#0a0a0a" },
+    // Console's paper and graphite grounds (tokens.css), as hex because browsers want a plain colour here.
+    { media: "(prefers-color-scheme: light)", color: "#faf8f4" },
+    { media: "(prefers-color-scheme: dark)", color: "#16191c" },
   ],
   colorScheme: "light dark",
   // Lets the phone tab bar reach under the home indicator (it pads itself with safe-area-inset-bottom).
@@ -42,9 +48,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
-      // The landing page sets data-* and classes on <html> before hydration (components/landing.tsx).
-      suppressHydrationWarning
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
+      className={`${hostGrotesk.variable} ${atkinsonMono.variable} h-full antialiased`}>
       <body className="flex min-h-full flex-col">
         {children}
         <Analytics />

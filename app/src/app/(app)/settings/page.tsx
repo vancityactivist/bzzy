@@ -89,7 +89,7 @@ async function SettingsContent() {
       {/* Jump to a section: a row of pills that stays under the header as you scroll. */}
       <nav
         aria-label="Settings sections"
-        className="sticky top-14 z-20 -mx-4 flex gap-1.5 overflow-x-auto border-b border-line bg-background/90 px-4 py-2.5 backdrop-blur-lg [scrollbar-width:none] sm:-mx-6 sm:px-6 lg:top-14 [&::-webkit-scrollbar]:hidden"
+        className="sticky top-14 z-20 -mx-4 flex gap-1.5 overflow-x-auto border-b border-line bg-background px-4 py-2.5 [scrollbar-width:none] sm:-mx-6 sm:px-6 lg:top-14 [&::-webkit-scrollbar]:hidden"
       >
         {SECTIONS.map((sec) => (
           <a
