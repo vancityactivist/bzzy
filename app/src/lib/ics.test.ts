@@ -3,7 +3,7 @@ import { join } from "node:path";
 
 import { describe, expect, it } from "vitest";
 
-import { blocksForDevice, type CachedEvent, eventsFromIcs, fetchWindow, mergeSchedule, zonedMidnight } from "./ics";
+import { blocksForDevice, type CachedEvent, eventsFromIcs, fetchWindow, explainSchedule, mergeSchedule, zonedMidnight } from "./ics";
 
 const outlook = readFileSync(join(__dirname, "fixtures/outlook.ics"), "utf8");
 const TZ = "America/Vancouver";
@@ -173,14 +173,33 @@ describe("mergeSchedule", () => {
     expect(mergeSchedule([a, b], t)).toEqual([{ start: t, end: t + 1800, status: "busy", text: "Board meeting" }]);
   });
 
-  it("keeps the first meeting's title when same-status meetings overlap", () => {
+  it("lets the higher calendar's title win where same-status meetings overlap", () => {
     const blocks = mergeSchedule(
       [
-        { events: [ev(0, 1800, "busy", "First")], showTitles: true },
-        { events: [ev(600, 2400, "busy", "Second")], showTitles: true },
+        { events: [ev(600, 2400, "busy", "Work")], showTitles: true },
+        { events: [ev(0, 1800, "busy", "Personal")], showTitles: true },
       ],
       t,
     );
-    expect(blocks).toEqual([{ start: t, end: t + 2400, status: "busy", text: "First" }]);
+    expect(blocks.map((b) => [b.start - t, b.end - t, b.text])).toEqual([
+      [0, 600, "Personal"],
+      [600, 2400, "Work"],
+    ]);
+  });
+
+  it("makes every event of a calendar count as its Counts as status", () => {
+    const focus = { events: [ev(0, 1800, "busy", "Deep work")], showTitles: false, countsAs: "dnd" as const };
+    expect(mergeSchedule([focus], t)).toEqual([{ start: t, end: t + 1800, status: "dnd", text: "Do not disturb" }]);
+  });
+
+  it("says which calendar decided each block", () => {
+    const blocks = explainSchedule(
+      [
+        { id: "work", events: [ev(0, 1800, "busy", "A")], showTitles: true },
+        { id: "home", events: [ev(900, 3600, "away", "B")], showTitles: true },
+      ],
+      t,
+    );
+    expect(blocks.map((b) => b.calendarId)).toEqual(["work", "home"]);
   });
 });

@@ -141,6 +141,13 @@
       "when": 1795312740439,
       "tag": "0019_calendar_accounts",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1795317429592,
+      "tag": "0020_calendar_priority",
+      "breakpoints": true
     }
   ]
 }

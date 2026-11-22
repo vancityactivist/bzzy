@@ -186,11 +186,13 @@ async function apiGet<T>(
   return (await res.json()) as T;
 }
 
+// `owned`: the person's own calendar, not one shared with them by someone else.
 export type GoogleCalendarInfo = {
   id: string;
   summary: string;
   primary: boolean;
   color: string | null;
+  owned: boolean;
 };
 
 export async function listGoogleCalendars(
@@ -206,6 +208,7 @@ export async function listGoogleCalendars(
         summaryOverride?: string;
         primary?: boolean;
         backgroundColor?: string;
+        accessRole?: string;
         deleted?: boolean;
         hidden?: boolean;
       }[];
@@ -213,7 +216,7 @@ export async function listGoogleCalendars(
     }>(accessToken, "/users/me/calendarList", {
       maxResults: "250",
       fields:
-        "items(id,summary,summaryOverride,primary,backgroundColor,deleted,hidden),nextPageToken",
+        "items(id,summary,summaryOverride,primary,backgroundColor,accessRole,deleted,hidden),nextPageToken",
       ...(pageToken ? { pageToken } : {}),
     });
     for (const c of r.items ?? []) {
@@ -223,6 +226,7 @@ export async function listGoogleCalendars(
         summary: c.summaryOverride || c.summary || c.id,
         primary: !!c.primary,
         color: c.backgroundColor ?? null,
+        owned: c.accessRole === "owner",
       });
     }
     pageToken = r.nextPageToken;
@@ -251,7 +255,7 @@ export async function listGoogleEvents(
         timeMax: to.toISOString(),
         maxResults: "250",
         fields:
-          "items(status,summary,iCalUID,eventType,transparency,start,end,attendees(self,responseStatus)),nextPageToken",
+          "items(status,summary,iCalUID,eventType,transparency,start,end,attendees(self,email,responseStatus)),nextPageToken",
         ...(pageToken ? { pageToken } : {}),
       },
     );

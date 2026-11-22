@@ -401,6 +401,7 @@ export const calendarAccounts = pgTable(
 );
 
 export type CalendarSource = "ics" | "google" | "caldav";
+export type CalendarCountsAs = "auto" | "busy" | "dnd" | "away";
 
 export const calendars = pgTable(
   "calendar",
@@ -421,6 +422,14 @@ export const calendars = pgTable(
     icsUrl: text("ics_url"),
     // Off: the calendar is listed but doesn't change your status.
     setsStatus: boolean("sets_status").notNull().default(true),
+    // How this calendar's events count: "auto" uses each event's own free/busy and type;
+    // the others make every event that status (a Focus calendar = do not disturb).
+    countsAs: text("counts_as").$type<CalendarCountsAs>().notNull().default("auto"),
+    // Priority order (lower first). Where events of the same strength overlap, the
+    // higher calendar decides whose title shows.
+    position: integer("position").notNull().default(0),
+    // The provider's colour for the calendar (#rrggbb), when it has one.
+    color: text("color"),
     // Incremental-sync bookmarks (Google sync token, CalDAV ctag, push channel).
     syncState: jsonb("sync_state").$type<Record<string, unknown>>(),
     // Show meeting titles on the device instead of "In a meeting".

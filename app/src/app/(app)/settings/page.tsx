@@ -23,17 +23,13 @@ import {
   StatusDot,
 } from "@/components/ui";
 import {
-  type CalendarRow,
   calendarsForUser,
   refreshStaleCalendars,
   userClock,
 } from "@/lib/calendar";
 import { EXPIRY_WARNING_DAYS, SCOPE_INFO } from "@/lib/api-rules";
 import { tokensForUser } from "@/lib/api-tokens";
-import { blocksForDevice } from "@/lib/ics";
 import { accountsForUser } from "@/lib/calendar-accounts";
-import { googleConfigured } from "@/lib/google-calendar";
-import { calendarKeyConfigured } from "@/lib/calendar-secret";
 import { passkeysForUser } from "@/lib/passkeys";
 import { nowSeconds } from "@/lib/protocol";
 import { getCurrentUser } from "@/lib/session";
@@ -47,15 +43,6 @@ import { webhooksForUser } from "@/lib/webhooks";
 
 import { absoluteTime, relativeTime } from "../lights/relative-time";
 import { NewApiTokenForm, RevokeApiToken } from "./api-token-forms";
-import {
-  AddCalendarForm,
-  CalendarActions,
-  CalendarNotice,
-  CalendarSwitch,
-  ConnectCalDavForm,
-  RemoveAccountButton,
-  UpdatePasswordForm,
-} from "./calendar-forms";
 import { DefaultStatusForm } from "./default-status-form";
 import { PasskeyActions } from "./passkey-forms";
 import { NewWebhookForm, WebhookActions } from "./webhook-forms";
@@ -87,8 +74,10 @@ async function SettingsContent() {
       webhooksForUser(user.id),
       accountsForUser(user.id),
     ]);
-  const links = calendars.filter((c) => !c.accountId);
-  const googleOn = googleConfigured();
+  const active = calendars.filter((c) => c.setsStatus);
+  const problems =
+    accounts.filter((a) => a.state !== "ok").length +
+    active.filter((c) => c.lastError).length;
   const TZ = clock.timeZone;
   const now = nowSeconds();
 
@@ -129,90 +118,27 @@ async function SettingsContent() {
           }
           description="Your lights turn Busy during meetings and Away when you're out of office."
         />
-        <CalendarNotice />
-        {calendars.length === 0 && <OutlookHelp />}
-
-        {accounts.map((a) => {
-          const own = calendars.filter((c) => c.accountId === a.id);
-          const on = own.filter((c) => c.setsStatus);
-          const off = own.filter((c) => !c.setsStatus);
-          return (
-            <section key={a.id} className="mt-5 rounded-xl border border-line">
-              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line p-4">
-                <div className="min-w-0">
-                  <p className="truncate font-medium">{a.label}</p>
-                  <p className="text-sm text-muted">{providerName(a)}</p>
-                  {a.state !== "ok" && a.lastError && (
-                    <p className="mt-1 text-sm text-danger">{a.lastError}</p>
-                  )}
-                </div>
-                <span className="flex gap-2">
-                  {googleOn && a.provider === "google" && (
-                    <a
-                      href={`/api/calendar/google/connect?hint=${encodeURIComponent(a.label)}`}
-                      className={buttonClass(a.state === "ok" ? "secondary" : "primary", "sm")}
-                    >
-                      Reconnect
-                    </a>
-                  )}
-                  <RemoveAccountButton id={a.id} label={a.label} />
-                </span>
-              </div>
-              {a.provider === "caldav" && a.state !== "ok" && (
-                <div className="border-b border-line p-4">
-                  <UpdatePasswordForm accountId={a.id} />
-                </div>
-              )}
-              {on.length > 0 && (
-                <ul className="divide-y divide-line">
-                  {on.map((c) => (
-                    <CalendarItem key={c.id} c={c} now={now} TZ={TZ} removable={false} />
-                  ))}
-                </ul>
-              )}
-              {off.length > 0 && (
-                <div className="space-y-2 border-t border-line p-4">
-                  <p className="text-xs font-medium tracking-wide text-muted uppercase">
-                    Not setting your status
-                  </p>
-                  {off.map((c) => (
-                    <CalendarSwitch key={c.id} id={c.id} name={c.name} />
-                  ))}
-                </div>
-              )}
-            </section>
-          );
-        })}
-
-        {links.length > 0 && (
-          <ul className="mt-5 divide-y divide-line rounded-xl border border-line">
-            {links.map((c) => (
-              <CalendarItem key={c.id} c={c} now={now} TZ={TZ} removable />
-            ))}
-          </ul>
-        )}
-
-        <Reveal
-          label="Add a calendar"
-          defaultOpen={calendars.length === 0}
-          className="mt-5"
-        >
-          {googleOn && (
-            <div className="mt-4 flex flex-wrap items-center gap-3">
-              <a href="/api/calendar/google/connect" className={buttonClass("primary", "sm")}>
-                Connect Google Calendar
-              </a>
-              <span className="text-sm text-muted">Read-only. Or add an ICS link below.</span>
-            </div>
-          )}
-          {calendarKeyConfigured() && <ConnectCalDavForm />}
-          {calendars.length > 0 && <OutlookHelp />}
-          <AddCalendarForm first={calendars.length === 0} />
-          <p className="text-xs text-muted">
-            The link is kept private: it&apos;s only used to read your calendar
-            and is never shown again.
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+          <p className="text-sm text-muted">
+            {calendars.length === 0
+              ? "No calendars yet."
+              : `${active.length} of ${calendars.length} calendar${calendars.length === 1 ? "" : "s"} setting your status${
+                  accounts.length > 0 ? `, from ${accounts.length} account${accounts.length === 1 ? "" : "s"}` : ""
+                }.`}
+            {problems > 0 && (
+              <span className="text-danger">
+                {" "}
+                {problems === 1 ? "One needs" : `${problems} need`} attention.
+              </span>
+            )}
           </p>
-        </Reveal>
+          <Link
+            href={calendars.length === 0 ? "/settings/calendars#add" : "/settings/calendars"}
+            className={buttonClass(calendars.length === 0 ? "primary" : "secondary", "sm")}
+          >
+            {calendars.length === 0 ? "Add a calendar" : "Manage calendars"}
+          </Link>
+        </div>
       </Card>
 
       <Card id="between" className="scroll-mt-32">
@@ -557,123 +483,6 @@ const SECTIONS = [
   { id: "developer", label: "Developer" },
 ];
 
-// Where Outlook hides the ICS link: open for a first calendar, folded once you have one.
-// "Google Calendar", "iCloud", "Fastmail", or the server's host name.
-function providerName(a: { provider: string; serverUrl: string | null }) {
-  if (a.provider === "google") return "Google Calendar";
-  const host = a.serverUrl ? new URL(a.serverUrl).hostname : "";
-  if (host.endsWith("icloud.com")) return "iCloud";
-  if (host.endsWith("fastmail.com")) return "Fastmail";
-  return host || "Calendar server";
-}
-
-function CalendarItem({
-  c,
-  now,
-  TZ,
-  removable,
-}: {
-  c: CalendarRow;
-  now: number;
-  TZ: string;
-  removable: boolean;
-}) {
-  const upcoming = blocksForDevice(c.events, now, c.showTitles).slice(0, 4);
-  return (
-                <li className="space-y-4 p-4">
-                  <div>
-                    <p className="font-medium">
-                      {c.name}
-                      {!c.setsStatus && (
-                        <span className="ml-2 text-sm font-normal text-muted">
-                          Not setting your status
-                        </span>
-                      )}
-                    </p>
-                    <p className="text-sm text-muted">
-                      {c.icsUrl && (
-                        <>
-                          <span className="break-all">
-                            {new URL(c.icsUrl).hostname}
-                          </span>{" "}
-                          ·{" "}
-                        </>
-                      )}
-                      <span
-                        title={
-                          c.lastFetchedAt
-                            ? absoluteTime(c.lastFetchedAt)
-                            : undefined
-                        }
-                      >
-                        {c.lastFetchedAt
-                          ? `checked ${relativeTime(c.lastFetchedAt)}`
-                          : "not checked yet"}
-                      </span>
-                    </p>
-                    {c.lastError && (
-                      <p className="mt-1 text-sm text-danger">{c.lastError}</p>
-                    )}
-                  </div>
-                  <div className="text-sm">
-                    <p className="text-xs font-medium tracking-wide text-muted uppercase">
-                      Next 24 hours
-                    </p>
-                    {upcoming.length === 0 ? (
-                      <p className="mt-1 text-muted">
-                        Nothing that makes you busy.
-                      </p>
-                    ) : (
-                      <ul className="mt-2 space-y-1.5">
-                        {upcoming.map((b) => (
-                          <li
-                            key={`${b.start}-${b.status}`}
-                            className="flex items-center gap-2"
-                          >
-                            <StatusDot status={b.status} />
-                            <span className="shrink-0 tabular-nums text-muted">
-                              {range(b.start, b.end, TZ)}
-                            </span>
-                            <span className="truncate">{b.text}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                  </div>
-                  <CalendarActions
-                    id={c.id}
-                    showTitles={c.showTitles}
-                    setsStatus={c.setsStatus}
-                    removable={removable}
-                  />
-                </li>
-  );
-}
-
-function OutlookHelp() {
-  return (
-    <div className="mt-4 rounded-xl bg-subtle p-4 text-sm text-muted">
-      <p className="font-medium text-foreground">
-        Where to find your ICS link in Outlook
-      </p>
-      <ol className="mt-1 list-decimal space-y-0.5 pl-5">
-        <li>Settings → Calendar → Shared calendars</li>
-        <li>Publish a calendar</li>
-        <li>Copy the ICS link and paste it below</li>
-      </ol>
-    </div>
-  );
-}
-
-const fmt = (sec: number, weekday: boolean, TZ: string) =>
-  new Date(sec * 1000).toLocaleString("en-US", {
-    timeZone: TZ,
-    weekday: weekday ? "short" : undefined,
-    hour: "numeric",
-    minute: "2-digit",
-  });
-
-// "Wed 2:00 PM – 3:00 PM"; the end's weekday only when it falls on another day.
 const shortDay = (d: Date, TZ: string) =>
   d.toLocaleDateString("en-CA", {
     month: "short",
@@ -681,12 +490,6 @@ const shortDay = (d: Date, TZ: string) =>
     year: "numeric",
     timeZone: TZ,
   });
-
-function range(start: number, end: number, TZ: string) {
-  const day = (sec: number) =>
-    new Date(sec * 1000).toLocaleDateString("en-US", { timeZone: TZ });
-  return `${fmt(start, true, TZ)} – ${fmt(end, day(start) !== day(end), TZ)}`;
-}
 
 function timeZones(current: string) {
   const all = Intl.supportedValuesOf("timeZone");
