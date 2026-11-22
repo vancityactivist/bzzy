@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { contactEmail, escapeHtml, inviteEmail, memberJoinedEmail, welcomeEmail } from "./mail-templates";
+import { contactEmail, escapeHtml, inviteEmail, MAIL_COLORS, memberJoinedEmail, welcomeEmail } from "./mail-templates";
 
 const base = {
   teamName: "Front office",
@@ -64,5 +64,18 @@ describe("join emails", () => {
     const m = memberJoinedEmail({ teamName: "Front office", who: "Sam", role: "admin", members: 4, url: "https://bzzy.ca/teams/t" });
     expect(m.subject).toBe("Sam joined Front office");
     expect(m.text).toContain("as an admin. The team has 4 people now.");
+  });
+});
+
+describe("layout", () => {
+  it("is set in Console: the lockup, paper card, amber button and weight-500 head", () => {
+    const { html } = inviteEmail(base);
+    expect(html).toContain("https://bzzy.ca/email/bzzy-console-light.png");
+    expect(html).toContain("https://bzzy.ca/email/bzzy-console-dark.png");
+    expect(html).toContain(`background:${MAIL_COLORS.light.paper}`);
+    expect(html).toContain(`background:${MAIL_COLORS.light.accent};color:${MAIL_COLORS.light.accentInk}`);
+    expect(html).toContain("font-weight:500");
+    expect(html).not.toContain("font-weight:700");
+    expect(html).toContain("Host Grotesk");
   });
 });
