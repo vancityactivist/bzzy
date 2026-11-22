@@ -9,7 +9,15 @@ import { tzOffset, zonedMidnight } from "./zoned";
 export { zonedMidnight };
 
 // What we keep from a feed between fetches: the next week, already expanded.
-export type CachedEvent = { start: number; end: number; status: Status; title: string };
+// `uid` is the event's iCalendar UID, used to show a meeting that arrives from two
+// calendars only once. Rows saved before it existed don't have it.
+export type CachedEvent = {
+  start: number;
+  end: number;
+  status: Status;
+  title: string;
+  uid?: string;
+};
 
 export const FETCH_WINDOW_DAYS = 7;
 export const DEVICE_HORIZON_SEC = 24 * 3600;
@@ -45,14 +53,20 @@ export function classify(e: VEvent, isFullDay: boolean): Status | null {
 
 function text(v: unknown): string {
   if (typeof v === "string") return v;
-  if (v && typeof v === "object" && "val" in v) return String((v as { val: unknown }).val);
+  if (v && typeof v === "object" && "val" in v)
+    return String((v as { val: unknown }).val);
   return "";
 }
 
 // node-ical makes date-only values local midnight on the server; re-anchor them to
 // the person's own time zone so an all-day event covers their whole day.
 function dateOnlyToZoned(d: Date, timeZone: string): number {
-  return zonedMidnight(d.getFullYear(), d.getMonth() + 1, d.getDate(), timeZone);
+  return zonedMidnight(
+    d.getFullYear(),
+    d.getMonth() + 1,
+    d.getDate(),
+    timeZone,
+  );
 }
 
 export class IcsError extends Error {}
@@ -62,15 +76,30 @@ export class IcsError extends Error {}
 // day rather than with the clock: a sliding window would change the saved events every
 // time a meeting aged out or a new one crossed the 7-day edge, and each of those saves
 // wakes the database even though the feed itself didn't change (docs/caching.md).
-export function fetchWindow(now: Date, timeZone: string): { from: Date; to: Date } {
+export function fetchWindow(
+  now: Date,
+  timeZone: string,
+): { from: Date; to: Date } {
   const anchor = now.getTime() - 3600_000;
   const local = new Date(anchor + tzOffset(anchor, timeZone));
-  const midnight = zonedMidnight(local.getUTCFullYear(), local.getUTCMonth() + 1, local.getUTCDate(), timeZone);
+  const midnight = zonedMidnight(
+    local.getUTCFullYear(),
+    local.getUTCMonth() + 1,
+    local.getUTCDate(),
+    timeZone,
+  );
   const from = new Date(midnight * 1000);
-  return { from, to: new Date(from.getTime() + (FETCH_WINDOW_DAYS + 1) * 86_400_000) };
+  return {
+    from,
+    to: new Date(from.getTime() + (FETCH_WINDOW_DAYS + 1) * 86_400_000),
+  };
 }
 
-export function eventsFromIcs(body: string, now: Date, timeZone: string): CachedEvent[] {
+export function eventsFromIcs(
+  body: string,
+  now: Date,
+  timeZone: string,
+): CachedEvent[] {
   if (!/BEGIN:VCALENDAR/i.test(body.slice(0, 2048))) {
     throw new IcsError("That link didn't return a calendar (ICS) file.");
   }
@@ -87,7 +116,11 @@ export function eventsFromIcs(body: string, now: Date, timeZone: string): Cached
     if (!ev.start) continue;
     let instances;
     try {
-      instances = ical.expandRecurringEvent(ev, { from: padFrom, to: padTo, expandOngoing: true });
+      instances = ical.expandRecurringEvent(ev, {
+        from: padFrom,
+        to: padTo,
+        expandOngoing: true,
+      });
     } catch {
       continue; // one broken event shouldn't sink the whole calendar
     }
@@ -101,33 +134,120 @@ export function eventsFromIcs(body: string, now: Date, timeZone: string): Cached
         ? dateOnlyToZoned(inst.end, timeZone)
         : Math.floor(inst.end.getTime() / 1000);
       if (!(end > start)) continue;
-      if (end <= from.getTime() / 1000 || start >= to.getTime() / 1000) continue;
-      out.push({ start, end, status, title: text(inst.summary).trim() });
+      if (end <= from.getTime() / 1000 || start >= to.getTime() / 1000)
+        continue;
+      const uid = text(inst.event.uid ?? ev.uid).trim();
+      out.push({
+        start,
+        end,
+        status,
+        title: text(inst.summary).trim(),
+        ...(uid ? { uid } : {}),
+      });
     }
   }
   return out.sort((a, b) => a.start - b.start || a.end - b.end);
 }
 
-// What the device gets: the next 24 hours, titles hidden unless asked for, and
-// overlapping or back-to-back blocks of the same status joined so 32 slots go further.
-export function blocksForDevice(events: CachedEvent[], now: number, showTitles: boolean): Block[] {
-  const horizon = now + DEVICE_HORIZON_SEC;
-  const sorted = events
-    .filter((e) => e.end > now && e.start < horizon)
-    .sort((a, b) => a.start - b.start || a.end - b.end);
+// When events overlap, the strongest status wins: someone who's out of office is away
+// even if a meeting is still on their calendar, and focus time beats a meeting.
+const RANK: Record<Status, number> = { away: 3, dnd: 2, busy: 1, free: 0 };
 
-  const out: Block[] = [];
-  for (const e of sorted) {
-    const label = showTitles && e.title ? e.title : HIDDEN_TITLE[e.status];
-    const last = out[out.length - 1];
-    if (last && last.status === e.status && e.start <= last.end) {
-      if (e.end > last.end) {
-        last.end = e.end;
-        // A joined block shows the meeting that's on when it starts; fine for a desk light.
-      }
+// One calendar's events and whether it shows titles.
+export type ScheduleSource = {
+  events: readonly CachedEvent[];
+  showTitles: boolean;
+};
+
+type Labelled = CachedEvent & { label: string };
+
+// The same meeting can arrive from two calendars (an invite on work and personal, or an
+// ICS link next to the connected account). Same UID and same start = one event; the
+// stronger status is kept, and a real title beats a hidden one.
+function dedupe(events: Labelled[]): Labelled[] {
+  const seen = new Map<string, number>();
+  const out: Labelled[] = [];
+  for (const e of events) {
+    if (!e.uid) {
+      out.push(e);
       continue;
     }
-    out.push({ start: e.start, end: e.end, status: e.status, text: clipText(label) });
+    const key = `${e.uid}@${e.start}`;
+    const at = seen.get(key);
+    if (at === undefined) {
+      seen.set(key, out.length);
+      out.push(e);
+      continue;
+    }
+    const kept = out[at];
+    const stronger = RANK[e.status] > RANK[kept.status];
+    const sameButTitled =
+      RANK[e.status] === RANK[kept.status] &&
+      e.label !== HIDDEN_TITLE[e.status] &&
+      kept.label === HIDDEN_TITLE[kept.status];
+    if (stronger || sameButTitled)
+      out[at] = { ...e, end: Math.max(e.end, kept.end) };
+    else if (e.end > kept.end) out[at] = { ...kept, end: e.end };
+  }
+  return out;
+}
+
+// What the device gets from one or more calendars: the next 24 hours, titles hidden
+// unless that calendar shows them, overlaps settled by RANK, and touching blocks of the
+// same status joined so 32 slots go further. A joined block shows the label of the event
+// that's on when it starts; fine for a desk light.
+export function mergeSchedule(
+  sources: readonly ScheduleSource[],
+  now: number,
+): Block[] {
+  const horizon = now + DEVICE_HORIZON_SEC;
+  const events = dedupe(
+    sources.flatMap((s) =>
+      s.events
+        .filter((e) => e.end > now && e.start < horizon && RANK[e.status] > 0)
+        .map((e) => ({
+          ...e,
+          label: s.showTitles && e.title ? e.title : HIDDEN_TITLE[e.status],
+        })),
+    ),
+  ).sort((a, b) => a.start - b.start || a.end - b.end);
+
+  // Sweep the moments where something starts or ends; between two of them the winner is
+  // the strongest event on, and among equals the one that started first.
+  const cuts = [...new Set(events.flatMap((e) => [e.start, e.end]))].sort(
+    (a, b) => a - b,
+  );
+  const out: Block[] = [];
+  for (let i = 0; i < cuts.length - 1; i++) {
+    const from = cuts[i];
+    const to = cuts[i + 1];
+    let win: Labelled | undefined;
+    for (const e of events) {
+      if (e.start > from) break;
+      if (e.end <= from) continue;
+      if (!win || RANK[e.status] > RANK[win.status]) win = e;
+    }
+    if (!win) continue;
+    const last = out[out.length - 1];
+    if (last && last.status === win.status && last.end >= from) {
+      last.end = to;
+      continue;
+    }
+    out.push({
+      start: from,
+      end: to,
+      status: win.status,
+      text: clipText(win.label),
+    });
   }
   return out.slice(0, MAX_BLOCKS);
+}
+
+// One calendar on its own (the Settings preview).
+export function blocksForDevice(
+  events: CachedEvent[],
+  now: number,
+  showTitles: boolean,
+): Block[] {
+  return mergeSchedule([{ events, showTitles }], now);
 }

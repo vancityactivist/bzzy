@@ -45,7 +45,12 @@ const id = () =>
 // Site-wide role, separate from team roles. "admin" can open /admin.
 export const userRole = pgEnum("user_role", ["user", "admin"]);
 
-export const statusKind = pgEnum("status_kind", ["free", "busy", "dnd", "away"]);
+export const statusKind = pgEnum("status_kind", [
+  "free",
+  "busy",
+  "dnd",
+  "away",
+]);
 
 export const users = pgTable("user", {
   id: id(),
@@ -122,7 +127,9 @@ export const authenticators = pgTable(
     // Ours, not Auth.js's: shown on Settings so people can tell passkeys apart.
     // Null on passkeys added before these columns existed.
     name: text("name"),
-    createdAt: timestamp("createdAt", { mode: "date" }).$defaultFn(() => new Date()),
+    createdAt: timestamp("createdAt", { mode: "date" }).$defaultFn(
+      () => new Date(),
+    ),
     lastUsedAt: timestamp("lastUsedAt", { mode: "date" }),
   },
   (t) => [primaryKey({ columns: [t.userId, t.credentialID] })],
@@ -154,7 +161,10 @@ export const teamMembers = pgTable(
     role: teamRole("role").notNull().default("member"),
     createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
   },
-  (t) => [primaryKey({ columns: [t.teamId, t.userId] }), index("team_member_user_idx").on(t.userId)],
+  (t) => [
+    primaryKey({ columns: [t.teamId, t.userId] }),
+    index("team_member_user_idx").on(t.userId),
+  ],
 );
 
 // "team": a reusable link for the office chat. "single": one person.
@@ -179,7 +189,9 @@ export const teamInvites = pgTable(
     uses: integer("uses").notNull().default(0),
     expiresAt: timestamp("expires_at", { mode: "date" }).notNull(),
     revokedAt: timestamp("revoked_at", { mode: "date" }),
-    createdBy: text("created_by").references(() => users.id, { onDelete: "set null" }),
+    createdBy: text("created_by").references(() => users.id, {
+      onDelete: "set null",
+    }),
     createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
   },
   (t) => [index("team_invite_team_idx").on(t.teamId)],
@@ -194,9 +206,14 @@ export const teamAudit = pgTable(
     teamId: text("team_id")
       .notNull()
       .references(() => teams.id, { onDelete: "cascade" }),
-    actorUserId: text("actor_user_id").references(() => users.id, { onDelete: "set null" }),
+    actorUserId: text("actor_user_id").references(() => users.id, {
+      onDelete: "set null",
+    }),
     action: text("action").notNull(),
-    detail: jsonb("detail").$type<Record<string, unknown>>().notNull().default({}),
+    detail: jsonb("detail")
+      .$type<Record<string, unknown>>()
+      .notNull()
+      .default({}),
     // True when the actor was acting as superadmin rather than as a member.
     asSuperadmin: boolean("as_superadmin").notNull().default(false),
     at: timestamp("at", { mode: "date" }).notNull().defaultNow(),
@@ -207,7 +224,6 @@ export const teamAudit = pgTable(
 // ---------------------------------------------------------------------------
 // Status
 // ---------------------------------------------------------------------------
-
 
 // A person's manual override. One row per user; `active = false` keeps the
 // time it was cleared so older button presses can't bring it back.
@@ -251,7 +267,9 @@ export const devices = pgTable(
     // follow use the owner's (user.default_status).
     defaultStatus: statusKind("default_status").notNull().default("free"),
     // The one team whose pushes this light shows. Null = none. Never a personal team.
-    pushTeamId: text("push_team_id").references(() => teams.id, { onDelete: "set null" }),
+    pushTeamId: text("push_team_id").references(() => teams.id, {
+      onDelete: "set null",
+    }),
     // X-Bzzy-Features from the last poll ("leds,push"). Null = firmware from before it.
     features: text("features"),
     // allowFlash off: the ring is always steady, pushes too.
@@ -271,13 +289,19 @@ export const devices = pgTable(
     // Set up for someone else (docs/provisioning.md): the claim it was paired to, and
     // ship mode. While shipMode is on the poll answer says `ship: true`; the light forgets
     // its Wi-Fi and waits to be set up at its new home, then says it has arrived.
-    claimId: text("claim_id").references((): AnyPgColumn => lightClaims.id, { onDelete: "set null" }),
+    claimId: text("claim_id").references((): AnyPgColumn => lightClaims.id, {
+      onDelete: "set null",
+    }),
     shipMode: boolean("ship_mode").notNull().default(false),
     shippedAt: timestamp("shipped_at", { mode: "date" }),
     arrivedAt: timestamp("arrived_at", { mode: "date" }),
     createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
   },
-  (t) => [index("device_team_idx").on(t.teamId), index("device_owner_idx").on(t.ownerUserId), index("device_claim_idx").on(t.claimId)],
+  (t) => [
+    index("device_team_idx").on(t.teamId),
+    index("device_owner_idx").on(t.ownerUserId),
+    index("device_claim_idx").on(t.claimId),
+  ],
 );
 
 // Lights set up for someone by email through the provisioning API (docs/provisioning.md),
@@ -322,15 +346,61 @@ export const devicePairings = pgTable(
     firmwareVersion: text("firmware_version"),
     expiresAt: timestamp("expires_at", { mode: "date" }).notNull(),
     // Set when someone claims it.
-    deviceId: text("device_id").references(() => devices.id, { onDelete: "cascade" }),
+    deviceId: text("device_id").references(() => devices.id, {
+      onDelete: "cascade",
+    }),
     createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
   },
-  (t) => [index("device_pairing_ip_idx").on(t.ipHash), index("device_pairing_expires_idx").on(t.expiresAt)],
+  (t) => [
+    index("device_pairing_ip_idx").on(t.ipHash),
+    index("device_pairing_expires_idx").on(t.expiresAt),
+  ],
 );
 
 // ---------------------------------------------------------------------------
 // Calendars and GIFs (filled in by later steps)
 // ---------------------------------------------------------------------------
+
+// A connection to a calendar provider: a Google account, or a CalDAV login (iCloud and
+// others). One person can have several. ICS links don't have one.
+export type CalendarProvider = "google" | "caldav";
+export type CalendarAccountState = "ok" | "needs_reconnect" | "error";
+
+export const calendarAccounts = pgTable(
+  "calendar_account",
+  {
+    id: id(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    provider: text("provider").$type<CalendarProvider>().notNull(),
+    // What the person sees: the Google address or Apple ID.
+    label: text("label").notNull(),
+    // The provider's id for the account (Google `sub`), so reconnecting updates the row.
+    externalId: text("external_id"),
+    // CalDAV only: the server and login name.
+    serverUrl: text("server_url"),
+    username: text("username"),
+    // The Google refresh token or CalDAV password, encrypted in the app (AES-256-GCM)
+    // before it gets here, and the id of the key that did it. Never sent to the browser.
+    secret: text("secret").notNull(),
+    keyId: text("key_id").notNull(),
+    scopes: text("scopes"),
+    state: text("state").$type<CalendarAccountState>().notNull().default("ok"),
+    lastError: text("last_error"),
+    createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
+  },
+  (t) => [
+    index("calendar_account_user_idx").on(t.userId),
+    uniqueIndex("calendar_account_provider_ext_idx").on(
+      t.userId,
+      t.provider,
+      t.externalId,
+    ),
+  ],
+);
+
+export type CalendarSource = "ics" | "google" | "caldav";
 
 export const calendars = pgTable(
   "calendar",
@@ -340,8 +410,19 @@ export const calendars = pgTable(
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
     name: text("name").notNull(),
+    // Where the events come from. ICS rows have `icsUrl`; the others an account and the
+    // provider's id for the calendar.
+    source: text("source").$type<CalendarSource>().notNull().default("ics"),
+    accountId: text("account_id").references(() => calendarAccounts.id, {
+      onDelete: "cascade",
+    }),
+    externalId: text("external_id"),
     // The secret ICS URL. Treat like a password: never send it to the browser after saving.
-    icsUrl: text("ics_url").notNull(),
+    icsUrl: text("ics_url"),
+    // Off: the calendar is listed but doesn't change your status.
+    setsStatus: boolean("sets_status").notNull().default(true),
+    // Incremental-sync bookmarks (Google sync token, CalDAV ctag, push channel).
+    syncState: jsonb("sync_state").$type<Record<string, unknown>>(),
     // Show meeting titles on the device instead of "In a meeting".
     showTitles: boolean("show_titles").notNull().default(false),
     // The next week of events from the last good fetch, already expanded.
@@ -350,7 +431,10 @@ export const calendars = pgTable(
     lastError: text("last_error"),
     createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
   },
-  (t) => [index("calendar_user_idx").on(t.userId)],
+  (t) => [
+    index("calendar_user_idx").on(t.userId),
+    index("calendar_account_idx").on(t.accountId),
+  ],
 );
 
 export const assets = pgTable(
@@ -360,7 +444,9 @@ export const assets = pgTable(
     teamId: text("team_id")
       .notNull()
       .references(() => teams.id, { onDelete: "cascade" }),
-    uploadedBy: text("uploaded_by").references(() => users.id, { onDelete: "set null" }),
+    uploadedBy: text("uploaded_by").references(() => users.id, {
+      onDelete: "set null",
+    }),
     name: text("name").notNull(),
     blobUrl: text("blob_url").notNull(),
     bytes: integer("bytes").notNull(),
@@ -384,7 +470,9 @@ export const deviceAssets = pgTable(
       .notNull()
       .references(() => devices.id, { onDelete: "cascade" }),
     status: statusKind("status").notNull(),
-    assetId: text("asset_id").references(() => assets.id, { onDelete: "cascade" }),
+    assetId: text("asset_id").references(() => assets.id, {
+      onDelete: "cascade",
+    }),
     builtin: text("builtin"),
   },
   (t) => [uniqueIndex("device_asset_unique").on(t.deviceId, t.status)],
@@ -400,7 +488,9 @@ export const userGifs = pgTable(
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
     status: statusKind("status").notNull(),
-    assetId: text("asset_id").references(() => assets.id, { onDelete: "cascade" }),
+    assetId: text("asset_id").references(() => assets.id, {
+      onDelete: "cascade",
+    }),
     builtin: text("builtin"),
   },
   (t) => [primaryKey({ columns: [t.userId, t.status] })],
@@ -427,7 +517,9 @@ export const lightShow = pgTable("light_show", {
     .primaryKey()
     .references(() => devices.id, { onDelete: "cascade" }),
   active: boolean("active").notNull().default(false),
-  assetId: text("asset_id").references(() => assets.id, { onDelete: "set null" }),
+  assetId: text("asset_id").references(() => assets.id, {
+    onDelete: "set null",
+  }),
   builtin: text("builtin"),
   text: text("text").notNull().default(""),
   leds: jsonb("leds").$type<LedStyle>(),
@@ -493,10 +585,14 @@ export const teamPushes = pgTable(
     teamId: text("team_id")
       .notNull()
       .references(() => teams.id, { onDelete: "cascade" }),
-    createdBy: text("created_by").references(() => users.id, { onDelete: "set null" }),
+    createdBy: text("created_by").references(() => users.id, {
+      onDelete: "set null",
+    }),
     target: pushTarget("target").notNull().default("all"),
     text: text("text").notNull().default(""),
-    assetId: text("asset_id").references(() => assets.id, { onDelete: "set null" }),
+    assetId: text("asset_id").references(() => assets.id, {
+      onDelete: "set null",
+    }),
     builtin: text("builtin"),
     leds: jsonb("leds").$type<LedStyle>(),
     // Unix seconds, like the device protocol. until 0 = until ended.

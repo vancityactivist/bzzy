@@ -3,7 +3,7 @@ import { join } from "node:path";
 
 import { describe, expect, it } from "vitest";
 
-import { blocksForDevice, type CachedEvent, eventsFromIcs, fetchWindow, zonedMidnight } from "./ics";
+import { blocksForDevice, type CachedEvent, eventsFromIcs, fetchWindow, mergeSchedule, zonedMidnight } from "./ics";
 
 const outlook = readFileSync(join(__dirname, "fixtures/outlook.ics"), "utf8");
 const TZ = "America/Vancouver";
@@ -136,5 +136,51 @@ describe("fetchWindow", () => {
   it("keeps yesterday until an hour past midnight", () => {
     const day = zonedMidnight(2026, 11, 16, tz) * 1000;
     expect(fetchWindow(new Date(day + 30 * 60_000), tz).from.getTime()).toBe(zonedMidnight(2026, 11, 15, tz) * 1000);
+  });
+});
+
+describe("mergeSchedule", () => {
+  const t = 1_800_000_000;
+  const ev = (start: number, end: number, status: CachedEvent["status"], title: string, uid?: string): CachedEvent => ({
+    start: t + start,
+    end: t + end,
+    status,
+    title,
+    ...(uid ? { uid } : {}),
+  });
+
+  it("lets the strongest status win where calendars overlap", () => {
+    const work = { events: [ev(0, 3600, "busy", "Standup")], showTitles: true };
+    const home = { events: [ev(1800, 7200, "away", "Dentist")], showTitles: true };
+    expect(mergeSchedule([work, home], t)).toEqual([
+      { start: t, end: t + 1800, status: "busy", text: "Standup" },
+      { start: t + 1800, end: t + 7200, status: "away", text: "Dentist" },
+    ]);
+  });
+
+  it("goes back to the meeting when a stronger block inside it ends", () => {
+    const blocks = mergeSchedule([{ events: [ev(0, 3600, "busy", "Long"), ev(600, 1200, "dnd", "Focus")], showTitles: true }], t);
+    expect(blocks.map((b) => [b.start - t, b.end - t, b.status])).toEqual([
+      [0, 600, "busy"],
+      [600, 1200, "dnd"],
+      [1200, 3600, "busy"],
+    ]);
+  });
+
+  it("shows a meeting that's on two calendars once, with its title if either calendar shows titles", () => {
+    const a = { events: [ev(0, 1800, "busy", "Board meeting", "u1")], showTitles: false };
+    const b = { events: [ev(0, 1800, "busy", "Board meeting", "u1")], showTitles: true };
+    expect(mergeSchedule([a, b], t)).toEqual([{ start: t, end: t + 1800, status: "busy", text: "Board meeting" }]);
+  });
+
+  it("keeps the first meeting's title when same-status meetings overlap", () => {
+    const blocks = mergeSchedule(
+      [
+        { events: [ev(0, 1800, "busy", "First")], showTitles: true },
+        { events: [ev(600, 2400, "busy", "Second")], showTitles: true },
+      ],
+      t,
+    );
+    expect(blocks).toEqual([{ start: t, end: t + 2400, status: "busy", text: "First" }]);
   });
 });

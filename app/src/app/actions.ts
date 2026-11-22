@@ -12,6 +12,7 @@ import {
   ownCalendar,
   refreshCalendar,
   saveUserClock,
+  setSetsStatus,
   setShowTitles,
   validTimeZone,
 } from "@/lib/calendar";
@@ -307,6 +308,14 @@ export async function setCalendarTitlesAction(id: string, showTitles: boolean) {
   const cal = await ownCalendar(user.id, id);
   if (!cal) return;
   await setShowTitles(cal, showTitles);
+  refresh();
+}
+
+export async function setCalendarSetsStatusAction(id: string, setsStatus: boolean) {
+  const user = await requireUser();
+  const cal = await ownCalendar(user.id, id);
+  if (!cal) return;
+  await setSetsStatus(cal, setsStatus);
   refresh();
 }
 

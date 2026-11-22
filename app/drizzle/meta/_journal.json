@@ -134,6 +134,13 @@
       "when": 1795310159622,
       "tag": "0018_light_claims",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1795312740439,
+      "tag": "0019_calendar_accounts",
+      "breakpoints": true
     }
   ]
 }

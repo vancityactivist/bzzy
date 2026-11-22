@@ -31,6 +31,7 @@ Start with [plan.md](plan.md) for where things are going, and the [root README](
 |---|---|
 | [api.md](api.md) | The public API (v1): personal tokens, endpoints, webhooks |
 | [caching.md](caching.md) | How device polls are answered from Vercel's runtime cache so the database can sleep |
+| [calendars.md](calendars.md) | How calendars become status, overlap rules, and the Google/iCloud plan |
 | [domains.md](domains.md) | bzzy.ca, the redirect domains, DNS |
 | [provisioning.md](provisioning.md) | Setting up lights for someone else: claims for an email, Assign to an order on the pair page, ship mode, the sign-in link |
 | [email.md](email.md) | Email through Resend: invites, join emails, the contact form |

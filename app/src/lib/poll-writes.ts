@@ -40,7 +40,7 @@ export function sameEvents(a: readonly CachedEvent[], b: readonly CachedEvent[])
   for (let i = 0; i < a.length; i++) {
     const x = a[i];
     const y = b[i];
-    if (x.start !== y.start || x.end !== y.end || x.status !== y.status || x.title !== y.title) return false;
+    if (x.start !== y.start || x.end !== y.end || x.status !== y.status || x.title !== y.title || x.uid !== y.uid) return false;
   }
   return true;
 }
