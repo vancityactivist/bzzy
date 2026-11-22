@@ -6,6 +6,8 @@ import { after } from "next/server";
 import { db, schema } from "@/db";
 
 import { cacheGet, cacheSet, expire, tag } from "./cache";
+import { googleEventsFor } from "./calendar-accounts";
+import { GoogleAuthLost, GoogleError } from "./google-calendar";
 import {
   type CachedEvent,
   eventsFromIcs,
@@ -92,7 +94,12 @@ export async function saveUserClock(
 }
 
 function friendlyError(err: unknown) {
-  if (err instanceof FetchRefused || err instanceof IcsError)
+  if (
+    err instanceof FetchRefused ||
+    err instanceof IcsError ||
+    err instanceof GoogleAuthLost ||
+    err instanceof GoogleError
+  )
     return err.message;
   if (
     err instanceof Error &&
@@ -116,6 +123,17 @@ export async function loadFeed(
   };
 }
 
+// A calendar's next week of events, from wherever it lives.
+async function eventsFor(
+  cal: CalendarRow,
+  timeZone: string,
+): Promise<CachedEvent[]> {
+  if (cal.source === "google") return googleEventsFor(cal, timeZone);
+  if (cal.source === "ics" && cal.icsUrl)
+    return (await loadFeed(cal.icsUrl, timeZone)).events;
+  throw new IcsError("bzzy can't read this kind of calendar yet.");
+}
+
 // Re-read a feed. The database is only written when something changed (new events, or
 // an error appearing, changing or clearing); otherwise the check is noted in the cache.
 export async function refreshCalendar(
@@ -125,13 +143,12 @@ export async function refreshCalendar(
   const now = new Date();
   let patch: Partial<CalendarRow> | null;
   let message: string | null = null;
-  // Only ICS links can be read so far; connected accounts come in a later step.
-  if (cal.source !== "ics" || !cal.icsUrl) return null;
+  // Connected calendars that don't set status aren't read at all: no API calls for the
+  // holidays and birthdays calendars Google lists by default.
+  if (cal.source !== "ics" && !cal.setsStatus) return null;
   try {
-    const { events } = await loadFeed(
-      cal.icsUrl,
-      timeZone ?? (await userTimezone(cal.userId)),
-    );
+    const tz = timeZone ?? (await userTimezone(cal.userId));
+    const events = await eventsFor(cal, tz);
     patch =
       sameEvents(events, cal.events) && cal.lastError === null
         ? null
