@@ -77,11 +77,17 @@ export async function adminOverview() {
         id: schema.devices.id,
         name: schema.devices.name,
         ownerName: schema.users.name,
+        ownerUserId: schema.devices.ownerUserId,
         lastSeenAt: schema.devices.lastSeenAt,
         createdAt: schema.devices.createdAt,
+        claimId: schema.devices.claimId,
+        claimRef: schema.lightClaims.ref,
+        shipMode: schema.devices.shipMode,
+        arrivedAt: schema.devices.arrivedAt,
       })
       .from(schema.devices)
       .innerJoin(schema.users, eq(schema.users.id, schema.devices.ownerUserId))
+      .leftJoin(schema.lightClaims, eq(schema.lightClaims.id, schema.devices.claimId))
       .orderBy(desc(schema.devices.createdAt)),
     d.select({ personal: schema.teams.personal }).from(schema.teams),
     d

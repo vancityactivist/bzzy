@@ -20,6 +20,10 @@ Firmware with the `ship` feature (it lists `ship` in `X-Bzzy-Features`):
 - Its polls from a Wi-Fi with a **different name** from the bench one carry `X-Bzzy-Arrived: 1`. When the answer stops saying `ship: true`, it forgets ship mode.
 - If it's put back on the bench Wi-Fi while still in ship mode (to test it again, say), it packs itself again on its next poll, so it never reaches its owner with the bench Wi-Fi saved.
 
+### Lights that are already set up
+
+The admin page's **Devices** table has an **Order** column. **Assign to an order** puts a light that's already paired onto an open claim, keeping its id and token, so it doesn't have to be deleted and paired again. That's handy for testing ship mode with one of your own lights. **Take back** moves a light on a claim back to you, in your own lights, off the claim and out of ship mode. It works after the light has arrived too, unlike `DELETE`.
+
 ## The claim link
 
 A buyer whose account can't sign in yet (no GitHub, no passkey) gets an email with a link to `/claim/{token}`:
