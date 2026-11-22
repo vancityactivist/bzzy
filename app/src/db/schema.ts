@@ -430,6 +430,9 @@ export const calendars = pgTable(
     position: integer("position").notNull().default(0),
     // The provider's colour for the calendar (#rrggbb), when it has one.
     color: text("color"),
+    // Which lights use it. null: every light that follows you. A list: only those lights,
+    // which can include lights with their own status.
+    lightIds: jsonb("light_ids").$type<string[]>(),
     // Incremental-sync bookmarks (Google sync token, CalDAV ctag, push channel).
     syncState: jsonb("sync_state").$type<Record<string, unknown>>(),
     // Show meeting titles on the device instead of "In a meeting".

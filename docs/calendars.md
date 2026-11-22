@@ -5,8 +5,14 @@ Full plan: the "bzzy: Google and iCloud calendars" design doc (2026-11-22).
 
 ## Today
 
-- Calendars belong to a person. Every light that follows them merges all their
-  calendars that have **Sets my status** on.
+- Calendars belong to a person. Each calendar has **Shows on** (`calendar.light_ids`):
+  empty means every light that follows you; a list means exactly those lights, which can
+  include lights with their own status (a meeting-room light, say). Set it under More on
+  Settings → Calendars, or tick calendars on a light's page (`calendarsForLight` in
+  `lib/calendar-lights.ts`).
+- Your own status (Home page, team dashboard, `/v1/status`) uses the calendars that reach a
+  light that follows you (`personCalendars`), so a calendar picked only for an own-status
+  light doesn't make you busy.
 - Sources: ICS links (Outlook published calendars, Google secret address, iCloud public
   calendar) and connected Google accounts (read-only). Read lazily: a poll or page load re-reads any calendar older than 5 minutes,
   after responding. No cron.
@@ -89,4 +95,3 @@ Full plan: the "bzzy: Google and iCloud calendars" design doc (2026-11-22).
 
 1. Google push notifications for near-instant updates.
 2. Google review (submitted 2026-11-21).
-3. Calendars for lights that don't follow their owner.

@@ -5,7 +5,7 @@ import { eq } from "drizzle-orm";
 import { db, schema } from "@/db";
 
 import { cachedRead, tag } from "./cache";
-import { calendarsForUser, type CalendarRow, userClock } from "./calendar";
+import { calendarsForLight, calendarsForUser, type CalendarRow, userClock } from "./calendar";
 import type { AuthedDevice } from "./device-auth";
 import { tokenMatches, bearerToken } from "./device-token";
 import { type ReleaseRow, savedRelease } from "./firmware-release";
@@ -34,7 +34,7 @@ export type PollBundle = {
   workHours: WorkHours | null;
   // The owner's status, or the light's own when it doesn't follow them.
   presence: Presence | null;
-  // The owner's calendars; none for a light with its own status.
+  // The owner's calendars this light uses (calendarsForLight).
   calendars: CalendarRow[];
   gifs: Record<Status, ResolvedGif>;
   show: CurrentShow | null;
@@ -50,7 +50,7 @@ export type PollBundle = {
 export const POLL_BUNDLE_TTL_SEC = 3 * 3600;
 
 // Bump the version when PollBundle changes shape: cache entries outlive deployments.
-const key = (deviceId: string) => `poll:v5:${deviceId}`;
+const key = (deviceId: string) => `poll:v6:${deviceId}`;
 
 const assetTags = (...gifs: (ResolvedGif | undefined)[]) =>
   gifs.flatMap((g) => (g?.kind === "asset" ? [tag.asset(g.id)] : []));
@@ -65,7 +65,7 @@ async function loadBundle(deviceId: string) {
     userClock(owner),
     getLook(owner),
     own ? getLightStatus(row.id).then((r) => r.presence) : getPresence(owner),
-    own ? Promise.resolve([]) : calendarsForUser(owner),
+    calendarsForUser(owner).then((cals) => calendarsForLight(cals, row)),
     resolveUserGifs(owner),
     own ? getLightShow(row.id) : getShow(owner),
     savedRelease(),

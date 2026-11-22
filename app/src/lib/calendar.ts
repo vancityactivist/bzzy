@@ -18,6 +18,8 @@ import {
 } from "./ics";
 import type { Block } from "./protocol";
 import { sameEvents } from "./poll-writes";
+import { personCalendars } from "./calendar-lights";
+export { calendarsForLight, personCalendars } from "./calendar-lights";
 import {
   FetchRefused,
   fetchPublicText,
@@ -216,6 +218,14 @@ export function scheduleSources(cals: CalendarRow[]): ScheduleSource[] {
     .map(({ c }) => ({ id: c.id, events: c.events, showTitles: c.showTitles, countsAs: c.countsAs ?? "auto" }));
 }
 
+export async function followerIds(userId: string): Promise<string[]> {
+  const rows = await db()
+    .select({ id: schema.devices.id })
+    .from(schema.devices)
+    .where(and(eq(schema.devices.ownerUserId, userId), eq(schema.devices.followsOwner, true)));
+  return rows.map((r) => r.id);
+}
+
 // Which of these (possibly cached) rows are due a re-read, counting checks that only
 // reached the cache.
 export async function staleCalendars(
@@ -231,9 +241,9 @@ export async function scheduleForUser(
   userId: string,
   nowSec: number,
 ): Promise<{ schedule: Block[]; stale: CalendarRow[] }> {
-  const cals = await calendarsForUser(userId);
+  const [cals, followers] = await Promise.all([calendarsForUser(userId), followerIds(userId)]);
   return {
-    schedule: scheduleFromCalendars(cals, nowSec),
+    schedule: scheduleFromCalendars(personCalendars(cals, followers), nowSec),
     stale: cals.filter((c) => isStale(c)),
   };
 }
@@ -315,6 +325,22 @@ export async function moveCalendar(cal: Pick<CalendarRow, "id" | "userId">, dire
       await db().update(schema.calendars).set({ position }).where(eq(schema.calendars.id, id));
     }
   }
+  await expire(tag.user(cal.userId));
+}
+
+// Which lights use a calendar: null = every light that follows you. Ids that aren't the
+// owner's lights are dropped.
+export async function setCalendarLights(cal: Pick<CalendarRow, "id" | "userId">, lightIds: string[] | null) {
+  let ids: string[] | null = null;
+  if (lightIds) {
+    const mine = await db()
+      .select({ id: schema.devices.id })
+      .from(schema.devices)
+      .where(eq(schema.devices.ownerUserId, cal.userId));
+    const ok = new Set(mine.map((d) => d.id));
+    ids = [...new Set(lightIds)].filter((id) => ok.has(id));
+  }
+  await db().update(schema.calendars).set({ lightIds: ids }).where(eq(schema.calendars.id, cal.id));
   await expire(tag.user(cal.userId));
 }
 

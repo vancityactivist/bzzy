@@ -8,7 +8,14 @@ import Link from "next/link";
 
 import { Button, Card, Container, cx, StatusDot } from "@/components/ui";
 import { LiveSync } from "@/components/live-sync";
-import { refreshStaleCalendars, scheduleForUser, userClock } from "@/lib/calendar";
+import {
+  calendarsForLight,
+  calendarsForUser,
+  refreshStaleCalendars,
+  scheduleForUser,
+  scheduleFromCalendars,
+  userClock,
+} from "@/lib/calendar";
 import { devicesForUser } from "@/lib/devices";
 import { BUILTIN_GIFS, defaultPreviewSrcs, gifsForUser, previewSrc, resolveUserGifs } from "@/lib/gifs";
 import { getLightShow, getLightStatus } from "@/lib/light-state";
@@ -17,7 +24,7 @@ import { gifPrefsForUser } from "@/lib/gif-prefs";
 import { getPresence } from "@/lib/presence";
 import { liveVersionFor } from "@/lib/live";
 import { isDark, signTicket } from "@/lib/live-rules";
-import { type Block, hasFeature, nowSeconds, showVisible, STATUSES } from "@/lib/protocol";
+import { hasFeature, nowSeconds, showVisible, STATUSES } from "@/lib/protocol";
 import { resolveScreen, screenText, viewFor } from "@/lib/screen";
 import { getCurrentUser } from "@/lib/session";
 import { ringNow } from "@/lib/push-rules";
@@ -112,7 +119,9 @@ async function HomeContent({ searchParams }: { searchParams: PageProps<"/">["sea
 
   const [presence, { schedule }, show] = await Promise.all([
     target ? getLightStatus(target.id).then((r) => r.presence) : getPresence(user.id),
-    target ? Promise.resolve({ schedule: [] as Block[] }) : scheduleForUser(user.id, now),
+    target
+      ? calendarsForUser(user.id).then((cals) => ({ schedule: scheduleFromCalendars(calendarsForLight(cals, target), now) }))
+      : scheduleForUser(user.id, now),
     target ? getLightShow(target.id) : getShow(user.id),
   ]);
   // "Show now" on the GIFs library links here with ?show=<choice>: start with it picked.

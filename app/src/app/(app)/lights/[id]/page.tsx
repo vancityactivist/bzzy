@@ -5,7 +5,8 @@ import { Suspense } from "react";
 
 import { CheckIcon, ChevronRightIcon } from "@/components/icons";
 import { SignIn } from "@/components/sign-in";
-import { Badge, Card, Container } from "@/components/ui";
+import { Badge, Card, CardHeader, Container } from "@/components/ui";
+import { calendarsForLight, calendarsForUser } from "@/lib/calendar";
 import { devicesForUser } from "@/lib/devices";
 import { firmwareState } from "@/lib/firmware";
 import { releaseForPage } from "@/lib/firmware-release";
@@ -17,6 +18,7 @@ import { sharedTeamsForUser } from "@/lib/teams";
 import { DeviceFirmware } from "../device-firmware";
 import { DeviceActions } from "../device-forms";
 import { absoluteTime, relativeTime } from "../relative-time";
+import { LightCalendarToggle } from "../../settings/calendar-forms";
 import { LightSettings } from "./light-settings";
 
 export const metadata: Metadata = { title: "Light" };
@@ -35,7 +37,12 @@ async function LightContent({ params, searchParams }: Pick<PageProps<"/lights/[i
   const user = await getCurrentUser();
   if (!user) return <SignIn />;
   const [{ id }, { added }] = await Promise.all([params, searchParams]);
-  const [devices, release, shared] = await Promise.all([devicesForUser(user.id), releaseForPage(), sharedTeamsForUser(user.id)]);
+  const [devices, release, shared, calendars] = await Promise.all([
+    devicesForUser(user.id),
+    releaseForPage(),
+    sharedTeamsForUser(user.id),
+    calendarsForUser(user.id),
+  ]);
   const d = devices.find((x) => x.id === id);
   if (!d || !d.canManage) notFound();
   const isOwner = d.ownerUserId === user.id;
@@ -46,6 +53,10 @@ async function LightContent({ params, searchParams }: Pick<PageProps<"/lights/[i
   // show a team's announcements: "legacy" keeps that until its owner picks something.
   const legacyPush = d.teamPersonal && d.pushTeamName ? d.pushTeamName : null;
   const team = d.teamPersonal ? (legacyPush ? "legacy" : "") : d.teamId;
+  // Your calendars that set status, and which of them this light uses. Only the owner
+  // picks: a teammate managing the light doesn't see your calendars.
+  const statusCals = isOwner ? calendars.filter((c) => c.setsStatus) : [];
+  const used = new Set(calendarsForLight(statusCals, d).map((c) => c.id));
 
   return (
     <div className="space-y-6">
@@ -99,6 +110,44 @@ async function LightContent({ params, searchParams }: Pick<PageProps<"/lights/[i
           allowFlash={d.ring.allowFlash}
         />
       </Card>
+
+      {isOwner && (
+        <Card>
+          <CardHeader
+            title="Calendars"
+            description={
+              d.followsOwner
+                ? "This light follows you, so it uses all your calendars unless you untick some."
+                : "This light has its own status. Tick a calendar to make it busy during that calendar's events."
+            }
+          />
+          {statusCals.length === 0 ? (
+            <p className="mt-3 text-sm text-muted">
+              No calendars yet.{" "}
+              <Link href="/settings/calendars" className="underline underline-offset-2">
+                Add one
+              </Link>
+              .
+            </p>
+          ) : (
+            <div className="mt-3">
+              {statusCals.map((c) => (
+                <LightCalendarToggle
+                  key={c.id}
+                  calendarId={c.id}
+                  deviceId={d.id}
+                  name={c.name}
+                  color={c.color}
+                  on={used.has(c.id)}
+                />
+              ))}
+              <Link href="/settings/calendars" className="mt-2 inline-block text-sm text-muted underline underline-offset-2">
+                Manage calendars
+              </Link>
+            </div>
+          )}
+        </Card>
+      )}
 
       <Card>
         <h2 className="text-sm font-medium">Updates</h2>

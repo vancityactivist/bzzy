@@ -12,6 +12,8 @@ import {
   connectCalDavAction,
   moveCalendarAction,
   setCalendarCountsAsAction,
+  setCalendarLightsAction,
+  setLightCalendarAction,
   updateCalDavPasswordAction,
   refreshCalendarAction,
   removeCalendarAccountAction,
@@ -385,5 +387,87 @@ export function CalendarDot({ color }: { color: string | null }) {
       className="inline-block size-2.5 shrink-0 rounded-full bg-line-strong"
       style={color && /^#[0-9a-f]{6}$/i.test(color) ? { backgroundColor: color } : undefined}
     />
+  );
+}
+
+// Which lights use a calendar: every light that follows you (no list), or exactly the
+// lights ticked here.
+export function ShowsOn({
+  id,
+  lightIds,
+  lights,
+}: {
+  id: string;
+  lightIds: string[] | null;
+  lights: { id: string; name: string; followsOwner: boolean }[];
+}) {
+  const [pending, start] = useTransition();
+  const picked = lightIds ?? lights.filter((l) => l.followsOwner).map((l) => l.id);
+  const save = (next: string[] | null) => start(() => setCalendarLightsAction(id, next));
+  return (
+    <fieldset className="space-y-1.5 text-sm" disabled={pending}>
+      <legend className="text-xs font-medium tracking-wide text-muted uppercase">Shows on</legend>
+      <label className="flex cursor-pointer items-center gap-2 pt-1">
+        <input type="radio" className="size-4 accent-foreground" checked={lightIds === null} onChange={() => save(null)} />
+        Every light that follows me
+      </label>
+      <label className="flex cursor-pointer items-center gap-2">
+        <input type="radio" className="size-4 accent-foreground" checked={lightIds !== null} onChange={() => save(picked)} />
+        Only these lights
+      </label>
+      {lightIds !== null && (
+        <div className="space-y-1 pl-6">
+          {lights.length === 0 && <p className="text-muted">You don&apos;t have any lights yet.</p>}
+          {lights.map((l) => (
+            <label key={l.id} className="flex cursor-pointer items-center gap-2">
+              <input
+                type="checkbox"
+                className="size-4 accent-foreground"
+                checked={lightIds.includes(l.id)}
+                onChange={(e) => {
+                  const on = e.target.checked;
+                  save(on ? [...lightIds, l.id] : lightIds.filter((x) => x !== l.id));
+                }}
+              />
+              <span className="truncate">{l.name}</span>
+              {!l.followsOwner && <span className="text-muted">own status</span>}
+            </label>
+          ))}
+        </div>
+      )}
+    </fieldset>
+  );
+}
+
+// On a light's page: tick the calendars this light uses.
+export function LightCalendarToggle({
+  calendarId,
+  deviceId,
+  name,
+  color,
+  on,
+}: {
+  calendarId: string;
+  deviceId: string;
+  name: string;
+  color: string | null;
+  on: boolean;
+}) {
+  const [pending, start] = useTransition();
+  return (
+    <label className="flex cursor-pointer items-center gap-2 py-1 text-sm">
+      <input
+        type="checkbox"
+        className="size-4 accent-foreground"
+        checked={on}
+        disabled={pending}
+        onChange={(e) => {
+          const v = e.target.checked;
+          start(() => setLightCalendarAction(calendarId, deviceId, v));
+        }}
+      />
+      <CalendarDot color={color} />
+      <span className="truncate">{name}</span>
+    </label>
   );
 }

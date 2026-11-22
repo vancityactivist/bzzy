@@ -14,6 +14,8 @@ import {
   ownCalendar,
   refreshCalendar,
   saveUserClock,
+  followerIds,
+  setCalendarLights,
   setCountsAs,
   setSetsStatus,
   setShowTitles,
@@ -383,6 +385,28 @@ export async function setCalendarCountsAsAction(id: string, countsAs: string) {
   const cal = await ownCalendar(user.id, id);
   if (!cal || !["auto", "busy", "dnd", "away"].includes(countsAs)) return;
   await setCountsAs(cal, countsAs as "auto" | "busy" | "dnd" | "away");
+  refresh();
+}
+
+// Which lights use a calendar: null = every light that follows you.
+export async function setCalendarLightsAction(id: string, lightIds: string[] | null) {
+  const user = await requireUser();
+  const cal = await ownCalendar(user.id, id);
+  if (!cal) return;
+  if (lightIds !== null && (!Array.isArray(lightIds) || lightIds.length > 100 || lightIds.some((l) => typeof l !== "string"))) return;
+  await setCalendarLights(cal, lightIds);
+  refresh();
+}
+
+// From a light's page: this light uses the calendar, or doesn't. A calendar going to
+// "every light that follows you" becomes a list of those lights, plus or minus this one.
+export async function setLightCalendarAction(calendarId: string, deviceId: string, on: boolean) {
+  const user = await requireUser();
+  const cal = await ownCalendar(user.id, calendarId);
+  if (!cal || typeof deviceId !== "string") return;
+  const current = cal.lightIds ?? (await followerIds(user.id));
+  const next = on ? [...current, deviceId] : current.filter((l) => l !== deviceId);
+  await setCalendarLights(cal, next);
   refresh();
 }
 

@@ -9,11 +9,13 @@ import {
   type CalendarRow,
   calendarsForUser,
   refreshStaleCalendars,
+  personCalendars,
   scheduleSources,
   userClock,
 } from "@/lib/calendar";
 import { accountsForUser, refreshCalendarLists } from "@/lib/calendar-accounts";
 import { calendarKeyConfigured } from "@/lib/calendar-secret";
+import { devicesForUser } from "@/lib/devices";
 import { googleConfigured } from "@/lib/google-calendar";
 import { blocksForDevice, explainSchedule } from "@/lib/ics";
 import { nowSeconds } from "@/lib/protocol";
@@ -29,6 +31,7 @@ import {
   ConnectCalDavForm,
   PriorityControls,
   RemoveAccountButton,
+  ShowsOn,
   UpdatePasswordForm,
 } from "../calendar-forms";
 
@@ -48,17 +51,24 @@ async function CalendarsContent() {
   const user = await getCurrentUser();
   if (!user) return <SignIn />;
   await Promise.all([refreshStaleCalendars(user.id), refreshCalendarLists(user.id)]);
-  const [calendars, clock, accounts] = await Promise.all([
+  const [calendars, clock, accounts, devices] = await Promise.all([
     calendarsForUser(user.id),
     userClock(user.id),
     accountsForUser(user.id),
+    devicesForUser(user.id),
   ]);
+  const lights = devices
+    .filter((d) => d.ownerUserId === user.id)
+    .map((d) => ({ id: d.id, name: d.name, followsOwner: d.followsOwner }));
+  const followers = lights.filter((l) => l.followsOwner).map((l) => l.id);
   const TZ = clock.timeZone;
   const now = nowSeconds();
   const googleOn = googleConfigured();
   const byId = new Map(calendars.map((c) => [c.id, c]));
   const active = calendars.filter((c) => c.setsStatus);
-  const timeline = explainSchedule(scheduleSources(calendars), now);
+  // Yours: what the lights that follow you show (calendars picked only for lights with
+  // their own status are left out).
+  const timeline = explainSchedule(scheduleSources(personCalendars(calendars, followers)), now);
   const links = calendars.filter((c) => !c.accountId);
   const accountLabel = new Map(accounts.map((a) => [a.id, a.label]));
 
@@ -71,7 +81,7 @@ async function CalendarsContent() {
         <PageHeader
           className="mt-2"
           title="Calendars"
-          description="Your lights turn Busy during meetings and Away when you're out of office."
+          description="Your lights turn Busy during meetings and Away when you're out of office. Each calendar goes to every light that follows you, unless you pick lights under More."
         />
       </div>
       <CalendarNotice />
@@ -80,7 +90,7 @@ async function CalendarsContent() {
         <Card>
           <CardHeader
             title="Your next 24 hours"
-            description="What your lights will show, and which calendar is behind each block."
+            description="What the lights that follow you will show, and which calendar is behind each block."
           />
           {timeline.length === 0 ? (
             <p className="mt-4 text-sm text-muted">Nothing that makes you busy.</p>
@@ -130,6 +140,7 @@ async function CalendarsContent() {
                 account={c.accountId ? accountLabel.get(c.accountId) : undefined}
                 first={i === 0}
                 last={i === active.length - 1}
+                lights={lights}
                 now={now}
                 TZ={TZ}
               />
@@ -238,6 +249,7 @@ function ActiveRow({
   account,
   first,
   last,
+  lights,
   now,
   TZ,
 }: {
@@ -245,6 +257,7 @@ function ActiveRow({
   account?: string;
   first: boolean;
   last: boolean;
+  lights: { id: string; name: string; followsOwner: boolean }[];
   now: number;
   TZ: string;
 }) {
@@ -257,6 +270,7 @@ function ActiveRow({
           <span className="block truncate font-medium">{c.name}</span>
           <span className="block truncate text-sm text-muted">
             {account ?? "Calendar link"}
+            {c.lightIds && ` · ${lightCount(c.lightIds, lights)}`}
             {c.lastError && <span className="text-danger"> · {c.lastError}</span>}
           </span>
         </span>
@@ -287,11 +301,20 @@ function ActiveRow({
               </ul>
             )}
           </div>
+          <ShowsOn id={c.id} lightIds={c.lightIds ?? null} lights={lights} />
           <CalendarActions id={c.id} showTitles={c.showTitles} setsStatus={c.setsStatus} removable={!c.accountId} />
         </div>
       </details>
     </li>
   );
+}
+
+// "Only Office light", "only 2 lights", "no lights".
+function lightCount(ids: string[], lights: { id: string; name: string }[]) {
+  const mine = lights.filter((l) => ids.includes(l.id));
+  if (mine.length === 0) return "no lights";
+  if (mine.length === 1) return `only ${mine[0].name}`;
+  return `only ${mine.length} lights`;
 }
 
 // "Google Calendar", "iCloud", "Fastmail", or the server's host name.
