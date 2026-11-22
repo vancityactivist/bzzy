@@ -31,6 +31,9 @@ struct View {
   uint32_t showBg = 0x000000;
   uint32_t showFg = 0xFFFFFF;
   bool showBgStatus = false;
+  // The status's name, in capitals, when the person renamed it; nullptr or "" = the
+  // standard word.
+  const char* label = nullptr;
 };
 
 // A setup screen (lib/core setup_flow.h): the step's QR code and a few lines of text,

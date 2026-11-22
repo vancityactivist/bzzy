@@ -69,6 +69,10 @@ export type StateResponse = {
   // with the "ship" feature forgets its Wi-Fi (keeping its id and token) and waits to be
   // set up at its new home, then sends X-Bzzy-Arrived: 1 on its first poll there.
   ship?: true;
+  // What the person calls their statuses (lib/status-labels.ts), only the renamed ones,
+  // as typed (the firmware draws them in capitals). Sent to firmware with the "labels"
+  // feature; left out, the light uses the standard words.
+  labels?: Partial<Record<Status, string>>;
 };
 
 export const overrideBody = z.object({
@@ -121,6 +125,7 @@ export function buildState(opts: {
   leds?: { ledStyles?: LedStyles; meetingWarn?: MeetingWarn };
   hours?: { set: boolean; windows: WorkWindow[]; poll: number };
   ship?: boolean;
+  labels?: Partial<Record<Status, string>> | null;
 }): StateResponse {
   const { now, defaultStatus, presence } = opts;
 
@@ -164,6 +169,7 @@ export function buildState(opts: {
   if (opts.leds?.ledStyles) state.ledStyles = opts.leds.ledStyles;
   if (opts.leds?.meetingWarn) state.meetingWarn = opts.leds.meetingWarn;
   if (opts.ship) state.ship = true;
+  if (opts.labels && Object.keys(opts.labels).length) state.labels = opts.labels;
   return state;
 }
 

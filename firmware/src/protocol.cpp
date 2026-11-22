@@ -40,6 +40,18 @@ static void writeStyle(JsonObject o, const LedStyle& st) {
   if (st.forSec) o["for"] = st.forSec;
 }
 
+// A status's name as the screen draws it: printable ASCII in capitals, at most
+// kLabelMax characters. Anything else is dropped (the fonts can't draw it).
+static void copyLabel(char* dst, const char* src) {
+  size_t n = 0;
+  for (; src && *src && n < kLabelMax; ++src) {
+    const unsigned char c = static_cast<unsigned char>(*src);
+    if (c < 0x20 || c > 0x7e) continue;
+    dst[n++] = (c >= 'a' && c <= 'z') ? static_cast<char>(c - 'a' + 'A') : static_cast<char>(c);
+  }
+  dst[n] = '\0';
+}
+
 bool parseState(const char* json, size_t len, State& out) {
   JsonDocument doc;
   if (deserializeJson(doc, json, len)) return false;
@@ -119,6 +131,9 @@ bool parseState(const char* json, size_t len, State& out) {
     }
   }
   st.pollSec = doc["poll"] | 0u;
+  // The person's names for their statuses; absent = the standard words.
+  JsonObjectConst labels = doc["labels"];
+  for (size_t i = 0; i < 4; ++i) copyLabel(st.labels[i], labels[statusName(static_cast<Status>(i))] | "");
 
   // Only in the on-device cache.
   strlcpy(st.dismissedPush, doc["dismissedPush"] | "", sizeof(st.dismissedPush));
@@ -193,6 +208,9 @@ String serializeState(const State& st) {
     }
   }
   if (st.pollSec) doc["poll"] = st.pollSec;
+  for (size_t i = 0; i < 4; ++i) {
+    if (st.labels[i][0]) doc["labels"][statusName(static_cast<Status>(i))] = st.labels[i];
+  }
   if (st.dismissedPush[0]) doc["dismissedPush"] = st.dismissedPush;
   String out;
   serializeJson(doc, out);

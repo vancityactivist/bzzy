@@ -95,6 +95,7 @@ static constexpr uint8_t kBrightness = 180;
 static View g_last = {Layout::Status, bzzy::Status::Unknown, nullptr, 0, false, nullptr, -1};
 static char g_lastText[bzzy::kTextMax] = "";
 static char g_lastNotice[64] = "";
+static char g_lastLabel[bzzy::kLabelMax + 1] = "";
 static bool g_drawn = false;
 
 static constexpr int kW = BZZY_LCD_W;
@@ -116,14 +117,20 @@ static uint16_t bgFor(bzzy::Status s) {
   }
 }
 
+// The standard words, for a status nobody renamed.
 static const char* labelFor(bzzy::Status s) {
   switch (s) {
     case bzzy::Status::Free: return "FREE";
     case bzzy::Status::Busy: return "BUSY";
-    case bzzy::Status::Dnd: return "DO NOT\nDISTURB";
+    case bzzy::Status::Dnd: return "DO NOT DISTURB";
     case bzzy::Status::Away: return "AWAY";
     default: return "?";
   }
+}
+
+// What the screen calls the view's status: the person's name for it, or the standard word.
+static const char* nameFor(const View& v) {
+  return v.status != bzzy::Status::Unknown && v.label && *v.label ? v.label : labelFor(v.status);
 }
 
 // ---- AnimatedGIF file callbacks (LittleFS) ----
@@ -245,7 +252,26 @@ static void drawOfflineBadge(bool online) {
 }
 
 static const lgfx::IFont* fontFor(bzzy::Font f) {
-  return f == bzzy::Font::Bold18 ? &fonts::FreeSansBold18pt7b : &fonts::FreeSansBold12pt7b;
+  return f == bzzy::Font::Bold24   ? &fonts::FreeSansBold24pt7b
+         : f == bzzy::Font::Bold18 ? &fonts::FreeSansBold18pt7b
+                                   : &fonts::FreeSansBold12pt7b;
+}
+
+// The status's name across the colour card, centred on y 120 (text_wrap.h cardLabel():
+// 24 pt, 18 pt, two lines of 18 pt like "DO NOT" / "DISTURB", or two of 12 pt).
+// app/src/components/device-preview.tsx draws the same.
+static void drawCardLabel(const char* name) {
+  const bzzy::Wrapped w = bzzy::cardLabel(name, kNarrow ? kW - 8 : bzzy::kCardLabelWidth);
+  g_lcd.setTextDatum(lgfx::middle_center);
+  g_lcd.setFont(fontFor(w.font));
+  char line[bzzy::kLabelMax + 1];
+  for (size_t i = 0; i < w.count; ++i) {
+    const size_t len = w.lines[i].len < sizeof(line) - 1 ? w.lines[i].len : sizeof(line) - 1;
+    memcpy(line, name + w.lines[i].start, len);
+    line[len] = '\0';
+    const int y = w.count == 1 ? 120 : w.font == bzzy::Font::Bold18 ? 100 + (int)i * 40 : 106 + (int)i * 28;
+    g_lcd.drawString(line, kW / 2, kDy + y);
+  }
 }
 
 // On a narrow screen, text too wide for `font` gets `smaller`. The 240 px screen always
@@ -375,9 +401,8 @@ static void redraw(const View& v) {
     g_lcd.fillRect(0, kGifH, kW, kH - kGifH, bg);
     g_lcd.setTextDatum(lgfx::top_center);
     g_lcd.setTextColor(TFT_WHITE, bg);
-    // One line in the bar; drawString would drop the '\n' and run "DO NOTDISTURB" together.
-    const char* label = v.status == bzzy::Status::Dnd ? "DO NOT DISTURB" : labelFor(v.status);
-    const char* line = v.text && *v.text ? v.text : label;
+    // The message, or else the status's name, in the bar.
+    const char* line = v.text && *v.text ? v.text : nameFor(v);
     const bzzy::Wrapped w = statusLines(line);
     if (w.count > 1) {
       // Too wide for one line: two, a little tighter, with the end time under them.
@@ -394,15 +419,7 @@ static void redraw(const View& v) {
     g_lcd.fillScreen(bg);
     g_lcd.setTextColor(TFT_WHITE, bg);
     g_lcd.setTextDatum(lgfx::middle_center);
-    g_lcd.setFont(&fonts::FreeSansBold24pt7b);
-    const char* label = labelFor(v.status);
-    if (strchr(label, '\n')) {
-      g_lcd.setFont(&fonts::FreeSansBold18pt7b);
-      g_lcd.drawString("DO NOT", kW / 2, kDy + 100);
-      g_lcd.drawString("DISTURB", kW / 2, kDy + 140);
-    } else {
-      g_lcd.drawString(label, kW / 2, kDy + 120);
-    }
+    drawCardLabel(nameFor(v));
     const bzzy::Wrapped w = v.text && *v.text ? statusLines(v.text) : bzzy::Wrapped{};
     if (w.count > 1) {
       // Two lines of the message, wrapped the same way as in the bar (regular weight here,
@@ -550,20 +567,24 @@ void show(const View& v) {
   g_inSetup = false;
   const char* text = v.text ? v.text : "";
   const char* notice = v.notice ? v.notice : "";
+  const char* label = v.label ? v.label : "";
+  const bool sameLabel = strcmp(label, g_lastLabel) == 0;
   const bool sameColours = v.showBg == g_last.showBg && v.showFg == g_last.showFg && v.showBgStatus == g_last.showBgStatus;
   if (g_drawn && v.layout == g_last.layout && v.status == g_last.status && v.until == g_last.until &&
-      v.online == g_last.online && sameColours && strcmp(text, g_lastText) == 0 &&
+      v.online == g_last.online && sameColours && sameLabel && strcmp(text, g_lastText) == 0 &&
       strcmp(notice, g_lastNotice) == 0) {
     return;
   }
   // Only the notice's wording changed (the update's percentage ticking up): redraw just
   // its bar, not the whole screen, which flickered on every percent.
   const bool onlyNotice = g_drawn && v.layout == g_last.layout && v.status == g_last.status &&
-                          v.until == g_last.until && v.online == g_last.online && sameColours &&
+                          v.until == g_last.until && v.online == g_last.online && sameColours && sameLabel &&
                           strcmp(text, g_lastText) == 0 && *notice && *g_lastNotice;
   g_last = v;
   strlcpy(g_lastText, text, sizeof(g_lastText));
   strlcpy(g_lastNotice, notice, sizeof(g_lastNotice));
+  strlcpy(g_lastLabel, label, sizeof(g_lastLabel));
+  g_last.label = g_lastLabel;
   g_drawn = true;
   if (onlyNotice) {
     drawNotice(notice, v.progress, false);

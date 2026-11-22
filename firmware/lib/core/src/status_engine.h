@@ -27,6 +27,7 @@ const char* statusName(Status s);
 bool parseStatus(const char* name, Status& out);
 
 constexpr size_t kTextMax = 48;
+constexpr size_t kLabelMax = 16;  // a status's name (app/src/lib/status-labels.ts LABEL_MAX)
 constexpr size_t kMaxBlocks = 32;
 
 struct Override {
@@ -100,6 +101,9 @@ struct State {
   size_t hoursCount = 0;
   // Seconds the app asked us to wait before the next poll; 0 = the default.
   uint32_t pollSec = 0;
+  // What the person calls each status (Free, Busy, Dnd, Away), in capitals as drawn.
+  // "" = the standard word. Kept in the cache, so the names survive a restart offline.
+  char labels[4][kLabelMax + 1] = {};
 };
 
 struct Settings {

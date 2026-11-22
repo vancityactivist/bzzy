@@ -315,6 +315,7 @@ void loop() {
   // LEDs and the screen's colours still say whether you can be interrupted.
   display::View view = {display::Layout::Status, r.status, r.text,
                         r.source == bzzy::Source::Fallback ? 0 : r.until, net::online(), notice};
+  if (static_cast<size_t>(r.status) < 4) view.label = g_state.labels[static_cast<size_t>(r.status)];
   const bzzy::Show& show = g_state.show;
   if (bzzy::showVisible(g_state, net::now())) {
     // While its GIF downloads, the status card says so; if the light gives up on it,

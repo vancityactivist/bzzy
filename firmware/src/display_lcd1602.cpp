@@ -154,6 +154,12 @@ static const char* labelFor(bzzy::Status s, bool shortForm) {
   }
 }
 
+// The person's name for the status if they renamed it (a long one scrolls), else the
+// standard word.
+static const char* nameFor(const View& v, bool shortForm) {
+  return v.status != bzzy::Status::Unknown && v.label && *v.label ? v.label : labelFor(v.status, shortForm);
+}
+
 static void untilText(uint32_t until, char* buf, size_t n) {
   buf[0] = '\0';
   if (!until) return;
@@ -228,7 +234,7 @@ void splash() {
 }
 
 void show(const View& v) {
-  uint32_t h = hashStr(hashStr(0x811c9dc5u ^ (uint32_t)v.layout, v.text), v.notice);
+  uint32_t h = hashStr(hashStr(hashStr(0x811c9dc5u ^ (uint32_t)v.layout, v.text), v.notice), v.label);
   h = (h ^ ((uint32_t)v.status << 1 | (v.online ? 1u : 0u))) * 16777619u;
   h = (h ^ v.until) * 16777619u;
   if (g_drawn && h == g_hash) return;
@@ -258,13 +264,13 @@ void show(const View& v) {
       setRow(0, r0);  // one row of message, then when it ends
       setRow(1, until);
     } else {
-      setSplitRow(0, labelFor(v.status, true), until);
+      setSplitRow(0, nameFor(v, true), until);
       setRow(1, text);  // too long for two rows: scroll it
     }
     return;
   }
 
-  setSplitRow(0, labelFor(v.status, until[0] != '\0'), until);
+  setSplitRow(0, nameFor(v, until[0] != '\0'), until);
   setRow(1, *notice ? notice : text);
 }
 

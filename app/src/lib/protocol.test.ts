@@ -27,6 +27,12 @@ const presence = (p: Partial<Presence> = {}): Presence => ({
 });
 
 describe("buildState", () => {
+  it("sends status names only when there are some", () => {
+    expect(buildState({ now: NOW, defaultStatus: "free", presence: null, schedule: [], labels: { dnd: "Heads down" } }).labels).toEqual({ dnd: "Heads down" });
+    expect("labels" in buildState({ now: NOW, defaultStatus: "free", presence: null, schedule: [], labels: null })).toBe(false);
+    expect("labels" in buildState({ now: NOW, defaultStatus: "free", presence: null, schedule: [], labels: {} })).toBe(false);
+  });
+
   it("says ship only in ship mode", () => {
     expect(buildState({ now: NOW, defaultStatus: "free", presence: null, schedule: [], ship: true }).ship).toBe(true);
     expect("ship" in buildState({ now: NOW, defaultStatus: "free", presence: null, schedule: [], ship: false })).toBe(false);
