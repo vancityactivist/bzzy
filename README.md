@@ -17,7 +17,7 @@
 
 # bzzy
 
-A homebrew desk busy light: a small screen that shows GIFs, a ring of light around it, and a status (Free, Busy, Do not disturb, Away) set from your phone, your calendar, or the button on top of the device. It clips to a monitor and is powered over USB-C.
+A homebrew desk busy light: a small screen that shows GIFs, a ring of light around it, and a status (Free, Busy, Do not disturb, Away) set from your phone, your calendar, or the button on top of the device. It sits on a desk facing the room, and its frosted front wraps round the edges so you can see your status from behind it too. It's powered over USB-C.
 
 The companion app runs at **[bzzy.ca](https://bzzy.ca)**.
 
@@ -64,7 +64,7 @@ Done:
 1. Breadboard prototype firmware
 2. Companion app with sign-in, teams, status, device API, GIFs, show now and the live preview
 3. Calendar sync from an ICS link
-4. DIY build designed: a custom LED ring board (rev D, drawn from a measured Waveshare board) for the Waveshare board, and a black case with a frosted light border, button cap and bzzy wordmark ([hardware/](hardware/README.md)). Five assembled ring boards ordered from JLCPCB on 2026-11-21; not tested yet
+4. DIY build designed: a custom LED ring board (rev D, drawn from a measured Waveshare board) for the Waveshare board, and a black case with a frosted front that wraps round the edges, a frosted button and the bzzy wordmark, plus a rounded desk stand ([hardware/](hardware/README.md)). Five assembled ring boards ordered from JLCPCB on 2026-11-21; not tested yet
 5. Signed firmware updates over Wi-Fi from GitHub Releases ([docs/ota.md](docs/ota.md))
 6. Setup on the light's own screen: QR codes for Wi-Fi, then pairing with the app
 
@@ -86,7 +86,7 @@ Next (the full list is in [docs/plan.md](docs/plan.md)):
 
 - **Pre-built lights.** Sell assembled and tested bzzys in small batches, built on the main board. The landing page already says they're coming. The ordering spec is in draft PR #81.
 - **DIY side stream.** Keep the Waveshare + ring board + printed case build working for people building their own: test the rev D ring boards (ordered 2026-11-21), which are drawn from a measured Waveshare board and have the rev C review fixes ([hardware/](hardware/README.md)).
-- **Landing page photos.** The signed-out home page (`app/src/components/landing.tsx`) uses a concept picture and illustrations. Swap them for photos of a real bzzy once one is built.
+- **Landing page photos.** The signed-out home page (`app/src/components/landing.tsx`) uses renders made from the case CAD. Swap them for photos of a real bzzy once one is built.
 
 ## Build log
 
@@ -136,9 +136,25 @@ Running the parts list through JLCPCB's BOM tool caught a few things: it wanted 
 
 Next: when the screens arrive, fold a real ribbon behind the glass to see where the connector goes, pick the connector and supercap, and lay out the board.
 
+### 2026-11-22: a light you can see from behind
+
+<p align="center">
+  <a href="docs/images/wraparound-2026-11-22.jpg"><img src="docs/images/wraparound-2026-11-22.jpg" alt="A render of the new case on its desk stand: the frosted front glows red round the screen, which reads Busy, and curves back onto the sides" width="640"></a>
+</p>
+
+A bzzy faces the room, so the person it belongs to sits behind it and can't see their own status. Some product mock-ups made with Runway showed the frosted border rounding over onto the sides, and that turned out to be the fix: if the light wraps round the edges, you can see it from your chair.
+
+So the case changed. The flat frosted plate is now a frosted **front cap**: the whole front face, a rounded edge, and a 5 mm band down all four sides, solid over the LEDs so it carries their light round the corner. The black frame became the body behind it. The size didn't change, and the button is frosted now too, so it doesn't look like a dark gap in the glow. The bzzy wordmark moved back onto the black. The desk stand got rounder at the same time.
+
+<p align="center">
+  <a href="docs/images/wraparound-behind-2026-11-22.jpg"><img src="docs/images/wraparound-behind-2026-11-22.jpg" alt="A render from behind: the back of the light on its stand, with a thin red glow round its edges and on the desk" width="480"></a>
+</p>
+
+Checking how it all holds together turned up an old bug: the M2×8 screws never reached the board. They're M2×12 now, into brass inserts glued into the front cap, since resin won't take self-tapping screws. Both pictures are renders made from the CAD, not photos. The real test comes in December, when the first ring boards arrive and light up a printed case.
+
 ## Hardware
 
-The product is the **bzzy main board** (in design): one custom board with an ESP32-S3-WROOM-1U module, the 1.69" touch screen and 16 LEDs, in a printed black case with a frosted border that glows in the status colour. See [docs/hardware/main-board.md](docs/hardware/main-board.md) and [hardware/](hardware/README.md).
+The product is the **bzzy main board** (in design): one custom board with an ESP32-S3-WROOM-1U module, the 1.69" touch screen and 16 LEDs, in a printed black case with a frosted front that glows in the status colour and wraps round the edges. See [docs/hardware/main-board.md](docs/hardware/main-board.md) and [hardware/](hardware/README.md).
 
 Until it exists, the **Waveshare ESP32-S3-Touch-LCD-1.69** is the development board. It has the same chip, memory and pins, but no radio certification, so it's for building your own, not for selling. The non-touch board and a plain ESP32 still build, for testing. The parts below are for a breadboard build on the Waveshare board.
 

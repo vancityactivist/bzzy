@@ -1,9 +1,9 @@
 import Image from "next/image";
 
-import caseBack from "@/assets/case-back.png";
 import caseExploded from "@/assets/case-exploded.png";
-import caseFront from "@/assets/case-front.png";
-import caseTop from "@/assets/case-top.png";
+import caseFront from "@/assets/case-front.jpg";
+import caseGlow from "@/assets/case-glow.jpg";
+import caseTop from "@/assets/case-top.jpg";
 import heroRender from "@/assets/hero.jpg";
 
 import { defaultPreviewSrcs } from "@/lib/gifs";
@@ -54,7 +54,7 @@ const STATUS_ROWS: { status: Status; name: string; use: string }[] = [
 const SPECS: { term: string; detail: string }[] = [
   { term: "Screen", detail: "1.69 in colour touch, 240 × 280" },
   { term: "Board", detail: "bzzy main board, ESP32-S3" },
-  { term: "Light", detail: "16 RGB LEDs, frosted border" },
+  { term: "Light", detail: "16 RGB LEDs, frosted front that wraps round the edges" },
   { term: "Wi-Fi", detail: "2.4 GHz, guest networks fine" },
   { term: "Power", detail: "USB-C" },
 ];
@@ -76,9 +76,9 @@ const CALENDARS: { name: string; how: string; detail: string }[] = [
 ];
 
 const VIEWS = [
-  { img: caseFront, alt: "The bzzy case from the front: a black frame with a white light border round the screen", title: "The case", line: "Black, with a frosted border" },
-  { img: caseTop, alt: "The top of the case, with the button and the bzzy wordmark", title: "The button", line: "One press changes your status" },
-  { img: caseBack, alt: "The back of the case, with the clip that holds it on a monitor", title: "The clip", line: "Hooks over a monitor's top edge" },
+  { img: caseFront, alt: "The bzzy case from the front, its frosted front glowing green round the screen and curving back onto the sides", title: "The case", line: "A frosted front that wraps round the edges" },
+  { img: caseTop, alt: "The top of the case: a frosted button in the frosted band, and the bzzy wordmark on the black body", title: "The button", line: "One press changes your status" },
+  { img: caseGlow, alt: "The light from behind on its desk stand, a thin red glow round its edges and on the desk", title: "From your chair", line: "The edges glow, so you see your status too" },
 ];
 
 const NAV = [
@@ -146,7 +146,7 @@ export function Landing({ batch }: { batch: ShopBatch }) {
             <div className="lp-c1-6">
               {/* A non-breaking hyphen, so "heads-down" never splits across lines. */}
               <h1 id="hero-h">Desk status light for heads‑down work</h1>
-              <p className="lead">It clips to your monitor and shows your status in light.</p>
+              <p className="lead">It sits on your desk, faces the room and shows your status in light.</p>
               <div className="lp-hero__actions flex flex-wrap items-center gap-3">
                 <a className={buttonClass("primary", "md", "h-12 px-5 text-[15px]")} href="#buy">
                   {BUY_ACTION}
@@ -166,13 +166,13 @@ export function Landing({ batch }: { batch: ShopBatch }) {
         {/* The light in use, close and large (it starts above the fold), then its four statuses as rows. */}
         <section id="light" aria-labelledby="light-h">
           <div className="lp-wrap">
-            {/* A render made from the real case CAD; a photo of the first built bzzy can replace it. */}
+            {/* A render made from the real case CAD (wraparound front, desk stand); a photo of the first built bzzy can replace it. */}
             <div className="lp-showcase">
               <Image
                 src={heroRender}
                 sizes="(min-width: 1440px) 1312px, 100vw"
                 priority
-                alt="A bzzy light clipped to the top of a monitor, its frosted ring glowing red and its screen reading Busy"
+                alt="A bzzy light on its desk stand, its frosted front glowing red and its screen reading Busy"
               />
             </div>
             <div className="lp-grid mt-30">
@@ -419,7 +419,7 @@ export function Landing({ batch }: { batch: ShopBatch }) {
                   <Image
                     src={caseExploded}
                     sizes="(min-width: 1024px) 640px, 100vw"
-                    alt="The case taken apart: back plate and clip, the Waveshare board, the LED ring board, the black frame and the white light border"
+                    alt="The case taken apart: back plate, the Waveshare board, the LED ring board, the black body and the frosted front"
                   />
                 </div>
               </div>
@@ -442,7 +442,7 @@ export function Landing({ batch }: { batch: ShopBatch }) {
                 </li>
                 <li>
                   <h3>Print the case and flash it</h3>
-                  <p className="mt-3 text-muted">Print the case in black and the border in white, then flash the firmware over USB.</p>
+                  <p className="mt-3 text-muted">Print the body in black and the front in frosted resin, then flash the firmware over USB.</p>
                   <a className={`mt-5 inline-block ${LINK}`} href={FIRMWARE}>
                     See the firmware
                   </a>

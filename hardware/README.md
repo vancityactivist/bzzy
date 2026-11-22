@@ -12,7 +12,7 @@ The DIY build is a frame of light around the screen. It has four parts:
 1. The **Waveshare ESP32-S3-Touch-LCD-1.69**, the brains and the screen. It's unchanged from the prototype.
 2. A custom **LED ring board** with 16 small RGB LEDs. It sits around the Waveshare board.
 3. A printed **frosted white front**, round the screen and wrapping round the edges onto the sides. The LEDs light it in the status colour.
-4. A printed **black case** round all of it, with a button on top, the bzzy wordmark, and a monitor clip.
+4. A printed **black case** round all of it, with a button on top, the bzzy wordmark, and a rail on the back for a stand or other mount.
 
 Nothing changes in the firmware. The ring board uses the same data pin (GPIO17) and LED count (16) that `firmware/src/config.h` already has.
 
