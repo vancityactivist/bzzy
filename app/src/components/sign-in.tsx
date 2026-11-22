@@ -30,6 +30,17 @@ export function SignIn({ bare = false }: { bare?: boolean }) {
       <p className="mt-4 text-center text-[13px] text-pretty text-muted">
         First time here? Sign in with GitHub, then add a passkey in Settings.
       </p>
+      <p className="mt-2 text-center text-[12px] text-pretty text-muted">
+        By signing in you agree to the{" "}
+        <a className="underline underline-offset-2 hover:text-foreground" href="/terms">
+          terms
+        </a>{" "}
+        and{" "}
+        <a className="underline underline-offset-2 hover:text-foreground" href="/privacy">
+          privacy policy
+        </a>
+        .
+      </p>
     </Card>
   );
   if (bare) return card;

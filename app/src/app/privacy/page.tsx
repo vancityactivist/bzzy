@@ -40,6 +40,11 @@ export default function PrivacyPage() {
           <li>Your account: name, email address and profile picture from GitHub, and your passkeys.</li>
           <li>Your lights, your status and messages, the GIFs you upload, your teams and settings.</li>
           <li>
+            About each light: its name, firmware version, board type and when it last checked in. Your Wi-Fi name and
+            password stay on the light and are never sent to bzzy.
+          </li>
+          <li>API tokens and light tokens, stored only as one-way hashes, and the webhook addresses you add.</li>
+          <li>
             From calendars you connect: the start and end time, free/busy state and title of events in the next eight
             days. Titles are only shown on a light if you turn that on.
           </li>
@@ -48,6 +53,13 @@ export default function PrivacyPage() {
             app-specific password, encrypted before it&apos;s stored. For an ICS link: the link itself, kept private.
           </li>
         </ul>
+
+        <H>Who can see what</H>
+        <p>
+          People on your teams see your name, picture and status, and any message you choose to show. They never see your
+          calendars or events. Team owners and admins can manage the team&apos;s lights and members, and a team keeps a log of
+          those changes. Anything you send to a webhook goes to the address you gave.
+        </p>
 
         <H>Google Calendar</H>
         <p>
@@ -64,8 +76,9 @@ export default function PrivacyPage() {
           >
             Google API Services User Data Policy
           </a>
-          , including the Limited Use requirements. Google data is not sold, not used for advertising, and not used
-          to train AI models. You can disconnect in Settings at any time, which deletes the token and the saved events
+          , including the Limited Use requirements. Google data is not sold, not transferred to anyone except as
+          needed to run bzzy, not used for advertising, and not used to train AI models. Nobody reads it unless you ask
+          for help and agree, it&apos;s needed for security, or the law requires it. You can disconnect in Settings at any time, which deletes the token and the saved events
           and tells Google to revoke bzzy&apos;s access. You can also remove access from your Google Account&apos;s
           security settings.
         </p>
@@ -78,6 +91,18 @@ export default function PrivacyPage() {
           revoke it at account.apple.com.
         </p>
 
+        <H>The contact form</H>
+        <p>
+          Your name, email and message are emailed to us and not stored in the app. Your IP address is used, as a one-way
+          hash, to stop more than a few messages a minute.
+        </p>
+
+        <H>Cookies and analytics</H>
+        <p>
+          bzzy uses a sign-in cookie to keep you signed in, and nothing for advertising or tracking. Vercel Web Analytics and
+          Speed Insights count page views and page speed without cookies and without identifying you.
+        </p>
+
         <H>Who else handles it</H>
         <ul>
           <li>Vercel hosts the app and its file storage.</li>
@@ -85,24 +110,57 @@ export default function PrivacyPage() {
           <li>Resend sends bzzy&apos;s emails.</li>
           <li>Cloudflare checks the contact form isn&apos;t a bot (Turnstile). It sees your browser and IP address, not your message.</li>
           <li>GitHub and Google, when you sign in with them or connect them.</li>
+          <li>GIPHY, when you use a GIPHY link: the GIF is loaded from GIPHY each time it&apos;s shown.</li>
+          <li>The bzzy shop at shop.bzzy.ca, if you buy a light: it gives the app your email so the light arrives paired to you.</li>
         </ul>
-        <p>These services may keep data outside Canada. bzzy doesn&apos;t sell or rent your data to anyone.</p>
-
-        <H>Deleting it</H>
         <p>
-          Remove a calendar or disconnect an account in Settings and its data is deleted straight away. To delete your
-          whole account, email{" "}
+          These services store data in the United States, where it may be accessed under US law. bzzy doesn&apos;t sell or
+          rent your data to anyone, and only emails you about your account and your teams.
+        </p>
+
+        <H>How long it&apos;s kept, and deleting it</H>
+        <p>
+          Everything is kept while you use bzzy. Calendar events are refreshed as they change and only the next eight days
+          are kept. Remove a calendar or disconnect an account in Settings and its data is deleted straight away. To delete
+          your whole account, email{" "}
           <a className="underline underline-offset-2" href="mailto:hello@bzzy.ca">
             hello@bzzy.ca
+          </a>{" "}
+          and it&apos;s deleted within 30 days. Hosting providers may keep short-lived logs and backups for a little longer.
+        </p>
+
+        <H>Your rights</H>
+        <p>
+          You can ask to see the information bzzy holds about you, correct it, or delete it, and you can withdraw your
+          consent at any time (which may mean closing your account). Email{" "}
+          <a className="underline underline-offset-2" href="mailto:hello@bzzy.ca">
+            hello@bzzy.ca
+          </a>{" "}
+          and you&apos;ll get an answer within 30 days. If your information is ever exposed in a way that could harm you,
+          you&apos;ll be told. The person responsible for privacy is Adam Glover. If you&apos;re not happy with the answer, you
+          can complain to the{" "}
+          <a className="underline underline-offset-2" href="https://www.oipc.bc.ca">
+            Office of the Information and Privacy Commissioner for British Columbia
+          </a>{" "}
+          or the{" "}
+          <a className="underline underline-offset-2" href="https://www.priv.gc.ca">
+            Office of the Privacy Commissioner of Canada
           </a>
           .
         </p>
+
+        <H>Children</H>
+        <p>bzzy is made for work desks and isn&apos;t meant for children under 13.</p>
 
         <p>
           See also the{" "}
           <Link className="underline underline-offset-2" href="/terms">
             terms
           </Link>
+          . Buying a light has its own{" "}
+          <a className="underline underline-offset-2" href="https://shop.bzzy.ca/privacy">
+            shop privacy policy
+          </a>
           .
         </p>
 
