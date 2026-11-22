@@ -37,7 +37,7 @@ for view in "noclip:75,0,-28:front:" "noclip:80,0,-12:busy:#ff3b30" "noclip:40,0
     --camera=0,0,0,$cam,0 --viewall --autocenter --colorscheme=Tomorrow case/bzzy_case.scad
 done
 # One STL per printed part, already turned the way it prints best.
-# Frosted white: light. Black: frame, back, trim, button, clip.
+# Frosted white: light, button. Black: frame, back, trim, clip.
 for part in light frame back trim button clip; do
   openscad -q -D "PART=\"$part\"" -o "case/stl/$part.stl" case/bzzy_case.scad
 done

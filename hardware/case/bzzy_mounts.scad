@@ -43,7 +43,11 @@ TONGUE_RELIEF = 0.8; // tongue is this much thinner than the floor, so it can fl
 STAND_TILT = 15;     // degrees back from upright
 STAND_BASE_T = 3;
 STAND_CLEAR = 1;     // the device's lowest (back bottom) edge above the base
-STAND_DEPTH = 46;    // base, front to back
+STAND_DEPTH = 46;    // base, behind the device's bottom front edge
+STAND_FRONT = 10;    // base in front of the device. The frosted band's bottom edge throws
+                     // the status colour onto it, which the owner sees from behind
+STAND_R = 10;        // corner radius of the base, seen from above
+STAND_SOFT = 1.6;    // rounded top edge of the base, and the spine's rounding
 
 // 1/4"-20 UNC hex nut: 7/16" (11.11 mm) across flats, 7/32" (5.56 mm) thick.
 NUT_AF = 11.11 + 0.1;  // press fit. Loose? A drop of glue.
@@ -116,20 +120,33 @@ module spine_slab(w) {
   translate([-w / 2, CAR_Y0, CAR_Z0 - 0.01]) cube([w, 0.55 * (CAR_Y1 - CAR_Y0), 0.02]);
 }
 
+// A slab with rounded corners and a rounded top edge (radius soft), flat underneath.
+module soft_slab(w, d, r, t, soft) {
+  hull() {
+    linear_extrude(t - soft) rrect(w, d, r);
+    for (a = [15 : 15 : 90])
+      translate([0, 0, t - soft + soft * sin(a) - 0.01]) linear_extrude(0.01) rrect(w - 2 * soft * (1 - cos(a)), d - 2 * soft * (1 - cos(a)), r - soft * (1 - cos(a)));
+  }
+}
+
+// Soft, rounded stand: rounded base, rounded spine, rounded carriage corners.
 module stand() {
-  spine_w = 22;
+  spine_w = 22 - 2 * STAND_SOFT;
   difference() {
     union() {
-      stand_place() carriage(26);
+      stand_place() carriage(26, 4);
       // spine: from the back of the carriage straight down to the base, and back to
-      // its rear edge. All of it is behind the carriage's back face.
-      hull() {
-        stand_place() spine_slab(spine_w);
-        linear_extrude(STAND_BASE_T) projection() stand_place() spine_slab(spine_w);
-        translate([-spine_w / 2, STAND_DEPTH - 12, 0]) cube([spine_w, 10, STAND_BASE_T]);
+      // its rear edge. All of it is behind the carriage's back face. Rounded all over.
+      minkowski() {
+        hull() {
+          stand_place() spine_slab(spine_w);
+          linear_extrude(STAND_BASE_T) projection() stand_place() spine_slab(spine_w);
+          translate([-spine_w / 2, STAND_DEPTH - 14, 0]) cube([spine_w, 8, STAND_BASE_T]);
+        }
+        sphere(r = STAND_SOFT, $fn = 16);
       }
       // base
-      translate([0, (STAND_DEPTH - 4) / 2, 0]) linear_extrude(STAND_BASE_T) rrect(STAND_W, STAND_DEPTH + 4, 4);
+      translate([0, (STAND_DEPTH - STAND_FRONT) / 2, 0]) soft_slab(STAND_W, STAND_DEPTH + STAND_FRONT, STAND_R, STAND_BASE_T, STAND_SOFT);
     }
     stand_place() { device_keepout(); tongue_relief(3); }
     translate([0, 0, -50]) cube(100, center = true);   // flat underneath
