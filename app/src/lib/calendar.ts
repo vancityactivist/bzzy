@@ -6,7 +6,8 @@ import { after } from "next/server";
 import { db, schema } from "@/db";
 
 import { cacheGet, cacheSet, expire, tag } from "./cache";
-import { googleEventsFor } from "./calendar-accounts";
+import { calDavEventsFor, googleEventsFor } from "./calendar-accounts";
+import { CalDavAuthFailed, CalDavError } from "./caldav";
 import { GoogleAuthLost, GoogleError } from "./google-calendar";
 import {
   type CachedEvent,
@@ -98,7 +99,9 @@ function friendlyError(err: unknown) {
     err instanceof FetchRefused ||
     err instanceof IcsError ||
     err instanceof GoogleAuthLost ||
-    err instanceof GoogleError
+    err instanceof GoogleError ||
+    err instanceof CalDavAuthFailed ||
+    err instanceof CalDavError
   )
     return err.message;
   if (
@@ -129,6 +132,7 @@ async function eventsFor(
   timeZone: string,
 ): Promise<CachedEvent[]> {
   if (cal.source === "google") return googleEventsFor(cal, timeZone);
+  if (cal.source === "caldav") return calDavEventsFor(cal, timeZone);
   if (cal.source === "ics" && cal.icsUrl)
     return (await loadFeed(cal.icsUrl, timeZone)).events;
   throw new IcsError("bzzy can't read this kind of calendar yet.");
@@ -179,6 +183,10 @@ export async function calendarsForUser(userId: string) {
     .where(eq(schema.calendars.userId, userId))
     .orderBy(asc(schema.calendars.createdAt));
   return withLastCheck(rows);
+}
+
+export async function calendarsForAccount(accountId: string) {
+  return db().select().from(schema.calendars).where(eq(schema.calendars.accountId, accountId));
 }
 
 export function isStale(cal: CalendarRow, now = Date.now()) {

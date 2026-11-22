@@ -161,3 +161,59 @@ export async function postPublic(url: URL, body: string, headers: Record<string,
   await res.body?.cancel().catch(() => {});
   return res.status;
 }
+
+// A WebDAV/CalDAV request to a server someone named: HTTPS only, public addresses only,
+// small and quick. Redirects are followed by hand (re-checked each hop); the login only
+// goes on to the same host, or within a few known providers that hand out per-account
+// hosts (caldav.icloud.com -> p42-caldav.icloud.com). Returns the status, the final URL
+// and the body text.
+const SHARDED = ["icloud.com", "fastmail.com"];
+const keepsLogin = (from: string, to: string) =>
+  from === to || SHARDED.some((d) => (from === d || from.endsWith(`.${d}`)) && (to === d || to.endsWith(`.${d}`)));
+
+export async function davRequest(
+  start: URL,
+  opts: { method: string; body?: string; depth?: "0" | "1"; authorization: string },
+): Promise<{ status: number; url: URL; text: string }> {
+  let url = start;
+  let authorization: string | null = opts.authorization;
+  for (let hop = 0; ; hop++) {
+    if (url.protocol !== "https:") throw new FetchRefused("Calendar servers have to use https://.");
+    if (url.port && url.port !== "443") throw new FetchRefused("Calendar servers on unusual ports aren't supported.");
+    await assertPublicHost(url);
+    const res = await fetch(url, {
+      method: opts.method,
+      body: opts.body,
+      redirect: "manual",
+      signal: AbortSignal.timeout(TIMEOUT_MS),
+      headers: {
+        "content-type": "application/xml; charset=utf-8",
+        "user-agent": "bzzy-calendar/1.0",
+        ...(opts.depth ? { depth: opts.depth } : {}),
+        ...(authorization ? { authorization } : {}),
+      },
+      cache: "no-store",
+    });
+    if (res.status >= 300 && res.status < 400 && res.headers.get("location")) {
+      if (hop >= MAX_REDIRECTS) throw new FetchRefused("The calendar server redirected too many times.");
+      const next = new URL(res.headers.get("location")!, url);
+      if (!keepsLogin(url.hostname, next.hostname)) authorization = null;
+      url = next;
+      continue;
+    }
+    const reader = res.body?.getReader();
+    const chunks: Uint8Array[] = [];
+    let total = 0;
+    while (reader) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      total += value.byteLength;
+      if (total > MAX_BYTES) {
+        await reader.cancel();
+        throw new FetchRefused("The calendar server sent too much.");
+      }
+      chunks.push(value);
+    }
+    return { status: res.status, url, text: new TextDecoder().decode(Buffer.concat(chunks)) };
+  }
+}

@@ -44,8 +44,8 @@ export default function PrivacyPage() {
             days. Titles are only shown on a light if you turn that on.
           </li>
           <li>
-            For a connected calendar account: the account&apos;s email address and an access token, encrypted before
-            it&apos;s stored. For an ICS link: the link itself, kept private.
+            For a connected calendar account: the account&apos;s email address or login and its access token or
+            app-specific password, encrypted before it&apos;s stored. For an ICS link: the link itself, kept private.
           </li>
         </ul>
 
@@ -68,6 +68,14 @@ export default function PrivacyPage() {
           to train AI models. You can disconnect in Settings at any time, which deletes the token and the saved events
           and tells Google to revoke bzzy&apos;s access. You can also remove access from your Google Account&apos;s
           security settings.
+        </p>
+
+        <H>iCloud and other calendar servers</H>
+        <p>
+          If you connect iCloud or another CalDAV server, bzzy uses the app-specific password you give it only to read
+          your calendars, the same way as above. Apple&apos;s app-specific passwords can&apos;t be limited to
+          calendars, so bzzy never asks the server for anything else. Disconnecting deletes the password; you can also
+          revoke it at account.apple.com.
         </p>
 
         <H>Who else handles it</H>

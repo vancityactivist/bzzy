@@ -54,9 +54,26 @@ Full plan: the "bzzy: Google and iCloud calendars" design doc (2026-11-22).
 - Unverified, Google shows a warning screen and allows 100 users over the app's lifetime.
   Submit for verification (privacy policy at /privacy, demo video) before selling.
 
+## iCloud and other CalDAV servers
+
+- Settings, Calendars, Add a calendar: pick iCloud, Fastmail or Other (server address),
+  then the login and an app-specific password. bzzy finds the calendars (current-user-principal,
+  then calendar-home-set, `.well-known/caldav` as a fallback) and adds every event calendar,
+  all setting status (CalDAV servers don't list holiday or birthday calendars). Reminder and
+  task lists are skipped.
+- Each refresh asks the calendar's ctag first and only downloads events when it changed or
+  the week moved on (marker in the runtime cache), then a time-range REPORT; the events go
+  through the same ICS rules (`lib/ics.ts`).
+- Requests go through `davRequest` (`lib/safe-fetch.ts`): HTTPS, public addresses only,
+  redirects re-checked, the login only sent to the same host (or within icloud.com /
+  fastmail.com, which hand out per-account hosts).
+- A refused password marks the account "needs reconnect" and shows an Update password form;
+  the new one is checked against the server before it's saved.
+- The password is sealed like Google's refresh token (`CALENDAR_KEY`). Apple's app-specific
+  passwords can't be limited to calendars, which the connect form says.
+
 ## Next
 
 1. Google push notifications for near-instant updates.
-2. CalDAV (iCloud with an app-specific password, Fastmail, Nextcloud).
-3. Google review before the shop opens.
-4. Calendars for lights that don't follow their owner.
+2. Google review (submitted 2026-11-21).
+3. Calendars for lights that don't follow their owner.

@@ -8,6 +8,7 @@ import { z } from "zod";
 import { signIn, signOut } from "@/auth";
 import {
   addCalendar,
+  calendarsForAccount,
   deleteCalendar,
   ownCalendar,
   refreshCalendar,
@@ -30,7 +31,9 @@ import {
   setLightDefault,
 } from "@/lib/devices";
 import { isAdmin, setSuperadmin } from "@/lib/admin";
-import { ownAccount, removeAccount } from "@/lib/calendar-accounts";
+import { connectCalDav, ownAccount, removeAccount, updateCalDavPassword } from "@/lib/calendar-accounts";
+import { CalDavAuthFailed, CalDavError, PRESETS } from "@/lib/caldav";
+import { FetchRefused } from "@/lib/safe-fetch";
 import { newTokenInput } from "@/lib/api-rules";
 import { takeLimit } from "@/lib/api-limits";
 import { createApiToken, revokeApiToken, setApiBlocked, TokenError } from "@/lib/api-tokens";
@@ -293,6 +296,57 @@ export async function addCalendarAction(_prev: CalendarFormResult, formData: For
   if (!input.success) return { ok: false, error: input.error.issues[0].message };
   const error = await addCalendar(user.id, input.data.name, input.data.url);
   if (error) return { ok: false, error };
+  refresh();
+  return { ok: true };
+}
+
+// Errors from connecting a CalDAV account, in words fit to show.
+function calDavMessage(err: unknown): string {
+  if (err instanceof CalDavAuthFailed)
+    return "The server didn't accept that login. For iCloud, use your Apple ID email and an app-specific password, not your normal password.";
+  if (err instanceof CalDavError || err instanceof FetchRefused) return err.message;
+  if (err instanceof Error && (err.name === "TimeoutError" || err.name === "AbortError")) return "The calendar server took too long to answer.";
+  return "Couldn't connect to that calendar server.";
+}
+
+export async function connectCalDavAction(_prev: CalendarFormResult, formData: FormData): Promise<CalendarFormResult> {
+  const user = await requireUser();
+  const preset = String(formData.get("preset") ?? "icloud");
+  const username = String(formData.get("username") ?? "").trim().slice(0, 320);
+  // App-specific passwords are often pasted with spaces or dashes kept; iCloud's have dashes.
+  const password = String(formData.get("password") ?? "").trim().slice(0, 256);
+  if (!username || !password) return { ok: false, error: "Enter the login name and password." };
+  let server: URL;
+  try {
+    const raw = preset in PRESETS ? PRESETS[preset as keyof typeof PRESETS].url : String(formData.get("server") ?? "").trim();
+    server = new URL(/^https?:\/\//i.test(raw) ? raw : `https://${raw}`);
+  } catch {
+    return { ok: false, error: "That server address doesn't look right." };
+  }
+  if (server.protocol !== "https:") return { ok: false, error: "The server has to use https://." };
+  try {
+    const account = await connectCalDav(user.id, { server, username, password });
+    const cals = await calendarsForAccount(account.id);
+    after(() => Promise.all(cals.map((c) => refreshCalendar(c))));
+  } catch (err) {
+    return { ok: false, error: calDavMessage(err) };
+  }
+  refresh();
+  return { ok: true };
+}
+
+export async function updateCalDavPasswordAction(_prev: CalendarFormResult, formData: FormData): Promise<CalendarFormResult> {
+  const user = await requireUser();
+  const account = await ownAccount(user.id, String(formData.get("account") ?? ""));
+  const password = String(formData.get("password") ?? "").trim().slice(0, 256);
+  if (!account || !password) return { ok: false, error: "Enter the new password." };
+  try {
+    await updateCalDavPassword(account, password);
+    const cals = await calendarsForAccount(account.id);
+    after(() => Promise.all(cals.map((c) => refreshCalendar(c))));
+  } catch (err) {
+    return { ok: false, error: calDavMessage(err) };
+  }
   refresh();
   return { ok: true };
 }
