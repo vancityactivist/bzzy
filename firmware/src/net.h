@@ -20,6 +20,9 @@ void loop();  // call from the main loop
 
 bool online();         // Wi-Fi up AND the last sync worked
 bool setupPortalOpen();
+// Ship mode: the app said this light is boxed up for its owner, so it forgot its Wi-Fi.
+// True until it's unplugged; next power-on it opens the Wi-Fi setup page.
+bool packed();
 
 // What the setup screens need (lib/core setup_flow.h). Safe to call from the main loop.
 struct SetupInfo {

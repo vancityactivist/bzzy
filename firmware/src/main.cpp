@@ -234,6 +234,22 @@ void loop() {
 
   const bool splashing = ms - g_splashAt < cfg::kSplashMs;
 
+  // Ship mode: packed for its owner (net.h packed()). The ring goes dark and the screen
+  // says what to do; presses do nothing until it's unplugged.
+  if (net::packed()) {
+    touch::poll();
+    topButtonPoll();
+    buttonPressed();
+    leds::setSetup(leds::Setup::None);
+    leds::setOff(true);
+    display::SetupView v = {bzzy::SetupStep::None, bzzy::SetupNote::None, 0, 0, nullptr,
+                            "Packed", "Plug me in at your desk", "and pick your Wi-Fi", false};
+    display::showSetup(v);
+    leds::tick(ms);
+    delay(1);
+    return;
+  }
+
   // Being set up (Wi-Fi, then pairing): the setup screens and ring take over, and
   // presses do nothing. Checked a few times a second; the answer changes slowly.
   static net::SetupInfo si;

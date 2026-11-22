@@ -11,6 +11,15 @@ It's a small, private API for one trusted caller, separate from the public API i
 3. **Ship.** When the box goes out, the shop calls `POST /api/provision/claims/{id}/ship`. Every light on the claim goes into ship mode, and the buyer gets the "set up your account" email if they haven't had it.
 4. **Arrive.** The buyer plugs the light in at home and joins their Wi-Fi. Its first poll from there carries `X-Bzzy-Arrived: 1`, which ends ship mode, and the claim reports `onlineSinceShip: true` for it (see [protocol.md](protocol.md)). Firmware before ship mode never sends the header, so until then the shop marks orders delivered by hand.
 
+### What the light does in ship mode
+
+Firmware with the `ship` feature (it lists `ship` in `X-Bzzy-Features`):
+
+- On the first answer with `ship: true` it saves the name of the Wi-Fi it's on, **forgets that Wi-Fi** (its device id and token stay), turns the ring off and shows **"Packed. Plug me in at your desk and pick your Wi-Fi"**. Wait for that screen before unplugging it.
+- At its new home there's no Wi-Fi saved, so it opens the usual `bzzy-XXXX` setup page. Once the owner picks their Wi-Fi it goes straight to their status: no pairing step.
+- Its polls from a Wi-Fi with a **different name** from the bench one carry `X-Bzzy-Arrived: 1`. When the answer stops saying `ship: true`, it forgets ship mode.
+- If it's put back on the bench Wi-Fi while still in ship mode (to test it again, say), it packs itself again on its next poll, so it never reaches its owner with the bench Wi-Fi saved.
+
 ## The claim link
 
 A buyer whose account can't sign in yet (no GitHub, no passkey) gets an email with a link to `/claim/{token}`:

@@ -278,4 +278,12 @@ bool parseFirmwareOffer(const char* json, size_t len, ota::Offer& out) {
   return true;
 }
 
+bool parseShip(const char* json, size_t len) {
+  JsonDocument filter;
+  filter["ship"] = true;
+  JsonDocument doc;
+  if (deserializeJson(doc, json, len, DeserializationOption::Filter(filter))) return false;
+  return doc["ship"] | false;
+}
+
 }  // namespace bzzy
