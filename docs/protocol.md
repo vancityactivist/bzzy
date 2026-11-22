@@ -55,7 +55,7 @@ Every request also says which firmware the device runs, so the app can offer upd
 | `X-Bzzy-Update-Failed` | `0.3.0` | only after an update rolled back |
 | `X-Bzzy-Update-Now` | `1762891100` | the last "Update now" press it acted on |
 | `X-Bzzy-Arrived` | `1` | only while the last answer had `ship: true`, on a poll from a new Wi-Fi network (the light has reached its owner). See [provisioning.md](provisioning.md) |
-| `X-Bzzy-Features` | `colors,hours,labels,leds,push` | comma-separated extras this firmware understands: `colors` (show now colours), `hours` (working hours and `poll`), `labels` (status names), `leds` (LED styles), `push` (team pushes) |
+| `X-Bzzy-Features` | `colors,hours,labels,leds,push,ship` | comma-separated extras this firmware understands: `colors` (show now colours), `hours` (working hours and `poll`), `labels` (status names), `leds` (LED styles), `push` (team pushes), `ship` (ship mode, sends `X-Bzzy-Arrived`) |
 
 ```json
 {

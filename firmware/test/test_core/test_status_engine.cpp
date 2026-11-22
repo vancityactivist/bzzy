@@ -452,6 +452,7 @@ void test_merge_takes_the_apps_hours() {
 void run_led_pattern_tests();  // test_led_pattern.cpp
 void run_push_tests();         // test_push.cpp
 void run_setup_flow_tests();   // test_setup_flow.cpp
+void run_ship_mode_tests();    // test_ship_mode.cpp
 
 int main(int, char**) {
   UNITY_BEGIN();
@@ -497,5 +498,6 @@ int main(int, char**) {
   run_led_pattern_tests();
   run_push_tests();
   run_setup_flow_tests();
+  run_ship_mode_tests();
   return UNITY_END();
 }

@@ -32,4 +32,7 @@ bool parseGifs(const char* json, size_t len, GifRef out[kGifSlots]);
 // there isn't one, or it's malformed.
 bool parseFirmwareOffer(const char* json, size_t len, ota::Offer& out);
 
+// Whether the app says this light is in ship mode ("ship": true; docs/provisioning.md).
+bool parseShip(const char* json, size_t len);
+
 }  // namespace bzzy

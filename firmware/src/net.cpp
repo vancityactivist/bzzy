@@ -13,6 +13,7 @@
 #include "ota.h"
 #include "protocol.h"
 #include "rtc.h"
+#include "ship_mode.h"
 
 namespace net {
 
@@ -45,6 +46,13 @@ static volatile bool g_fastPoll = false;  // set by the main loop: awake outside
 static volatile uint32_t g_pollMs = cfg::kPollIntervalMs;  // what the app asked for last
 static uint32_t g_nextUpdateTryMs = 0;    // after a failed update, wait before trying again
 static uint8_t g_unauthorized = 0;        // 401s in a row from the app: the light was removed
+
+// Ship mode (lib/core ship_mode.h). Saved, so it survives the trip in the box. Network
+// task only, except g_packed, which the main loop reads.
+static bool g_shipArmed = false;
+static char g_shipSsid[33] = "";     // the Wi-Fi it was packed on
+static bool g_sendArrived = false;   // add X-Bzzy-Arrived: 1 to this state request
+static volatile bool g_packed = false;  // packed this power-on: show "Packed" until unplugged
 
 // Pairing (docs/protocol.md, "Pairing"). The network task owns these; the code, link
 // and paired name are copied out for the screen under g_mx.
@@ -83,6 +91,8 @@ static void loadSettings() {
   p.getString("api", g_settings.apiBase, sizeof(g_settings.apiBase));
   p.getString("device", g_settings.deviceId, sizeof(g_settings.deviceId));
   p.getString("token", g_settings.token, sizeof(g_settings.token));
+  g_shipArmed = p.getBool("ship", false);
+  p.getString("shipSsid", g_shipSsid, sizeof(g_shipSsid));
   p.end();
   // A fresh device: offer the usual app URL in the setup portal.
   if (!g_settings.apiBase[0]) strlcpy(g_settings.apiBase, cfg::kDefaultApiBase, sizeof(g_settings.apiBase));
@@ -118,6 +128,14 @@ static void saveParams() {
   if (n && g_settings.apiBase[n - 1] == '/') g_settings.apiBase[n - 1] = '\0';
   g_unauthorized = 0;
   saveSettings();
+}
+
+static void saveShip() {
+  Preferences p;
+  p.begin("bzzy", false);
+  p.putBool("ship", g_shipArmed);
+  p.putString("shipSsid", g_shipSsid);
+  p.end();
 }
 
 static bool configured() { return g_settings.apiBase[0] && g_settings.deviceId[0] && g_settings.token[0]; }
@@ -159,7 +177,8 @@ static bool httpRequest(const char* method, const String& u, const String& body,
   http.addHeader("X-Bzzy-Board", ota::board());
   // What this firmware understands beyond protocol v1, so the app only offers it where
   // it works: "leds" = ledStyles and meetingWarn; "push" = team pushes and push-ack.
-  http.addHeader("X-Bzzy-Features", "colors,hours,labels,leds,push");
+  http.addHeader("X-Bzzy-Features", "colors,hours,labels,leds,push,ship");
+  if (g_sendArrived) http.addHeader("X-Bzzy-Arrived", "1");
   if (ota::failedVersion()[0]) http.addHeader("X-Bzzy-Update-Failed", ota::failedVersion());
   if (ota::lastNowId()) http.addHeader("X-Bzzy-Update-Now", String(ota::lastNowId()));
   int code;
@@ -451,10 +470,13 @@ static bool syncOnce() {
     xSemaphoreGive(g_mx);
   }
 
-  // 2) Pull the current state.
+  // 2) Pull the current state. In ship mode on a new Wi-Fi, say it has arrived.
   String resp;
   int status = 0;
-  if (!httpRequest("GET", url("/state"), "", &resp, &status)) {
+  g_sendArrived = bzzy::shipArrived(g_shipArmed, g_shipSsid, WiFi.SSID().c_str());
+  const bool got = httpRequest("GET", url("/state"), "", &resp, &status);
+  g_sendArrived = false;
+  if (!got) {
     // Someone deleted this light in the app (or made it a new token). After a few in a
     // row, forget the id and show a pairing code. The saved settings stay until a new
     // pairing replaces them, so a light set up by hand can still be fixed by hand.
@@ -466,6 +488,30 @@ static bool syncOnce() {
     return false;
   }
   g_unauthorized = 0;
+
+  // 2b) Ship mode: the light was set up on the bench and is going in a box.
+  switch (bzzy::shipStep(g_shipArmed, bzzy::parseShip(resp.c_str(), resp.length()), g_shipSsid, WiFi.SSID().c_str())) {
+    case bzzy::ShipAction::Pack:
+      // Remember the bench Wi-Fi (so it can tell when it's somewhere else), then forget
+      // it. The device id and token stay: at its new home it only needs the owner's Wi-Fi.
+      strlcpy(g_shipSsid, WiFi.SSID().c_str(), sizeof(g_shipSsid));
+      g_shipArmed = true;
+      saveShip();
+      g_packed = true;
+      Serial.printf("[ship] packed on \"%s\": forgetting Wi-Fi\n", g_shipSsid);
+      WiFi.setAutoReconnect(false);
+      WiFi.disconnect(true, true);  // radio off, saved network erased
+      return true;
+    case bzzy::ShipAction::Done:
+      Serial.println("[ship] out of ship mode");
+      g_shipArmed = false;
+      g_shipSsid[0] = '\0';
+      saveShip();
+      break;
+    case bzzy::ShipAction::None:
+      break;
+  }
+
   static bzzy::State parsed;  // big-ish: keep it off the task stack
   if (!bzzy::parseState(resp.c_str(), resp.length(), parsed)) {
     Serial.println("[net] couldn't parse state response");
@@ -717,6 +763,7 @@ void loop() {
 
 bool online() { return WiFi.status() == WL_CONNECTED && g_lastSyncOk; }
 bool setupPortalOpen() { return g_portalOpen; }
+bool packed() { return g_packed; }
 
 void setupInfo(SetupInfo& out) {
   out.portalOpen = g_portalOpen;
