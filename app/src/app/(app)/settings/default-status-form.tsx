@@ -9,7 +9,7 @@ import { type Status, STATUSES } from "@/lib/protocol";
 import { setDefaultStatusAction } from "@/app/actions";
 
 // What every light that follows you shows when there's no meeting and nothing is set.
-export function DefaultStatusForm({ value }: { value: Status }) {
+export function DefaultStatusForm({ value, names }: { value: Status; names: Record<Status, string> }) {
   const [pending, start] = useTransition();
   const [current, setCurrent] = useOptimistic(value);
   return (
@@ -33,7 +33,7 @@ export function DefaultStatusForm({ value }: { value: Status }) {
           )}
         >
           <StatusDot status={s} />
-          {STATUS_META[s].label}
+          {names[s]}
         </button>
       ))}
     </div>

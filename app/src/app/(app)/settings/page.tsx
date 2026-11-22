@@ -34,6 +34,7 @@ import { passkeysForUser } from "@/lib/passkeys";
 import { nowSeconds } from "@/lib/protocol";
 import { getCurrentUser } from "@/lib/session";
 import { getLook } from "@/lib/look";
+import { allLabels, statusLabel } from "@/lib/status-labels";
 import {
   EVENT_INFO,
   FAILURES_TO_DISABLE,
@@ -116,7 +117,7 @@ async function SettingsContent() {
               Calendars
             </span>
           }
-          description="Your lights turn Busy during meetings and Away when you're out of office."
+          description={`Your lights turn ${statusLabel("busy", look.statusLabels)} during meetings and ${statusLabel("away", look.statusLabels)} when you're out of office.`}
         />
         <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
           <p className="text-sm text-muted">
@@ -152,7 +153,7 @@ async function SettingsContent() {
           description="What your lights show when there's no meeting and you haven't set anything."
         />
         <div className="mt-5">
-          <DefaultStatusForm value={look.defaultStatus} />
+          <DefaultStatusForm value={look.defaultStatus} names={allLabels(look.statusLabels)} />
         </div>
       </Card>
 

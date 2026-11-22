@@ -7,6 +7,7 @@
 
 import { type Block, clipText, type Presence, type Status } from "./protocol";
 import { bgHex, type ShowColors } from "./show-colors";
+import { screenLabel, type StatusLabels } from "./status-labels";
 
 export type ScreenStatus = Status | "unknown";
 
@@ -21,6 +22,8 @@ export type ScreenView = {
   online: boolean; // false draws the small offline ring in the corner
   notice: string | null; // black strip along the bottom, e.g. "No recent calendar data"
   colors?: ShowColors | null; // a show's background and text colours; null: white on black
+  // The status's name as the light draws it (screenLabel()); left out, the standard word.
+  label?: string;
 };
 
 export type ScreenSource = "manual" | "calendar" | "default" | "fallback";
@@ -62,14 +65,31 @@ export const LED_RGB: Record<ScreenStatus, [number, number, number]> = {
   unknown: [80, 80, 80],
 };
 
-// display.cpp labelFor(). DND is two lines on the colour card.
-export const SCREEN_LABEL: Record<ScreenStatus, string[]> = {
-  free: ["FREE"],
-  busy: ["BUSY"],
-  dnd: ["DO NOT", "DISTURB"],
-  away: ["AWAY"],
-  unknown: ["?"],
+// display.cpp labelFor(): the standard words, on firmware from before the "labels" feature.
+export const SCREEN_LABEL: Record<ScreenStatus, string> = {
+  free: "FREE",
+  busy: "BUSY",
+  dnd: "DO NOT DISTURB",
+  away: "AWAY",
+  unknown: "?",
 };
+
+/** The status's name as the light draws it, on one line. */
+export function viewLabel(view: ScreenView): string {
+  return view.status === "unknown" ? SCREEN_LABEL.unknown : (view.label ?? SCREEN_LABEL[view.status]);
+}
+
+// display.cpp drawCardLabel(): the name across the colour card. One line in bold 24 pt
+// when it fits, else bold 18 pt, else two lines of 18 pt (as "DO NOT" / "DISTURB"
+// always has been), else two lines of 12 pt.
+export const CARD_LABEL_WIDTH = 220;
+export function cardLabel(label: string): { font: "bold24" | WrapFont; lines: string[] } {
+  if (textWidth(label, "bold24") <= CARD_LABEL_WIDTH) return { font: "bold24", lines: [label] };
+  if (textWidth(label, "bold18") <= CARD_LABEL_WIDTH) return { font: "bold18", lines: [label] };
+  const two = wrapText(label, "bold18", CARD_LABEL_WIDTH, 2);
+  if (!two.cut) return { font: "bold18", lines: two.lines };
+  return { font: "bold12", lines: wrapText(label, "bold12", CARD_LABEL_WIDTH, 2).lines };
+}
 
 // The firmware stores 47 bytes of text, and its fonts only have printable ASCII:
 // anything else (accents, emoji) is skipped when drawn.
@@ -97,8 +117,9 @@ export function resolveScreen(opts: { now: number; defaultStatus: Status; presen
 }
 
 // What main.cpp hands to the display for a resolved status.
-export function viewFor(r: { status: ScreenStatus; text: string; until: number }, online = true): ScreenView {
-  return {
+// `labels`: what the light calls the statuses, when its firmware can draw them.
+export function viewFor(r: { status: ScreenStatus; text: string; until: number }, online = true, labels?: StatusLabels | null): ScreenView {
+  const view: ScreenView = {
     layout: "status",
     status: r.status,
     text: screenText(r.text),
@@ -106,6 +127,7 @@ export function viewFor(r: { status: ScreenStatus; text: string; until: number }
     online,
     notice: null,
   };
+  return labels && r.status !== "unknown" && labels[r.status] ? { ...view, label: screenText(screenLabel(r.status, labels)) } : view;
 }
 
 // main.cpp: "show now" replaces the screen, in its own colours (white on black unless
@@ -149,7 +171,7 @@ export function untilLabel(until: number): string {
 
 // ---- word wrap (firmware/lib/core/src/text_wrap.cpp) ----
 
-export type WrapFont = "bold12" | "bold18";
+export type WrapFont = "bold12" | "bold18" | "bold24";
 
 // Advance widths of ' '..'~' in LovyanGFX's FreeSansBold fonts, in pixels. Same
 // tables as text_wrap.cpp.
@@ -164,9 +186,14 @@ const WIDTHS: Record<WrapFont, number[]> = {
     25, 25, 23, 22, 27, 26, 11, 20, 25, 22, 30, 26, 27, 24, 27, 25, 24, 23, 26, 23, 34, 24, 22, 21, 12, 10, 12, 20, 19, 9, 20, 22, 20, 22,
     20, 12, 21, 21, 10, 10, 20, 9, 31, 21, 21, 22, 22, 14, 19, 12, 21, 19, 27, 19, 19, 18, 14, 10, 14, 18,
   ],
+  bold24: [
+    13, 16, 22, 26, 26, 42, 34, 12, 16, 16, 18, 27, 12, 16, 12, 13, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 12, 12, 27, 27, 27, 29, 46, 33, 33,
+    34, 34, 31, 30, 36, 35, 15, 27, 34, 29, 41, 35, 37, 32, 37, 34, 32, 30, 35, 31, 45, 32, 30, 29, 16, 13, 16, 27, 26, 12, 27, 29, 26, 29,
+    27, 16, 29, 28, 13, 13, 27, 13, 42, 29, 29, 29, 29, 18, 26, 16, 29, 25, 37, 26, 26, 24, 18, 13, 18, 23,
+  ],
 };
-export const LINE_HEIGHT: Record<WrapFont, number> = { bold12: 29, bold18: 42 };
-export const FONT_PT: Record<WrapFont, number> = { bold12: 12, bold18: 18 };
+export const LINE_HEIGHT: Record<WrapFont, number> = { bold12: 29, bold18: 42, bold24: 56 };
+export const FONT_PT: Record<WrapFont, number> = { bold12: 12, bold18: 18, bold24: 24 };
 export const MESSAGE_WIDTH = 220;
 
 export function textWidth(s: string, font: WrapFont): number {

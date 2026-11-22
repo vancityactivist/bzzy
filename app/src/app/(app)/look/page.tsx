@@ -2,13 +2,13 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 
 import { SignIn } from "@/components/sign-in";
-import { STATUS_META } from "@/components/status-meta";
 import { Container, PageHeader } from "@/components/ui";
 import { devicesForUser } from "@/lib/devices";
 import { gifPrefsForUser } from "@/lib/gif-prefs";
 import { BUILTIN_GIFS, DEFAULT_BUILTIN, editableAssets, gifsForUser, userGifChoices } from "@/lib/gifs";
 import { getLook } from "@/lib/look";
-import { STATUSES, type Status } from "@/lib/protocol";
+import { hasFeature, STATUSES, type Status } from "@/lib/protocol";
+import { statusLabel } from "@/lib/status-labels";
 import { getCurrentUser } from "@/lib/session";
 import { teamsForUser } from "@/lib/teams";
 
@@ -46,7 +46,7 @@ async function LookContent() {
   for (const s of STATUSES) {
     const choice = choices[s] === "default" ? `builtin:${DEFAULT_BUILTIN[s]}` : choices[s];
     if (choice === "none") continue;
-    usedBy.set(choice, [...(usedBy.get(choice) ?? []), STATUS_META[s].label]);
+    usedBy.set(choice, [...(usedBy.get(choice) ?? []), statusLabel(s, look.statusLabels)]);
   }
   // Uploads to a shared team are everyone's in it: say which team, so a GIF someone else
   // added isn't a surprise.
@@ -81,7 +81,7 @@ async function LookContent() {
         source: "builtin" as const,
         team: null,
         bytes: g.bytes,
-        madeFor: g.status ? STATUS_META[g.status].label : null,
+        madeFor: g.status ? statusLabel(g.status, look.statusLabels) : null,
         addedAt: 0,
         editable: false,
         usedBy: usedBy.get(choice) ?? [],
@@ -101,7 +101,10 @@ async function LookContent() {
     ...uploads.map((u) => ({ value: `asset:${u.id}`, label: shared.has(u.teamId) ? `${u.name} (${shared.get(u.teamId)})` : u.name, src: `/api/gifs/${u.id}` })),
     ...builtinOptions,
   ];
-  const following = devices.filter((d) => d.ownerUserId === user.id).map((d) => d.name);
+  const mine = devices.filter((d) => d.ownerUserId === user.id);
+  const following = mine.map((d) => d.name);
+  // Lights that follow you whose firmware can't draw your own status names yet.
+  const olderFirmware = mine.filter((d) => d.followsOwner && !hasFeature(d.features, "labels")).map((d) => d.name);
 
   return (
     <div className="space-y-12">
@@ -116,7 +119,9 @@ async function LookContent() {
           defaults={defaults}
           ledStyles={look.ledStyles}
           meetingWarn={look.meetingWarn}
+          statusLabels={look.statusLabels}
           lights={following}
+          olderFirmware={olderFirmware}
         />
       </section>
       <section id="library" className="scroll-mt-20 space-y-6">

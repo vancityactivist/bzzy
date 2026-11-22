@@ -11,12 +11,16 @@ import { STATUSES } from "./protocol";
 
 const body = (schema: z.ZodType) => z.toJSONSchema(schema, { io: "input" });
 
-const status = { type: "string", enum: [...STATUSES] };
+const status = { type: "string", enum: [...STATUSES], description: "The status's key. It never changes: use it in code." };
+const label = {
+  type: "string",
+  description: 'What the person calls this status ("Free" unless they renamed it, say to "Come in"). For display only; it can change at any time.',
+};
 const time = { type: ["string", "null"], format: "date-time" };
 const block = {
   type: ["object", "null"],
-  properties: { status, text: { type: "string" }, start: { type: "string", format: "date-time" }, end: { type: "string", format: "date-time" } },
-  required: ["status", "text", "start", "end"],
+  properties: { status, label, text: { type: "string" }, start: { type: "string", format: "date-time" }, end: { type: "string", format: "date-time" } },
+  required: ["status", "label", "text", "start", "end"],
 };
 const ring = {
   type: ["object", "null"],
@@ -47,6 +51,7 @@ const schemas = {
     type: "object",
     properties: {
       status,
+      label,
       source: { type: "string", enum: ["manual", "calendar", "default"] },
       text: { type: "string" },
       until: { ...time, description: "When this status ends. null: no end known." },
@@ -54,18 +59,19 @@ const schemas = {
         type: ["object", "null"],
         properties: {
           status,
+          label,
           text: { type: "string" },
           until: time,
           setAt: time,
           setBy: { type: "string", description: '"app", "light", or "api:<token name>"' },
         },
-        required: ["status", "text", "until", "setAt", "setBy"],
+        required: ["status", "label", "text", "until", "setAt", "setBy"],
       },
       meeting: block,
       next: block,
       offHours: { type: "boolean", description: "Outside working hours, when the lights are dark." },
     },
-    required: ["status", "source", "text", "until", "manual", "meeting", "next", "offHours"],
+    required: ["status", "label", "source", "text", "until", "manual", "meeting", "next", "offHours"],
   },
   Show: {
     type: ["object", "null"],
@@ -94,10 +100,11 @@ const schemas = {
         properties: {
           layout: { type: "string", enum: ["status", "show-gif", "show-text"] },
           status,
+          label: { ...label, description: "What this light calls the status: its owner's name for it, or its own." },
           text: { type: "string" },
           until: time,
         },
-        required: ["layout", "status", "text", "until"],
+        required: ["layout", "status", "label", "text", "until"],
       },
       ring,
       push: {
@@ -462,9 +469,10 @@ export function openApiDocument(serverUrl: string) {
         properties: {
           light: { type: "object", properties: { id: { type: "string" }, name: { type: "string" } }, required: ["id", "name"] },
           status: { type: ["string", "null"], enum: [...STATUSES, null], description: "The status the press chose. null: it went back to the calendar." },
+          label: { type: ["string", "null"], description: "What the light calls that status, for display. null with status." },
           pressedAt: time,
         },
-        required: ["light", "status", "pressedAt"],
+        required: ["light", "status", "label", "pressedAt"],
       }),
       ping: event("ping", "A test from Settings or POST /webhooks/{id}/test", {
         type: "object",

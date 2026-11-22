@@ -13,6 +13,7 @@ import { hashToken, newDeviceId, newDeviceToken } from "./device-token";
 import type { DeviceFirmware } from "./firmware";
 import type { Status } from "./protocol";
 import type { LedStyles, MeetingWarn } from "./ring";
+import type { StatusLabels } from "./status-labels";
 import { ensurePersonalTeam, roleInTeam, teamsForUser } from "./teams";
 
 export type DeviceSummary = {
@@ -29,6 +30,8 @@ export type DeviceSummary = {
   followsOwner: boolean;
   // What it shows between meetings: its owner's, or its own when it doesn't follow them.
   defaultStatus: Status;
+  // What it calls the statuses: its owner's, or its own when it doesn't follow them.
+  statusLabels: StatusLabels | null;
   pushTeamId: string | null;
   lastSeenAt: Date | null;
   // Seconds until its next poll, as last told (see isOnline).
@@ -68,6 +71,7 @@ export async function devicesForUser(userId: string): Promise<DeviceSummary[]> {
       ownerUserId: d.ownerUserId,
       followsOwner: d.followsOwner,
       defaultStatus: d.defaultStatus,
+      statusLabels: d.statusLabels,
       pushTeamId: d.pushTeamId,
       lastSeenAt: d.lastSeenAt,
       pollSec: d.pollSec,
@@ -124,10 +128,10 @@ export async function renameDevice(deviceId: string, name: string) {
 
 // "Follows me" off: the light starts on its own status from nothing set, so it shows its
 // "between meetings" status (which starts as its owner's).
-export async function setFollowsOwner(deviceId: string, followsOwner: boolean, ownerDefault: Status) {
+export async function setFollowsOwner(deviceId: string, followsOwner: boolean, owner: { defaultStatus: Status; statusLabels: StatusLabels | null }) {
   await db()
     .update(schema.devices)
-    .set(followsOwner ? { followsOwner } : { followsOwner, defaultStatus: ownerDefault })
+    .set(followsOwner ? { followsOwner } : { followsOwner, defaultStatus: owner.defaultStatus, statusLabels: owner.statusLabels })
     .where(eq(schema.devices.id, deviceId));
   await expire(tag.device(deviceId));
 }
@@ -135,6 +139,12 @@ export async function setFollowsOwner(deviceId: string, followsOwner: boolean, o
 // What a light with its own status shows between meetings.
 export async function setLightDefault(deviceId: string, defaultStatus: Status) {
   await db().update(schema.devices).set({ defaultStatus }).where(eq(schema.devices.id, deviceId));
+  await expire(tag.device(deviceId));
+}
+
+// What a light with its own status calls the statuses. null: the standard words.
+export async function setLightLabels(deviceId: string, statusLabels: StatusLabels | null) {
+  await db().update(schema.devices).set({ statusLabels }).where(eq(schema.devices.id, deviceId));
   await expire(tag.device(deviceId));
 }
 

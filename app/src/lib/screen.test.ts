@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { Block, Presence } from "./protocol";
-import { MESSAGE_WIDTH, resolveScreen, screenText, textWidth, statusCut, statusLines, untilLabel, viewFor, withShow, wrapMessage, wrapText } from "./screen";
+import { cardLabel, MESSAGE_WIDTH, resolveScreen, screenText, STALE_VIEW, textWidth, statusCut, statusLines, untilLabel, viewFor, viewLabel, withShow, wrapMessage, wrapText } from "./screen";
 
 const now = 1_800_000_000;
 const block = (start: number, end: number, status: Block["status"], text = ""): Block => ({ start, end, status, text });
@@ -141,5 +141,29 @@ describe("statusLines", () => {
   });
   it("measures what the screen draws (emoji dropped, ends trimmed)", () => {
     expect(statusLines("  Lunch 🍕  ")).toEqual(["Lunch"]);
+  });
+});
+
+describe("status names on the screen", () => {
+  it("lays the standard words out as the firmware always has", () => {
+    expect(cardLabel("FREE")).toEqual({ font: "bold24", lines: ["FREE"] });
+    expect(cardLabel("AWAY")).toEqual({ font: "bold24", lines: ["AWAY"] });
+    expect(cardLabel("DO NOT DISTURB")).toEqual({ font: "bold18", lines: ["DO NOT", "DISTURB"] });
+  });
+
+  it("steps a longer name down, then wraps it", () => {
+    expect(cardLabel("COME IN")).toEqual({ font: "bold24", lines: ["COME IN"] });
+    expect(cardLabel("ON A CALL")).toEqual({ font: "bold18", lines: ["ON A CALL"] });
+    expect(cardLabel("HEADS DOWN")).toEqual({ font: "bold18", lines: ["HEADS", "DOWN"] });
+    expect(cardLabel("OUT FOR LUNCH NOW")).toEqual({ font: "bold12", lines: ["OUT FOR LUNCH", "NOW"] });
+    expect(cardLabel("WWWWWWWWWWWWWWWW").font).toBe("bold12");
+  });
+
+  it("draws a renamed status in capitals, and the standard word otherwise", () => {
+    const busy = { status: "busy" as const, text: "", until: 0 };
+    expect(viewLabel(viewFor(busy, true, { busy: "On a call" }))).toBe("ON A CALL");
+    expect(viewLabel(viewFor(busy, true, { dnd: "Heads down" }))).toBe("BUSY");
+    expect(viewLabel(viewFor(busy))).toBe("BUSY");
+    expect(viewLabel(STALE_VIEW)).toBe("?");
   });
 });

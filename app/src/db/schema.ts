@@ -29,6 +29,7 @@ import type { ReleaseManifest } from "../lib/firmware";
 import type { LedStyle } from "../lib/push-rules";
 import type { LedStyles, MeetingWarn } from "../lib/ring";
 import type { ShowColors } from "../lib/show-colors";
+import type { StatusLabels } from "../lib/status-labels";
 import type { CachedEvent } from "../lib/ics";
 import type { Delivery } from "../lib/webhook-rules";
 import type { WorkHours } from "../lib/work-hours";
@@ -66,6 +67,8 @@ export const users = pgTable("user", {
   defaultStatus: statusKind("default_status").notNull().default("free"),
   ledStyles: jsonb("led_styles").$type<LedStyles>(),
   meetingWarn: jsonb("meeting_warn").$type<MeetingWarn>(),
+  // What they call their statuses (lib/status-labels.ts); only the renamed ones. null: none.
+  statusLabels: jsonb("status_labels").$type<StatusLabels>(),
   role: userRole("role").notNull().default("user"),
   // A superadmin turned off this person's API tokens (all revoked, no new ones).
   apiBlocked: boolean("api_blocked").notNull().default(false),
@@ -266,6 +269,9 @@ export const devices = pgTable(
     // What a light that doesn't follow its owner shows when nothing is set. Lights that
     // follow use the owner's (user.default_status).
     defaultStatus: statusKind("default_status").notNull().default("free"),
+    // Its own names for the statuses, for a light that doesn't follow its owner (lights
+    // that follow use user.status_labels). null: the standard words.
+    statusLabels: jsonb("status_labels").$type<StatusLabels>(),
     // The one team whose pushes this light shows. Null = none. Never a personal team.
     pushTeamId: text("push_team_id").references(() => teams.id, {
       onDelete: "set null",

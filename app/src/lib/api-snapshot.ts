@@ -5,6 +5,7 @@ import { eq } from "drizzle-orm";
 import { db, schema } from "@/db";
 
 import { type ApiShow, apiStatus, type ApiStatus, iso } from "./api-rules";
+import { statusLabel, type StatusLabels } from "./status-labels";
 import { cachedRead, tag } from "./cache";
 import {
   calendarsForLight,
@@ -43,6 +44,8 @@ type Light = {
   // A light that doesn't follow its owner: its own status and Show now.
   own: { presence: Presence | null; show: CurrentShow | null } | null;
   defaultStatus: Status;
+  // What it calls the statuses: its owner's, or its own when it doesn't follow them.
+  statusLabels: StatusLabels | null;
   pushTeamId: string | null;
   allowFlash: boolean;
   ledStyles: LedStyles | null;
@@ -63,11 +66,13 @@ export type ApiSnapshot = {
   calendars: CalendarRow[];
   // Their look's "between meetings" status (lib/look.ts).
   defaultStatus: Status;
+  // What they call their statuses (lib/status-labels.ts).
+  statusLabels: StatusLabels | null;
   lights: Light[];
   pushes: Push[];
 };
 
-const key = (userId: string) => `api:v2:${userId}`;
+const key = (userId: string) => `api:v3:${userId}`;
 const SNAPSHOT_TTL_SEC = 3 * 3600;
 
 async function load(userId: string) {
@@ -78,6 +83,7 @@ async function load(userId: string) {
         name: schema.devices.name,
         followsOwner: schema.devices.followsOwner,
         defaultStatus: schema.devices.defaultStatus,
+        statusLabels: schema.devices.statusLabels,
         pushTeamId: schema.devices.pushTeamId,
         allowFlash: schema.devices.allowFlash,
         ledStyles: schema.devices.ledStyles,
@@ -115,6 +121,7 @@ async function load(userId: string) {
     show,
     calendars,
     defaultStatus: look.defaultStatus,
+    statusLabels: look.statusLabels,
     lights,
     pushes,
   };
@@ -156,6 +163,7 @@ export function statusFrom(snap: ApiSnapshot, now: number): ApiStatus {
     presenceSource: snap.presenceSource,
     schedule: scheduleFromCalendars(personSchedule(snap), now),
     offHours: offHours(snap, now),
+    labels: snap.statusLabels,
   });
 }
 
@@ -192,7 +200,8 @@ export type ApiLight = {
   firmwareVersion: string | null;
   // Outside working hours the screen and ring are off.
   dark: boolean;
-  screen: { layout: ScreenLayout; status: ApiStatus["status"]; text: string; until: string | null };
+  // label: what the light calls that status (its owner's name for it, or its own).
+  screen: { layout: ScreenLayout; status: ApiStatus["status"]; label: string; text: string; until: string | null };
   ring: LedStyle | null;
   push: { id: string; text: string; gif: { id: string; name: string } | null } | null;
 };
@@ -222,7 +231,7 @@ export async function lightsFrom(snap: ApiSnapshot, now: number): Promise<ApiLig
       lastSeenAt: l.lastSeenAt?.toISOString() ?? null,
       firmwareVersion: l.firmwareVersion,
       dark,
-      screen: { layout: view.layout, status: resolved.status, text: view.text, until: iso(view.until) },
+      screen: { layout: view.layout, status: resolved.status, label: statusLabel(resolved.status, l.statusLabels), text: view.text, until: iso(view.until) },
       ring: ringFor({ ...l, status: resolved.status, schedule: l.own ? [] : schedule, now, push, show: ownShow }),
       push: push ? { id: push.id, text: push.text, gif: gifOut(push.gif) } : null,
     };

@@ -12,13 +12,14 @@ import {
   LINE_HEIGHT,
   SCREEN_BG,
   SCREEN_H,
-  SCREEN_LABEL,
+  cardLabel,
   SCREEN_W,
   type ScreenView,
   showPaint,
   STATUS_LINE_GAP,
   statusLines,
   untilLabel,
+  viewLabel,
   wrapBar,
   wrapMessage,
 } from "@/lib/screen";
@@ -70,13 +71,14 @@ export function DevicePreview({
   dark?: boolean;
 }) {
   const bg = SCREEN_BG[view.status];
-  const label = SCREEN_LABEL[view.status];
+  // The status's name, on one line (the bar under a GIF) or laid out across the colour card.
+  const oneLineLabel = viewLabel(view);
+  const card = cardLabel(oneLineLabel);
   const until = view.until ? untilLabel(view.until) : null;
   // The device never has a GIF for "unknown" (but "show now" brings its own).
   const gif = view.layout === "show-text" || (view.status === "unknown" && view.layout === "status") ? null : gifSrc;
   // display.cpp openGif(): a "show now" GIF with no message gets the whole screen.
   const gifArea = view.layout === "show-gif" && !view.text ? SCREEN_H : GIF_H;
-  const oneLineLabel = view.status === "dnd" ? "DO NOT DISTURB" : label.join(" ");
   // display.cpp statusLines(): the message, or the label in the bar, on one line or two.
   const barLines = view.layout === "status" ? statusLines(view.text || oneLineLabel) : [];
   const cardLines = view.layout === "status" && view.text ? statusLines(view.text) : [];
@@ -180,7 +182,7 @@ export function DevicePreview({
                   ) : (
                     <>
                       <Line y={topBaseline(GIF_H + 12, 12)} pt={12} bold>
-                        {view.text || label.join(" ")}
+                        {view.text || oneLineLabel}
                       </Line>
                       {until && (
                         <Line y={topBaseline(GIF_H + 46, 9)} pt={9}>
@@ -193,18 +195,16 @@ export function DevicePreview({
               ) : (
                 <>
                   <rect width={SCREEN_W} height={SCREEN_H} fill={bg} />
-                  {label.length > 1 ? (
-                    <>
-                      <Line y={middleBaseline(100, 18)} pt={18} bold>
-                        {label[0]}
+                  {card.lines.length > 1 ? (
+                    // Two lines, centred on the card's middle like "DO NOT" / "DISTURB".
+                    card.lines.map((l, i) => (
+                      <Line key={i} y={middleBaseline(card.font === "bold18" ? 100 + i * 40 : 106 + i * 28, FONT_PT[card.font])} pt={FONT_PT[card.font]} bold>
+                        {l}
                       </Line>
-                      <Line y={middleBaseline(140, 18)} pt={18} bold>
-                        {label[1]}
-                      </Line>
-                    </>
+                    ))
                   ) : (
-                    <Line y={middleBaseline(120, 24)} pt={24} bold>
-                      {label[0]}
+                    <Line y={middleBaseline(120, FONT_PT[card.font])} pt={FONT_PT[card.font]} bold>
+                      {card.lines[0]}
                     </Line>
                   )}
                   {cardLines.length > 1

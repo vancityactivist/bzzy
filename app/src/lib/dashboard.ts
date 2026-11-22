@@ -12,7 +12,8 @@ import { getPresence } from "./presence";
 import { type LedStyle, pushFor } from "./push-rules";
 import { ringFor } from "./ring";
 import { livePushes } from "./pushes";
-import { showVisible, STATUSES, type Status } from "./protocol";
+import { hasFeature, showVisible, STATUSES, type Status } from "./protocol";
+import { statusLabel } from "./status-labels";
 import { resolveScreen, type ScreenSource, type ScreenView, viewFor, withShow } from "./screen";
 import { describeSource } from "./api-rules";
 import { isOnline } from "./poll-writes";
@@ -33,6 +34,7 @@ export type MemberCard = {
   view: ScreenView;
   gifSrc: string | null; // the GIF the screen shows right now
   status: Status;
+  label: string; // what they call that status
   source: Exclude<ScreenSource, "fallback">;
   // For a manual status: whether it was set on a light or in the app.
   setOnLight: boolean;
@@ -55,6 +57,7 @@ export async function teamDashboard(members: TeamMemberRow[], now: number): Prom
         ownerUserId: schema.devices.ownerUserId,
         followsOwner: schema.devices.followsOwner,
         defaultStatus: schema.devices.defaultStatus,
+        features: schema.devices.features,
         lastSeenAt: schema.devices.lastSeenAt,
         pushTeamId: schema.devices.pushTeamId,
         allowFlash: schema.devices.allowFlash,
@@ -100,7 +103,9 @@ export async function teamDashboard(members: TeamMemberRow[], now: number): Prom
       const lastSeenAt = main?.lastSeenAt ?? null;
       const online = isOnline(lastSeenAt, nowMs, main?.pollSec);
       const shown = push ?? live;
-      const view = withShow(viewFor(resolved, online || !main), shown ? { text: shown.text, until: shown.until, gif: !!shown.gif } : null);
+      const labels = looks.get(m.userId)!.statusLabels;
+      // Their light draws their names once its firmware can; with no light, as it would.
+      const view = withShow(viewFor(resolved, online || !main, !main || hasFeature(main.features, "labels") ? labels : null), shown ? { text: shown.text, until: shown.until, gif: !!shown.gif } : null);
       const statusGifs = Object.fromEntries(STATUSES.map((s) => [s, previewSrc(gifs[s])])) as Record<Status, string | null>;
       const source = sourceOf.get(m.userId);
       return {
@@ -110,6 +115,7 @@ export async function teamDashboard(members: TeamMemberRow[], now: number): Prom
         view,
         gifSrc: shown?.gif ? previewSrc(shown.gif) : statusGifs[resolved.status],
         status: resolved.status,
+        label: statusLabel(resolved.status, labels),
         source: resolved.source,
         setOnLight: resolved.source === "manual" && describeSource(source) === "light",
         showing: !!live,

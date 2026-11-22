@@ -167,6 +167,11 @@ requests.put(
               JSON in and out. Times are ISO 8601 in UTC. A <C>PUT</C> or <C>DELETE</C> that wouldn&apos;t change anything saves nothing and answers{" "}
               <C>&quot;changed&quot;: false</C>, so it&apos;s fine to send the same state again.
             </p>
+            <p>
+              A status is always one of four keys: <C>free</C>, <C>busy</C>, <C>dnd</C> and <C>away</C>. People can rename them (Do not disturb
+              might be &ldquo;Heads down&rdquo;), so responses carry a <C>label</C> beside each key. Use the key in code and the label for
+              display; a rename changes only the label.
+            </p>
             <div className="space-y-10">
               {Object.entries(doc.paths).flatMap(([path, methods]) =>
                 Object.entries(methods).map(([method, op]) => (
@@ -417,6 +422,7 @@ if ($Status -eq "clear") {
             <Table
               head={["Date", "Change"]}
               rows={[
+                ["2026-11-22", "label beside every status key (in /status, /lights screen and the status.changed and button.pressed events): what the person calls it."],
                 ["2026-11-16", "Team pushes: the push scope, /teams and /teams/{id}/pushes, and the push.received webhook event."],
                 ["2026-11-16", "Webhooks: status.changed, show.changed, button.pressed and ping, the webhooks scope and /webhooks."],
                 ["2026-11-15", "v1: tokens, status, Show now, lights and GIFs."],

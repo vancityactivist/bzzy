@@ -189,7 +189,7 @@ describe("mergeSchedule", () => {
 
   it("makes every event of a calendar count as its Counts as status", () => {
     const focus = { events: [ev(0, 1800, "busy", "Deep work")], showTitles: false, countsAs: "dnd" as const };
-    expect(mergeSchedule([focus], t)).toEqual([{ start: t, end: t + 1800, status: "dnd", text: "Do not disturb" }]);
+    expect(mergeSchedule([focus], t)).toEqual([{ start: t, end: t + 1800, status: "dnd", text: "" }]);
   });
 
   it("says which calendar decided each block", () => {

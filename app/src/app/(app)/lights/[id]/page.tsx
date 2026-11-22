@@ -104,6 +104,7 @@ async function LightContent({ params, searchParams }: Pick<PageProps<"/lights/[i
           canManage={d.canManage}
           followsOwner={d.followsOwner}
           defaultStatus={d.defaultStatus}
+          statusLabels={d.statusLabels}
           team={team}
           legacyPush={legacyPush}
           teams={shared.map((t) => ({ id: t.id, name: t.name }))}

@@ -138,6 +138,22 @@ describe("the status as the API describes it", () => {
     expect(s.next?.status).toBe("away");
   });
 
+  it("gives each status key the person's name for it", () => {
+    const s = apiStatus({
+      now,
+      defaultStatus: "free",
+      presence: { active: true, status: "dnd", text: "", until: 0, updatedAt: now - 10 },
+      presenceSource: "web",
+      schedule: [meeting, later],
+      offHours: false,
+      labels: { dnd: "Heads down" },
+    });
+    expect(s).toMatchObject({ status: "dnd", label: "Heads down" });
+    expect(s.manual).toMatchObject({ status: "dnd", label: "Heads down" });
+    expect(s.meeting).toMatchObject({ status: "busy", label: "Busy" });
+    expect(s.next).toMatchObject({ status: "away", label: "Away" });
+  });
+
   it("follows the calendar, then the default", () => {
     const cal = apiStatus({ now, defaultStatus: "free", presence: null, presenceSource: null, schedule: [meeting], offHours: false });
     expect(cal).toMatchObject({ status: "busy", source: "calendar", manual: null });

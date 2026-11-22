@@ -18,7 +18,9 @@ import { calendarKeyConfigured } from "@/lib/calendar-secret";
 import { devicesForUser } from "@/lib/devices";
 import { googleConfigured } from "@/lib/google-calendar";
 import { blocksForDevice, explainSchedule } from "@/lib/ics";
-import { nowSeconds } from "@/lib/protocol";
+import { getLook } from "@/lib/look";
+import { nowSeconds, type Status } from "@/lib/protocol";
+import { allLabels } from "@/lib/status-labels";
 import { getCurrentUser } from "@/lib/session";
 
 import { absoluteTime, relativeTime } from "../../lights/relative-time";
@@ -52,12 +54,14 @@ async function CalendarsContent() {
   const user = await getCurrentUser();
   if (!user) return <SignIn />;
   await Promise.all([refreshStaleCalendars(user.id), refreshCalendarLists(user.id)]);
-  const [calendars, clock, accounts, devices] = await Promise.all([
+  const [calendars, clock, accounts, devices, look] = await Promise.all([
     calendarsForUser(user.id),
     userClock(user.id),
     accountsForUser(user.id),
     devicesForUser(user.id),
+    getLook(user.id),
   ]);
+  const names = allLabels(look.statusLabels);
   const lights = devices
     .filter((d) => d.ownerUserId === user.id)
     .map((d) => ({ id: d.id, name: d.name, followsOwner: d.followsOwner }));
@@ -82,7 +86,7 @@ async function CalendarsContent() {
         <PageHeader
           className="mt-2"
           title="Calendars"
-          description="Your lights turn Busy during meetings and Away when you're out of office. Each calendar goes to every light that follows you, unless you pick lights under More."
+          description={`Your lights turn ${names.busy} during meetings and ${names.away} when you're out of office. Each calendar goes to every light that follows you, unless you pick lights under More.`}
         />
       </div>
       <CalendarNotice />
@@ -103,7 +107,7 @@ async function CalendarsContent() {
                   <li key={`${b.start}-${b.status}`} className="flex items-center gap-2">
                     <StatusDot status={b.status} />
                     <span className="shrink-0 tabular-nums text-muted">{range(b.start, b.end, TZ)}</span>
-                    <span className="min-w-0 flex-1 truncate">{b.text || STATUS_WORD[b.status] || ""}</span>
+                    <span className="min-w-0 flex-1 truncate">{b.text || names[b.status]}</span>
                     {cal && (
                       <span className="flex shrink-0 items-center gap-1.5 text-muted">
                         <CalendarDot color={cal.color} />
@@ -126,7 +130,7 @@ async function CalendarsContent() {
               Setting your status
             </span>
           }
-          description="When events overlap, the strongest status wins: Away, then Do not disturb, then Busy. If they're equal, the calendar higher in this list decides whose title shows. Drag to reorder."
+          description={`When events overlap, the strongest status wins: ${names.away}, then ${names.dnd}, then ${names.busy}. If they're equal, the calendar higher in this list decides whose title shows. Drag to reorder.`}
         />
         {active.length === 0 ? (
           <p className="mt-4 text-sm text-muted">
@@ -144,6 +148,7 @@ async function CalendarsContent() {
                   lights={lights}
                   now={now}
                   TZ={TZ}
+                  names={names}
                 />
               ),
             }))}
@@ -244,15 +249,15 @@ async function CalendarsContent() {
   );
 }
 
-const STATUS_WORD: Record<string, string> = { busy: "Busy", dnd: "Do not disturb", away: "Away" };
-
 function ActiveRow({
   c,
   account,
   lights,
   now,
   TZ,
+  names,
 }: {
+  names: Record<Status, string>;
   c: CalendarRow;
   account?: string;
   lights: { id: string; name: string; followsOwner: boolean }[];
@@ -272,7 +277,7 @@ function ActiveRow({
             {c.lastError && <span className="text-danger"> · {c.lastError}</span>}
           </span>
         </span>
-        <CountsAsPicker id={c.id} name={c.name} countsAs={c.countsAs ?? "auto"} />
+        <CountsAsPicker id={c.id} name={c.name} countsAs={c.countsAs ?? "auto"} names={names} />
       </div>
       <details className="mt-1 pl-5.5">
         <summary className="cursor-pointer text-sm text-muted hover:text-foreground">More</summary>
@@ -293,7 +298,7 @@ function ActiveRow({
                   <li key={`${b.start}-${b.status}`} className="flex items-center gap-2">
                     <StatusDot status={b.status} />
                     <span className="shrink-0 tabular-nums text-muted">{range(b.start, b.end, TZ)}</span>
-                    <span className="truncate">{b.text}</span>
+                    <span className="truncate">{b.text || names[b.status]}</span>
                   </li>
                 ))}
               </ul>

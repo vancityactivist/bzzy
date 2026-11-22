@@ -5,13 +5,14 @@ import { useState, useTransition } from "react";
 import { DevicePreview } from "@/components/device-preview";
 import { ColorSwatches } from "@/components/ring-picker";
 import { STATUS_META } from "@/components/status-meta";
-import { Button, cx, Select, StatusDot } from "@/components/ui";
+import { Button, cx, Input, Select, StatusDot } from "@/components/ui";
 import { type Status, STATUSES } from "@/lib/protocol";
 import { type LedStyle, type Pattern, PATTERNS } from "@/lib/push-rules";
 import { type LedStyles, lookRingFromInput, type LookRingInput, type MeetingWarn, WARN_MINUTES } from "@/lib/ring";
 import { viewFor } from "@/lib/screen";
+import { allLabels, LABEL_MAX, labelProblem, parseLabels, STANDARD_LABEL, type StatusLabels, tidyLabel } from "@/lib/status-labels";
 
-import { setLookGifAction, setLookRingAction } from "@/app/actions";
+import { setLookGifAction, setLookRingAction, setStatusLabelsAction } from "@/app/actions";
 
 export type GifOption = { value: string; label: string; src: string | null };
 
@@ -41,7 +42,11 @@ function initialRing(ledStyles: LedStyles | null, meetingWarn: MeetingWarn | nul
 
 const sameRing = (a: LookRingInput, b: LookRingInput) => JSON.stringify(a) === JSON.stringify(b);
 
-// How every light that follows you looks: the GIF and ring for each status, and the
+// What's typed in each name box: the name, or "" for the standard word.
+const namesFrom = (labels: StatusLabels | null) => Object.fromEntries(STATUSES.map((s) => [s, labels?.[s] ?? ""])) as Record<Status, string>;
+const sameNames = (a: Record<Status, string>, b: Record<Status, string>) => STATUSES.every((s) => tidyLabel(a[s]) === tidyLabel(b[s]));
+
+// How every light that follows you looks: its name, GIF and ring for each status, and the
 // warning before a meeting. One preview beside it shows whichever row you're on, and one
 // Save sends it all (the lights pick it up on their next check-in).
 export function LookEditor({
@@ -50,15 +55,22 @@ export function LookEditor({
   defaults,
   ledStyles,
   meetingWarn,
+  statusLabels,
   lights,
+  olderFirmware,
 }: {
   gifs: Record<Status, string>; // "default" | "none" | "builtin:<id>" | "asset:<id>"
   options: GifOption[];
   defaults: Record<Status, GifOption>;
   ledStyles: LedStyles | null;
   meetingWarn: MeetingWarn | null;
+  statusLabels: StatusLabels | null;
   lights: string[]; // names of the lights that follow you, for the "Saved" line
+  olderFirmware: string[]; // those whose firmware still draws the standard words
 }) {
+  const [savedNames, setSavedNames] = useState(() => namesFrom(statusLabels));
+  const [names, setNames] = useState(savedNames);
+  const [nameError, setNameError] = useState<{ status?: Status; error: string } | null>(null);
   const [savedGifs, setSavedGifs] = useState(gifs);
   const [gifDraft, setGifDraft] = useState(gifs);
   const [savedRing, setSavedRing] = useState(() => initialRing(ledStyles, meetingWarn));
@@ -67,7 +79,20 @@ export function LookEditor({
   const [result, setResult] = useState<"saved" | "failed" | null>(null);
   const [pending, start] = useTransition();
 
-  const dirty = STATUSES.some((s) => gifDraft[s] !== savedGifs[s]) || !sameRing(ring, savedRing);
+  const namesChanged = !sameNames(names, savedNames);
+  const dirty = STATUSES.some((s) => gifDraft[s] !== savedGifs[s]) || !sameRing(ring, savedRing) || namesChanged;
+  // The names as typed so far, for the preview and the rows (a name that can't be used yet
+  // shows as typed; Save says what's wrong).
+  const draftLabels: StatusLabels = Object.fromEntries(
+    STATUSES.map((s) => [s, tidyLabel(names[s])]).filter(([, l]) => l && !labelProblem(l)),
+  );
+  const shownNames = allLabels(draftLabels);
+  const setName = (s: Status, v: string) => {
+    touch();
+    setNameError(null);
+    setPreview(s);
+    setNames((n) => ({ ...n, [s]: v }));
+  };
   const optionFor = (s: Status) => (gifDraft[s] === "default" ? defaults[s] : options.find((o) => o.value === gifDraft[s]));
   const built = lookRingFromInput(ring);
   const status: Status = preview === "warn" ? "free" : preview;
@@ -89,14 +114,23 @@ export function LookEditor({
       className="grid grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-[minmax(0,4fr)_minmax(0,7fr)] lg:items-start"
       onSubmit={(e) => {
         e.preventDefault();
+        // Check the names here first, so nothing is half saved over a typo.
+        const parsed = namesChanged ? parseLabels(names) : null;
+        if (parsed && !parsed.ok) {
+          setNameError(parsed);
+          return;
+        }
         start(async () => {
           const changed = STATUSES.filter((s) => gifDraft[s] !== savedGifs[s]);
-          const results = await Promise.all([
+          const [named, ...results] = await Promise.all([
+            namesChanged ? setStatusLabelsAction(names) : ({ ok: true } as const),
             ...changed.map((s) => setLookGifAction(s, gifDraft[s])),
             sameRing(ring, savedRing) ? { ok: true } : setLookRingAction(ring),
           ]);
-          const ok = results.every((r) => r.ok);
-          if (ok) {
+          if (!named.ok) setNameError(named);
+          else if (namesChanged) setSavedNames(names);
+          const ok = named.ok && results.every((r) => r.ok);
+          if (results.every((r) => r.ok)) {
             setSavedGifs(gifDraft);
             setSavedRing(ring);
           }
@@ -106,14 +140,14 @@ export function LookEditor({
     >
       <div className="flex flex-col items-center gap-3 rounded-2xl bg-subtle p-5 lg:sticky lg:top-20">
         <DevicePreview
-          view={viewFor({ status, text: "", until: 0 })}
+          view={viewFor({ status, text: "", until: 0 }, true, draftLabels)}
           gifSrc={preview === "warn" ? optionFor("free")?.src ?? null : (optionFor(preview)?.src ?? null)}
           ring={shownRing}
           scale={0.8}
           className="m-4"
         />
         <p className="text-center text-sm text-muted" aria-live="polite">
-          {preview === "warn" ? "A meeting is about to start" : STATUS_META[preview].label}
+          {preview === "warn" ? "A meeting is about to start" : shownNames[preview]}
         </p>
       </div>
 
@@ -138,14 +172,27 @@ export function LookEditor({
                   )}
                 </div>
                 <div className="min-w-0 flex-1 basis-56 space-y-2">
-                  <p className="flex items-center gap-1.5 text-sm font-medium">
+                  <div className="flex items-center gap-2">
                     <StatusDot status={s} size="sm" />
-                    {STATUS_META[s].label}
-                  </p>
+                    <Input
+                      aria-label={`Name for ${STANDARD_LABEL[s]}`}
+                      aria-invalid={nameError?.status === s || undefined}
+                      value={names[s]}
+                      placeholder={STANDARD_LABEL[s]}
+                      maxLength={LABEL_MAX}
+                      onChange={(e) => setName(s, e.target.value)}
+                      className={cx("h-8 max-w-56 px-2 text-sm font-medium", nameError?.status === s && "border-danger")}
+                    />
+                    {tidyLabel(names[s]) && tidyLabel(names[s]) !== STANDARD_LABEL[s] && (
+                      <button type="button" className="shrink-0 text-xs text-muted underline-offset-2 hover:text-foreground hover:underline" onClick={() => setName(s, "")}>
+                        Reset to {STANDARD_LABEL[s]}
+                      </button>
+                    )}
+                  </div>
                   <div className="flex flex-wrap gap-2">
                     <div className="min-w-0 flex-1 basis-44">
                       <Select
-                        aria-label={`${STATUS_META[s].label}: GIF`}
+                        aria-label={`${shownNames[s]}: GIF`}
                         value={gifDraft[s]}
                         onChange={(e) => {
                           touch();
@@ -164,7 +211,7 @@ export function LookEditor({
                     </div>
                     <div className="w-28 shrink-0">
                       <Select
-                        aria-label={`${STATUS_META[s].label}: ring`}
+                        aria-label={`${shownNames[s]}: ring`}
                         value={st.pattern}
                         onChange={(e) => setStyle(s, { pattern: e.target.value as Pattern })}
                       >
@@ -178,7 +225,7 @@ export function LookEditor({
                     {st.pattern !== "solid" && (
                       <div className="w-24 shrink-0">
                         <Select
-                          aria-label={`${STATUS_META[s].label}: ring speed`}
+                          aria-label={`${shownNames[s]}: ring speed`}
                           value={st.speed}
                           onChange={(e) => setStyle(s, { speed: Number(e.target.value) })}
                         >
@@ -255,12 +302,26 @@ export function LookEditor({
                 : "Your lights pick it up when you add them."}
             </p>
           )}
-          {result === "failed" && (
+          {nameError ? (
             <p className="text-sm text-danger" role="alert">
-              Couldn&apos;t save all of that. Try again?
+              {nameError.status ? `${STANDARD_LABEL[nameError.status]}: ` : ""}
+              {nameError.error}
             </p>
+          ) : (
+            result === "failed" && (
+              <p className="text-sm text-danger" role="alert">
+                Couldn&apos;t save all of that. Try again?
+              </p>
+            )
           )}
         </div>
+        <p className="text-xs text-muted">
+          Names are up to {LABEL_MAX} characters and show in capitals on the light. Leave one blank for the standard word. The calendar,
+          the button and the API work the same whatever you call them.
+          {olderFirmware.length > 0 &&
+            Object.keys(draftLabels).length > 0 &&
+            ` ${olderFirmware.join(", ")} ${olderFirmware.length === 1 ? "shows" : "show"} the standard words until ${olderFirmware.length === 1 ? "its" : "their"} next firmware update.`}
+        </p>
         <p className="text-xs text-muted">
           A light can stay steady with &ldquo;Allow flashing&rdquo; off on its page. Rings never flash faster than 3 times a second, and lights on
           older firmware stay steady until they update.
