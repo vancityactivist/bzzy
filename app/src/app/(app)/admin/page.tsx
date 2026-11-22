@@ -11,6 +11,7 @@ import { absoluteTime, relativeTime, shortDate } from "../lights/relative-time";
 import { openClaims } from "@/lib/provision";
 
 import { ClaimControls } from "./claim-controls";
+import { DeleteAccountButton } from "./delete-account";
 import { ApiBlockToggle, SuperadminToggle } from "./superadmin-toggle";
 
 export const metadata: Metadata = { title: "Admin", robots: { index: false } };
@@ -107,7 +108,7 @@ async function AdminContent() {
       <Card padding="none" className="overflow-hidden">
         <CardHeader title="Users" description={`${users.length} in total`} className="p-5 pb-3 sm:p-6 sm:pb-3" />
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[50rem] text-left text-sm">
+          <table className="w-full min-w-[56rem] text-left text-sm">
             <thead>
               <tr className="border-y border-line bg-subtle/60">
                 <th className={TH}>Person</th>
@@ -117,6 +118,9 @@ async function AdminContent() {
                 <th className={TH}>API</th>
                 <th className={TH}>Signed up</th>
                 <th className={TH}>Last active</th>
+                <th className={TH}>
+                  <span className="sr-only">Delete</span>
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-line">
@@ -165,6 +169,7 @@ async function AdminContent() {
                       <Presence at={u.lastActiveAt} never="Signed out" now={now} />
                     </span>
                   </td>
+                  <td className={TD}>{u.id !== me.id && <DeleteAccountButton userId={u.id} />}</td>
                 </tr>
               ))}
             </tbody>

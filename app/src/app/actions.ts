@@ -37,6 +37,7 @@ import {
 } from "@/lib/devices";
 import { isAdmin, setSuperadmin } from "@/lib/admin";
 import { assignToClaim, ProvisionError, takeBackFromClaim } from "@/lib/provision";
+import { deleteAccount, DeleteAccountError, deleteAccountSummary, type DeleteAccountSummary } from "@/lib/delete-account";
 import { connectCalDav, ownAccount, removeAccount, updateCalDavPassword } from "@/lib/calendar-accounts";
 import { CalDavAuthFailed, CalDavError, PRESETS } from "@/lib/caldav";
 import { FetchRefused } from "@/lib/safe-fetch";
@@ -777,6 +778,30 @@ export async function setApiBlockedAction(userId: string, blocked: boolean) {
   if (!(await isAdmin(user.id))) throw new Error("Not a superadmin");
   await setApiBlocked(userId, blocked);
   refresh();
+}
+
+// Deleting someone's account from the admin page: first what it will touch (for the
+// confirm step), then the delete. Their lights come to you; they're never deleted.
+export async function deleteAccountSummaryAction(userId: string): Promise<{ ok: true; summary: DeleteAccountSummary } | { ok: false; error: string }> {
+  const user = await requireUser();
+  try {
+    return { ok: true, summary: await deleteAccountSummary(user.id, userId) };
+  } catch (e) {
+    if (e instanceof DeleteAccountError) return { ok: false, error: e.message };
+    throw e;
+  }
+}
+
+export async function deleteAccountAction(userId: string): Promise<string | null> {
+  const user = await requireUser();
+  try {
+    await deleteAccount(user, userId);
+  } catch (e) {
+    if (e instanceof DeleteAccountError) return e.message;
+    throw e;
+  }
+  refresh();
+  return null;
 }
 
 // Bench tools on the admin page: put a light that's already set up onto an order, or take
