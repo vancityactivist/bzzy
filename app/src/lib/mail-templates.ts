@@ -15,11 +15,26 @@ function oneLine(s: string, max = 80): string {
   return t.length > max ? `${t.slice(0, max - 1)}…` : t;
 }
 
-// Logos are PNGs on the public site: Gmail and Outlook don't show SVG in email.
-// Rendered at 3x from docs/brand (288x84), shown at 96x28.
+// The email layout, on the site's one system: Console (app/tokens.css). The shop
+// (shop.bzzy.ca) sends its email in the same layout; change both together.
+//
+// Colours are Console's tokens as hex, because email clients don't read oklch() or CSS
+// variables: paper ground, a paper-2 card with a 1px rule and a 10px radius, ink heads
+// at weight 500, and the amber accent on the one button.
+export const MAIL_COLORS = {
+  light: { paper: "#faf8f4", card: "#fffefb", rule: "#e0dbd7", ink: "#17130f", muted: "#5d5751", accent: "#f0b135", accentInk: "#201301", link: "#915200" },
+  dark: { paper: "#0d1013", card: "#15191c", rule: "#2d3135", ink: "#eceff2", muted: "#9da2a8", accent: "#f7b83d", accentInk: "#1c0e00", link: "#f7b83d" },
+};
+const L = MAIL_COLORS.light;
+const D = MAIL_COLORS.dark;
+
+// The lockup (the four-dot mark and "bzzy" in Host Grotesk, as the site's nav sets it) is a
+// PNG, because Gmail and Outlook don't show SVG. Rendered at 3x (240 x 84), shown at 80 x 28.
+// bzzy-lockup-*.png are the old Geist lockups, kept because emails already sent point at them.
 const LOGO_BASE = "https://bzzy.ca/email";
 
-const FONT = "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif";
+// Host Grotesk where the client loads web fonts (Apple Mail, iOS Mail); the system face elsewhere.
+const FONT = "'Host Grotesk',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif";
 
 // Dark mode: Apple Mail, iOS Mail and some others honour prefers-color-scheme, so the
 // colours flip and the logo swaps. Gmail and Outlook recolour by themselves instead,
@@ -29,16 +44,18 @@ const HEAD = `<meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="color-scheme" content="light dark">
 <meta name="supported-color-schemes" content="light dark">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Host+Grotesk:wght@400;500&display=swap">
 <style>
   :root { color-scheme: light dark; supported-color-schemes: light dark; }
   .logo-dark { display: none; }
   @media (prefers-color-scheme: dark) {
-    .bg { background: #111111 !important; }
-    .card { background: #1c1c1c !important; border-color: #2a2a2a !important; }
-    .ink { color: #f2f2f2 !important; }
-    .muted, .muted a { color: #a1a1aa !important; }
-    .btn { background: #f2f2f2 !important; color: #111111 !important; }
-    .quote { border-color: #a08672 !important; }
+    .bg { background: ${D.paper} !important; }
+    .card { background: ${D.card} !important; border-color: ${D.rule} !important; }
+    .ink { color: ${D.ink} !important; }
+    .ink a { color: ${D.link} !important; }
+    .muted, .muted a { color: ${D.muted} !important; }
+    .btn { background: ${D.accent} !important; color: ${D.accentInk} !important; }
+    .quote { border-color: ${D.accent} !important; }
     .logo-light { display: none !important; }
     .logo-dark { display: block !important; }
   }
@@ -59,36 +76,36 @@ type Layout = {
 };
 
 function layout({ preheader, title, paragraphs, button, quote, footer }: Layout): string {
-  const p = (html: string) => `<p class="ink" style="margin:0 0 16px;font-size:16px;line-height:1.55;color:#18181b">${html}</p>`;
+  const p = (html: string) => `<p class="ink" style="margin:0 0 16px;font-size:16px;line-height:1.55;color:${L.ink}">${html}</p>`;
   const url = button ? escapeHtml(button.url) : "";
   return `<!doctype html>
 <html lang="en"><head>${HEAD}<title>${title}</title></head>
-<body class="bg" style="margin:0;padding:0;background:#f4f4f5;-webkit-text-size-adjust:100%">
+<body class="bg" style="margin:0;padding:0;background:${L.paper};-webkit-text-size-adjust:100%">
 <div style="display:none;max-height:0;overflow:hidden;mso-hide:all">${preheader}&#8199;&#847;&#8199;&#847;&#8199;&#847;&#8199;&#847;</div>
-<table role="presentation" class="bg" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f4f4f5">
+<table role="presentation" class="bg" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:${L.paper}">
 <tr><td class="outer" align="center" style="padding:40px 16px">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:520px">
 <tr><td style="padding:0 4px 20px">
 <a href="https://bzzy.ca" style="text-decoration:none">
-<img class="logo-light" src="${LOGO_BASE}/bzzy-lockup-light.png" width="96" height="28" alt="bzzy" style="display:block;border:0;width:96px;height:28px">
-<!--[if !mso]><!--><img class="logo-dark" src="${LOGO_BASE}/bzzy-lockup-dark.png" width="96" height="28" alt="bzzy" style="display:none;border:0;width:96px;height:28px;mso-hide:all"><!--<![endif]-->
+<img class="logo-light" src="${LOGO_BASE}/bzzy-console-light.png" width="80" height="28" alt="bzzy" style="display:block;border:0;width:80px;height:28px">
+<!--[if !mso]><!--><img class="logo-dark" src="${LOGO_BASE}/bzzy-console-dark.png" width="80" height="28" alt="bzzy" style="display:none;border:0;width:80px;height:28px;mso-hide:all"><!--<![endif]-->
 </a>
 </td></tr>
-<tr><td class="card card-pad" style="background:#ffffff;border:1px solid #e4e4e7;border-radius:16px;padding:36px 32px;font-family:${FONT}">
-<h1 class="ink" style="margin:0 0 16px;font-size:22px;line-height:1.3;font-weight:700;letter-spacing:-0.01em;color:#0a0a0a">${title}</h1>
+<tr><td class="card card-pad" style="background:${L.card};border:1px solid ${L.rule};border-radius:10px;padding:36px 32px;font-family:${FONT}">
+<h1 class="ink" style="margin:0 0 16px;font-size:22px;line-height:1.3;font-weight:500;letter-spacing:-0.02em;color:${L.ink}">${title}</h1>
 ${paragraphs.map(p).join("\n")}
-${quote ? `<div class="quote ink" style="margin:4px 0 16px;padding:4px 0 4px 14px;border-left:3px solid #a08672;font-size:16px;line-height:1.55;color:#18181b;white-space:pre-wrap">${quote}</div>` : ""}
+${quote ? `<div class="quote ink" style="margin:4px 0 16px;padding:4px 0 4px 14px;border-left:2px solid ${L.accent};font-size:16px;line-height:1.55;color:${L.ink};white-space:pre-wrap">${quote}</div>` : ""}
 ${
   button
-    ? `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:28px 0 24px"><tr><td>
-<a class="btn" href="${url}" style="display:inline-block;background:#0a0a0a;color:#ffffff;text-decoration:none;font-weight:600;font-size:16px;line-height:20px;padding:14px 24px;border-radius:10px">${escapeHtml(button.label)}</a>
+    ? `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:28px 0 24px"><tr><td style="border-radius:6px;background:${L.accent}">
+<a class="btn" href="${url}" style="display:inline-block;background:${L.accent};color:${L.accentInk};text-decoration:none;font-family:${FONT};font-weight:500;font-size:16px;line-height:20px;padding:12px 22px;border-radius:6px">${escapeHtml(button.label)}</a>
 </td></tr></table>
-<p class="muted" style="margin:0;font-size:13px;line-height:1.5;color:#71717a">Or paste this link into your browser:<br><a href="${url}" style="color:#71717a;word-break:break-all">${url}</a></p>`
+<p class="muted" style="margin:0;font-size:13px;line-height:1.5;color:${L.muted}">Or paste this link into your browser:<br><a href="${url}" style="color:${L.muted};word-break:break-all">${url}</a></p>`
     : ""
 }
 </td></tr>
-<tr><td class="muted" style="padding:20px 8px 0;font-family:${FONT};font-size:12px;line-height:1.5;color:#71717a">
-${footer}<br><a href="https://bzzy.ca" style="color:#71717a">bzzy.ca</a> &middot; a desk status light
+<tr><td class="muted" style="padding:20px 8px 0;font-family:${FONT};font-size:12px;line-height:1.5;color:${L.muted}">
+${footer}<br><a href="https://bzzy.ca" style="color:${L.muted}">bzzy.ca</a> &middot; a desk status light
 </td></tr>
 </table>
 </td></tr></table>
