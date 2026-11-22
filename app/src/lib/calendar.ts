@@ -302,30 +302,27 @@ export async function setCountsAs(cal: Pick<CalendarRow, "id" | "userId">, count
   await expire(tag.user(cal.userId));
 }
 
-// Moves a calendar one step up or down the priority order (among the ones that set
-// status, which is the list people see ordered), renumbering everyone 0..n.
-export async function moveCalendar(cal: Pick<CalendarRow, "id" | "userId">, direction: -1 | 1) {
+// Puts the user's calendars in this order: the listed ones (the calendars that set
+// status, as dragged) take the slots those calendars had, in the new order, and the rest
+// keep theirs. Unknown ids are ignored. Only rows whose number changes are written.
+export async function reorderCalendars(userId: string, ids: string[]) {
   const rows = await db()
-    .select({ id: schema.calendars.id, setsStatus: schema.calendars.setsStatus, position: schema.calendars.position })
+    .select({ id: schema.calendars.id, position: schema.calendars.position })
     .from(schema.calendars)
-    .where(eq(schema.calendars.userId, cal.userId))
+    .where(eq(schema.calendars.userId, userId))
     .orderBy(asc(schema.calendars.position), asc(schema.calendars.createdAt));
   const order = rows.map((r) => r.id);
-  const visible = rows.filter((r) => r.setsStatus).map((r) => r.id);
-  const at = visible.indexOf(cal.id);
-  const swapWith = visible[at + direction];
-  if (at < 0 || !swapWith) return;
-  const i = order.indexOf(cal.id);
-  const j = order.indexOf(swapWith);
-  [order[i], order[j]] = [order[j], order[i]];
-  // Only rows whose number changes are written (usually just the two swapped).
+  const listed = new Set(ids.filter((id) => order.includes(id)));
+  const moving = [...listed];
+  let k = 0;
+  const next = order.map((id) => (listed.has(id) ? moving[k++] : id));
   const current = new Map(rows.map((r) => [r.id, r.position]));
-  for (const [position, id] of order.entries()) {
+  for (const [position, id] of next.entries()) {
     if (current.get(id) !== position) {
       await db().update(schema.calendars).set({ position }).where(eq(schema.calendars.id, id));
     }
   }
-  await expire(tag.user(cal.userId));
+  await expire(tag.user(userId));
 }
 
 // Which lights use a calendar: null = every light that follows you. Ids that aren't the

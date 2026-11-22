@@ -26,8 +26,8 @@ Full plan: the "bzzy: Google and iCloud calendars" design doc (2026-11-22).
 - Shared Google calendars (ones you don't own) only count events you've accepted or said
   maybe to. Your own calendars count everything except what you declined.
 - Settings → Calendars (`/settings/calendars`) has the combined next 24 hours (with the
-  calendar behind each block), the calendars setting status in priority order (up/down
-  buttons, Counts as, More for titles/refresh/remove), and accounts as folded groups with an
+  calendar behind each block), the calendars setting status in priority order (drag
+  handles or arrow keys on the handle, Counts as, More for titles/refresh/remove), and accounts as folded groups with an
   on/off switch per calendar. Google and CalDAV calendar lists are re-read once a day there,
   so calendars added in Google or iCloud show up.
 - The same meeting on two calendars (same iCalendar UID and start) shows once.

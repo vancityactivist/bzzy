@@ -29,9 +29,10 @@ import {
   CalendarNotice,
   CalendarToggle,
   ConnectCalDavForm,
-  PriorityControls,
+  CountsAsPicker,
   RemoveAccountButton,
   ShowsOn,
+  SortableCalendars,
   UpdatePasswordForm,
 } from "../calendar-forms";
 
@@ -125,27 +126,28 @@ async function CalendarsContent() {
               Setting your status
             </span>
           }
-          description="When events overlap, the strongest status wins: Away, then Do not disturb, then Busy. If they're equal, the calendar higher in this list decides whose title shows."
+          description="When events overlap, the strongest status wins: Away, then Do not disturb, then Busy. If they're equal, the calendar higher in this list decides whose title shows. Drag to reorder."
         />
         {active.length === 0 ? (
           <p className="mt-4 text-sm text-muted">
             No calendar is setting your status yet. Turn one on below, or add one.
           </p>
         ) : (
-          <ol className="mt-4 divide-y divide-line rounded-xl border border-line">
-            {active.map((c, i) => (
-              <ActiveRow
-                key={c.id}
-                c={c}
-                account={c.accountId ? accountLabel.get(c.accountId) : undefined}
-                first={i === 0}
-                last={i === active.length - 1}
-                lights={lights}
-                now={now}
-                TZ={TZ}
-              />
-            ))}
-          </ol>
+          <SortableCalendars
+            items={active.map((c) => ({
+              id: c.id,
+              name: c.name,
+              node: (
+                <ActiveRow
+                  c={c}
+                  account={c.accountId ? accountLabel.get(c.accountId) : undefined}
+                  lights={lights}
+                  now={now}
+                  TZ={TZ}
+                />
+              ),
+            }))}
+          />
         )}
       </Card>
 
@@ -247,23 +249,19 @@ const STATUS_WORD: Record<string, string> = { busy: "Busy", dnd: "Do not disturb
 function ActiveRow({
   c,
   account,
-  first,
-  last,
   lights,
   now,
   TZ,
 }: {
   c: CalendarRow;
   account?: string;
-  first: boolean;
-  last: boolean;
   lights: { id: string; name: string; followsOwner: boolean }[];
   now: number;
   TZ: string;
 }) {
   const upcoming = blocksForDevice(c.events, now, c.showTitles).slice(0, 4);
   return (
-    <li className="p-3">
+    <div className="min-w-0 flex-1">
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
         <CalendarDot color={c.color} />
         <span className="min-w-0 flex-1">
@@ -274,7 +272,7 @@ function ActiveRow({
             {c.lastError && <span className="text-danger"> · {c.lastError}</span>}
           </span>
         </span>
-        <PriorityControls id={c.id} name={c.name} first={first} last={last} countsAs={c.countsAs ?? "auto"} />
+        <CountsAsPicker id={c.id} name={c.name} countsAs={c.countsAs ?? "auto"} />
       </div>
       <details className="mt-1 pl-5.5">
         <summary className="cursor-pointer text-sm text-muted hover:text-foreground">More</summary>
@@ -305,7 +303,7 @@ function ActiveRow({
           <CalendarActions id={c.id} showTitles={c.showTitles} setsStatus={c.setsStatus} removable={!c.accountId} />
         </div>
       </details>
-    </li>
+    </div>
   );
 }
 

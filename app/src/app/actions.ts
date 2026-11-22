@@ -10,7 +10,7 @@ import {
   addCalendar,
   calendarsForAccount,
   deleteCalendar,
-  moveCalendar,
+  reorderCalendars,
   ownCalendar,
   refreshCalendar,
   saveUserClock,
@@ -410,11 +410,11 @@ export async function setLightCalendarAction(calendarId: string, deviceId: strin
   refresh();
 }
 
-export async function moveCalendarAction(id: string, direction: -1 | 1) {
+// The calendars that set status, in their new priority order (dragged on Settings → Calendars).
+export async function reorderCalendarsAction(ids: string[]) {
   const user = await requireUser();
-  const cal = await ownCalendar(user.id, id);
-  if (!cal) return;
-  await moveCalendar(cal, direction === -1 ? -1 : 1);
+  if (!Array.isArray(ids) || ids.length > 200 || ids.some((x) => typeof x !== "string")) return;
+  await reorderCalendars(user.id, ids);
   refresh();
 }
 
