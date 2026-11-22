@@ -154,6 +154,8 @@ static void restoreClockFromRtc() {
 }
 
 // ---- HTTP (runs on the network task) ----
+static const char* const kFeatures = "colors,hours,labels,leds,push,ship";
+
 static String url(const char* path) {
   return String(g_settings.apiBase) + "/api/device/" + g_settings.deviceId + path;
 }
@@ -177,7 +179,7 @@ static bool httpRequest(const char* method, const String& u, const String& body,
   http.addHeader("X-Bzzy-Board", ota::board());
   // What this firmware understands beyond protocol v1, so the app only offers it where
   // it works: "leds" = ledStyles and meetingWarn; "push" = team pushes and push-ack.
-  http.addHeader("X-Bzzy-Features", "colors,hours,labels,leds,push,ship");
+  http.addHeader("X-Bzzy-Features", kFeatures);
   if (g_sendArrived) http.addHeader("X-Bzzy-Arrived", "1");
   if (ota::failedVersion()[0]) http.addHeader("X-Bzzy-Update-Failed", ota::failedVersion());
   if (ota::lastNowId()) http.addHeader("X-Bzzy-Update-Now", String(ota::lastNowId()));
@@ -474,8 +476,10 @@ static bool syncOnce() {
   String resp;
   int status = 0;
   g_sendArrived = bzzy::shipArrived(g_shipArmed, g_shipSsid, WiFi.SSID().c_str());
+  const bool sentArrived = g_sendArrived;
   const bool got = httpRequest("GET", url("/state"), "", &resp, &status);
   g_sendArrived = false;
+  if (got && sentArrived) Serial.printf("[ship] sent X-Bzzy-Arrived from \"%s\"\n", WiFi.SSID().c_str());
   if (!got) {
     // Someone deleted this light in the app (or made it a new token). After a few in a
     // row, forget the id and show a pairing code. The saved settings stay until a new
@@ -504,6 +508,7 @@ static bool syncOnce() {
       return true;
     case bzzy::ShipAction::Done:
       Serial.println("[ship] out of ship mode");
+      Serial.flush();
       g_shipArmed = false;
       g_shipSsid[0] = '\0';
       saveShip();
@@ -517,6 +522,14 @@ static bool syncOnce() {
     Serial.println("[net] couldn't parse state response");
     return false;
   }
+  // No clock yet (NTP still backing off after the setup page, and no RTC time): take the
+  // app's. It's a second or so out at most, and NTP corrects it when it answers.
+  if (!now() && parsed.lastSync > 1700000000u) {
+    struct timeval tv = {(time_t)parsed.lastSync, 0};
+    settimeofday(&tv, nullptr);
+    Serial.printf("[clock] set from the app: %lu\n", (unsigned long)parsed.lastSync);
+  }
+  if (!g_lastSyncOk) Serial.printf("[net] polling ok (features %s)\n", kFeatures);
   g_pollMs = bzzy::pollIntervalSec(parsed, cfg::kPollIntervalMs / 1000, cfg::kMaxPollMs / 1000) * 1000;
   xSemaphoreTake(g_mx, portMAX_DELAY);
   g_incoming = parsed;
@@ -749,6 +762,8 @@ void loop() {
       WiFi.mode(WIFI_STA);
       WiFi.begin();
       capTxPower();
+      // NTP gave up backing off while the portal had no internet: start it again.
+      configTzTime(cfg::kTimezone, cfg::kNtpServer);
     }
   }
   // Once NTP has set the clock, copy it to the battery-backed RTC.
