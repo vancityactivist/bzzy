@@ -8,7 +8,7 @@
 
 namespace bzzy {
 
-enum class Font : uint8_t { Bold12, Bold18 };  // FreeSansBold12pt7b, FreeSansBold18pt7b
+enum class Font : uint8_t { Bold12, Bold18, Bold24 };  // FreeSansBold12pt7b, 18pt7b, 24pt7b
 
 constexpr int kMessageWidth = 220;  // 10 px margin each side
 constexpr size_t kMaxLines = 6;
@@ -39,5 +39,11 @@ Wrapped wrapMessage(const char* text, int maxWidth = kMessageWidth);
 
 // A message in the bar under a GIF: 12 pt, up to 2 lines.
 Wrapped wrapBar(const char* text, int maxWidth = kMessageWidth);
+
+// A status's name across its colour card: one line in bold 24 pt if it fits, else bold
+// 18 pt, else two lines of 18 pt (as "DO NOT" / "DISTURB"), else two lines of 12 pt.
+// app/src/lib/screen.ts cardLabel() does the same.
+constexpr int kCardLabelWidth = 220;
+Wrapped cardLabel(const char* label, int maxWidth = kCardLabelWidth);
 
 }  // namespace bzzy

@@ -22,12 +22,20 @@ constexpr uint8_t kBold18[95] = {
     9, 20, 22, 20, 22, 20, 12, 21, 21, 10, 10, 20, 9, 31, 21, 21,
     22, 22, 14, 19, 12, 21, 19, 27, 19, 19, 18, 14, 10, 14, 18,
 };
+constexpr uint8_t kBold24[95] = {
+    13, 16, 22, 26, 26, 42, 34, 12, 16, 16, 18, 27, 12, 16, 12, 13,
+    26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 12, 12, 27, 27, 27, 29,
+    46, 33, 33, 34, 34, 31, 30, 36, 35, 15, 27, 34, 29, 41, 35, 37,
+    32, 37, 34, 32, 30, 35, 31, 45, 32, 30, 29, 16, 13, 16, 27, 26,
+    12, 27, 29, 26, 29, 27, 16, 29, 28, 13, 13, 27, 13, 42, 29, 29,
+    29, 29, 18, 26, 16, 29, 25, 37, 26, 26, 24, 18, 13, 18, 23,
+};
 }  // namespace
 
-int lineHeight(Font f) { return f == Font::Bold18 ? 42 : 29; }
+int lineHeight(Font f) { return f == Font::Bold24 ? 56 : f == Font::Bold18 ? 42 : 29; }
 
 int textWidth(const char* s, size_t n, Font f) {
-  const uint8_t* w = f == Font::Bold18 ? kBold18 : kBold12;
+  const uint8_t* w = f == Font::Bold24 ? kBold24 : f == Font::Bold18 ? kBold18 : kBold12;
   int total = 0;
   for (size_t i = 0; i < n && s[i]; ++i) {
     const unsigned char c = static_cast<unsigned char>(s[i]);
@@ -91,6 +99,29 @@ Wrapped wrapBar(const char* text, int maxWidth) {
   Wrapped w;
   w.font = Font::Bold12;
   w.count = wrapText(text, w.font, maxWidth, 2, w.lines, nullptr);
+  return w;
+}
+
+Wrapped cardLabel(const char* label, int maxWidth) {
+  Wrapped w;
+  size_t n = 0;
+  while (label[n]) ++n;
+  const Font oneLine[2] = {Font::Bold24, Font::Bold18};
+  for (Font f : oneLine) {
+    if (textWidth(label, n, f) <= maxWidth) {
+      w.font = f;
+      w.count = n ? 1 : 0;
+      w.lines[0] = {0, static_cast<uint8_t>(n)};
+      return w;
+    }
+  }
+  bool cut = false;
+  w.font = Font::Bold18;
+  w.count = wrapText(label, w.font, maxWidth, 2, w.lines, &cut);
+  if (cut) {
+    w.font = Font::Bold12;
+    w.count = wrapText(label, w.font, maxWidth, 2, w.lines, nullptr);
+  }
   return w;
 }
 

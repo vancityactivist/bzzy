@@ -310,6 +310,24 @@ void test_wrap_narrow_screen() {
   TEST_ASSERT_EQUAL(2, bar.count);
 }
 
+// The same layouts as app/src/lib/screen.test.ts cardLabel().
+static void assertCard(const char* label, Font font, size_t count, const char* first) {
+  const Wrapped w = cardLabel(label);
+  TEST_ASSERT_EQUAL((int)font, (int)w.font);
+  TEST_ASSERT_EQUAL(count, w.count);
+  TEST_ASSERT_EQUAL(strlen(first), w.lines[0].len);
+  TEST_ASSERT_EQUAL_MEMORY(first, label + w.lines[0].start, strlen(first));
+}
+
+void test_card_label_layouts() {
+  assertCard("FREE", Font::Bold24, 1, "FREE");
+  assertCard("COME IN", Font::Bold24, 1, "COME IN");
+  assertCard("ON A CALL", Font::Bold18, 1, "ON A CALL");
+  assertCard("DO NOT DISTURB", Font::Bold18, 2, "DO NOT");
+  assertCard("HEADS DOWN", Font::Bold18, 2, "HEADS");
+  assertCard("OUT FOR LUNCH NOW", Font::Bold12, 2, "OUT FOR LUNCH");
+}
+
 // ---- over-the-air updates ----
 
 void test_release_versions() {
@@ -461,6 +479,7 @@ int main(int, char**) {
   RUN_TEST(test_wrap_falls_back_to_small_font);
   RUN_TEST(test_wrap_breaks_long_words);
   RUN_TEST(test_wrap_narrow_screen);
+  RUN_TEST(test_card_label_layouts);
   RUN_TEST(test_release_versions);
   RUN_TEST(test_version_order);
   RUN_TEST(test_signed_message);

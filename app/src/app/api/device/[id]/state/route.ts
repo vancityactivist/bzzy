@@ -78,6 +78,8 @@ export async function GET(req: NextRequest, ctx: RouteContext<"/api/device/[id]/
     firmware,
     hours,
     ship: device.shipMode && !arrived,
+    // The status names, for firmware that can draw them.
+    labels: hasFeature(features, "labels") ? device.statusLabels : null,
   });
 
   // Answer from the saved copies right away, then re-read any calendar (or the

@@ -159,7 +159,7 @@ static bool httpRequest(const char* method, const String& u, const String& body,
   http.addHeader("X-Bzzy-Board", ota::board());
   // What this firmware understands beyond protocol v1, so the app only offers it where
   // it works: "leds" = ledStyles and meetingWarn; "push" = team pushes and push-ack.
-  http.addHeader("X-Bzzy-Features", "colors,hours,leds,push");
+  http.addHeader("X-Bzzy-Features", "colors,hours,labels,leds,push");
   if (ota::failedVersion()[0]) http.addHeader("X-Bzzy-Update-Failed", ota::failedVersion());
   if (ota::lastNowId()) http.addHeader("X-Bzzy-Update-Now", String(ota::lastNowId()));
   int code;
