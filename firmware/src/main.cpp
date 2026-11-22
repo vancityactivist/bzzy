@@ -243,7 +243,7 @@ void loop() {
     leds::setSetup(leds::Setup::None);
     leds::setOff(true);
     display::SetupView v = {bzzy::SetupStep::None, bzzy::SetupNote::None, 0, 0, nullptr,
-                            "Packed", "Plug me in at your desk", "and pick your Wi-Fi", false};
+                            "Packed", "You can unplug me now", "Next stop: my new home", false};
     display::showSetup(v);
     leds::tick(ms);
     delay(1);

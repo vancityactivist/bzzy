@@ -15,9 +15,10 @@ It's a small, private API for one trusted caller, separate from the public API i
 
 Firmware with the `ship` feature (it lists `ship` in `X-Bzzy-Features`):
 
-- On the first answer with `ship: true` it saves the name of the Wi-Fi it's on, **forgets that Wi-Fi** (its device id and token stay), turns the ring off and shows **"Packed. Plug me in at your desk and pick your Wi-Fi"**. Wait for that screen before unplugging it.
+- On the first answer with `ship: true` it saves the name of the Wi-Fi it's on, **forgets that Wi-Fi** (its device id and token stay), turns the ring off and shows **"Packed. You can unplug me now"**. Wait for that screen before unplugging it.
 - At its new home there's no Wi-Fi saved, so it opens the usual `bzzy-XXXX` setup page. Once the owner picks their Wi-Fi it goes straight to their status: no pairing step.
 - Its polls from a Wi-Fi with a **different name** from the bench one carry `X-Bzzy-Arrived: 1`. When the answer stops saying `ship: true`, it forgets ship mode.
+- If it has no clock yet when it first connects (NTP gave up while the setup page was open), it takes the time from the app's `serverTime`, so it doesn't sit on "Waiting for the clock".
 - If it's put back on the bench Wi-Fi while still in ship mode (to test it again, say), it packs itself again on its next poll, so it never reaches its owner with the bench Wi-Fi saved.
 
 ### Lights that are already set up
