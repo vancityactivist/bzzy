@@ -177,7 +177,7 @@ function Tile({ name, src, checked, onPick }: { name: string; src?: string; chec
       title={name}
       onClick={onPick}
       className={cx(
-        "relative flex aspect-square items-center justify-center overflow-hidden rounded-xl bg-[#0b0b0c] transition-shadow hover:ring-2 hover:ring-line-strong",
+        "relative flex aspect-square items-center justify-center overflow-hidden rounded-xl bg-device transition-shadow hover:ring-2 hover:ring-line-strong",
         checked && "ring-2 ring-foreground ring-offset-2 ring-offset-card hover:ring-foreground",
       )}
     >
@@ -234,8 +234,8 @@ export function PushList({ teamId, pushes }: { teamId: string; pushes: PushSumma
             <div className="min-w-0 flex-1 basis-48 text-sm">
               <p className="truncate font-medium">{p.text ? `“${p.text}”` : p.gifName}</p>
               <p className="text-muted">
-                {p.who} · {p.acked} of {p.of} dismissed
-                {p.flash && ` · ${p.flash}`} · {p.by ? `${p.by}, ` : ""}
+                {p.who}, {p.acked} of {p.of} dismissed
+                {p.flash && `, ${p.flash}`}, {p.by ? `${p.by}, ` : ""}
                 {p.sentAgo}
               </p>
             </div>

@@ -1,0 +1,322 @@
+/* Hallmark · see app/globals.css for the stamp: this page shares the site's one system (Console, app/tokens.css) */
+/* The signed-out landing page (landing.tsx), on the site's one system: Console (app/tokens.css).
+   Only the page's structure lives here; colour, type and controls come from the tokens and the
+   app's own Tailwind utilities. The Hallmark stamp is at the top of app/globals.css. */
+
+.lp {
+  /* the page's sections part by the scaffold's three steps */
+  --lp-gap: var(--section-gap);
+}
+
+.lp-wrap {
+  width: 100%;
+  max-width: var(--container);
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+}
+
+/* Twelve columns, 32px apart; every section places its parts on them. */
+.lp-grid {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  column-gap: var(--gap-columns);
+  row-gap: var(--space-2xl);
+}
+.lp-grid > * {
+  grid-column: 1 / -1;
+  min-width: 0;
+}
+@media (min-width: 60rem) {
+  .lp-c1-6 { grid-column: 1 / span 6; }
+  .lp-c1-5 { grid-column: 1 / span 5; }
+  .lp-c1-4 { grid-column: 1 / span 4; }
+  .lp-c7-12 { grid-column: 7 / -1; }
+  .lp-c6-12 { grid-column: 6 / -1; }
+  .lp-c5-12 { grid-column: 5 / -1; }
+  .lp-c8-12 { grid-column: 8 / -1; }
+}
+
+.lp-section {
+  padding-block: var(--section-gap-s) 0;
+}
+.lp-section--rule {
+  margin-top: var(--section-gap-s);
+  border-top: var(--rule-hair) solid var(--color-rule);
+}
+.lp-band {
+  margin-top: var(--section-gap);
+  padding-block: var(--section-gap-s);
+  background: var(--color-paper-3);
+  border-block: var(--rule-hair) solid var(--color-rule);
+}
+
+.lp h2 + .lead,
+.lp h1 + .lead {
+  margin-top: var(--space-md);
+  color: var(--color-ink-2);
+}
+
+/* The nav: one line, the wordmark at one edge and the action at the other. */
+.lp-nav {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-sticky-nav);
+  background: var(--color-paper);
+  border-bottom: var(--rule-hair) solid var(--color-rule);
+}
+.lp-nav__bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-lg);
+  height: 64px;
+}
+.lp-nav__links {
+  display: none;
+}
+@media (min-width: 60rem) {
+  .lp-nav__links {
+    display: flex;
+    gap: var(--space-2xs);
+    margin-left: var(--space-md);
+  }
+}
+
+/* The hero (Banner): the head on seven columns, the live light on five; the render starts above the fold. */
+.lp-hero {
+  padding-block: var(--space-2xl) var(--section-gap-s);
+}
+.lp-hero__grid {
+  align-items: center;
+}
+.lp-hero h1 {
+  font-size: clamp(2.5rem, 4.2vw + 0.75rem, 4.75rem);
+  max-width: 16ch;
+}
+.lp-hero__actions {
+  margin-top: var(--space-xl);
+}
+
+/* The render of the case, edge to edge of the container. */
+.lp-showcase {
+  overflow: hidden;
+  border: var(--rule-hair) solid var(--color-rule);
+  border-radius: var(--radius-card);
+  background: var(--color-paper-3);
+  aspect-ratio: 21 / 9;
+}
+.lp-showcase img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 70% 45%;
+}
+@media (max-width: 40rem) {
+  .lp-showcase { aspect-ratio: 4 / 3; }
+}
+
+/* Panels cut from one surface: 1px seams between them (Console). */
+.lp-panels {
+  display: grid;
+  gap: var(--rule-hair);
+  overflow: hidden;
+  background: var(--color-rule);
+  border: var(--rule-hair) solid var(--color-rule);
+  border-radius: var(--radius-card);
+}
+.lp-panels > * {
+  min-width: 0;
+  background: var(--color-paper-2);
+}
+@media (min-width: 48rem) {
+  .lp-panels--4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .lp-panels--2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .lp-panels--3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+/* A stage of the workflow: its number rides in the heading; a rule above each one. */
+.lp-stage {
+  margin-top: var(--section-gap-s);
+  padding-top: var(--space-2xl);
+  border-top: var(--rule-hair) solid var(--color-rule);
+}
+
+/* The three ways: one row each, the words on five columns and the app's own piece on seven. */
+.lp-way {
+  display: grid;
+  gap: var(--space-lg);
+  padding: var(--space-xl);
+  align-items: start;
+}
+@media (min-width: 60rem) {
+  .lp-way { grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: var(--space-2xl); }
+}
+/* The first way leads: its piece stands taller than the other two. */
+.lp-way--lead .lp-way__art { min-height: 380px; }
+.lp-way__art {
+  display: grid;
+  place-items: center;
+  min-height: 300px;
+  padding: var(--space-lg);
+  border-radius: calc(var(--radius-card) - 2px);
+  background: var(--color-paper-3);
+}
+.lp-way__art > * {
+  /* The sketches are drawn at the app's own small size: set them large enough to read. */
+  zoom: 1.35;
+}
+@media (max-width: 40rem) {
+  .lp-way { padding: var(--space-lg); }
+  .lp-way__art,
+  .lp-way--lead .lp-way__art { min-height: 240px; padding: var(--space-md); }
+  .lp-way__art > * { zoom: 1; }
+}
+
+/* The trail: what reaches bzzy.ca, and the light fetching it, on a 1px spine. */
+.lp-trail {
+  position: relative;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.lp-trail::before {
+  content: "";
+  position: absolute;
+  top: 28px;
+  bottom: 28px;
+  left: 27px;
+  width: var(--rule-hair);
+  background: var(--color-rule-2);
+}
+.lp-trail > li {
+  position: relative;
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-md);
+  min-height: 56px;
+  padding-block: var(--space-xs);
+}
+.lp-trail__node {
+  justify-self: center;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--color-paper-2);
+  border: var(--rule-hair) solid var(--color-rule-2);
+}
+.lp-trail__node--hub {
+  width: 13px;
+  height: 13px;
+  background: var(--color-cool);
+  border-color: var(--color-cool);
+}
+
+/* Build: the exploded case held while the three steps pass it. */
+@media (min-width: 60rem) {
+  .lp-pin {
+    position: sticky;
+    top: calc(64px + var(--space-xl));
+  }
+}
+.lp-pin__frame {
+  overflow: hidden;
+  border: var(--rule-hair) solid var(--color-rule);
+  border-radius: var(--radius-card);
+  /* The renders are drawn on white: give them the light step so they sit on a surface, not a hole. */
+  background: var(--color-swatch-white);
+}
+.lp-pin__frame img {
+  width: 100%;
+  height: auto;
+}
+.lp-steps {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: step;
+}
+.lp-steps > li {
+  counter-increment: step;
+  padding-block: var(--space-xl);
+  border-top: var(--rule-hair) solid var(--color-rule);
+}
+.lp-steps > li:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+.lp-steps h3::before {
+  content: counter(step) ". ";
+}
+
+/* The case from three sides. */
+.lp-views {
+  display: grid;
+  gap: var(--gap-columns);
+}
+@media (min-width: 48rem) {
+  .lp-views { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+.lp-views figure {
+  margin: 0;
+}
+.lp-views img {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border: var(--rule-hair) solid var(--color-rule);
+  border-radius: var(--radius-card);
+  background: var(--color-swatch-white);
+}
+
+/* The footer: one closing sentence large, the links beneath. */
+.lp-footer {
+  margin-top: var(--section-gap);
+  padding-block: var(--section-gap-s) var(--space-xl);
+  border-top: var(--rule-hair) solid var(--color-rule);
+}
+.lp-footer__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs) var(--space-lg);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* The light in the hero, and in the GIF stage: their chips and screens never push the page sideways. */
+.lp-device {
+  display: grid;
+  justify-items: center;
+  max-width: 100%;
+}
+
+/* The four statuses as rows: the name on the left, what it asks of people on the right. */
+.lp-rows {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: var(--rule-hair) solid var(--color-rule);
+}
+.lp-rows > li {
+  display: grid;
+  gap: var(--space-2xs) var(--space-lg);
+  padding-block: var(--space-lg);
+  border-bottom: var(--rule-hair) solid var(--color-rule);
+}
+@media (min-width: 48rem) {
+  .lp-rows > li { grid-template-columns: minmax(0, 2fr) minmax(0, 3fr); align-items: baseline; }
+}
+
+/* The GIF lights three across on a phone too, set smaller so all three fit one screen. */
+@media (max-width: 48rem) {
+  .lp-gifs { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .lp-gifs > li { padding: var(--space-md) var(--space-2xs); }
+  .lp-gifs .lp-device { zoom: 0.42; }
+}
+
+/* The closing statement, set a step above a section head. */
+.lp .lp-close {
+  font-size: var(--text-display-s);
+  max-width: 18ch;
+}

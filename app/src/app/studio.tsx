@@ -28,8 +28,8 @@ import { clearShowAction, type SaveGifResult, saveShowGifAction, setStatus, show
 export type PreviewDevice = {
   id: string;
   name: string;
-  offline?: string | null; // "Offline · seen 3 days ago" when the light isn't checking in
-  dark?: string | null; // "Off hours · on at 8:00 AM" while working hours have it dark
+  offline?: string | null; // "Offline, seen 3 days ago" when the light isn't checking in
+  dark?: string | null; // "Off hours, on at 8:00 AM" while working hours have it dark
   view: ScreenView; // the status part, as it is now
   gifs: Record<Status, string | null>;
   ring?: LedStyle | null; // what the ring is doing now (a push, a show, a meeting warning, the status's style)
@@ -316,7 +316,7 @@ export function StudioPreview({
   return (
     <section
       aria-label="Your light"
-      className="sticky top-14 z-20 -mx-4 border-b border-line bg-background/90 px-4 py-3 backdrop-blur-lg backdrop-saturate-150 sm:-mx-6 sm:px-6 lg:top-20 lg:mx-0 lg:rounded-2xl lg:border lg:bg-card lg:p-0 lg:shadow-card lg:backdrop-blur-none"
+      className="sticky top-14 z-20 -mx-4 border-b border-line bg-background px-4 py-3 sm:-mx-6 sm:px-6 lg:top-20 lg:mx-0 lg:rounded-2xl lg:border lg:bg-card lg:p-0 lg:shadow-card"
     >
       <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-4 gap-y-2 lg:grid-cols-1 lg:gap-0">
         {/* What you're looking at: the screen as it is, or a draft. */}
@@ -437,7 +437,7 @@ function Chips({
             onChange={() => onChange(d.minutes)}
             className="peer sr-only"
           />
-          <span className="flex h-9 items-center justify-center rounded-full border border-line bg-card px-3.5 text-sm font-medium whitespace-nowrap text-muted shadow-card transition-colors hover:border-line-strong hover:text-foreground peer-checked:border-foreground peer-checked:bg-foreground peer-checked:text-background peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-ring">
+          <span className="flex h-9 items-center justify-center rounded-full border border-line bg-card px-3.5 text-sm font-medium whitespace-nowrap text-muted shadow-card transition-colors hover:border-line-strong hover:text-foreground peer-checked:border-signal peer-checked:bg-signal peer-checked:text-signal-ink peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-ring">
             {d.label}
           </span>
         </label>
@@ -760,8 +760,8 @@ export function ShowNowControls({
             <p className="font-medium">{live.push ? `An announcement from ${live.push.team} is on screen` : "On screen now"}</p>
             <p className="truncate text-muted">
               {[live.gifName, live.text && `“${live.text}”`].filter(Boolean).join(" with ")}
-              {live.leds ? ` · ${ringLabel(live.leds)} ring` : ""}
-              {live.until ? ` · until ${clock(live.until)}` : ""}
+              {live.leds ? `, ${ringLabel(live.leds)} ring` : ""}
+              {live.until ? `, until ${clock(live.until)}` : ""}
             </p>
             {live.push && <p className="text-muted">Press the top button on a light to dismiss it.</p>}
           </div>
@@ -1073,7 +1073,7 @@ function Tile({ name, gif, checked, onPick }: { name: string; gif?: LibraryGif; 
       onClick={onPick}
       onMouseEnter={() => setShow({ hover: gif ?? null })}
       className={cx(
-        "relative flex aspect-square items-center justify-center overflow-hidden rounded-xl bg-[#0b0b0c] transition-[box-shadow,transform] duration-150 hover:ring-2 hover:ring-line-strong motion-safe:hover:scale-[1.03]",
+        "relative flex aspect-square items-center justify-center overflow-hidden rounded-xl bg-device transition-[box-shadow,transform] duration-150 hover:ring-2 hover:ring-line-strong motion-safe:hover:scale-[1.03]",
         checked && "ring-2 ring-foreground ring-offset-2 ring-offset-card hover:ring-foreground",
       )}
     >
@@ -1087,7 +1087,7 @@ function Tile({ name, gif, checked, onPick }: { name: string; gif?: LibraryGif; 
         </span>
       )}
       {checked && (
-        <span className="absolute top-1 right-1 flex size-4 items-center justify-center rounded-full bg-foreground text-background">
+        <span className="absolute top-1 right-1 flex size-4 items-center justify-center rounded-full bg-signal text-signal-ink">
           <CheckIcon className="size-3" strokeWidth={3} />
         </span>
       )}

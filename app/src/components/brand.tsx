@@ -1,12 +1,11 @@
 // bzzy's mark: the four status colours as dots on a rounded tile (docs/brand/README.md).
-// Plain SVG with no Tailwind, so the landing page (which keeps Tailwind off) can use it too.
 // The tile takes its colours from --mark-tile and --mark-line when set, otherwise from the
-// app's card and line-strong tokens, so it is white on light pages and near-black on dark.
+// app's card and line-strong tokens (Console's paper-2 and rule-2), so it follows the colourway.
 const DOTS = [
-  { cx: 20.5, cy: 20.5, fill: "#16a34a" }, // free
-  { cx: 43.5, cy: 20.5, fill: "#dc2626" }, // busy
-  { cx: 20.5, cy: 43.5, fill: "#7c3aed" }, // do not disturb
-  { cx: 43.5, cy: 43.5, fill: "#ea580c" }, // away
+  { cx: 20.5, cy: 20.5, fill: "var(--color-status-free)" }, // free
+  { cx: 43.5, cy: 20.5, fill: "var(--color-status-busy)" }, // busy
+  { cx: 20.5, cy: 43.5, fill: "var(--color-status-dnd)" }, // do not disturb
+  { cx: 43.5, cy: 43.5, fill: "var(--color-status-away)" }, // away
 ];
 
 export function BzzyMark({ className }: { className?: string }) {
@@ -18,8 +17,8 @@ export function BzzyMark({ className }: { className?: string }) {
         width="62.5"
         height="62.5"
         rx="15"
-        fill="var(--mark-tile, var(--card, #171717))"
-        stroke="var(--mark-line, var(--line-strong, rgb(255 255 255 / 0.14)))"
+        fill="var(--mark-tile, var(--card))"
+        stroke="var(--mark-line, var(--line-strong))"
         strokeWidth="1.5"
       />
       {DOTS.map((d) => (

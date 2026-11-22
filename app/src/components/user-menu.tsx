@@ -1,25 +1,18 @@
-import Link from "next/link";
-
 import { isAdmin } from "@/lib/admin";
 import { getCurrentUser } from "@/lib/session";
 
 import { AccountMenu } from "./account-menu";
-import { NavLinks, TabBar } from "./site-nav";
-import { buttonClass } from "./ui";
+import { NavLinks, SignInLink, TabBar } from "./site-nav";
 
 // The request-time parts of the app shell. Each reads the session, so the layout renders
 // them inside <Suspense>.
 
 // Header, right of the wordmark. Signed in: section pills (sm and up) and the account menu.
-// Signed out: just a Sign in button.
+// Signed out: just a Sign in button (not on the sign-in page).
 export async function HeaderNav() {
   const user = await getCurrentUser();
   if (!user) {
-    return (
-      <Link href="/sign-in" className={buttonClass("secondary", "sm", "ml-auto")}>
-        Sign in
-      </Link>
-    );
+    return <SignInLink />;
   }
   const admin = await isAdmin(user.id);
   return (

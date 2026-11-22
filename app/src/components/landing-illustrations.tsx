@@ -7,7 +7,7 @@ import { STATUS_META } from "./status-meta";
 import { cx, StatusDot } from "./ui";
 
 // Small drawings for "Three ways to set it", built from the app's own pieces rather than
-// screenshots. All decorative: the card text next to each says the same thing.
+// screenshots. They have no frame of their own: the landing's panel is their one surface. All decorative: the card text next to each says the same thing.
 
 const SOLID: Record<Status, string> = { free: "bg-free", busy: "bg-busy", dnd: "bg-dnd", away: "bg-away" };
 const TINT: Record<Status, string> = {
@@ -21,7 +21,7 @@ const TINT: Record<Status, string> = {
 export function StatusPickerSketch() {
   const picked: Status = "busy";
   return (
-    <div aria-hidden className="w-full max-w-64 rounded-xl border border-line bg-card p-3 shadow-pop">
+    <div aria-hidden className="w-full max-w-64">
       <div className="grid grid-cols-2 gap-1.5">
         {(["free", "busy", "dnd", "away"] as const).map((s) => (
           <div
@@ -46,7 +46,7 @@ export function StatusPickerSketch() {
             key={d}
             className={cx(
               "rounded-full px-2 py-0.5 text-[10px] font-medium",
-              d === "1 hour" ? "bg-foreground text-background" : "border border-line text-muted",
+              d === "1 hour" ? "bg-signal text-signal-ink" : "border border-line text-muted",
             )}
           >
             {d}
@@ -82,7 +82,7 @@ export function CalendarSketch() {
   if (t < DAY_START + DAY_HOURS) strip.push({ start: t, end: DAY_START + DAY_HOURS, status: "free" });
 
   return (
-    <div aria-hidden className="w-full max-w-64 rounded-xl border border-line bg-card p-3 shadow-pop">
+    <div aria-hidden className="w-full max-w-64">
       <div className="mb-2 flex items-center justify-between text-[10px] font-medium text-muted">
         <span>Tuesday</span>
         <span className="inline-flex items-center gap-1 rounded-full border border-line px-1.5 py-0.5 font-mono">
@@ -161,7 +161,7 @@ export function TapSketch({ gifSrc }: { gifSrc: string | null }) {
 
 function Key({ children }: { children: string }) {
   return (
-    <span className="inline-block rounded-md border border-line bg-card px-1.5 py-0.5 font-mono text-[10px] text-muted shadow-card">
+    <span className="inline-block rounded-md border border-line bg-card px-1.5 py-0.5 font-mono text-[10px] text-muted">
       {children}
     </span>
   );

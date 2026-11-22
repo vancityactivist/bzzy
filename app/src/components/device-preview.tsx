@@ -131,7 +131,7 @@ export function DevicePreview({
           }}
         />
       )}
-      <div className="relative rounded-[24%/20%] bg-[#151515]" style={{ padding: bezel }}>
+      <div className="relative rounded-[24%/20%] bg-device-body" style={{ padding: bezel }}>
         <div
           className="relative overflow-hidden bg-black"
           style={{ width: SCREEN_W * scale, height: SCREEN_H * scale, borderRadius: 30 * scale }}

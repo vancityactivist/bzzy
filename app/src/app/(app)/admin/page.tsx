@@ -55,7 +55,7 @@ function Stat({ label, value, note }: { label: string; value: number; note?: str
   );
 }
 
-const TH = "px-3 py-2.5 text-xs font-medium tracking-wide whitespace-nowrap text-muted uppercase first:pl-5 last:pr-5 sm:first:pl-6 sm:last:pr-6";
+const TH = "px-3 py-2.5 text-[13px] font-medium whitespace-nowrap text-muted first:pl-5 last:pr-5 sm:first:pl-6 sm:last:pr-6";
 const TD = "px-3 py-3 first:pl-5 last:pr-5 sm:first:pl-6 sm:last:pr-6";
 
 async function AdminContent() {
@@ -77,7 +77,7 @@ async function AdminContent() {
         <Stat label="Users" value={users.length} />
         <Stat label="New this week" value={countSince(created, now, 7)} note={`${countSince(created, now, 30)} in 30 days`} />
         <Stat label="Active this week" value={activeWeek} note="signed in and used the app" />
-        <Stat label="Devices" value={devices.length} note={`${online} online now · ${sharedTeams} shared teams`} />
+        <Stat label="Devices" value={devices.length} note={`${online} online now, ${sharedTeams} shared teams`} />
       </section>
 
       <Card>
@@ -88,7 +88,7 @@ async function AdminContent() {
               <div
                 key={d.day}
                 title={`${dayLabel(d.day)}: ${d.count}`}
-                className={`flex-1 rounded-t-sm ${d.count ? "bg-foreground" : "bg-line"}`}
+                className={`flex-1 rounded-t-sm ${d.count ? "bg-instrument" : "bg-line"}`}
                 style={{ height: d.count ? `${(d.count / peak) * 100}%` : "2px" }}
               />
             ))}

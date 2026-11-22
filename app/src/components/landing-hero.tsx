@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { preload } from "react-dom";
 
 import { type Status, STATUSES } from "@/lib/protocol";
-import { LED_RGB, viewFor } from "@/lib/screen";
+import { viewFor } from "@/lib/screen";
 
 import { DevicePreview } from "./device-preview";
 import { STATUS_META } from "./status-meta";
@@ -27,10 +27,6 @@ const SAMPLE: Record<Status, { text: string; until: number }> = {
 };
 
 const next = (s: Status) => STATUSES[(STATUSES.indexOf(s) + 1) % STATUSES.length];
-const tint = (s: Status, a: number) => {
-  const [r, g, b] = LED_RGB[s];
-  return `rgb(${r} ${g} ${b} / ${a})`;
-};
 
 export function LandingHeroDevice({
   gifs,
@@ -72,21 +68,7 @@ export function LandingHeroDevice({
   const view = viewFor({ status, ...SAMPLE[status] });
 
   return (
-    <div className="relative isolate flex flex-col items-center">
-      {/* A soft wash of the status colour behind the light. One layer per status so it can fade. */}
-      <div aria-hidden className="pointer-events-none absolute inset-x-0 -top-8 bottom-16 -z-10">
-        {STATUSES.map((s) => (
-          <div
-            key={s}
-            className={cx(
-              "absolute inset-0 transition-opacity duration-700",
-              s === status ? "opacity-100" : "opacity-0",
-            )}
-            style={{ background: `radial-gradient(closest-side, ${tint(s, 0.16)}, ${tint(s, 0.05)} 55%, transparent)` }}
-          />
-        ))}
-      </div>
-
+    <div className="flex flex-col items-center">
       <div className="[zoom:0.8] sm:[zoom:1]">
         <DevicePreview
           view={view}
@@ -100,7 +82,7 @@ export function LandingHeroDevice({
       <div
         role="group"
         aria-label="Try a status"
-        className="mt-2 inline-flex max-w-full items-center gap-0.5 rounded-full border border-line bg-card/80 p-1 shadow-card backdrop-blur"
+        className="mt-2 inline-flex max-w-full items-center gap-0.5 rounded-xl border border-line bg-card p-1"
       >
         {STATUSES.map((s) => {
           const on = s === status;
@@ -114,11 +96,11 @@ export function LandingHeroDevice({
                 setStatus(s);
               }}
               className={cx(
-                "inline-flex h-9 items-center gap-1.5 rounded-full px-2.5 text-[13px] font-medium whitespace-nowrap transition-colors duration-150 sm:gap-2 sm:px-3.5 sm:text-sm",
-                on ? "bg-subtle text-foreground ring-1 ring-line-strong ring-inset" : "text-muted hover:text-foreground",
+                "inline-flex h-11 items-center gap-1.5 rounded-lg px-2.5 text-[13px] font-medium whitespace-nowrap transition-colors duration-150 active:bg-subtle/70 sm:gap-2 sm:px-3.5 sm:text-sm",
+                on ? "bg-subtle text-foreground ring-1 ring-line-strong ring-inset" : "text-muted hover:bg-subtle/60 hover:text-foreground",
               )}
             >
-              <StatusDot status={s} size="sm" className={cx("transition-transform", on && "scale-125")} />
+              <StatusDot status={s} size="sm" />
               {STATUS_META[s].label}
             </button>
           );
@@ -126,7 +108,6 @@ export function LandingHeroDevice({
       </div>
       {hint && (
         <p className="mt-3 flex items-center gap-1.5 text-xs text-muted">
-          <span aria-hidden className="font-mono">↑</span>
           Try it: pick a status and watch the light change.
         </p>
       )}

@@ -12,13 +12,13 @@ export function AppShell({ children }: { children: ReactNode }) {
     <>
       <a
         href="#main"
-        className="sr-only rounded-lg bg-foreground px-3 py-2 text-sm font-medium text-background focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50"
+        className="sr-only rounded-lg bg-signal px-3 py-2 text-sm font-medium text-signal-ink focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50"
       >
         Skip to content
       </a>
-      <header className="sticky top-0 z-40 border-b border-line bg-background/75 backdrop-blur-lg backdrop-saturate-150">
+      <header className="sticky top-0 z-40 border-b border-line bg-background">
         <div className="mx-auto flex h-14 max-w-5xl items-center gap-4 px-4 sm:gap-6 sm:px-6">
-          <Link href="/" className="flex items-center gap-2 text-lg font-semibold tracking-tight">
+          <Link href="/" className="flex items-center gap-2 text-lg font-medium tracking-[-0.02em]">
             <BzzyMark className="size-6 shrink-0" />
             bzzy
           </Link>

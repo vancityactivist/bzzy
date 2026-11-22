@@ -3,7 +3,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 
 import { BzzyMark } from "@/components/brand";
-import { cx } from "@/components/ui";
+import { buttonClass } from "@/components/ui";
 import { API_EXAMPLES, WEBHOOK_EXAMPLES } from "@/lib/api-examples";
 import { openApiDocument } from "@/lib/api-openapi";
 import { LIMITS, MAX_LIVE_TOKENS, SCOPE_INFO, SCOPES } from "@/lib/api-rules";
@@ -44,9 +44,9 @@ export default function ApiDocsPage() {
   const doc = openApiDocument(SITE_URL);
   return (
     <>
-      <header className="sticky top-0 z-40 border-b border-line bg-background/75 backdrop-blur-lg backdrop-saturate-150">
+      <header className="sticky top-0 z-40 border-b border-line bg-background">
         <div className="mx-auto flex h-14 max-w-6xl items-center gap-3 px-4 sm:px-6">
-          <Link href="/" className="flex items-center gap-2 text-lg font-semibold tracking-tight">
+          <Link href="/" className="flex items-center gap-2 text-lg font-medium tracking-[-0.02em]">
             <BzzyMark className="size-6 shrink-0" />
             bzzy
           </Link>
@@ -55,10 +55,10 @@ export default function ApiDocsPage() {
           </span>
           <span className="text-sm font-medium">API docs</span>
           <nav className="ml-auto flex items-center gap-1 text-sm font-medium" aria-label="Site">
-            <a href={REPO_URL} className="hidden h-8 items-center rounded-full px-3 text-muted hover:text-foreground sm:flex">
+            <a href={REPO_URL} className="hidden h-8 items-center rounded-lg px-3 text-muted hover:bg-subtle hover:text-foreground sm:flex">
               GitHub
             </a>
-            <Link href="/settings" className="flex h-8 items-center rounded-full bg-foreground px-3 text-background">
+            <Link href="/settings" className={buttonClass("primary", "sm")}>
               Get a token
             </Link>
           </nav>
@@ -68,7 +68,7 @@ export default function ApiDocsPage() {
       <div className="mx-auto flex w-full max-w-6xl gap-10 px-4 py-10 sm:px-6 lg:py-14">
         <aside className="hidden w-44 shrink-0 lg:block">
           <nav aria-label="On this page" className="sticky top-24 text-sm">
-            <p className="mb-2 text-xs font-medium tracking-wide text-muted uppercase">On this page</p>
+            <p className="mb-2 text-[13px] font-medium text-muted">On this page</p>
             <ul className="space-y-1.5">
               {TOC.map((t) => (
                 <li key={t.id}>
@@ -84,7 +84,7 @@ export default function ApiDocsPage() {
         <main id="main" className="min-w-0 flex-1 space-y-16">
           <section className="space-y-4">
             <p className="text-sm font-medium text-muted">Version 1</p>
-            <h1 className="text-3xl font-semibold tracking-tight text-balance sm:text-4xl">The bzzy API</h1>
+            <h1 className="text-3xl font-medium tracking-[-0.03em] text-balance sm:text-4xl">The bzzy API</h1>
             <p className="max-w-2xl text-lg text-muted text-pretty">
               Set your status and Show now from anything that can make a web request: a script, a Stream Deck button, Home Assistant, Power Automate,
               or your own app. Read what your lights are showing, and get a webhook the moment it changes.
@@ -97,7 +97,7 @@ export default function ApiDocsPage() {
               <ul className="flex flex-wrap gap-2 text-sm">
                 {TOC.map((t) => (
                   <li key={t.id}>
-                    <a href={`#${t.id}`} className="flex h-8 items-center rounded-full border border-line px-3 text-muted hover:text-foreground">
+                    <a href={`#${t.id}`} className="flex h-8 items-center rounded-lg border border-line px-3 text-muted hover:bg-subtle hover:text-foreground">
                       {t.label}
                     </a>
                   </li>
@@ -439,8 +439,8 @@ if ($Status -eq "clear") {
 
 function Section({ id, title, children }: { id: string; title: string; children: ReactNode }) {
   return (
-    <section id={id} aria-labelledby={`${id}-h`} className="scroll-mt-20 space-y-4 leading-relaxed">
-      <h2 id={`${id}-h`} className="border-b border-line pb-2 text-2xl font-semibold tracking-tight">
+    <section id={id} aria-labelledby={`${id}-h`} className="scroll-mt-20 space-y-4 leading-relaxed [&>p]:max-w-[68ch] [&>ol]:max-w-[68ch] [&>ul]:max-w-[68ch]">
+      <h2 id={`${id}-h`} className="border-b border-line pb-3 text-2xl font-medium tracking-[-0.02em]">
         {title}
       </h2>
       {children}
@@ -449,13 +449,13 @@ function Section({ id, title, children }: { id: string; title: string; children:
 }
 
 function C({ children }: { children: ReactNode }) {
-  return <code className="rounded bg-subtle px-1 py-0.5 font-mono text-[0.85em] break-words">{children}</code>;
+  return <code className="rounded-sm border border-line bg-inset px-1 py-px font-mono text-[0.9em] break-words">{children}</code>;
 }
 
 function Code({ label, children }: { label: string; children: string }) {
   return (
-    <figure className="overflow-hidden rounded-xl border border-line bg-card">
-      <figcaption className="flex items-center justify-between border-b border-line px-3 py-1 text-xs text-muted">
+    <figure className="overflow-hidden rounded-2xl border border-line bg-inset">
+      <figcaption className="flex items-center justify-between gap-3 border-b border-line bg-card py-1.5 pr-2 pl-4 text-[13px] text-muted">
         <span>{label}</span>
         <CopyButton value={children} label={`${label} example`} />
       </figcaption>
@@ -468,8 +468,8 @@ function Code({ label, children }: { label: string; children: string }) {
 
 function Fact({ label, value, href, copy }: { label: string; value: string; href?: string; copy?: boolean }) {
   return (
-    <div className="min-w-0 rounded-xl border border-line bg-card px-3 py-2">
-      <dt className="text-xs text-muted">{label}</dt>
+    <div className="min-w-0 rounded-2xl border border-line bg-card px-4 py-3">
+      <dt className="text-[13px] text-muted">{label}</dt>
       <dd className="flex items-center justify-between gap-2">
         {href ? (
           <a href={href} className="min-w-0 truncate font-mono text-[13px] underline underline-offset-2">
@@ -486,12 +486,12 @@ function Fact({ label, value, href, copy }: { label: string; value: string; href
 
 function Table({ head, rows }: { head: string[]; rows: ReactNode[][] }) {
   return (
-    <div className="overflow-x-auto rounded-xl border border-line">
+    <div className="overflow-x-auto rounded-2xl border border-line">
       <table className="w-full text-left text-sm">
-        <thead className="bg-subtle/60">
+        <thead className="bg-card">
           <tr>
             {head.map((h) => (
-              <th key={h} className="px-3 py-2 font-medium">
+              <th key={h} className="px-3 py-2 text-[13px] font-medium text-muted">
                 {h}
               </th>
             ))}
@@ -536,13 +536,6 @@ type Operation = {
   requestBody?: { content: { "application/json": { schema: JsonSchema } } };
 };
 
-const METHOD_TONE: Record<string, string> = {
-  GET: "bg-free/15 text-free",
-  POST: "bg-dnd/15 text-dnd",
-  PUT: "bg-away/15 text-away",
-  PATCH: "bg-away/15 text-away",
-  DELETE: "bg-busy/15 text-busy",
-};
 
 function typeLabel(s: JsonSchema): string {
   if (s.anyOf) return s.anyOf.map(typeLabel).join(" or ");
@@ -562,9 +555,10 @@ function Endpoint({ method, path, op, schemas }: { method: string; path: string;
   return (
     <article id={id} className="scroll-mt-20 space-y-3">
       <h3 className="flex flex-wrap items-center gap-2 font-mono text-[15px] font-medium">
-        <span className={cx("rounded-md px-1.5 py-0.5 text-xs font-semibold", METHOD_TONE[method])}>{method}</span>
+        {/* The method is what the server reads, not a status: a plain chip, so the status colours keep their one meaning. */}
+        <span className="rounded-md border border-line-strong bg-inset px-1.5 py-0.5 text-[13px] font-medium text-foreground">{method}</span>
         <span>/v1{path}</span>
-        <span className="font-sans text-xs font-normal text-muted">
+        <span className="font-sans text-[13px] font-normal text-muted">
           scope: <C>{op["x-bzzy-scope"]}</C>
         </span>
       </h3>

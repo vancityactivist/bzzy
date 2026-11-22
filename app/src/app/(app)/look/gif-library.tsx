@@ -29,7 +29,7 @@ export type LibraryItem = {
   madeFor: string | null; // a built-in GIF drawn for one status
   addedAt: number; // ms; 0 for built-in
   editable: boolean; // this person may rename or delete it
-  usedBy: string[]; // "Desk light · Busy"
+  usedBy: string[]; // "Desk light, Busy"
   favourite: boolean;
   lastShownAt: number; // unix seconds, 0 = never
 };
@@ -242,7 +242,7 @@ export function GifLibrary({ items: initial, add }: { items: LibraryItem[]; add:
       }}
     >
       {drag && (
-        <div className="pointer-events-none absolute -inset-2 z-30 flex items-center justify-center rounded-3xl border-2 border-dashed border-foreground bg-background/85 backdrop-blur-sm">
+        <div className="pointer-events-none absolute -inset-2 z-30 flex items-center justify-center rounded-3xl border-2 border-dashed border-foreground bg-background/95">
           <p className="flex items-center gap-2 text-lg font-semibold">
             <UploadIcon />
             Drop to add them to your GIFs
@@ -313,7 +313,7 @@ export function GifLibrary({ items: initial, add }: { items: LibraryItem[]; add:
                     onClick={() => setFilter(f.id)}
                     className={cx(
                       "flex h-8 shrink-0 items-center gap-1.5 rounded-full border px-3 text-sm font-medium whitespace-nowrap transition-colors",
-                      filter === f.id ? "border-foreground bg-foreground text-background" : "border-line bg-card text-muted hover:border-line-strong hover:text-foreground",
+                      filter === f.id ? "border-signal bg-signal text-signal-ink" : "border-line bg-card text-muted hover:border-line-strong hover:text-foreground",
                     )}
                   >
                     {f.id === "favourites" && <StarIcon className="size-3.5" />}
@@ -344,11 +344,11 @@ export function GifLibrary({ items: initial, add }: { items: LibraryItem[]; add:
           {uploads.length > 0 && <UploadList uploads={uploads} onClose={() => setUploads([])} />}
 
           {selecting && (
-            <div className="sticky top-16 z-20 flex flex-wrap items-center gap-3 rounded-xl border border-line bg-card/95 p-2.5 pl-4 shadow-card backdrop-blur max-lg:top-[4.5rem]">
+            <div className="sticky top-16 z-20 flex flex-wrap items-center gap-3 rounded-xl border border-line bg-card p-2.5 pl-4 max-lg:top-[4.5rem]">
               <p className="flex-1 text-sm">
                 {selected.size === 0
                   ? "Tap GIFs to select them."
-                  : `${selected.size} selected${deletable.length < selected.size ? ` · ${selected.size - deletable.length} you can't delete` : ""}`}
+                  : `${selected.size} selected${deletable.length < selected.size ? `, ${selected.size - deletable.length} you can't delete` : ""}`}
               </p>
               <Button size="sm" variant="secondary" onClick={() => setSelected(new Set(listedOrAll(browsing, listed, items).filter((i) => i.editable).map((i) => i.choice)))}>
                 Select all yours
@@ -387,7 +387,7 @@ export function GifLibrary({ items: initial, add }: { items: LibraryItem[]; add:
                 {listed.length} {listed.length === 1 ? "GIF" : "GIFs"}
                 {filter !== "all" && (
                   <>
-                    {" · "}
+                    {", "}
                     <button type="button" className="underline underline-offset-2 hover:text-foreground" onClick={() => setFilter("all")}>
                       show all
                     </button>
@@ -423,7 +423,7 @@ function TryOn({
   return (
     <section
       aria-label="Try it on your light"
-      className="sticky top-0 z-10 -mx-4 border-b border-line bg-background/90 px-4 py-3 backdrop-blur max-lg:pt-0 sm:-mx-6 sm:px-6 lg:top-20 lg:mx-0 lg:rounded-2xl lg:border lg:bg-card lg:p-5 lg:shadow-card"
+      className="sticky top-0 z-10 -mx-4 border-b border-line bg-background px-4 py-3 max-lg:pt-0 sm:-mx-6 sm:px-6 lg:top-20 lg:mx-0 lg:rounded-2xl lg:border lg:bg-card lg:p-5 lg:shadow-card"
     >
       <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-4 lg:grid-cols-1 lg:gap-y-4">
         <div className="flex justify-center max-lg:[zoom:0.42]">
@@ -498,7 +498,7 @@ function Details({
           {error}
         </p>
       )}
-      <p className="truncate text-xs text-muted">{meta.join(" · ")}</p>
+      <p className="truncate text-xs text-muted">{meta.join(", ")}</p>
       {item.usedBy.length > 0 && (
         <div className="flex flex-wrap gap-1 max-lg:hidden">
           {item.usedBy.slice(0, 4).map((u) => (
@@ -648,7 +648,7 @@ function Tile({
           }
         }}
         className={cx(
-          "relative block aspect-square w-full overflow-hidden rounded-xl bg-[#0b0b0c] transition-[box-shadow,transform] duration-150 hover:ring-2 hover:ring-line-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground motion-safe:hover:scale-[1.02]",
+          "relative block aspect-square w-full overflow-hidden rounded-xl bg-device transition-[box-shadow,transform] duration-150 hover:ring-2 hover:ring-line-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground motion-safe:hover:scale-[1.02]",
           (selecting ? isSelected : pinned === item.choice) && "ring-2 ring-foreground ring-offset-2 ring-offset-background hover:ring-foreground",
         )}
       >
@@ -661,7 +661,7 @@ function Tile({
           <span
             className={cx(
               "absolute top-1.5 left-1.5 flex size-5 items-center justify-center rounded-full border-2",
-              isSelected ? "border-foreground bg-foreground text-background" : "border-white/80 bg-black/30",
+              isSelected ? "border-signal bg-signal text-signal-ink" : "border-white/80 bg-black/30",
               !item.editable && "opacity-40",
             )}
           >

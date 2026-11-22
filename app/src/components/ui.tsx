@@ -56,8 +56,8 @@ export function PageHeader({
   return (
     <div className={cx("flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between", className)}>
       <div className="min-w-0">
-        <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
-        {description && <p className="mt-1 max-w-2xl text-sm text-muted">{description}</p>}
+        <h1 className="text-[1.75rem] leading-tight font-medium tracking-[-0.02em]">{title}</h1>
+        {description && <p className="mt-2 max-w-2xl text-[15px] text-muted">{description}</p>}
       </div>
       {actions && <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div>}
     </div>
@@ -74,10 +74,10 @@ const BUTTON_BASE =
   "inline-flex shrink-0 select-none items-center justify-center gap-2 whitespace-nowrap font-medium transition-[color,background-color,border-color,opacity] duration-150 disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 [&_svg]:size-4 [&_svg]:shrink-0";
 
 const BUTTON_VARIANTS: Record<ButtonVariant, string> = {
-  primary: "bg-foreground text-background shadow-card hover:bg-foreground/85",
-  secondary: "border border-line bg-card text-foreground shadow-card hover:border-line-strong hover:bg-subtle",
-  ghost: "text-muted hover:bg-subtle hover:text-foreground",
-  danger: "border border-line bg-card text-danger shadow-card hover:border-danger/40 hover:bg-danger/5",
+  primary: "bg-signal text-signal-ink hover:bg-signal/88 active:bg-signal/80",
+  secondary: "border border-line-strong bg-card text-foreground hover:bg-subtle active:bg-subtle/70",
+  ghost: "text-muted hover:bg-subtle hover:text-foreground active:bg-subtle/70",
+  danger: "border border-line-strong bg-card text-danger hover:border-danger/50 hover:bg-danger/8 active:bg-danger/12",
 };
 
 const BUTTON_SIZES: Record<ButtonSize, string> = {
@@ -107,7 +107,7 @@ export function Button({
 
 // ---- cards ----
 
-/** A raised surface: hairline border, subtle shadow, rounded-2xl. padding: "md" (default), "sm" or "none". */
+/** A panel: a 1px rule round paper-2, 10px radius, no shadow (Console). padding: "md" (default), "sm" or "none". */
 export function Card({
   padding = "md",
   className,
@@ -116,7 +116,7 @@ export function Card({
   return (
     <div
       className={cx(
-        "rounded-2xl border border-line bg-card shadow-card",
+        "rounded-2xl border border-line bg-card",
         padding === "md" && "p-5 sm:p-6",
         padding === "sm" && "p-4",
         className,
@@ -141,7 +141,7 @@ export function CardHeader({
   return (
     <div className={cx("flex items-start justify-between gap-4", className)}>
       <div className="min-w-0">
-        <h2 className="font-semibold tracking-tight">{title}</h2>
+        <h2 className="text-[17px] leading-snug font-medium tracking-[-0.01em]">{title}</h2>
         {description && <p className="mt-1 text-sm text-muted">{description}</p>}
       </div>
       {actions && <div className="flex shrink-0 items-center gap-2">{actions}</div>}
@@ -152,7 +152,7 @@ export function CardHeader({
 // ---- form controls ----
 
 const CONTROL =
-  "w-full rounded-xl border border-line bg-card text-sm text-foreground shadow-card transition-colors duration-150 placeholder:text-muted/70 hover:border-line-strong focus-visible:border-line-strong disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-danger";
+  "w-full rounded-xl border border-field bg-inset text-sm text-foreground transition-colors duration-150 placeholder:text-muted hover:border-muted focus-visible:border-muted disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-danger";
 
 /** A 40px text input. Also styles type="file" sensibly. */
 export function Input({ className, ...props }: ComponentProps<"input">) {
@@ -258,8 +258,8 @@ export function StatusDot({
 export type BadgeTone = "neutral" | "inverse" | Status;
 
 const BADGE_TONES: Record<BadgeTone, string> = {
-  neutral: "border border-line bg-subtle text-muted",
-  inverse: "bg-foreground text-background",
+  neutral: "border border-line bg-inset text-muted",
+  inverse: "border border-signal/40 bg-signal-soft text-foreground",
   free: "bg-free/10 text-foreground ring-1 ring-inset ring-free/25",
   busy: "bg-busy/10 text-foreground ring-1 ring-inset ring-busy/25",
   dnd: "bg-dnd/10 text-foreground ring-1 ring-inset ring-dnd/25",
@@ -281,7 +281,7 @@ export function Badge({
   return (
     <span
       className={cx(
-        "inline-flex h-6 items-center gap-1.5 rounded-full px-2.5 text-xs font-medium whitespace-nowrap",
+        "inline-flex h-6 items-center gap-1.5 rounded-md px-2 text-xs font-medium whitespace-nowrap",
         BADGE_TONES[tone],
         className,
       )}
@@ -312,16 +312,16 @@ export function EmptyState({
   return (
     <div
       className={cx(
-        "flex flex-col items-center rounded-2xl border border-dashed border-line-strong px-6 py-10 text-center",
+        "flex flex-col items-center rounded-2xl border border-dashed border-line-strong bg-inset px-6 py-10 text-center",
         className,
       )}
     >
       {icon && (
-        <div className="mb-4 flex size-11 items-center justify-center rounded-xl bg-subtle text-muted [&_svg]:size-5">
+        <div className="mb-4 flex size-11 items-center justify-center rounded-xl border border-line bg-card text-muted [&_svg]:size-5">
           {icon}
         </div>
       )}
-      <h3 className="font-semibold tracking-tight">{title}</h3>
+      <h3 className="font-medium">{title}</h3>
       {children && <div className="mt-1 max-w-sm text-sm text-muted">{children}</div>}
       {action && <div className="mt-5">{action}</div>}
     </div>

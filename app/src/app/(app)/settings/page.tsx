@@ -89,7 +89,7 @@ async function SettingsContent() {
       {/* Jump to a section: a row of pills that stays under the header as you scroll. */}
       <nav
         aria-label="Settings sections"
-        className="sticky top-14 z-20 -mx-4 flex gap-1.5 overflow-x-auto border-b border-line bg-background/90 px-4 py-2.5 backdrop-blur-lg [scrollbar-width:none] sm:-mx-6 sm:px-6 lg:top-14 [&::-webkit-scrollbar]:hidden"
+        className="sticky top-14 z-20 -mx-4 flex gap-1.5 overflow-x-auto border-b border-line bg-background px-4 py-2.5 [scrollbar-width:none] sm:-mx-6 sm:px-6 lg:top-14 [&::-webkit-scrollbar]:hidden"
       >
         {SECTIONS.map((sec) => (
           <a
@@ -218,7 +218,7 @@ async function SettingsContent() {
                     ) : (
                       "added a while ago"
                     )}
-                    {" · "}
+                    {", "}
                     {p.lastUsedAt ? (
                       <span title={absoluteTime(p.lastUsedAt)}>
                         last used {relativeTime(p.lastUsedAt)}
@@ -303,7 +303,7 @@ async function SettingsContent() {
                       <span title={absoluteTime(t.createdAt)}>
                         made {relativeTime(t.createdAt)}
                       </span>
-                      {" · "}
+                      {", "}
                       {t.lastUsedAt ? (
                         <span title={absoluteTime(t.lastUsedAt)}>
                           last used {relativeTime(t.lastUsedAt)}
@@ -313,7 +313,7 @@ async function SettingsContent() {
                       )}
                       {t.live && (
                         <>
-                          {" · "}
+                          {", "}
                           {t.expiresAt ? (
                             <span title={absoluteTime(t.expiresAt)}>
                               expires {shortDay(t.expiresAt, TZ)}
@@ -403,7 +403,7 @@ async function SettingsContent() {
                             <span title={absoluteTime(new Date(last.at))}>
                               last sent {relativeTime(new Date(last.at))}
                             </span>
-                            {" · "}
+                            {", "}
                             {last.ok ? (
                               <span className="text-free">delivered</span>
                             ) : (
@@ -447,7 +447,7 @@ async function SettingsContent() {
                             </span>
                             <span className="col-start-2 text-muted [overflow-wrap:anywhere]">
                               {d.ok ? `${d.code} in ${d.ms} ms` : d.error}
-                              {d.tries > 1 && ` · ${d.tries} tries`}
+                              {d.tries > 1 && `, ${d.tries} tries`}
                             </span>
                           </li>
                         ))}

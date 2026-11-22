@@ -138,7 +138,7 @@ function Swatches({
               special && "bg-card",
               checked && "ring-2 ring-foreground ring-offset-2 ring-offset-card",
             )}
-            style={special ? (c.value === AUTO_TEXT ? { background: "linear-gradient(135deg, #fff 50%, #000 50%)" } : undefined) : { background: c.value }}
+            style={special ? (c.value === AUTO_TEXT ? { background: "linear-gradient(135deg, var(--color-swatch-white) 50%, var(--color-swatch-black) 50%)" } : undefined) : { background: c.value }}
           >
             {c.value === STATUS_BG ? (
               <span aria-hidden className="grid grid-cols-2 gap-[3px]">

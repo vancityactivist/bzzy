@@ -65,7 +65,7 @@ export function NewWebhookForm({ first }: { first: boolean }) {
               <input type="checkbox" name="events" value={e} defaultChecked className="mt-0.5 size-4 accent-foreground" />
               <span>
                 <span className="font-medium">{EVENT_INFO[e].label}</span>
-                <span className="text-muted"> · {EVENT_INFO[e].detail}</span>
+                <span className="text-muted">, {EVENT_INFO[e].detail}</span>
               </span>
             </label>
           ))}
