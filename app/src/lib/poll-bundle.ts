@@ -50,7 +50,7 @@ export type PollBundle = {
 export const POLL_BUNDLE_TTL_SEC = 3 * 3600;
 
 // Bump the version when PollBundle changes shape: cache entries outlive deployments.
-const key = (deviceId: string) => `poll:v4:${deviceId}`;
+const key = (deviceId: string) => `poll:v5:${deviceId}`;
 
 const assetTags = (...gifs: (ResolvedGif | undefined)[]) =>
   gifs.flatMap((g) => (g?.kind === "asset" ? [tag.asset(g.id)] : []));

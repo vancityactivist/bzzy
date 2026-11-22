@@ -65,6 +65,10 @@ export type StateResponse = {
   // The owner's coming working windows (unix seconds), oldest first. Absent when no
   // hours are set; firmware with the "hours" feature goes dark outside them.
   workHours?: WorkWindow[];
+  // Ship mode (docs/provisioning.md): the light is being boxed for someone else. Firmware
+  // with the "ship" feature forgets its Wi-Fi (keeping its id and token) and waits to be
+  // set up at its new home, then sends X-Bzzy-Arrived: 1 on its first poll there.
+  ship?: true;
 };
 
 export const overrideBody = z.object({
@@ -116,6 +120,7 @@ export function buildState(opts: {
   push?: PushState | null;
   leds?: { ledStyles?: LedStyles; meetingWarn?: MeetingWarn };
   hours?: { set: boolean; windows: WorkWindow[]; poll: number };
+  ship?: boolean;
 }): StateResponse {
   const { now, defaultStatus, presence } = opts;
 
@@ -158,6 +163,7 @@ export function buildState(opts: {
   if (opts.push && show?.active) state.push = opts.push;
   if (opts.leds?.ledStyles) state.ledStyles = opts.leds.ledStyles;
   if (opts.leds?.meetingWarn) state.meetingWarn = opts.leds.meetingWarn;
+  if (opts.ship) state.ship = true;
   return state;
 }
 

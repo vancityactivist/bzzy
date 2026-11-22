@@ -5,7 +5,9 @@ import { Suspense } from "react";
 import { BzzyMark } from "@/components/brand";
 import { buttonClass, Card } from "@/components/ui";
 import { formatPairCode, normalizePairCode } from "@/lib/pair-rules";
+import { isAdmin } from "@/lib/admin";
 import { lookupPairing, pairingTeams } from "@/lib/pairing";
+import { openClaims } from "@/lib/provision";
 import { getCurrentUser } from "@/lib/session";
 
 import { ClaimForm, SignInToPair } from "../pair-forms";
@@ -95,14 +97,14 @@ async function PairContent({ params }: PageProps<"/pair/[code]">) {
     );
   }
 
-  const teams = await pairingTeams(user.id, user.name);
+  const [teams, orders] = await Promise.all([pairingTeams(user.id, user.name), isAdmin(user.id).then((a) => (a ? openClaims() : []))]);
   return (
     <Card className="p-6 sm:p-8">
       <Header title="Add this light" code={code}>
         Check this code matches the light&apos;s screen.
       </Header>
       <div className="mt-6">
-        <ClaimForm code={code} teams={teams} />
+        <ClaimForm code={code} teams={teams} orders={orders} />
       </div>
     </Card>
   );

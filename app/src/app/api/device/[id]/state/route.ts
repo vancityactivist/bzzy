@@ -7,6 +7,7 @@ import { refreshRelease, releaseDue } from "@/lib/firmware-release";
 import type { ResolvedGif } from "@/lib/gifs";
 import type { CurrentShow } from "@/lib/show";
 import { authenticatedBundle } from "@/lib/poll-bundle";
+import { markArrived } from "@/lib/provision";
 import { buildState, type GifMap, type GifRef, hasFeature, nowSeconds, readFeatures, type ShowState, STATUSES } from "@/lib/protocol";
 import { pushAsShow, pushFor } from "@/lib/push-rules";
 import { allowedRing, sentLeds } from "@/lib/ring";
@@ -54,6 +55,9 @@ export async function GET(req: NextRequest, ctx: RouteContext<"/api/device/[id]/
     url: (v) => `${origin}/api/device/${device.id}/firmware/${encodeURIComponent(v)}`,
   });
 
+  // Ship mode: until the light says it has arrived at its new home (docs/provisioning.md).
+  const arrived = device.shipMode && req.headers.get("x-bzzy-arrived") === "1";
+
   const state = buildState({
     now,
     defaultStatus: device.defaultStatus,
@@ -73,6 +77,7 @@ export async function GET(req: NextRequest, ctx: RouteContext<"/api/device/[id]/
     leds: sentLeds(device),
     firmware,
     hours,
+    ship: device.shipMode && !arrived,
   });
 
   // Answer from the saved copies right away, then re-read any calendar (or the
@@ -89,6 +94,7 @@ export async function GET(req: NextRequest, ctx: RouteContext<"/api/device/[id]/
       // A meeting starting or ending, or a status running out, changes nothing in the
       // database, so the poll is where it's noticed and sent (lib/webhooks.ts).
       bundle.webhooks ? noticeChanges(device.ownerUserId, "poll") : null,
+      arrived ? markArrived(device.id) : null,
     ]);
   });
   return Response.json(state, { headers: { "Cache-Control": "no-store" } });

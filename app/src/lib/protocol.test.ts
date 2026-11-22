@@ -27,6 +27,11 @@ const presence = (p: Partial<Presence> = {}): Presence => ({
 });
 
 describe("buildState", () => {
+  it("says ship only in ship mode", () => {
+    expect(buildState({ now: NOW, defaultStatus: "free", presence: null, schedule: [], ship: true }).ship).toBe(true);
+    expect("ship" in buildState({ now: NOW, defaultStatus: "free", presence: null, schedule: [], ship: false })).toBe(false);
+  });
+
   it("matches the documented shape", () => {
     const s = buildState({ now: NOW, defaultStatus: "free", presence: presence({ text: "On a call" }), schedule: [] });
     expect(s).toEqual({
