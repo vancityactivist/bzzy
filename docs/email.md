@@ -18,7 +18,7 @@ Vercel environment variables:
 - `RESEND_API_KEY`: a **sending access** key restricted to the bzzy.ca domain. Without it nothing is sent: the invite form hides the email field and still shows the link, and the contact form says to email hello@ instead.
 - `MAIL_FROM` (optional): defaults to `bzzy <noreply@bzzy.ca>`.
 - `CONTACT_TO` (optional): defaults to `hello@bzzy.ca`.
-- `NEXT_PUBLIC_TURNSTILE_SITE_KEY` and `TURNSTILE_SECRET_KEY`: the Cloudflare Turnstile widget on the contact form (Cloudflare dashboard > Turnstile > Add widget, hostnames `bzzy.ca` and `localhost`, mode Managed). The site key is public and baked in at build time, so redeploy after setting it. Unset = no captcha.
+- `NEXT_PUBLIC_TURNSTILE_SITE_KEY` and `TURNSTILE_SECRET_KEY`: the Cloudflare Turnstile widget on the contact form (Cloudflare dashboard > Turnstile > Add widget, hostnames `bzzy.ca` and `localhost`, mode Managed). The site key is public and baked in at build time, so redeploy after setting it. Unset = no captcha. The server requires `success`, action `contact` and a hostname in `TURNSTILE_HOSTNAMES` (default `bzzy.ca`; never add `localhost` on production). Rejections log `[turnstile] rejected: ...` in Vercel's runtime logs with Cloudflare's error codes.
 
 Links in emails use `https://bzzy.ca` in production (never bzzy.vercel.app) and the request's own host on previews.
 
