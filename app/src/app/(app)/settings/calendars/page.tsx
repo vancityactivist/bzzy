@@ -170,8 +170,8 @@ async function CalendarsContent() {
                     <span className="min-w-0">
                       <span className="block truncate font-medium">{a.label}</span>
                       <span className="block text-sm text-muted">
-                        {providerName(a)} · {on} of {own.length} on
-                        {broken && <span className="text-danger"> · needs attention</span>}
+                        {providerName(a)}, {on} of {own.length} on
+                        {broken && <span className="text-danger">, needs attention</span>}
                       </span>
                     </span>
                     <span aria-hidden className="text-muted transition-transform group-open:rotate-180">
@@ -207,7 +207,7 @@ async function CalendarsContent() {
                   <span className="min-w-0">
                     <span className="block font-medium">Calendar links</span>
                     <span className="block text-sm text-muted">
-                      ICS · {links.filter((c) => c.setsStatus).length} of {links.length} on
+                      ICS, {links.filter((c) => c.setsStatus).length} of {links.length} on
                     </span>
                   </span>
                   <span aria-hidden className="text-muted transition-transform group-open:rotate-180">
@@ -273,8 +273,8 @@ function ActiveRow({
           <span className="block truncate font-medium">{c.name}</span>
           <span className="block truncate text-sm text-muted">
             {account ?? "Calendar link"}
-            {c.lightIds && ` · ${lightCount(c.lightIds, lights)}`}
-            {c.lastError && <span className="text-danger"> · {c.lastError}</span>}
+            {c.lightIds && `, ${lightCount(c.lightIds, lights)}`}
+            {c.lastError && <span className="text-danger">, {c.lastError}</span>}
           </span>
         </span>
         <CountsAsPicker id={c.id} name={c.name} countsAs={c.countsAs ?? "auto"} names={names} />
@@ -283,7 +283,7 @@ function ActiveRow({
         <summary className="cursor-pointer text-sm text-muted hover:text-foreground">More</summary>
         <div className="mt-3 space-y-4">
           <p className="text-sm text-muted">
-            {c.icsUrl && <span className="break-all">{new URL(c.icsUrl).hostname} · </span>}
+            {c.icsUrl && <span className="break-all">{new URL(c.icsUrl).hostname}, </span>}
             <span title={c.lastFetchedAt ? absoluteTime(c.lastFetchedAt) : undefined}>
               {c.lastFetchedAt ? `checked ${relativeTime(c.lastFetchedAt)}` : "not checked yet"}
             </span>

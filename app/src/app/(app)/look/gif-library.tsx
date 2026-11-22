@@ -29,7 +29,7 @@ export type LibraryItem = {
   madeFor: string | null; // a built-in GIF drawn for one status
   addedAt: number; // ms; 0 for built-in
   editable: boolean; // this person may rename or delete it
-  usedBy: string[]; // "Desk light · Busy"
+  usedBy: string[]; // "Desk light, Busy"
   favourite: boolean;
   lastShownAt: number; // unix seconds, 0 = never
 };
@@ -313,7 +313,7 @@ export function GifLibrary({ items: initial, add }: { items: LibraryItem[]; add:
                     onClick={() => setFilter(f.id)}
                     className={cx(
                       "flex h-8 shrink-0 items-center gap-1.5 rounded-full border px-3 text-sm font-medium whitespace-nowrap transition-colors",
-                      filter === f.id ? "border-foreground bg-foreground text-background" : "border-line bg-card text-muted hover:border-line-strong hover:text-foreground",
+                      filter === f.id ? "border-signal bg-signal text-signal-ink" : "border-line bg-card text-muted hover:border-line-strong hover:text-foreground",
                     )}
                   >
                     {f.id === "favourites" && <StarIcon className="size-3.5" />}
@@ -348,7 +348,7 @@ export function GifLibrary({ items: initial, add }: { items: LibraryItem[]; add:
               <p className="flex-1 text-sm">
                 {selected.size === 0
                   ? "Tap GIFs to select them."
-                  : `${selected.size} selected${deletable.length < selected.size ? ` · ${selected.size - deletable.length} you can't delete` : ""}`}
+                  : `${selected.size} selected${deletable.length < selected.size ? `, ${selected.size - deletable.length} you can't delete` : ""}`}
               </p>
               <Button size="sm" variant="secondary" onClick={() => setSelected(new Set(listedOrAll(browsing, listed, items).filter((i) => i.editable).map((i) => i.choice)))}>
                 Select all yours
@@ -387,7 +387,7 @@ export function GifLibrary({ items: initial, add }: { items: LibraryItem[]; add:
                 {listed.length} {listed.length === 1 ? "GIF" : "GIFs"}
                 {filter !== "all" && (
                   <>
-                    {" · "}
+                    {", "}
                     <button type="button" className="underline underline-offset-2 hover:text-foreground" onClick={() => setFilter("all")}>
                       show all
                     </button>
@@ -498,7 +498,7 @@ function Details({
           {error}
         </p>
       )}
-      <p className="truncate text-xs text-muted">{meta.join(" · ")}</p>
+      <p className="truncate text-xs text-muted">{meta.join(", ")}</p>
       {item.usedBy.length > 0 && (
         <div className="flex flex-wrap gap-1 max-lg:hidden">
           {item.usedBy.slice(0, 4).map((u) => (
@@ -661,7 +661,7 @@ function Tile({
           <span
             className={cx(
               "absolute top-1.5 left-1.5 flex size-5 items-center justify-center rounded-full border-2",
-              isSelected ? "border-foreground bg-foreground text-background" : "border-white/80 bg-black/30",
+              isSelected ? "border-signal bg-signal text-signal-ink" : "border-white/80 bg-black/30",
               !item.editable && "opacity-40",
             )}
           >

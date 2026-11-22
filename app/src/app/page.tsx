@@ -189,7 +189,7 @@ async function HomeContent({ searchParams }: { searchParams: PageProps<"/">["sea
   // Outside working hours a light with firmware that knows about them is dark.
   const windows = workWindows(clock.workHours, clock.timeZone, now);
   const nextOn = windows.find((w) => w.start > now);
-  const darkLabel = isDark(windows, now) ? `Off hours${nextOn ? ` · on at ${at(nextOn.start)}` : ""}` : null;
+  const darkLabel = isDark(windows, now) ? `Off hours${nextOn ? `, on at ${at(nextOn.start)}` : ""}` : null;
   const statusGifs = Object.fromEntries(STATUSES.map((s) => [s, previewSrc(gifs[s])])) as PreviewDevice["gifs"];
   const previews: PreviewDevice[] =
     shown.length > 0
@@ -200,7 +200,7 @@ async function HomeContent({ searchParams }: { searchParams: PageProps<"/">["sea
           return {
             id: d.id,
             name: d.name,
-            offline: online(d) ? null : d.lastSeenAt ? `Offline · seen ${relativeTime(d.lastSeenAt, now * 1000)}` : "Never connected",
+            offline: online(d) ? null : d.lastSeenAt ? `Offline, seen ${relativeTime(d.lastSeenAt, now * 1000)}` : "Never connected",
             view: viewFor(resolved, true, screenLabels(d)),
             gifs: statusGifs,
             labels: screenLabels(d),
@@ -256,7 +256,7 @@ async function HomeContent({ searchParams }: { searchParams: PageProps<"/">["sea
           )}
           <span className="min-w-0 truncate">
             <span className="font-semibold">Showing {liveShow.gifName ?? "a message"}</span>
-            {liveShow.gifName && liveShow.text && <span className="text-muted"> · {liveShow.text}</span>}
+            {liveShow.gifName && liveShow.text && <span className="text-muted">, {liveShow.text}</span>}
           </span>
         </p>
       ) : showing ? (
@@ -264,7 +264,7 @@ async function HomeContent({ searchParams }: { searchParams: PageProps<"/">["sea
           <StatusDot status={showing.status} size="lg" />
           <span className="min-w-0 truncate">
             <span className="font-semibold">{nameOf(showing.status)}</span>
-            {showing.text && <span className="text-muted"> · {showing.text}</span>}
+            {showing.text && <span className="text-muted">, {showing.text}</span>}
           </span>
         </p>
       ) : (
@@ -277,16 +277,16 @@ async function HomeContent({ searchParams }: { searchParams: PageProps<"/">["sea
         <p className="text-xs text-muted lg:text-sm">
           {liveShow
             ? liveShow.push
-              ? `Announcement from ${liveShow.push.team} · press a light's button to dismiss it`
-              : `Show now · ${liveShow.until ? `until ${at(liveShow.until)}` : "until you stop it"}`
+              ? `Announcement from ${liveShow.push.team}, press a light's button to dismiss it`
+              : `Show now, ${liveShow.until ? `until ${at(liveShow.until)}` : "until you stop it"}`
             : live
               ? `Set ${live.until ? `until ${at(live.until)}` : "until you change it"}`
               : current
-                ? `From your calendar · until ${at(current.end)}`
+                ? `From your calendar, until ${at(current.end)}`
                 : target
                   ? "Nothing set"
                   : next
-                    ? `${between} now · ${labelInSentence(next.status, labels)} at ${at(next.start)}`
+                    ? `${between} now, ${labelInSentence(next.status, labels)} at ${at(next.start)}`
                     : `${between} between meetings`}
         </p>
         {liveShow
@@ -319,7 +319,7 @@ async function HomeContent({ searchParams }: { searchParams: PageProps<"/">["sea
           // Whose status the page sets: theirs, or a light that has its own.
           <nav aria-label="Whose status" className="mb-4 max-lg:pt-4">
             <div className="inline-flex max-w-full gap-1 overflow-x-auto rounded-xl bg-subtle p-1 [scrollbar-width:none]">
-              {[{ id: null, label: followers.length ? `You · ${followers.map((d) => d.name).join(", ")}` : "You" }, ...ownLights.map((d) => ({ id: d.id, label: d.name }))].map(
+              {[{ id: null, label: followers.length ? `You, ${followers.map((d) => d.name).join(", ")}` : "You" }, ...ownLights.map((d) => ({ id: d.id, label: d.name }))].map(
                 (t) => {
                   const on = (target?.id ?? null) === t.id;
                   return (

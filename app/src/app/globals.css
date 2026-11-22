@@ -114,6 +114,12 @@
     font-variant-numeric: tabular-nums slashed-zero;
   }
 
+  /* Native checkboxes and radios take the signal colour when on (Console: amber is the current choice). */
+  input[type="checkbox"],
+  input[type="radio"] {
+    accent-color: var(--color-accent);
+  }
+
   ::selection {
     background: color-mix(in oklab, var(--foreground) 16%, transparent);
   }

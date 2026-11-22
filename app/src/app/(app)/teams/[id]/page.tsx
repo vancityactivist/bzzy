@@ -154,7 +154,7 @@ async function TeamContent({ params, searchParams }: PageProps<"/teams/[id]">) {
             <CardHeader title="Lights" description="Lights in this team. Open one for its name, flashing and updates." className="p-5 pb-3 sm:p-6 sm:pb-3" />
             <ul className="divide-y divide-line border-t border-line p-2">
               {teamLights.map((d) => (
-                <LightRow key={d.id} d={d} now={now.getTime()} line={`${names.get(d.ownerUserId) ?? "Someone"}${d.followsOwner ? "" : " · its own status"}`} />
+                <LightRow key={d.id} d={d} now={now.getTime()} line={`${names.get(d.ownerUserId) ?? "Someone"}${d.followsOwner ? "" : ", its own status"}`} />
               ))}
             </ul>
           </Card>
@@ -180,7 +180,7 @@ async function TeamContent({ params, searchParams }: PageProps<"/teams/[id]">) {
                       {self && <span className="font-normal text-muted"> (you)</span>}
                     </p>
                     <p className="truncate text-sm text-muted" title={absoluteTime(m.joinedAt)}>
-                      {ROLE_LABEL[m.role]} · joined {shortDate(m.joinedAt)}
+                      {ROLE_LABEL[m.role]}, joined {shortDate(m.joinedAt)}
                     </p>
                   </div>
                   {!self && (manage || owner) && (
@@ -215,17 +215,17 @@ async function TeamContent({ params, searchParams }: PageProps<"/teams/[id]">) {
                   <li key={inv.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 py-3 text-sm">
                     <div className="min-w-0 flex-1 basis-56">
                       <p className="font-medium">
-                        {inv.kind === "team" ? "Team link" : "One-person link"} · joins as {ROLE_LABEL[inv.role].toLowerCase()}
+                        {inv.kind === "team" ? "Team link" : "One-person link"}, joins as {ROLE_LABEL[inv.role].toLowerCase()}
                       </p>
                       <p className="text-muted">
-                        {inv.uses} {inv.uses === 1 ? "use" : "uses"} ·{" "}
+                        {inv.uses} {inv.uses === 1 ? "use" : "uses"},{" "}
                         {inv.state === "live" ? (
                           <span title={absoluteTime(inv.expiresAt)}>ends {shortDate(inv.expiresAt)}</span>
                         ) : (
                           INVITE_STATE_LABEL[inv.state].toLowerCase()
                         )}
-                        {inv.email && ` · emailed to ${inv.email}`}
-                        {inv.createdByName && ` · made by ${inv.createdByName}`}
+                        {inv.email && `, emailed to ${inv.email}`}
+                        {inv.createdByName && `, made by ${inv.createdByName}`}
                       </p>
                     </div>
                     {inv.state === "live" ? (

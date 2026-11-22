@@ -79,7 +79,7 @@ export function Chip({ checked, onClick, children }: { checked: boolean; onClick
       onClick={onClick}
       className={cx(
         "inline-flex h-8 items-center gap-1.5 rounded-full border px-3 text-sm transition-colors",
-        checked ? "border-foreground bg-foreground text-background" : "border-line bg-card hover:border-line-strong",
+        checked ? "border-signal bg-signal text-signal-ink" : "border-line bg-card hover:border-line-strong",
       )}
     >
       {checked && <CheckIcon className="size-3.5" strokeWidth={3} />}

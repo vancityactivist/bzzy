@@ -39,7 +39,7 @@ function Switch({ checked, onChange, label, disabled }: { checked: boolean; onCh
       onClick={() => onChange(!checked)}
       className={cx(
         "relative h-6 w-11 shrink-0 rounded-full transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring disabled:opacity-50",
-        checked ? "bg-foreground" : "bg-line-strong",
+        checked ? "bg-signal" : "bg-line-strong",
       )}
     >
       <span

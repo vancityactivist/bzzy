@@ -46,7 +46,7 @@ export function StatusPickerSketch() {
             key={d}
             className={cx(
               "rounded-full px-2 py-0.5 text-[10px] font-medium",
-              d === "1 hour" ? "bg-foreground text-background" : "border border-line text-muted",
+              d === "1 hour" ? "bg-signal text-signal-ink" : "border border-line text-muted",
             )}
           >
             {d}
