@@ -286,3 +286,39 @@ export async function markArrived(deviceId: string) {
     .returning({ id: schema.devices.id });
   if (rows[0]) await expire(tag.device(deviceId));
 }
+
+// ---- superadmin bench tools (the admin page's Devices table) ----
+
+// Puts a light that's already set up onto a claim, keeping its id and token, so a light
+// on the bench (or one of your own, to test ship mode) needn't be deleted and paired
+// again. It becomes the claim's person's, in their personal team, out of ship mode.
+export async function assignToClaim(deviceId: string, claimId: string) {
+  const [device] = await db().select({ owner: schema.devices.ownerUserId }).from(schema.devices).where(eq(schema.devices.id, deviceId)).limit(1);
+  if (!device) throw new ProvisionError("No light with that id.", 404);
+  const target = await claimTarget(claimId);
+  if (!target) throw new ProvisionError("That order isn't waiting for a light any more.", 404);
+  await db()
+    .update(schema.devices)
+    .set({ teamId: target.teamId, ownerUserId: target.userId, pushTeamId: null, claimId, shipMode: false, shippedAt: null, arrivedAt: null })
+    .where(eq(schema.devices.id, deviceId));
+  await expire(tag.device(deviceId), tag.user(device.owner), tag.user(target.userId));
+}
+
+// The other way: a light on a claim comes back to the superadmin, in their personal team,
+// off the claim and out of ship mode. Works after it has arrived too (a test claim, or a
+// light sent back). Only for lights on a claim, so it can't take anyone's own light.
+export async function takeBackFromClaim(deviceId: string, admin: { id: string; name: string }) {
+  const [device] = await db()
+    .select({ owner: schema.devices.ownerUserId, claimId: schema.devices.claimId })
+    .from(schema.devices)
+    .where(eq(schema.devices.id, deviceId))
+    .limit(1);
+  if (!device) throw new ProvisionError("No light with that id.", 404);
+  if (!device.claimId) throw new ProvisionError("That light isn't on an order.", 409);
+  const teamId = await ensurePersonalTeam(admin.id, admin.name);
+  await db()
+    .update(schema.devices)
+    .set({ teamId, ownerUserId: admin.id, pushTeamId: null, claimId: null, shipMode: false, shippedAt: null, arrivedAt: null })
+    .where(eq(schema.devices.id, deviceId));
+  await expire(tag.device(deviceId), tag.user(device.owner), tag.user(admin.id));
+}

@@ -36,6 +36,7 @@ import {
   setLightDefault,
 } from "@/lib/devices";
 import { isAdmin, setSuperadmin } from "@/lib/admin";
+import { assignToClaim, ProvisionError, takeBackFromClaim } from "@/lib/provision";
 import { connectCalDav, ownAccount, removeAccount, updateCalDavPassword } from "@/lib/calendar-accounts";
 import { CalDavAuthFailed, CalDavError, PRESETS } from "@/lib/caldav";
 import { FetchRefused } from "@/lib/safe-fetch";
@@ -776,4 +777,32 @@ export async function setApiBlockedAction(userId: string, blocked: boolean) {
   if (!(await isAdmin(user.id))) throw new Error("Not a superadmin");
   await setApiBlocked(userId, blocked);
   refresh();
+}
+
+// Bench tools on the admin page: put a light that's already set up onto an order, or take
+// one back off its order (docs/provisioning.md).
+export async function assignToClaimAction(deviceId: string, claimId: string) {
+  const user = await requireUser();
+  if (!(await isAdmin(user.id))) throw new Error("Not a superadmin");
+  try {
+    await assignToClaim(deviceId, claimId);
+  } catch (e) {
+    if (e instanceof ProvisionError) return e.message;
+    throw e;
+  }
+  refresh();
+  return null;
+}
+
+export async function takeBackFromClaimAction(deviceId: string) {
+  const user = await requireUser();
+  if (!(await isAdmin(user.id))) throw new Error("Not a superadmin");
+  try {
+    await takeBackFromClaim(deviceId, user);
+  } catch (e) {
+    if (e instanceof ProvisionError) return e.message;
+    throw e;
+  }
+  refresh();
+  return null;
 }

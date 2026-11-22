@@ -8,6 +8,9 @@ import { allSharedTeams } from "@/lib/teams";
 import { countSince, signupsByDay } from "@/lib/admin-stats";
 
 import { absoluteTime, relativeTime, shortDate } from "../lights/relative-time";
+import { openClaims } from "@/lib/provision";
+
+import { ClaimControls } from "./claim-controls";
 import { ApiBlockToggle, SuperadminToggle } from "./superadmin-toggle";
 
 export const metadata: Metadata = { title: "Admin", robots: { index: false } };
@@ -60,7 +63,7 @@ const TD = "px-3 py-3 first:pl-5 last:pr-5 sm:first:pl-6 sm:last:pr-6";
 
 async function AdminContent() {
   const me = await requireAdmin();
-  const [{ users, devices, sharedTeams }, teams] = await Promise.all([adminOverview(), allSharedTeams()]);
+  const [{ users, devices, sharedTeams }, teams, claims] = await Promise.all([adminOverview(), allSharedTeams(), openClaims()]);
   const now = new Date();
   const created = users.map((u) => u.createdAt);
   const days = signupsByDay(created, now, 30, TZ);
@@ -206,18 +209,19 @@ async function AdminContent() {
       </Card>
 
       <Card padding="none" className="overflow-hidden">
-        <CardHeader title="Devices" description={`${devices.length} in total, ${online} online now`} className="p-5 pb-3 sm:p-6 sm:pb-3" />
+        <CardHeader title="Devices" description={`${devices.length} in total, ${online} online now. Assign a light that's already set up to an order (to test ship mode, say) and take it back afterwards.`} className="p-5 pb-3 sm:p-6 sm:pb-3" />
         {devices.length === 0 ? (
           <p className="px-5 pb-5 text-sm text-muted sm:px-6 sm:pb-6">No devices yet.</p>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[36rem] text-left text-sm">
+            <table className="w-full min-w-[52rem] text-left text-sm">
               <thead>
                 <tr className="border-y border-line bg-subtle/60">
                   <th className={TH}>Device</th>
                   <th className={TH}>ID</th>
                   <th className={TH}>Owner</th>
                   <th className={TH}>Last seen</th>
+                  <th className={TH}>Order</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-line">
@@ -230,6 +234,17 @@ async function AdminContent() {
                     <td className={`${TD} text-muted`}>{d.ownerName ?? "—"}</td>
                     <td className={`${TD} whitespace-nowrap`}>
                       <Presence at={d.lastSeenAt} never="Never" now={now} />
+                    </td>
+                    <td className={TD}>
+                      <div className="flex items-center gap-2">
+                        {d.claimRef && (
+                          <span className="whitespace-nowrap">
+                            {d.claimRef}
+                            {d.arrivedAt ? <span className="text-muted"> · home</span> : d.shipMode ? <span className="text-muted"> · ship mode</span> : null}
+                          </span>
+                        )}
+                        <ClaimControls deviceId={d.id} name={d.name} claimRef={d.claimRef} claims={claims} />
+                      </div>
                     </td>
                   </tr>
                 ))}
