@@ -11,7 +11,7 @@ The DIY build is a frame of light around the screen. It has four parts:
 
 1. The **Waveshare ESP32-S3-Touch-LCD-1.69**, the brains and the screen. It's unchanged from the prototype.
 2. A custom **LED ring board** with 16 small RGB LEDs. It sits around the Waveshare board.
-3. A printed **frosted white border**, about 1 cm wide, round the screen. The LEDs light it in the status colour.
+3. A printed **frosted white front**, round the screen and wrapping round the edges onto the sides. The LEDs light it in the status colour.
 4. A printed **black case** round all of it, with a button on top, the bzzy wordmark, and a monitor clip.
 
 Nothing changes in the firmware. The ring board uses the same data pin (GPIO17) and LED count (16) that `firmware/src/config.h` already has.
@@ -102,9 +102,11 @@ To change something, edit the script and run `./render.sh` (needs KiCad 7+ and O
 
 ## Case
 
-[`case/bzzy_case.scad`](case/bzzy_case.scad) is parametric OpenSCAD. The case is black, with the screen in the middle of a frosted white border about 1 cm wide (9.2 mm at the sides, 8.2 mm top and bottom). The LEDs sit under the border. Overall it's about 58 × 67 × 17.5 mm, plus whichever mount it sits on (see [Mounts](#mounts)).
+[`case/bzzy_case.scad`](case/bzzy_case.scad) is parametric OpenSCAD. The screen sits in the middle of a frosted white front that the LEDs light. The frosted part is the whole front of the case: it rounds over the front edge (3 mm radius) and **wraps 5 mm back onto all four sides**, with a black body behind it. A bzzy usually faces away from its owner, towards the people it's telling, so the glow on the sides, and the colour the bottom edge throws onto the desk or stand, let the owner see their own status from behind or beside it. Overall it's about 58 × 67 × 17.5 mm, plus whichever mount it sits on (see [Mounts](#mounts)).
 
-Looking at the front, from the middle out: the screen, set 2.5 mm deep behind a black trim over the Waveshare board's own glass edge (the window opens out at 45° so it doesn't shade the screen), the frosted border, then a 1.4 mm black rim. The border starts at the Waveshare board's edge, not at the lit screen, because no LED can sit under the board. The ring board didn't need to change for this.
+Looking at the front, from the middle out: the screen, set 2.5 mm deep behind a black trim over the Waveshare board's own glass edge (the window opens out at 45° so it doesn't shade the screen), then frosted white all the way to the edge and round it (10.75 mm at the sides, 11.25 mm top and bottom). The frosted area starts at the Waveshare board's edge, not at the lit screen, because no LED can sit under the board.
+
+**Why it's built this way.** The LEDs face forwards, so most of their light goes out of the front. Over the LED row the frosted cap is solid plastic (`FILL`, 2.4 mm in from the walls), not a thin plate over an air gap, so light scatters in it and spreads out into the band. Expect the band to be dimmer than the front. `BAND` sets how far it wraps; 5 mm is the most this case takes, because deeper would reach the USB-C opening (the file checks this). The design and the options behind it: [wraparound light edge spec](https://claude.ai/artifact/924eMiRco7rqjTJb4s8GJ1), 2026-11-22.
 
 Export a part with:
 
@@ -116,23 +118,23 @@ openscad -D 'PART="light"' -o light.stl case/bzzy_case.scad   # or frame, back, 
 
 | Part | Colour and material | Notes |
 |---|---|---|
-| light | **Frosted white.** Translucent white PETG, or clear or white resin (SLA) with a matte finish | The glowing border. 1.6 mm thick at the front, about 2.4 mm in front of the LEDs. Its outer lip sits over the frame's rim, and four bosses take the screws. Print it face down |
-| frame | **Black.** PLA, PETG, or MJF nylon (PA12, dyed black) | Front rim and the four side walls, with the USB-C opening on the left, pinholes for the Waveshare's PWR, BOOT and RST buttons on the right, and the button hole and wordmark on top. Print it face down |
+| light | **Frosted white.** Translucent resin (SLA), sanded or bead-blasted matte. Natural PETG at a pinch. **Not MJF nylon**: it's grey and nearly opaque | The front cap: front face (1.6 mm), rounded edge, the 5 mm band round the sides, solid frosted plastic over the LED row, and four bosses for the screws. A step inside its back edge takes the body's lip. Print it face down. In PETG the rounded edge overhangs where it meets the bed, so resin gives a much cleaner edge |
+| frame | **Black.** PLA, PETG, or MJF nylon (PA12, dyed black) | The body: the four side walls behind the band, with the USB-C opening on the left, pinholes for the Waveshare's PWR, BOOT and RST buttons on the right, the wordmark on top, and a lip round the inside of its front edge. Print it back edge down |
 | back | **Black** | Back plate. Four posts press the ring board forward and the screws go through them. Dovetail rail for the clip |
 | trim | **Black** | Sleeve round the Waveshare board, with the thin trim round the screen. Keeps LED light off the display. The light ring holds it down |
-| button | **Black** | Cap for the top button. Sits in a pocket in the frame's top wall, held in by its flange. Print it flange down |
+| button | **Frosted white**, same as the light | Cap for the top button. It passes through the frosted band, so a black cap would show as a dark gap in the glow. Held in by its flange, in a pocket split between the cap and the body. Print it flange down |
 | clip | **Black.** PETG or nylon (needs some flex) | Slides up the rail. Two legs rest on the monitor's top edge, with a lip at the front and a drop at the back. Set `MONITOR_T` to your monitor's thickness |
 
-**For a print service** (JLC3DP, Craftcloud, a local shop): order `light.stl` in translucent or white resin, and the other five in black. MJF nylon in black is tough and has no visible layers, which suits the frame and clip. Resin is fine for the light ring, but ask for the "translucent" or "semi-transparent" option with a matte or sanded finish, so the LEDs don't show as dots. None of the parts need supports in the orientation they're exported in, except the back plate, which stands on its rail. Ask the service to orient it, or use MJF or resin, where it doesn't matter.
+**For a print service** (JLC3DP, PCBWay, Craftcloud, a local shop): order `light.stl` and `button.stl` in translucent resin, and the other four in black. Ask for the "translucent" or "semi-transparent" option with a matte, sanded or bead-blasted finish, so the LEDs don't show as dots. MJF nylon in black is tough and has no visible layers, which suits the body, back and mounts. None of the parts need supports in the orientation they're exported in, except the back plate, which stands on its rail. Ask the service to orient it, or use MJF or resin, where it doesn't matter.
 
 ### How it goes together
 
-1. Put the button cap into its pocket in the frame's top wall, from the inside.
-2. Hold the frame face up and drop the light ring in from the front, so its lip sits on the frame's rim. Turn the two over together, face down on the table.
-3. Put the trim in from the back, face down, through the light ring's middle.
-4. Put the ring board, LEDs down, onto the light ring's bosses, then the Waveshare board into the trim. The button cap now rests just off the switch.
-5. Put a square of 3 mm foam tape on the back of the Waveshare board, then put the back plate on and do up the four M2 screws. They pull the light ring back, and its lip clamps the frame's rim against the back plate. No glue.
-6. Slide the clip up the rail.
+1. Put the front cap face down on the table. Put the button cap into its hole in the cap's top band, from the inside.
+2. Put the trim in from the back, face down, through the cap's middle.
+3. Put the ring board, LEDs down, onto the cap's bosses, then the Waveshare board into the trim. The button cap now rests just off the switch.
+4. Lower the body over everything, front edge down, so its lip drops into the step inside the cap. The other half of the button's pocket closes round its flange.
+5. Put a square of 3 mm foam tape on the back of the Waveshare board, then put the back plate on and do up the four M2 screws. They pull the cap back onto the body, which clamps the body against the back plate. No glue.
+6. Drop it onto a mount.
 
 ### The top button
 
@@ -144,8 +146,8 @@ The switch only travels 0.2 mm, and its plunger tip sits on the board's routed e
 
 | `LOGO` | Where |
 |---|---|
-| `"top"` (default) | Top face, right of the button. People standing at your desk see it |
-| `"chin"` | Front, in a 9 mm black chin below the border. The device gets taller and the screen sits above centre |
+| `"top"` (default) | Top face, right of the button, on the black body just behind the frosted band. People standing at your desk see it |
+| `"chin"` | Front, in a 9 mm chin below the screen. The chin is part of the frosted cap, so it glows faintly. The device gets taller and the screen sits above centre |
 | `"back"` | Back plate, above the clip rail. Hidden when the device is on the monitor |
 | `"none"` | No wordmark |
 
@@ -172,7 +174,7 @@ The rail is built from `RAIL_W`, `RAIL_T`, `RAIL_FIT` and `RAIL_L` in `case/bzzy
 
 | Mount | What it's for | Extra parts |
 |---|---|---|
-| `stand` | Desk stand. Leans the device back 15° (`STAND_TILT`) on a 52 × 50 mm base. The USB-C cable comes out the left side, clear of the base | Four small rubber feet, if you like |
+| `stand` | Desk stand, all soft rounded edges. Leans the device back 15° (`STAND_TILT`) on a 52 × 56 mm base that reaches 10 mm in front of the device (`STAND_FRONT`), so the glow from the bottom edge lands on it. The USB-C cable comes out the left side, clear of the base | Four small rubber feet, if you like |
 | `tripod` | A 1/4"-20 camera thread under a block behind the device. Fits mini tripods, phone clamp arms, monitor-arm camera mounts and suction-cup mounts | One 1/4"-20 hex nut (7/16" across flats). Press it into the pocket from the top. A drop of glue if it's loose |
 | `magnet` | Flat plate with four magnet pockets in its back. Sticks to a filing cabinet, steel cubicle panel, whiteboard or fridge. Without magnets, stick it to a wall with double-sided tape | Four 10 × 3 mm disc magnets (N42 or N52). Glue them in flush with CA or epoxy |
 

@@ -213,6 +213,8 @@ PCF85063 (same chip as Waveshare, same firmware driver) with a 32.768 kHz crysta
 - **Rev D items fold in here**: the review tweaks from the ring board thread and the firmware LED cap 400 → 250 mA. (Ring-board rev D carries on separately, for the DIY build only.)
 - The full ring stays: the antenna sticks out past the top edge (section 7), so no LEDs have to move.
 - Top button: the same Alps SKRT side-push switch on the top edge, to GPIO18 with the internal pull-up. Unchanged behaviour.
+- **Wraparound frosted edge (2026-11-22):** the case's frosted front now wraps about 5 mm onto all four sides, so the owner can see the status from behind ([hardware/README.md](../../hardware/README.md#case), [spec](https://claude.ai/artifact/924eMiRco7rqjTJb4s8GJ1)). The plan is to keep the 16 forward-facing LEDs (Adam leans to this, option 2). If the rev D light test in December shows the band is too dim from behind, option 3 adds about 8 side-emitting addressable LEDs (4020 side-view, two per edge) on the board edges, chained after the 16, under the same 250 mA cap. **Leave the board edges clear enough for those pads until that test is done.**
+- **Top button, open:** in the wraparound case the button passes through the glowing band. Before layout, decide whether to move it to the black body or back, or drop it and use the touch screen instead (for example, a long press at power-up for setup).
 
 ### 6.6 PCB
 
