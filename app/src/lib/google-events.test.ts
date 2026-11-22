@@ -58,6 +58,20 @@ describe("classifyGoogle", () => {
     ).toBeNull();
   });
 
+  it("on a shared calendar, only counts events you've accepted", () => {
+    const me = "me@example.com";
+    const ev = (responseStatus?: string) => ({
+      ...timed("a", "b"),
+      attendees: responseStatus ? [{ email: "Me@Example.com", responseStatus }] : [],
+    });
+    expect(classifyGoogle(ev("accepted"), me)).toBe("busy");
+    expect(classifyGoogle(ev("tentative"), me)).toBe("busy");
+    expect(classifyGoogle(ev("needsAction"), me)).toBeNull();
+    expect(classifyGoogle(ev(), me)).toBeNull();
+    // Your own calendar: no attendee check.
+    expect(classifyGoogle(ev())).toBe("busy");
+  });
+
   it("keeps an all-day out of office", () => {
     expect(
       classifyGoogle({

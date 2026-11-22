@@ -307,3 +307,11 @@ export function PencilIcon(props: IconProps) {
     </Icon>
   );
 }
+
+export function ChevronUpIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="m18 15-6-6-6 6" />
+    </Icon>
+  );
+}

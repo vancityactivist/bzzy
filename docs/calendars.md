@@ -11,7 +11,19 @@ Full plan: the "bzzy: Google and iCloud calendars" design doc (2026-11-22).
   calendar) and connected Google accounts (read-only). Read lazily: a poll or page load re-reads any calendar older than 5 minutes,
   after responding. No cron.
 - Where calendars overlap, the strongest status wins: away, then do not disturb, then
-  busy (`mergeSchedule` in `app/src/lib/ics.ts`).
+  busy (`explainSchedule` / `mergeSchedule` in `app/src/lib/ics.ts`). Only when the status
+  is equal does calendar order matter: the calendar higher in the list decides whose title
+  shows.
+- Each calendar has **Counts as**: each event's own setting (default), or always busy,
+  always do not disturb, always away (`calendar.counts_as`). Handy for a "Focus" or
+  "Travel" calendar.
+- Shared Google calendars (ones you don't own) only count events you've accepted or said
+  maybe to. Your own calendars count everything except what you declined.
+- Settings → Calendars (`/settings/calendars`) has the combined next 24 hours (with the
+  calendar behind each block), the calendars setting status in priority order (up/down
+  buttons, Counts as, More for titles/refresh/remove), and accounts as folded groups with an
+  on/off switch per calendar. Google and CalDAV calendar lists are re-read once a day there,
+  so calendars added in Google or iCloud show up.
 - The same meeting on two calendars (same iCalendar UID and start) shows once.
 
 ## Data model
@@ -20,11 +32,12 @@ Full plan: the "bzzy: Google and iCloud calendars" design doc (2026-11-22).
   password is encrypted in the app (AES-256-GCM, key in a Vercel env var, key id kept for
   rotation) and never sent to the browser.
 - `calendar`: `source` (`ics`, `google`, `caldav`), `account_id`, `external_id`,
-  `ics_url` (ICS only), `sets_status`, `sync_state` (sync tokens, push channel).
+  `ics_url` (ICS only), `sets_status`, `counts_as`, `position` (priority, 0 first),
+  `color` (from the provider), `sync_state` (sync tokens, push channel, `owned`).
 
 ## Google
 
-- Settings, Calendars, **Connect Google Calendar**: `/api/calendar/google/connect` sends you
+- Settings → Calendars, **Connect Google Calendar**: `/api/calendar/google/connect` sends you
   to Google's consent screen; Google sends you back to `/api/calendar/google/callback` on
   bzzy.ca, which forwards to the preview the connect started on (same idea as GitHub sign-in,
   docs/domains.md). A one-time cookie must match the `state` before the code is used.
@@ -56,7 +69,7 @@ Full plan: the "bzzy: Google and iCloud calendars" design doc (2026-11-22).
 
 ## iCloud and other CalDAV servers
 
-- Settings, Calendars, Add a calendar: pick iCloud, Fastmail or Other (server address),
+- Settings → Calendars, Add a calendar: pick iCloud, Fastmail or Other (server address),
   then the login and an app-specific password. bzzy finds the calendars (current-user-principal,
   then calendar-home-set, `.well-known/caldav` as a fallback) and adds every event calendar,
   all setting status (CalDAV servers don't list holiday or birthday calendars). Reminder and

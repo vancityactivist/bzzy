@@ -14,6 +14,7 @@ import {
   eventsFromIcs,
   IcsError,
   mergeSchedule,
+  type ScheduleSource,
 } from "./ics";
 import type { Block } from "./protocol";
 import { sameEvents } from "./poll-writes";
@@ -181,7 +182,7 @@ export async function calendarsForUser(userId: string) {
     .select()
     .from(schema.calendars)
     .where(eq(schema.calendars.userId, userId))
-    .orderBy(asc(schema.calendars.createdAt));
+    .orderBy(asc(schema.calendars.position), asc(schema.calendars.createdAt));
   return withLastCheck(rows);
 }
 
@@ -202,12 +203,17 @@ export function scheduleFromCalendars(
   cals: CalendarRow[],
   nowSec: number,
 ): Block[] {
-  return mergeSchedule(
-    cals
-      .filter((c) => c.setsStatus !== false)
-      .map((c) => ({ events: c.events, showTitles: c.showTitles })),
-    nowSec,
-  );
+  return mergeSchedule(scheduleSources(cals), nowSec);
+}
+
+// The calendars that set status, highest priority first, as merge inputs. Rows cached
+// before priority existed have no position or countsAs: they count as 0 and "auto".
+export function scheduleSources(cals: CalendarRow[]): ScheduleSource[] {
+  return cals
+    .filter((c) => c.setsStatus !== false)
+    .map((c, i) => ({ c, i }))
+    .sort((a, b) => (a.c.position ?? 0) - (b.c.position ?? 0) || a.i - b.i)
+    .map(({ c }) => ({ id: c.id, events: c.events, showTitles: c.showTitles, countsAs: c.countsAs ?? "auto" }));
 }
 
 // Which of these (possibly cached) rows are due a re-read, counting checks that only
@@ -240,9 +246,10 @@ export async function addCalendar(
   try {
     const tz = await userTimezone(userId);
     const { url, events } = await loadFeed(rawUrl, tz);
+    const position = await nextPosition(userId);
     await db()
       .insert(schema.calendars)
-      .values({ userId, name, icsUrl: url, events, lastFetchedAt: new Date() });
+      .values({ userId, name, icsUrl: url, events, lastFetchedAt: new Date(), position });
     await expire(tag.user(userId));
     return null;
   } catch (err) {
@@ -269,6 +276,45 @@ export async function setShowTitles(
     .update(schema.calendars)
     .set({ showTitles })
     .where(eq(schema.calendars.id, cal.id));
+  await expire(tag.user(cal.userId));
+}
+
+async function nextPosition(userId: string): Promise<number> {
+  const rows = await db()
+    .select({ position: schema.calendars.position })
+    .from(schema.calendars)
+    .where(eq(schema.calendars.userId, userId));
+  return rows.reduce((m, r) => Math.max(m, r.position + 1), 0);
+}
+
+export async function setCountsAs(cal: Pick<CalendarRow, "id" | "userId">, countsAs: CalendarRow["countsAs"]) {
+  await db().update(schema.calendars).set({ countsAs }).where(eq(schema.calendars.id, cal.id));
+  await expire(tag.user(cal.userId));
+}
+
+// Moves a calendar one step up or down the priority order (among the ones that set
+// status, which is the list people see ordered), renumbering everyone 0..n.
+export async function moveCalendar(cal: Pick<CalendarRow, "id" | "userId">, direction: -1 | 1) {
+  const rows = await db()
+    .select({ id: schema.calendars.id, setsStatus: schema.calendars.setsStatus, position: schema.calendars.position })
+    .from(schema.calendars)
+    .where(eq(schema.calendars.userId, cal.userId))
+    .orderBy(asc(schema.calendars.position), asc(schema.calendars.createdAt));
+  const order = rows.map((r) => r.id);
+  const visible = rows.filter((r) => r.setsStatus).map((r) => r.id);
+  const at = visible.indexOf(cal.id);
+  const swapWith = visible[at + direction];
+  if (at < 0 || !swapWith) return;
+  const i = order.indexOf(cal.id);
+  const j = order.indexOf(swapWith);
+  [order[i], order[j]] = [order[j], order[i]];
+  // Only rows whose number changes are written (usually just the two swapped).
+  const current = new Map(rows.map((r) => [r.id, r.position]));
+  for (const [position, id] of order.entries()) {
+    if (current.get(id) !== position) {
+      await db().update(schema.calendars).set({ position }).where(eq(schema.calendars.id, id));
+    }
+  }
   await expire(tag.user(cal.userId));
 }
 

@@ -19,7 +19,7 @@ import { getCurrentUser } from "@/lib/session";
 
 function back(req: NextRequest, result: string) {
   const res = NextResponse.redirect(
-    new URL(`/settings?calendar=${result}#calendars`, req.url),
+    new URL(`/settings/calendars?calendar=${result}`, req.url),
   );
   res.cookies.delete({ name: STATE_COOKIE, path: "/api/calendar/google" });
   return res;

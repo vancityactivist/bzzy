@@ -14,7 +14,7 @@ export async function GET(req: Request) {
   if (!user) return NextResponse.redirect(new URL("/", url));
   if (!googleConfigured())
     return NextResponse.redirect(
-      new URL("/settings?calendar=google-off#calendars", url),
+      new URL("/settings/calendars?calendar=google-off", url),
     );
 
   const nonce = randomBytes(18).toString("base64url");

@@ -25,6 +25,7 @@ import {
   calDavObjects,
   discoverCalDav,
   listCalDav,
+  type CalDavCalendar,
 } from "./caldav";
 import { FetchRefused } from "./safe-fetch";
 
@@ -222,41 +223,84 @@ export async function syncGoogleCalendarList(
   account: CalendarAccountRow,
 ): Promise<void> {
   const remote = await withGoogle(account, listGoogleCalendars);
-  const local = await db()
-    .select()
-    .from(schema.calendars)
-    .where(eq(schema.calendars.accountId, account.id));
+  await mergeCalendarList(
+    account,
+    "google",
+    remote.map((r) => ({ ext: r.id, name: r.summary, color: r.color, on: r.primary, owned: r.owned })),
+  );
+  if (account.state !== "ok") await markAccount(account, "ok", null);
+}
+
+type RemoteCalendar = { ext: string; name: string; color: string | null; on: boolean; owned?: boolean };
+
+// Brings an account's calendars in line with the provider's list: new ones are added at the
+// bottom of the priority order, names, colours and ownership kept up to date. Calendars
+// that vanished are left (with an error on the next read) so their settings survive.
+async function mergeCalendarList(account: CalendarAccountRow, source: "google" | "caldav", remote: RemoteCalendar[]) {
+  const mine = await db().select().from(schema.calendars).where(eq(schema.calendars.userId, account.userId));
+  const local = mine.filter((c) => c.accountId === account.id);
   const byExt = new Map(local.map((c) => [c.externalId, c]));
-  const fresh = remote.filter((r) => !byExt.has(r.id));
+  let next = mine.reduce((m, c) => Math.max(m, c.position + 1), 0);
+  const fresh = remote.filter((r) => !byExt.has(r.ext));
   if (fresh.length > 0) {
     await db()
       .insert(schema.calendars)
       .values(
         fresh.map((r) => ({
           userId: account.userId,
-          name: r.summary,
-          source: "google" as const,
+          name: r.name,
+          source,
           accountId: account.id,
-          externalId: r.id,
-          setsStatus: r.primary,
+          externalId: r.ext,
+          setsStatus: r.on,
+          color: r.color,
+          position: next++,
+          ...(r.owned === undefined ? {} : { syncState: { owned: r.owned } }),
         })),
       );
   }
   for (const r of remote) {
-    const c = byExt.get(r.id);
-    if (c && c.name !== r.summary)
+    const c = byExt.get(r.ext);
+    if (!c) continue;
+    const owned = r.owned === undefined ? undefined : (c.syncState as { owned?: boolean } | null)?.owned;
+    if (c.name !== r.name || c.color !== r.color || (r.owned !== undefined && owned !== r.owned)) {
       await db()
         .update(schema.calendars)
-        .set({ name: r.summary })
+        .set({
+          name: r.name,
+          color: r.color,
+          ...(r.owned === undefined ? {} : { syncState: { ...(c.syncState ?? {}), owned: r.owned } }),
+        })
         .where(eq(schema.calendars.id, c.id));
+    }
   }
-  if (account.state !== "ok") await markAccount(account, "ok", null);
   await expire(tag.user(account.userId));
+}
+
+// Re-reads every connected account's calendar list at most once a day, when the
+// Calendars page is opened, so calendars added at the provider show up.
+export async function refreshCalendarLists(userId: string): Promise<void> {
+  const key = `calist:${userId}`;
+  if (await cacheGet<number>(key)) return;
+  await cacheSet(key, Date.now(), 24 * 3600);
+  const rows = await db().select().from(schema.calendarAccounts).where(eq(schema.calendarAccounts.userId, userId));
+  await Promise.all(
+    rows
+      .filter((a) => a.state === "ok")
+      .map((a) =>
+        (a.provider === "google"
+          ? syncGoogleCalendarList(a)
+          : a.serverUrl
+            ? withCalDav(a, (auth) => listCalDav(new URL(a.serverUrl!), auth)).then((r) => addCalDavCalendars(a, r))
+            : Promise.resolve()
+        ).catch((err) => console.warn(`[calendar] list refresh ${a.id} failed`, err instanceof Error ? err.message : err)),
+      ),
+  );
 }
 
 // The next week of a Google calendar's events, for refreshCalendar.
 export async function googleEventsFor(
-  cal: { accountId: string | null; externalId: string | null },
+  cal: { accountId: string | null; externalId: string | null; syncState?: Record<string, unknown> | null },
   timeZone: string,
 ): Promise<CachedEvent[]> {
   const account = cal.accountId ? await accountRow(cal.accountId) : null;
@@ -272,7 +316,10 @@ export async function googleEventsFor(
     const items = await withGoogle(account, (t) =>
       listGoogleEvents(t, cal.externalId!, from, to),
     );
-    return eventsFromGoogle(items, window, timeZone);
+    // On a calendar someone else shared, only events you've accepted count.
+    const owned = (cal.syncState as { owned?: boolean } | null)?.owned;
+    const attendee = owned === false ? account.label.toLowerCase() : undefined;
+    return eventsFromGoogle(items, window, timeZone, attendee);
   } catch (err) {
     if (
       err instanceof GoogleError &&
@@ -368,29 +415,13 @@ export async function connectCalDav(
   return row;
 }
 
-async function addCalDavCalendars(account: CalendarAccountRow, remote: { url: string; name: string }[]) {
-  const local = await db().select().from(schema.calendars).where(eq(schema.calendars.accountId, account.id));
-  const byExt = new Map(local.map((c) => [c.externalId, c]));
-  const fresh = remote.filter((r) => !byExt.has(r.url));
-  if (fresh.length > 0) {
-    await db()
-      .insert(schema.calendars)
-      .values(
-        fresh.map((r) => ({
-          userId: account.userId,
-          name: r.name,
-          source: "caldav" as const,
-          accountId: account.id,
-          externalId: r.url,
-          setsStatus: true,
-        })),
-      );
-  }
-  for (const r of remote) {
-    const c = byExt.get(r.url);
-    if (c && c.name !== r.name) await db().update(schema.calendars).set({ name: r.name }).where(eq(schema.calendars.id, c.id));
-  }
-  await expire(tag.user(account.userId));
+async function addCalDavCalendars(account: CalendarAccountRow, remote: CalDavCalendar[]) {
+  // Apple colours come as #RRGGBBAA.
+  await mergeCalendarList(
+    account,
+    "caldav",
+    remote.map((r) => ({ ext: r.url, name: r.name, color: r.color ? r.color.slice(0, 7) : null, on: true })),
+  );
 }
 
 // A new password for a CalDAV account. Checked against the server before it's saved.

@@ -10,9 +10,11 @@ import {
   addCalendar,
   calendarsForAccount,
   deleteCalendar,
+  moveCalendar,
   ownCalendar,
   refreshCalendar,
   saveUserClock,
+  setCountsAs,
   setSetsStatus,
   setShowTitles,
   validTimeZone,
@@ -373,6 +375,22 @@ export async function setCalendarSetsStatusAction(id: string, setsStatus: boolea
   await setSetsStatus(cal, setsStatus);
   // A connected calendar that was off has no events saved yet: read it now.
   if (setsStatus) await refreshCalendar({ ...cal, setsStatus });
+  refresh();
+}
+
+export async function setCalendarCountsAsAction(id: string, countsAs: string) {
+  const user = await requireUser();
+  const cal = await ownCalendar(user.id, id);
+  if (!cal || !["auto", "busy", "dnd", "away"].includes(countsAs)) return;
+  await setCountsAs(cal, countsAs as "auto" | "busy" | "dnd" | "away");
+  refresh();
+}
+
+export async function moveCalendarAction(id: string, direction: -1 | 1) {
+  const user = await requireUser();
+  const cal = await ownCalendar(user.id, id);
+  if (!cal) return;
+  await moveCalendar(cal, direction === -1 ? -1 : 1);
   refresh();
 }
 

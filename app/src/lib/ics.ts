@@ -153,13 +153,16 @@ export function eventsFromIcs(
 // even if a meeting is still on their calendar, and focus time beats a meeting.
 const RANK: Record<Status, number> = { away: 3, dnd: 2, busy: 1, free: 0 };
 
-// One calendar's events and whether it shows titles.
+// One calendar's events, in priority order (the first source is the highest), with
+// whether it shows titles and how its events count ("auto" = each event's own status).
 export type ScheduleSource = {
   events: readonly CachedEvent[];
   showTitles: boolean;
+  countsAs?: "auto" | "busy" | "dnd" | "away";
+  id?: string;
 };
 
-type Labelled = CachedEvent & { label: string };
+type Labelled = CachedEvent & { label: string; prio: number; source?: string };
 
 // The same meeting can arrive from two calendars (an invite on work and personal, or an
 // ICS link next to the connected account). Same UID and same start = one event; the
@@ -192,32 +195,39 @@ function dedupe(events: Labelled[]): Labelled[] {
   return out;
 }
 
-// What the device gets from one or more calendars: the next 24 hours, titles hidden
-// unless that calendar shows them, overlaps settled by RANK, and touching blocks of the
-// same status joined so 32 slots go further. A joined block shows the label of the event
-// that's on when it starts; fine for a desk light.
-export function mergeSchedule(
+// A block plus the calendar that decided it (for the Calendars page).
+export type ExplainedBlock = Block & { calendarId?: string };
+
+// The merged schedule: the next 24 hours, titles hidden unless that calendar shows them.
+// Where events overlap, the strongest status wins (away, then do not disturb, then busy);
+// between equals the higher calendar wins, then the one that started first. Touching
+// blocks with the same status and text are joined so 32 slots go further.
+export function explainSchedule(
   sources: readonly ScheduleSource[],
   now: number,
-): Block[] {
+): ExplainedBlock[] {
   const horizon = now + DEVICE_HORIZON_SEC;
   const events = dedupe(
-    sources.flatMap((s) =>
+    sources.flatMap((s, prio) =>
       s.events
         .filter((e) => e.end > now && e.start < horizon && RANK[e.status] > 0)
-        .map((e) => ({
-          ...e,
-          label: s.showTitles && e.title ? e.title : HIDDEN_TITLE[e.status],
-        })),
+        .map((e) => {
+          const status = s.countsAs && s.countsAs !== "auto" ? s.countsAs : e.status;
+          return {
+            ...e,
+            status,
+            prio,
+            source: s.id,
+            label: s.showTitles && e.title ? e.title : HIDDEN_TITLE[status],
+          };
+        }),
     ),
   ).sort((a, b) => a.start - b.start || a.end - b.end);
 
-  // Sweep the moments where something starts or ends; between two of them the winner is
-  // the strongest event on, and among equals the one that started first.
   const cuts = [...new Set(events.flatMap((e) => [e.start, e.end]))].sort(
     (a, b) => a - b,
   );
-  const out: Block[] = [];
+  const out: ExplainedBlock[] = [];
   for (let i = 0; i < cuts.length - 1; i++) {
     const from = cuts[i];
     const to = cuts[i + 1];
@@ -225,22 +235,31 @@ export function mergeSchedule(
     for (const e of events) {
       if (e.start > from) break;
       if (e.end <= from) continue;
-      if (!win || RANK[e.status] > RANK[win.status]) win = e;
+      if (
+        !win ||
+        RANK[e.status] > RANK[win.status] ||
+        (RANK[e.status] === RANK[win.status] && e.prio < win.prio)
+      )
+        win = e;
     }
     if (!win) continue;
+    const text = clipText(win.label);
     const last = out[out.length - 1];
-    if (last && last.status === win.status && last.end >= from) {
+    if (last && last.status === win.status && last.text === text && last.end >= from) {
       last.end = to;
       continue;
     }
-    out.push({
-      start: from,
-      end: to,
-      status: win.status,
-      text: clipText(win.label),
-    });
+    out.push({ start: from, end: to, status: win.status, text, calendarId: win.source });
   }
   return out.slice(0, MAX_BLOCKS);
+}
+
+// What the device gets (no calendar ids).
+export function mergeSchedule(
+  sources: readonly ScheduleSource[],
+  now: number,
+): Block[] {
+  return explainSchedule(sources, now).map(({ start, end, status, text }) => ({ start, end, status, text }));
 }
 
 // One calendar on its own (the Settings preview).

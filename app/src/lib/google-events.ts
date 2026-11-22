@@ -13,7 +13,7 @@ export type GoogleEvent = {
   transparency?: string; // opaque (default) | transparent
   start?: { date?: string; dateTime?: string };
   end?: { date?: string; dateTime?: string };
-  attendees?: { self?: boolean; responseStatus?: string }[];
+  attendees?: { self?: boolean; email?: string; responseStatus?: string }[];
 };
 
 // The rules:
@@ -22,8 +22,16 @@ export type GoogleEvent = {
 //   focus time                                                 -> do not disturb
 //   anything else with a time (busy, tentative, not answered)  -> busy
 //   other all-day events (birthdays, holidays)                 -> ignored
-export function classifyGoogle(e: GoogleEvent): Status | null {
+//
+// `attendee`: for a calendar shared with you by someone else, the account's email. Then
+// only events you've accepted (or said maybe to) count, so a teammate's calendar doesn't
+// make you busy for their meetings.
+export function classifyGoogle(e: GoogleEvent, attendee?: string): Status | null {
   if (e.status === "cancelled") return null;
+  if (attendee) {
+    const me = e.attendees?.find((a) => a.email?.toLowerCase() === attendee);
+    if (!me || (me.responseStatus !== "accepted" && me.responseStatus !== "tentative")) return null;
+  }
   if (e.eventType === "workingLocation" || e.eventType === "birthday")
     return null;
   if (e.attendees?.some((a) => a.self && a.responseStatus === "declined"))
@@ -53,12 +61,13 @@ export function eventsFromGoogle(
   items: readonly GoogleEvent[],
   window: { from: Date; to: Date },
   timeZone: string,
+  attendee?: string,
 ): CachedEvent[] {
   const from = window.from.getTime() / 1000;
   const to = window.to.getTime() / 1000;
   const out: CachedEvent[] = [];
   for (const e of items) {
-    const status = classifyGoogle(e);
+    const status = classifyGoogle(e, attendee);
     if (!status) continue;
     const start = when(e.start, timeZone);
     const end = when(e.end, timeZone);

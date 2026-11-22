@@ -3,13 +3,15 @@
 import { useSearchParams } from "next/navigation";
 import { useActionState, useEffect, useId, useRef, useState, useTransition } from "react";
 
-import { PlusIcon, RefreshIcon, TrashIcon } from "@/components/icons";
+import { ChevronDownIcon, ChevronUpIcon, PlusIcon, RefreshIcon, TrashIcon } from "@/components/icons";
 import { Button, Field, Input, Select } from "@/components/ui";
 
 import {
   addCalendarAction,
   type CalendarFormResult,
   connectCalDavAction,
+  moveCalendarAction,
+  setCalendarCountsAsAction,
   updateCalDavPasswordAction,
   refreshCalendarAction,
   removeCalendarAccountAction,
@@ -149,25 +151,6 @@ export function CalendarActions({
         )}
       </span>
     </div>
-  );
-}
-
-// Just the "Sets my status" switch, for a connected calendar that's off (nothing to
-// preview or refresh until it's on).
-export function CalendarSwitch({ id, name }: { id: string; name: string }) {
-  const [pending, start] = useTransition();
-  return (
-    <label className="flex cursor-pointer items-center gap-2 text-sm">
-      <input
-        type="checkbox"
-        className="size-4 accent-foreground"
-        checked={false}
-        disabled={pending}
-        onChange={() => start(() => setCalendarSetsStatusAction(id, true))}
-      />
-      <span className="truncate">{name}</span>
-      {pending && <span className="text-muted">Reading…</span>}
-    </label>
   );
 }
 
@@ -315,5 +298,92 @@ export function UpdatePasswordForm({ accountId }: { accountId: string }) {
         </p>
       )}
     </form>
+  );
+}
+
+// Up/down in the priority order, and how the calendar's events count.
+export function PriorityControls({
+  id,
+  name,
+  first,
+  last,
+  countsAs,
+}: {
+  id: string;
+  name: string;
+  first: boolean;
+  last: boolean;
+  countsAs: string;
+}) {
+  const [pending, start] = useTransition();
+  return (
+    <span className="flex shrink-0 items-center gap-1">
+      <Select
+        aria-label={`How ${name} counts`}
+        value={countsAs}
+        disabled={pending}
+        onChange={(e) => {
+          const v = e.target.value;
+          start(() => setCalendarCountsAsAction(id, v));
+        }}
+        wrapperClassName="w-auto"
+        className="h-8 text-sm"
+      >
+        <option value="auto">Each event&apos;s setting</option>
+        <option value="busy">Always busy</option>
+        <option value="dnd">Always do not disturb</option>
+        <option value="away">Always away</option>
+      </Select>
+      <Button
+        size="icon-sm"
+        variant="ghost"
+        aria-label={`Move ${name} up`}
+        disabled={pending || first}
+        onClick={() => start(() => moveCalendarAction(id, -1))}
+      >
+        <ChevronUpIcon />
+      </Button>
+      <Button
+        size="icon-sm"
+        variant="ghost"
+        aria-label={`Move ${name} down`}
+        disabled={pending || last}
+        onClick={() => start(() => moveCalendarAction(id, 1))}
+      >
+        <ChevronDownIcon />
+      </Button>
+    </span>
+  );
+}
+
+// On/off for one calendar in an account list.
+export function CalendarToggle({ id, name, on, color }: { id: string; name: string; on: boolean; color: string | null }) {
+  const [pending, start] = useTransition();
+  return (
+    <label className="flex cursor-pointer items-center gap-2 py-1 text-sm">
+      <input
+        type="checkbox"
+        className="size-4 accent-foreground"
+        checked={on}
+        disabled={pending}
+        onChange={(e) => {
+          const v = e.target.checked;
+          start(() => setCalendarSetsStatusAction(id, v));
+        }}
+      />
+      <CalendarDot color={color} />
+      <span className="truncate">{name}</span>
+      {pending && <span className="text-muted">{on ? "Turning off…" : "Reading…"}</span>}
+    </label>
+  );
+}
+
+export function CalendarDot({ color }: { color: string | null }) {
+  return (
+    <span
+      aria-hidden
+      className="inline-block size-2.5 shrink-0 rounded-full bg-line-strong"
+      style={color && /^#[0-9a-f]{6}$/i.test(color) ? { backgroundColor: color } : undefined}
+    />
   );
 }
