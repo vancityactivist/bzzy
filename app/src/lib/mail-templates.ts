@@ -117,6 +117,41 @@ export function inviteEmail(input: { teamName: string; inviterName: string; role
   };
 }
 
+// Lights set up for someone through the provisioning API (docs/provisioning.md). With a
+// link: a new account that can't sign in yet. Without: an account they already use.
+export function claimEmail(input: { name: string | null; lights: number; url: string; expiresAt: Date | null; shipped: boolean }): Mail {
+  const hi = input.name ? `Hi ${oneLine(input.name, 40)},` : "Hi,";
+  const it = input.lights === 1 ? "Your bzzy" : "Your bzzys";
+  const subject = input.expiresAt ? `${it} ${input.shipped ? "is on its way" : "is ready"}: set up your account` : `${it} ${input.shipped ? "is on its way" : "is in your account"}`;
+  const first = input.shipped
+    ? `${it} ${input.lights === 1 ? "has" : "have"} shipped. When ${input.lights === 1 ? "it arrives, plug it in and it" : "they arrive, plug them in and they"}'ll ask for your Wi-Fi, then show your status.`
+    : `${it} ${input.lights === 1 ? "is" : "are"} set up and waiting for you.`;
+  const lines = input.expiresAt
+    ? [
+        hi,
+        first,
+        "We've made you a bzzy account to go with it. Open the link to sign in, then add a passkey or connect GitHub so you can get back in any time. There's no password.",
+        "Once you're in you can add your calendar, pick your GIFs and change what the light shows.",
+      ]
+    : [hi, first, `${input.lights === 1 ? "It's" : "They're"} already in your bzzy account. Sign in as usual to add your calendar and change what it shows.`];
+  const ends = input.expiresAt?.toLocaleDateString("en-CA", { month: "long", day: "numeric", year: "numeric", timeZone: "UTC" });
+  const footer = input.expiresAt
+    ? `This link signs you in once and works until ${ends} (UTC). Don't forward it. Need a new one? Ask whoever set up your light to send another.`
+    : "You're getting this because a bzzy was set up for this email address.";
+  const label = input.expiresAt ? "Set up my account" : "Open bzzy";
+  return {
+    subject,
+    text: `${lines.join("\n\n")}\n\n${label}: ${input.url}\n\n${footer}\n`,
+    html: layout({
+      preheader: escapeHtml(first),
+      title: escapeHtml(input.expiresAt ? "Set up your bzzy account" : subject),
+      paragraphs: lines.map(escapeHtml),
+      button: { label, url: input.url },
+      footer: escapeHtml(footer),
+    }),
+  };
+}
+
 // To the person who just joined.
 export function welcomeEmail(input: { teamName: string; name: string | null; role: "member" | "admin"; url: string }): Mail {
   const team = oneLine(input.teamName);

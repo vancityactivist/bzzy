@@ -11,6 +11,7 @@
 // shared door) has a status and Show now of its own (light_status, light_show).
 
 import {
+  type AnyPgColumn,
   boolean,
   index,
   integer,
@@ -267,9 +268,40 @@ export const devices = pgTable(
     firmwareFailed: text("firmware_failed"), // a version that installed but rolled back
     // Unix seconds of the last "Update now" press; 0 = none waiting.
     updateRequestedAt: integer("update_requested_at").notNull().default(0),
+    // Set up for someone else (docs/provisioning.md): the claim it was paired to, and
+    // ship mode. While shipMode is on the poll answer says `ship: true`; the light forgets
+    // its Wi-Fi and waits to be set up at its new home, then says it has arrived.
+    claimId: text("claim_id").references((): AnyPgColumn => lightClaims.id, { onDelete: "set null" }),
+    shipMode: boolean("ship_mode").notNull().default(false),
+    shippedAt: timestamp("shipped_at", { mode: "date" }),
+    arrivedAt: timestamp("arrived_at", { mode: "date" }),
     createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
   },
-  (t) => [index("device_team_idx").on(t.teamId), index("device_owner_idx").on(t.ownerUserId)],
+  (t) => [index("device_team_idx").on(t.teamId), index("device_owner_idx").on(t.ownerUserId), index("device_claim_idx").on(t.claimId)],
+);
+
+// Lights set up for someone by email through the provisioning API (docs/provisioning.md),
+// for example by a shop. `ref` is the caller's own id for it (an order number), so
+// creating the same claim twice gives the same row. The person gets a one-time link
+// (/claim/<token>) to sign in and set up a passkey or GitHub; only its SHA-256 is stored.
+export const lightClaims = pgTable(
+  "light_claim",
+  {
+    id: id(),
+    ref: text("ref").notNull().unique(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    quantity: integer("quantity").notNull(),
+    tokenHash: text("token_hash"),
+    tokenExpiresAt: timestamp("token_expires_at", { mode: "date" }),
+    // When the person first got in: by the link, or straight away for an account that
+    // could already sign in.
+    claimedAt: timestamp("claimed_at", { mode: "date" }),
+    invitedAt: timestamp("invited_at", { mode: "date" }),
+    createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
+  },
+  (t) => [index("light_claim_user_idx").on(t.userId)],
 );
 
 // A light that hasn't been added yet asks for a pairing code (POST /api/pair) and

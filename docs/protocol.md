@@ -54,6 +54,7 @@ Every request also says which firmware the device runs, so the app can offer upd
 | `X-Bzzy-Board` | `waveshare_s3_touch_lcd169` | the PlatformIO env |
 | `X-Bzzy-Update-Failed` | `0.3.0` | only after an update rolled back |
 | `X-Bzzy-Update-Now` | `1762891100` | the last "Update now" press it acted on |
+| `X-Bzzy-Arrived` | `1` | only while the last answer had `ship: true`, on a poll from a new Wi-Fi network (the light has reached its owner). See [provisioning.md](provisioning.md) |
 | `X-Bzzy-Features` | `colors,hours,leds,push` | comma-separated extras this firmware understands: `colors` (show now colours), `hours` (working hours and `poll`), `leds` (LED styles), `push` (team pushes) |
 
 ```json
@@ -108,6 +109,7 @@ Every request also says which firmware the device runs, so the app can offer upd
 - `push` (optional, `push` feature) says that `show` is a **team push**: `{ "id": "…", "updatedAt": 1762891150, "leds": { "pattern": "strobe", "color": "#ff2000", "speed": 2, "for": 30 } }`. See **Team pushes** below. `leds` is missing when the push doesn't flash.
 - `poll` is how many seconds to wait before the next poll: 20, or, outside working hours, up to 300 (never past the start of the next working window, so the light is quick again as the day begins). Firmware with the `hours` feature waits that long, kept between 20 s and 10 minutes; while someone has woken it, it polls every 20 s anyway.
 - `workHours` (optional, `hours` feature) lists the owner's coming working windows, oldest first: today's (if it hasn't ended) and the next week's, at most 14. It's missing when they haven't set working hours, and then the light is always on. They're set on the Settings page (days, start and end time, time zone) and worked out in the owner's time zone, daylight saving included. Outside every window the light goes dark (screen and ring off); see **Working hours** below.
+- `ship` (optional) is `true` while the light is in ship mode: it was set up on someone's bench and is on its way to its owner ([provisioning.md](provisioning.md)). Firmware that knows it sends `X-Bzzy-Arrived: 1` on its first poll from a different Wi-Fi network, which ends ship mode. Older firmware ignores it.
 - `serverTime` is when the response was built. The device treats the schedule as stale after 24 hours without a successful sync.
 
 ## LED styles

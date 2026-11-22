@@ -18,6 +18,7 @@ import {
   type PairingState,
   secondsLeft,
 } from "./pair-rules";
+import { claimTarget } from "./provision";
 import { ensurePersonalTeam, teamsForUser } from "./teams";
 
 export class PairingError extends Error {}
@@ -107,27 +108,43 @@ export async function pairingTeams(userId: string, displayName: string) {
   return [{ id: personalId, name: "Just me" }, ...shared.map((t) => ({ id: t.id, name: t.name }))];
 }
 
+// `teamId` is one of the person's teams, or "claim:<id>" for a superadmin setting a
+// light up for someone else at the bench (docs/provisioning.md). Then it's theirs: their
+// personal team, their status.
 export async function claimPairing(
   user: { id: string; name: string },
   code: string,
   input: { name: string; teamId: string; autoUpdate: boolean },
-  now = new Date(),
+  opts: { superadmin?: boolean; now?: Date } = {},
 ): Promise<string> {
+  const now = opts.now ?? new Date();
   const rows = await db().select().from(schema.devicePairings).where(eq(schema.devicePairings.code, code)).limit(1);
   const pairing = rows[0];
   if (!pairing || pairingState(pairing, now) !== "live") throw new PairingError("This code has run out. The light will show a new one.");
-  const teams = await pairingTeams(user.id, user.name);
-  if (!teams.some((t) => t.id === input.teamId)) throw new PairingError("Pick one of your teams.");
-  // A light in a shared team shows that team's announcements: one setting, not two.
-  const personal = teams[0].id === input.teamId;
+  let owner = user.id;
+  let claimId: string | null = null;
+  let teamId = input.teamId;
+  let personal: boolean;
+  if (input.teamId.startsWith("claim:")) {
+    const target = opts.superadmin ? await claimTarget(input.teamId.slice(6)) : null;
+    if (!target) throw new PairingError("That order isn't waiting for a light any more.");
+    ({ userId: owner, claimId, teamId } = target);
+    personal = true;
+  } else {
+    const teams = await pairingTeams(user.id, user.name);
+    if (!teams.some((t) => t.id === input.teamId)) throw new PairingError("Pick one of your teams.");
+    // A light in a shared team shows that team's announcements: one setting, not two.
+    personal = teams[0].id === input.teamId;
+  }
 
   // The pairing secret becomes the device token: the light already has it.
   const id = newDeviceId();
   await db().insert(schema.devices).values({
     id,
-    teamId: input.teamId,
-    pushTeamId: personal ? null : input.teamId,
-    ownerUserId: user.id,
+    teamId,
+    pushTeamId: personal ? null : teamId,
+    ownerUserId: owner,
+    claimId,
     name: input.name,
     tokenHash: pairing.secretHash,
     autoUpdate: input.autoUpdate,
@@ -146,7 +163,7 @@ export async function claimPairing(
     throw new PairingError("Someone else just added this light.");
   }
   // The API lists a person's lights from a copy saved under their tag.
-  await expire(tag.user(user.id));
+  await expire(tag.user(owner));
   return id;
 }
 

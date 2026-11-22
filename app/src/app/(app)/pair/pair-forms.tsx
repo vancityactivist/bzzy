@@ -43,7 +43,9 @@ export function EnterCodeForm() {
   );
 }
 
-export function ClaimForm({ code, teams }: { code: string; teams: { id: string; name: string }[] }) {
+// `orders`: superadmins setting lights up for someone else at the bench see the claims
+// still waiting for one (docs/provisioning.md).
+export function ClaimForm({ code, teams, orders = [] }: { code: string; teams: { id: string; name: string }[]; orders?: { id: string; label: string }[] }) {
   const [state, action, pending] = useActionState<PairResult, FormData>(claimPairingAction.bind(null, code), null);
   return (
     <form action={action} className="space-y-4">
@@ -56,11 +58,30 @@ export function ClaimForm({ code, teams }: { code: string; teams: { id: string; 
         hint="It shows your status either way. In a team, the team's admins can manage it too and send it pushes."
       >
         <Select id="pair-team" name="teamId" defaultValue={teams[0]?.id}>
-          {teams.map((t) => (
-            <option key={t.id} value={t.id}>
-              {t.name}
-            </option>
-          ))}
+          {orders.length > 0 ? (
+            <>
+              <optgroup label="Your teams">
+                {teams.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.name}
+                  </option>
+                ))}
+              </optgroup>
+              <optgroup label="Assign to an order">
+                {orders.map((o) => (
+                  <option key={o.id} value={`claim:${o.id}`}>
+                    {o.label}
+                  </option>
+                ))}
+              </optgroup>
+            </>
+          ) : (
+            teams.map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.name}
+              </option>
+            ))
+          )}
         </Select>
       </Field>
       <label className="flex cursor-pointer items-start gap-2 text-sm">

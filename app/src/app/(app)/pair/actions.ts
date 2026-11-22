@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { signIn } from "@/auth";
+import { isAdmin } from "@/lib/admin";
 import { normalizePairCode } from "@/lib/pair-rules";
 import { claimPairing, PairingError } from "@/lib/pairing";
 import { requireUser } from "@/lib/session";
@@ -36,13 +37,15 @@ export async function claimPairingAction(code: string, _prev: PairResult, formDa
   if (!c) return { ok: false, error: "That code doesn't work." };
   const input = claimInput.safeParse({ name: formData.get("name"), teamId: formData.get("teamId") });
   if (!input.success) return { ok: false, error: input.error.issues[0]?.message ?? "Check the form." };
+  const forSomeoneElse = input.data.teamId.startsWith("claim:");
   let deviceId: string;
   try {
-    deviceId = await claimPairing(user, c, { ...input.data, autoUpdate: formData.get("autoUpdate") === "on" });
+    deviceId = await claimPairing(user, c, { ...input.data, autoUpdate: formData.get("autoUpdate") === "on" }, { superadmin: forSomeoneElse && (await isAdmin(user.id)) });
   } catch (e) {
     if (e instanceof PairingError) return { ok: false, error: e.message };
     throw e;
   }
   refresh();
-  redirect(`/lights/${deviceId}?added=1`);
+  // Someone else's light: back to the bench page, which says it's added.
+  redirect(forSomeoneElse ? `/pair/${c}` : `/lights/${deviceId}?added=1`);
 }
