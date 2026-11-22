@@ -83,6 +83,7 @@ export default function PrivacyPage() {
           <li>Vercel hosts the app and its file storage.</li>
           <li>Neon hosts the database.</li>
           <li>Resend sends bzzy&apos;s emails.</li>
+          <li>Cloudflare checks the contact form isn&apos;t a bot (Turnstile). It sees your browser and IP address, not your message.</li>
           <li>GitHub and Google, when you sign in with them or connect them.</li>
         </ul>
         <p>These services may keep data outside Canada. bzzy doesn&apos;t sell or rent your data to anyone.</p>
