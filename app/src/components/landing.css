@@ -108,7 +108,7 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: 70% 45%;
+  object-position: 45% 55%;
 }
 @media (max-width: 40rem) {
   .lp-showcase { aspect-ratio: 4 / 3; }
