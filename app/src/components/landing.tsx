@@ -508,11 +508,15 @@ export function Landing() {
                   <li><a href="/docs/api">API</a></li>
                   <li><a href="#hello">Contact</a></li>
                   <li><a href={REPO}>GitHub</a></li>
+                  <li><a href="/privacy">Privacy</a></li>
+                  <li><a href="/terms">Terms</a></li>
                 </ul>
               </div>
             </div>
             <div className="footer__legal">
-              <span>&copy; 2026 Adam Glover</span>
+              <span>
+                &copy; 2026 Adam Glover · <a href="/privacy">Privacy policy</a> · <a href="/terms">Terms</a>
+              </span>
               <div className="socials" />
               <a className="credits" href="https://giphy.com">
                 GIFs via GIPHY. Product names and logos are trademarks of their owners
