@@ -38,6 +38,7 @@ export function Dashboard({ cards, nowMs }: { cards: MemberCard[]; nowMs: number
           Right now
         </h2>
         <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted">
+          {/* Everyone's own names differ, so the tally uses the standard words. */}
           {(["free", "busy", "dnd", "away"] as const)
             .filter((s) => counts[s])
             .map((s) => (
@@ -70,7 +71,7 @@ export function Dashboard({ cards, nowMs }: { cards: MemberCard[]; nowMs: number
                 <p className="w-full truncate font-medium sm:mt-1">{c.name}</p>
                 <p className="flex items-center gap-1.5 text-sm">
                   <StatusDot status={c.status} size="sm" />
-                  {STATUS_META[c.status].label}
+                  {c.label}
                 </p>
                 <p className="mt-0.5 text-xs text-pretty text-muted">{sourceLine(c)}</p>
               </div>

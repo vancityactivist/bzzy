@@ -13,6 +13,8 @@ import { teamMembers } from "./teams";
 import { cacheGet, cachedRead, cacheSet, expire, tag } from "./cache";
 import type { AuthedDevice } from "./device-auth";
 import { iso } from "./api-rules";
+import { getLook } from "./look";
+import { readLabels, statusLabel } from "./status-labels";
 import { nowSeconds, type OverrideBody } from "./protocol";
 import { checkPublicUrl, FetchRefused, postPublic } from "./safe-fetch";
 import { seal, unseal } from "./seal";
@@ -244,10 +246,14 @@ export async function noticeChanges(userId: string, cause: Cause) {
 export async function buttonPressed(device: AuthedDevice, press: OverrideBody) {
   try {
     const hooks = await liveHooks(device.ownerUserId);
+    if (!hooks.some((h) => h.events.includes("button.pressed"))) return;
+    // What the light calls the status: its owner's names, or its own.
+    const labels = device.followsOwner ? (await getLook(device.ownerUserId)).statusLabels : readLabels(device.statusLabels);
     await send(hooks, "button.pressed", {
       light: { id: device.id, name: device.name },
       // null: the press cleared the manual status, back to the calendar.
       status: press.active ? press.status : null,
+      label: press.active ? statusLabel(press.status, labels) : null,
       pressedAt: iso(press.updatedAt),
     });
   } catch (err) {

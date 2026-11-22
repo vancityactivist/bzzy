@@ -32,6 +32,7 @@ import {
   setAllowFlash,
   setAutoUpdate,
   setFollowsOwner,
+  setLightLabels,
   setLightDefault,
 } from "@/lib/devices";
 import { isAdmin, setSuperadmin } from "@/lib/admin";
@@ -44,11 +45,12 @@ import { createApiToken, revokeApiToken, setApiBlocked, TokenError } from "@/lib
 import { GifError } from "@/lib/gif-process";
 import { checkGifChoice, deleteGif, importGifFromLink, renameGif, setUserGif, uploadGif } from "@/lib/gifs";
 import { clearLightShow, getLightStatus, setLightShow, setLightStatus } from "@/lib/light-state";
-import { getLook, setDefaultStatus, setLookRing } from "@/lib/look";
+import { getLook, setDefaultStatus, setLookRing, setStatusLabels } from "@/lib/look";
+import { labelsInput, parseLabels } from "@/lib/status-labels";
 import { noteShown, setFavourite } from "@/lib/gif-prefs";
 import { PasskeyError, renamePasskey, revokePasskey } from "@/lib/passkeys";
 import { getPresence, setPresence } from "@/lib/presence";
-import { clipText, nowSeconds, STATUSES } from "@/lib/protocol";
+import { clipText, nowSeconds, type Status, STATUSES } from "@/lib/protocol";
 import { pushInput, pushLeds } from "@/lib/push-rules";
 import { lookRingFromInput, type LookRingInput, lookRingInput } from "@/lib/ring";
 import { setDeviceTeam, TeamError } from "@/lib/teams";
@@ -684,6 +686,20 @@ export async function setDefaultStatusAction(status: string) {
   refresh();
 }
 
+// What you call your statuses. A blank or standard name goes back to the standard word.
+export type LabelsResult = { ok: true } | { ok: false; status?: Status; error: string };
+
+export async function setStatusLabelsAction(raw: Partial<Record<Status, string>>): Promise<LabelsResult> {
+  const user = await requireUser();
+  const input = labelsInput.safeParse(raw);
+  if (!input.success) return { ok: false, error: "Couldn't read those names." };
+  const parsed = parseLabels(input.data);
+  if (!parsed.ok) return parsed;
+  await setStatusLabels(user.id, parsed.labels);
+  refresh();
+  return { ok: true };
+}
+
 // ---- a light's own settings ----
 
 export async function renameDeviceAction(deviceId: string, raw: string): Promise<{ ok: boolean; error?: string }> {
@@ -707,7 +723,7 @@ export async function setAllowFlashAction(deviceId: string, allowFlash: boolean)
 export async function setFollowsAction(deviceId: string, follows: boolean) {
   const user = await requireUser();
   if (!(await ownedDevice(user.id, deviceId))) return;
-  await setFollowsOwner(deviceId, follows, (await getLook(user.id)).defaultStatus);
+  await setFollowsOwner(deviceId, follows, await getLook(user.id));
   refresh();
 }
 
@@ -718,6 +734,19 @@ export async function setLightDefaultAction(deviceId: string, status: string) {
   if (!s.success || !(await ownedDevice(user.id, deviceId))) return;
   await setLightDefault(deviceId, s.data);
   refresh();
+}
+
+// What a light with its own status calls the statuses.
+export async function setLightLabelsAction(deviceId: string, raw: Partial<Record<Status, string>>): Promise<LabelsResult> {
+  const user = await requireUser();
+  const input = labelsInput.safeParse(raw);
+  if (!input.success) return { ok: false, error: "Couldn't read those names." };
+  if (!(await ownedDevice(user.id, deviceId))) return { ok: false, error: "You can't change that light." };
+  const parsed = parseLabels(input.data);
+  if (!parsed.ok) return parsed;
+  await setLightLabels(deviceId, parsed.labels);
+  refresh();
+  return { ok: true };
 }
 
 // The light's team, which is also whose announcements it shows. "" = just you.

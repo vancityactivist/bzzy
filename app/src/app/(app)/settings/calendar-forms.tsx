@@ -5,6 +5,7 @@ import { useActionState, useEffect, useId, useRef, useState, useTransition } fro
 
 import { GripIcon, PlusIcon, RefreshIcon, TrashIcon } from "@/components/icons";
 import { Button, Field, Input, Select } from "@/components/ui";
+import type { Status } from "@/lib/protocol";
 
 import {
   addCalendarAction,
@@ -304,7 +305,7 @@ export function UpdatePasswordForm({ accountId }: { accountId: string }) {
 }
 
 // How a calendar's events count.
-export function CountsAsPicker({ id, name, countsAs }: { id: string; name: string; countsAs: string }) {
+export function CountsAsPicker({ id, name, countsAs, names }: { id: string; name: string; countsAs: string; names: Record<Status, string> }) {
   const [pending, start] = useTransition();
   return (
     <Select
@@ -319,9 +320,9 @@ export function CountsAsPicker({ id, name, countsAs }: { id: string; name: strin
       className="h-8 text-sm"
     >
       <option value="auto">Each event&apos;s setting</option>
-      <option value="busy">Always busy</option>
-      <option value="dnd">Always do not disturb</option>
-      <option value="away">Always away</option>
+      <option value="busy">Counts as {names.busy}</option>
+      <option value="dnd">Counts as {names.dnd}</option>
+      <option value="away">Counts as {names.away}</option>
     </Select>
   );
 }

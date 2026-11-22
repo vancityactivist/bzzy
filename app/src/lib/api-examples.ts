@@ -2,14 +2,16 @@
 // "METHOD /path" as in the OpenAPI document; lib/api-examples.test.ts checks that every
 // operation has one and that the bodies pass the routes' own schemas.
 
+// This person renamed Do not disturb to "Heads down"; the rest keep the standard words.
 const status = {
   status: "busy",
+  label: "Busy",
   source: "manual",
   text: "On a call",
   until: "2026-11-16T18:45:00.000Z",
-  manual: { status: "busy", text: "On a call", until: "2026-11-16T18:45:00.000Z", setAt: "2026-11-16T18:00:00.000Z", setBy: "api:Stream Deck" },
+  manual: { status: "busy", label: "Busy", text: "On a call", until: "2026-11-16T18:45:00.000Z", setAt: "2026-11-16T18:00:00.000Z", setBy: "api:Stream Deck" },
   meeting: null,
-  next: { status: "busy", text: "Council meeting", start: "2026-11-16T21:00:00.000Z", end: "2026-11-16T22:00:00.000Z" },
+  next: { status: "busy", label: "Busy", text: "Council meeting", start: "2026-11-16T21:00:00.000Z", end: "2026-11-16T22:00:00.000Z" },
   offHours: false,
 };
 
@@ -66,7 +68,7 @@ export const API_EXAMPLES: Record<string, ApiExample> = {
       text: "Standup",
       until: "2026-11-16T17:30:00.000Z",
       manual: null,
-      meeting: { status: "busy", text: "Standup", start: "2026-11-16T17:00:00.000Z", end: "2026-11-16T17:30:00.000Z" },
+      meeting: { status: "busy", label: "Busy", text: "Standup", start: "2026-11-16T17:00:00.000Z", end: "2026-11-16T17:30:00.000Z" },
     },
   },
   "PUT /status": {
@@ -74,7 +76,7 @@ export const API_EXAMPLES: Record<string, ApiExample> = {
     response: { ...status, changed: true },
   },
   "DELETE /status": {
-    response: { ...status, status: "free", source: "default", text: "", until: "2026-11-16T21:00:00.000Z", manual: null, changed: true },
+    response: { ...status, status: "free", label: "Free", source: "default", text: "", until: "2026-11-16T21:00:00.000Z", manual: null, changed: true },
   },
   "GET /show": { response: { show } },
   "PUT /show": {
@@ -93,7 +95,7 @@ export const API_EXAMPLES: Record<string, ApiExample> = {
           lastSeenAt: "2026-11-16T18:00:12.000Z",
           firmwareVersion: "0.2.0",
           dark: false,
-          screen: { layout: "show-gif", status: "busy", text: "Back at 2", until: "2026-11-16T18:30:00.000Z" },
+          screen: { layout: "show-gif", status: "busy", label: "Busy", text: "Back at 2", until: "2026-11-16T18:30:00.000Z" },
           ring: { pattern: "pulse", color: "#2979ff" },
           push: null,
         },
@@ -143,7 +145,7 @@ export const WEBHOOK_EXAMPLES: Record<string, unknown> = {
     version: "1",
     data: {
       status: API_EXAMPLES["GET /status"].response,
-      previous: { ...status, status: "free", source: "default", text: "", until: "2026-11-16T17:00:00.000Z", manual: null, meeting: null },
+      previous: { ...status, status: "free", label: "Free", source: "default", text: "", until: "2026-11-16T17:00:00.000Z", manual: null, meeting: null },
     },
   },
   "show.changed": { type: "show.changed", timestamp: "2026-11-16T18:00:00.000Z", version: "1", data: { show, previous: null } },
@@ -151,7 +153,7 @@ export const WEBHOOK_EXAMPLES: Record<string, unknown> = {
     type: "button.pressed",
     timestamp: "2026-11-16T18:10:00.000Z",
     version: "1",
-    data: { light: { id: "bz-k7qf2m", name: "Desk" }, status: "dnd", pressedAt: "2026-11-16T18:09:59.000Z" },
+    data: { light: { id: "bz-k7qf2m", name: "Desk" }, status: "dnd", label: "Heads down", pressedAt: "2026-11-16T18:09:59.000Z" },
   },
   "push.received": {
     type: "push.received",

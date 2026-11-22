@@ -89,6 +89,7 @@ describe("webhook input", () => {
 
 const status = (over: Partial<ApiStatus> = {}): ApiStatus => ({
   status: "free",
+  label: "Free",
   source: "default",
   text: "",
   until: null,
@@ -117,8 +118,14 @@ describe("what's worth sending", () => {
   });
 
   it("doesn't count the meeting list moving on, or a push hiding Show now", () => {
-    const a = seen(status({ next: { status: "busy", text: "A", start: "x", end: "y" } }), show());
+    const a = seen(status({ next: { status: "busy", label: "Busy", text: "A", start: "x", end: "y" } }), show());
     const b = seen(status({ next: null }), show({ hiddenByPush: true }));
+    expect(changesToSend(a, b, "poll")).toEqual({ status: false, show: false, save: false });
+  });
+
+  it("doesn't count a rename as a change of status", () => {
+    const a = seen(status({ status: "dnd", label: "Do not disturb" }));
+    const b = seen(status({ status: "dnd", label: "Heads down" }));
     expect(changesToSend(a, b, "poll")).toEqual({ status: false, show: false, save: false });
   });
 

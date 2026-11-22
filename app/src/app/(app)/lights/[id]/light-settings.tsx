@@ -2,11 +2,18 @@
 
 import { useOptimistic, useState, useTransition } from "react";
 
-import { STATUS_META } from "@/components/status-meta";
 import { Button, cx, Input, Select } from "@/components/ui";
 import { type Status, STATUSES } from "@/lib/protocol";
+import { allLabels, LABEL_MAX, STANDARD_LABEL, type StatusLabels, tidyLabel } from "@/lib/status-labels";
 
-import { renameDeviceAction, setAllowFlashAction, setDeviceTeamAction, setFollowsAction, setLightDefaultAction } from "@/app/actions";
+import {
+  renameDeviceAction,
+  setAllowFlashAction,
+  setDeviceTeamAction,
+  setFollowsAction,
+  setLightDefaultAction,
+  setLightLabelsAction,
+} from "@/app/actions";
 
 // One setting: what it is on the left, the control on the right (stacked on phones).
 function Row({ title, hint, children }: { title: React.ReactNode; hint?: React.ReactNode; children: React.ReactNode }) {
@@ -53,6 +60,7 @@ export function LightSettings({
   canManage,
   followsOwner,
   defaultStatus,
+  statusLabels,
   team,
   legacyPush,
   teams,
@@ -64,6 +72,7 @@ export function LightSettings({
   canManage: boolean;
   followsOwner: boolean;
   defaultStatus: Status;
+  statusLabels: StatusLabels | null;
   team: string; // "" = just you, "legacy" = just you but with legacyPush's announcements
   legacyPush: string | null;
   teams: { id: string; name: string }[];
@@ -143,12 +152,14 @@ export function LightSettings({
           >
             {STATUSES.map((s) => (
               <option key={s} value={s}>
-                {STATUS_META[s].label}
+                {allLabels(statusLabels)[s]}
               </option>
             ))}
           </Select>
         </Row>
       )}
+
+      {isOwner && !follows && <LightNames deviceId={deviceId} statusLabels={statusLabels} />}
 
       {isOwner && (
         <Row title="Team" hint={teams.length ? "Its admins can manage it, and it shows the team's announcements." : "Join or make a team to share announcements."}>
@@ -198,5 +209,59 @@ export function LightSettings({
         </p>
       )}
     </div>
+  );
+}
+
+// What a light with its own status calls the statuses (a boardroom: "Room free", "In use").
+function LightNames({ deviceId, statusLabels }: { deviceId: string; statusLabels: StatusLabels | null }) {
+  const initial = Object.fromEntries(STATUSES.map((s) => [s, statusLabels?.[s] ?? ""])) as Record<Status, string>;
+  const [saved, setSaved] = useState(initial);
+  const [names, setNames] = useState(initial);
+  const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
+  const [pending, start] = useTransition();
+  const dirty = STATUSES.some((s) => tidyLabel(names[s]) !== tidyLabel(saved[s]));
+
+  return (
+    <form
+      className="space-y-3 py-4"
+      onSubmit={(e) => {
+        e.preventDefault();
+        start(async () => {
+          const r = await setLightLabelsAction(deviceId, names);
+          if (r.ok) setSaved(names);
+          setMessage(r.ok ? { ok: true, text: "Saved." } : { ok: false, text: `${r.status ? `${STANDARD_LABEL[r.status]}: ` : ""}${r.error}` });
+        });
+      }}
+    >
+      <div>
+        <p className="text-sm font-medium">Status names</p>
+        <p className="mt-0.5 text-sm text-muted">What this light calls each status, up to {LABEL_MAX} characters. Blank keeps the standard word.</p>
+      </div>
+      <div className="grid gap-2 sm:grid-cols-2">
+        {STATUSES.map((s) => (
+          <Input
+            key={s}
+            aria-label={`Name for ${STANDARD_LABEL[s]}`}
+            placeholder={STANDARD_LABEL[s]}
+            maxLength={LABEL_MAX}
+            value={names[s]}
+            onChange={(e) => {
+              setMessage(null);
+              setNames((n) => ({ ...n, [s]: e.target.value }));
+            }}
+          />
+        ))}
+      </div>
+      <div className="flex flex-wrap items-center gap-3">
+        <Button size="sm" disabled={pending || !dirty}>
+          {pending ? "Saving…" : "Save names"}
+        </Button>
+        {message && (
+          <p className={cx("text-sm", message.ok ? "text-muted" : "text-danger")} role={message.ok ? "status" : "alert"}>
+            {message.text}
+          </p>
+        )}
+      </div>
+    </form>
   );
 }

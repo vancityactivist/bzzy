@@ -19,6 +19,7 @@ import { type RingChoice, RingPicker } from "@/components/ring-picker";
 import { type ShowColorDraft, ShowColorPicker } from "@/components/show-color-picker";
 import { type LedStyle, PUSH_COLORS, PUSH_FLASHES, pushLeds } from "@/lib/push-rules";
 import { allowedRing } from "@/lib/ring";
+import { allLabels, type StatusLabels } from "@/lib/status-labels";
 import { AUTO_TEXT, parseShowColors, type ShowColors } from "@/lib/show-colors";
 import { LED_RGB, screenText, statusCut, type ScreenView, viewFor, withShow, wrapBar, wrapMessage } from "@/lib/screen";
 
@@ -35,6 +36,7 @@ export type PreviewDevice = {
   baseRing?: LedStyle | null; // the same, leaving out their own show now's
   allowFlash?: boolean; // "Allow flashing" on the light's page
   styles?: Record<Status, LedStyle | null>; // each status's style, for drafts
+  labels?: StatusLabels | null; // the status names its screen draws (firmware with "labels")
 };
 
 // What's on the screens now from "show now", if it's visible.
@@ -121,6 +123,7 @@ type Ctx = {
   show: ShowDraft;
   setShow: (d: Partial<ShowDraft>) => void;
   resetShow: () => void;
+  names: Record<Status, string>; // what they call each status
 };
 
 const Studio = createContext<Ctx | null>(null);
@@ -136,8 +139,10 @@ export function StudioProvider({
   initialShow,
   light = null,
   lightsLabel = "Your lights",
+  labels = null,
   children,
 }: {
+  labels?: StatusLabels | null;
   library: LibraryGif[];
   live: LiveShow | null;
   light?: string | null;
@@ -168,8 +173,9 @@ export function StudioProvider({
       show,
       setShow: (d) => setShowState((s) => ({ ...s, ...d })),
       resetShow: () => setShowState(EMPTY_SHOW),
+      names: allLabels(labels),
     }),
-    [library, light, lightsLabel, live, focus, status, setStatus, show],
+    [library, light, lightsLabel, live, focus, status, setStatus, show, labels],
   );
   return <Studio.Provider value={value}>{children}</Studio.Provider>;
 }
@@ -282,7 +288,7 @@ export function StudioPreview({
       status: s,
       text: status.text.trim(),
       until: status.minutes === KEEP_UNTIL ? status.keepUntil : minutesFromNow(status.minutes),
-    });
+    }, true, device.labels);
     gif = device.gifs[s];
     ring = device.styles?.[s] ?? null;
     draft = true;
@@ -441,7 +447,7 @@ function Chips({
 }
 
 export function StatusControls({ active = null, className }: { active?: ActiveStatus | null; className?: string }) {
-  const { setFocus, status, setStatus: setDraft, live } = useStudio();
+  const { setFocus, status, setStatus: setDraft, live, names } = useStudio();
   const form = useRef<HTMLFormElement>(null);
   // While a show has the screen, the status is only what the light glows.
   const covered = live !== null;
@@ -522,7 +528,7 @@ export function StatusControls({ active = null, className }: { active?: ActiveSt
             "The screen only has plain letters: emoji and accents are left out."
           ) : sendWith ? (
             <>
-              Optional, shown under your status.<span className="max-sm:hidden"> Press Enter to send it with {STATUS_META[sendWith].label}.</span>
+              Optional, shown under your status.<span className="max-sm:hidden"> Press Enter to send it with {names[sendWith]}.</span>
             </>
           ) : (
             "Optional, shown under your status."
@@ -535,7 +541,7 @@ export function StatusControls({ active = null, className }: { active?: ActiveSt
       {manual && changed && (
         <div className="flex justify-end">
           <Button size="sm" name="status" value={manual.status}>
-            Update {STATUS_META[manual.status].label}
+            Update {names[manual.status]}
           </Button>
         </div>
       )}
@@ -546,13 +552,13 @@ export function StatusControls({ active = null, className }: { active?: ActiveSt
 // The four status buttons. Tapping one sends the form; until the page comes back, the one
 // you tapped says so and the others wait, so a slow connection doesn't look like a dead tap.
 function StatusTiles({ active, covered }: { active: ActiveStatus | null; covered: boolean }) {
-  const { focus, status, setStatus: setDraft } = useStudio();
+  const { focus, status, setStatus: setDraft, names } = useStudio();
   const { pending, data } = useFormStatus();
   const sending = pending ? (data?.get("status") as Status | null) : null;
   return (
     <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4" aria-busy={pending || undefined}>
       {STATUSES.map((s) => {
-        const meta = STATUS_META[s];
+        const meta = { ...STATUS_META[s], label: names[s] };
         const isActive = sending ? sending === s : active?.status === s;
         // Under the pointer or keyboard focus: what the preview is showing.
         const previewing = focus === "status" && status.status === s && !isActive;

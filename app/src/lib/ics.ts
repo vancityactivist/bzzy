@@ -22,10 +22,13 @@ export type CachedEvent = {
 export const FETCH_WINDOW_DAYS = 7;
 export const DEVICE_HORIZON_SEC = 24 * 3600;
 
+// "In a meeting" and "Out of office" say what the event is. A hidden do-not-disturb event
+// (a Focus calendar) has no text, so the light shows the status's own name for it, which
+// people can change (lib/status-labels.ts).
 const HIDDEN_TITLE: Record<Status, string> = {
   busy: "In a meeting",
   away: "Out of office",
-  dnd: "Do not disturb",
+  dnd: "",
   free: "",
 };
 

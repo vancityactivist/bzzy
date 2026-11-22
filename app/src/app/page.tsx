@@ -3,7 +3,6 @@ import { Suspense } from "react";
 
 import { AppShell } from "@/components/app-shell";
 import { Landing } from "@/components/landing";
-import { STATUS_META } from "@/components/status-meta";
 import Link from "next/link";
 
 import { Button, Card, Container, cx, StatusDot } from "@/components/ui";
@@ -24,7 +23,9 @@ import { gifPrefsForUser } from "@/lib/gif-prefs";
 import { getPresence } from "@/lib/presence";
 import { liveVersionFor } from "@/lib/live";
 import { isDark, signTicket } from "@/lib/live-rules";
-import { hasFeature, nowSeconds, showVisible, STATUSES } from "@/lib/protocol";
+import { hasFeature, nowSeconds, showVisible, type Status, STATUSES } from "@/lib/protocol";
+import { getLook } from "@/lib/look";
+import { labelInSentence, statusLabel } from "@/lib/status-labels";
 import { resolveScreen, screenText, viewFor } from "@/lib/screen";
 import { getCurrentUser } from "@/lib/session";
 import { ringNow } from "@/lib/push-rules";
@@ -99,13 +100,14 @@ async function HomeContent({ searchParams }: { searchParams: PageProps<"/">["sea
 
   const now = nowSeconds();
   await refreshStaleCalendars(user.id);
-  const [devices, uploads, prefs, clock, gifs, params] = await Promise.all([
+  const [devices, uploads, prefs, clock, gifs, params, look] = await Promise.all([
     devicesForUser(user.id),
     gifsForUser(user.id),
     gifPrefsForUser(user.id),
     userClock(user.id),
     resolveUserGifs(user.id),
     searchParams,
+    getLook(user.id),
   ]);
   // Lights that show this person's status (team devices can belong to others), online
   // ones first, so the preview draws a light that's showing what it says.
@@ -116,6 +118,11 @@ async function HomeContent({ searchParams }: { searchParams: PageProps<"/">["sea
   // ?light=<id>: one of their lights with its own status. Otherwise: them.
   const target = ownLights.find((d) => d.id === params.light) ?? null;
   const shown = target ? [target] : followers;
+  // What they (or the light with its own status) call each status.
+  const labels = target ? target.statusLabels : look.statusLabels;
+  const nameOf = (st: Status) => statusLabel(st, labels);
+  // A light draws the names only once its firmware can.
+  const screenLabels = (d: (typeof devices)[number]) => (hasFeature(d.features, "labels") ? labels : null);
 
   const [presence, { schedule }, show] = await Promise.all([
     target ? getLightStatus(target.id).then((r) => r.presence) : getPresence(user.id),
@@ -194,8 +201,9 @@ async function HomeContent({ searchParams }: { searchParams: PageProps<"/">["sea
             id: d.id,
             name: d.name,
             offline: online(d) ? null : d.lastSeenAt ? `Offline · seen ${relativeTime(d.lastSeenAt, now * 1000)}` : "Never connected",
-            view: viewFor(resolved),
+            view: viewFor(resolved, true, screenLabels(d)),
             gifs: statusGifs,
+            labels: screenLabels(d),
             ring: ringFor({ ...d.ring, status: resolved.status, schedule, now, push: ringPush, show: ringShow }),
             // Without their show now's: what a new show with no ring of its own gets.
             baseRing: ringFor({ ...d.ring, status: resolved.status, schedule, now, push: ringPush }),
@@ -210,7 +218,8 @@ async function HomeContent({ searchParams }: { searchParams: PageProps<"/">["sea
           {
             id: "example",
             name: "How a new light would look",
-            view: viewFor(resolveScreen({ now, defaultStatus: "free", presence, schedule })),
+            view: viewFor(resolveScreen({ now, defaultStatus: look.defaultStatus, presence, schedule }), true, labels),
+            labels,
             gifs: mine.length > 0 ? statusGifs : defaultPreviewSrcs(),
           },
         ];
@@ -228,7 +237,7 @@ async function HomeContent({ searchParams }: { searchParams: PageProps<"/">["sea
       ? { status: current.status, source: "calendar" }
       : null;
 
-  const between = STATUS_META[(target ?? shown[0])?.defaultStatus ?? "free"].label;
+  const between = nameOf((target ?? shown[0])?.defaultStatus ?? look.defaultStatus);
   const showing = live ?? current ?? null;
   const names = shown.map((d) => d.name);
   const lightsLabel = target ? target.name : names.length === 0 ? "Your lights" : names.length === 1 ? names[0] : `${names.slice(0, -1).join(", ")} and ${names.at(-1)}`;
@@ -254,7 +263,7 @@ async function HomeContent({ searchParams }: { searchParams: PageProps<"/">["sea
         <p className="flex min-w-0 items-center gap-2">
           <StatusDot status={showing.status} size="lg" />
           <span className="min-w-0 truncate">
-            <span className="font-semibold">{STATUS_META[showing.status].label}</span>
+            <span className="font-semibold">{nameOf(showing.status)}</span>
             {showing.text && <span className="text-muted"> · {showing.text}</span>}
           </span>
         </p>
@@ -277,7 +286,7 @@ async function HomeContent({ searchParams }: { searchParams: PageProps<"/">["sea
                 : target
                   ? "Nothing set"
                   : next
-                    ? `${between} now · ${STATUS_META[next.status].label.toLowerCase()} at ${at(next.start)}`
+                    ? `${between} now · ${labelInSentence(next.status, labels)} at ${at(next.start)}`
                     : `${between} between meetings`}
         </p>
         {liveShow
@@ -337,6 +346,7 @@ async function HomeContent({ searchParams }: { searchParams: PageProps<"/">["sea
           live={liveShow}
           light={target?.id ?? null}
           lightsLabel={lightsLabel}
+          labels={labels}
           initialShow={library.some((g) => g.choice === pick) ? pick : undefined}
         >
           <div className="grid grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:items-start lg:gap-8">

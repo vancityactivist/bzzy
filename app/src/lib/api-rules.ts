@@ -8,6 +8,7 @@ import { z } from "zod";
 import { ledStyle, type LedStyle } from "./push-rules";
 import { type Block, clipText, type Presence, STATUSES, type Status } from "./protocol";
 import { resolveScreen } from "./screen";
+import { statusLabel, type StatusLabels } from "./status-labels";
 
 // ---- tokens ----
 
@@ -244,15 +245,18 @@ export type ApiShow = {
 
 export type ApiSource = "manual" | "calendar" | "default";
 
+// `status` is the key (free, busy, dnd, away), which never changes: use it in code. `label`
+// is what the person calls it (lib/status-labels.ts): use it for display.
 export type ApiStatus = {
   status: Status;
+  label: string;
   source: ApiSource;
   text: string;
   // When this status ends (manual expiry or the meeting's end); null = no end known.
   until: string | null;
-  manual: { status: Status; text: string; until: string | null; setAt: string | null; setBy: string } | null;
-  meeting: { status: Status; text: string; start: string; end: string } | null;
-  next: { status: Status; text: string; start: string; end: string } | null;
+  manual: { status: Status; label: string; text: string; until: string | null; setAt: string | null; setBy: string } | null;
+  meeting: { status: Status; label: string; text: string; start: string; end: string } | null;
+  next: { status: Status; label: string; text: string; start: string; end: string } | null;
   // Outside the person's working hours, when their lights go dark.
   offHours: boolean;
 };
@@ -271,20 +275,23 @@ export function apiStatus(opts: {
   presenceSource: string | null;
   schedule: Block[];
   offHours: boolean;
+  labels?: StatusLabels | null;
 }): ApiStatus {
   const { now, presence, schedule } = opts;
+  const label = (s: Status) => statusLabel(s, opts.labels);
   const r = resolveScreen({ now, defaultStatus: opts.defaultStatus, presence, schedule });
   const live = presence?.active && (presence.until === 0 || presence.until > now) ? presence : null;
-  const block = (b: Block) => ({ status: b.status, text: b.text, start: iso(b.start)!, end: iso(b.end)! });
+  const block = (b: Block) => ({ status: b.status, label: label(b.status), text: b.text, start: iso(b.start)!, end: iso(b.end)! });
   const current = schedule.find((b) => b.start <= now && now < b.end);
   const next = schedule.filter((b) => b.start > now).sort((a, b) => a.start - b.start)[0];
   return {
     status: r.status,
+    label: label(r.status),
     source: r.source,
     text: r.text,
     until: iso(r.until),
     manual: live
-      ? { status: live.status, text: live.text, until: iso(live.until), setAt: iso(live.updatedAt), setBy: describeSource(opts.presenceSource) }
+      ? { status: live.status, label: label(live.status), text: live.text, until: iso(live.until), setAt: iso(live.updatedAt), setBy: describeSource(opts.presenceSource) }
       : null,
     meeting: current ? block(current) : null,
     next: next ? block(next) : null,
