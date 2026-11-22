@@ -148,6 +148,13 @@
       "when": 1795317429592,
       "tag": "0020_calendar_priority",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1795318154480,
+      "tag": "0021_calendar_lights",
+      "breakpoints": true
     }
   ]
 }

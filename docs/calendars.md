@@ -5,8 +5,14 @@ Full plan: the "bzzy: Google and iCloud calendars" design doc (2026-11-22).
 
 ## Today
 
-- Calendars belong to a person. Every light that follows them merges all their
-  calendars that have **Sets my status** on.
+- Calendars belong to a person. Each calendar has **Shows on** (`calendar.light_ids`):
+  empty means every light that follows you; a list means exactly those lights, which can
+  include lights with their own status (a meeting-room light, say). Set it under More on
+  Settings → Calendars, or tick calendars on a light's page (`calendarsForLight` in
+  `lib/calendar-lights.ts`).
+- Your own status (Home page, team dashboard, `/v1/status`) uses the calendars that reach a
+  light that follows you (`personCalendars`), so a calendar picked only for an own-status
+  light doesn't make you busy.
 - Sources: ICS links (Outlook published calendars, Google secret address, iCloud public
   calendar) and connected Google accounts (read-only). Read lazily: a poll or page load re-reads any calendar older than 5 minutes,
   after responding. No cron.
@@ -20,8 +26,8 @@ Full plan: the "bzzy: Google and iCloud calendars" design doc (2026-11-22).
 - Shared Google calendars (ones you don't own) only count events you've accepted or said
   maybe to. Your own calendars count everything except what you declined.
 - Settings → Calendars (`/settings/calendars`) has the combined next 24 hours (with the
-  calendar behind each block), the calendars setting status in priority order (up/down
-  buttons, Counts as, More for titles/refresh/remove), and accounts as folded groups with an
+  calendar behind each block), the calendars setting status in priority order (drag
+  handles or arrow keys on the handle, Counts as, More for titles/refresh/remove), and accounts as folded groups with an
   on/off switch per calendar. Google and CalDAV calendar lists are re-read once a day there,
   so calendars added in Google or iCloud show up.
 - The same meeting on two calendars (same iCalendar UID and start) shows once.
@@ -89,4 +95,3 @@ Full plan: the "bzzy: Google and iCloud calendars" design doc (2026-11-22).
 
 1. Google push notifications for near-instant updates.
 2. Google review (submitted 2026-11-21).
-3. Calendars for lights that don't follow their owner.

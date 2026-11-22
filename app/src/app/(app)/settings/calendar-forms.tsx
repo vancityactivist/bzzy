@@ -3,15 +3,17 @@
 import { useSearchParams } from "next/navigation";
 import { useActionState, useEffect, useId, useRef, useState, useTransition } from "react";
 
-import { ChevronDownIcon, ChevronUpIcon, PlusIcon, RefreshIcon, TrashIcon } from "@/components/icons";
+import { GripIcon, PlusIcon, RefreshIcon, TrashIcon } from "@/components/icons";
 import { Button, Field, Input, Select } from "@/components/ui";
 
 import {
   addCalendarAction,
   type CalendarFormResult,
   connectCalDavAction,
-  moveCalendarAction,
+  reorderCalendarsAction,
   setCalendarCountsAsAction,
+  setCalendarLightsAction,
+  setLightCalendarAction,
   updateCalDavPasswordAction,
   refreshCalendarAction,
   removeCalendarAccountAction,
@@ -301,58 +303,127 @@ export function UpdatePasswordForm({ accountId }: { accountId: string }) {
   );
 }
 
-// Up/down in the priority order, and how the calendar's events count.
-export function PriorityControls({
-  id,
-  name,
-  first,
-  last,
-  countsAs,
-}: {
-  id: string;
-  name: string;
-  first: boolean;
-  last: boolean;
-  countsAs: string;
-}) {
+// How a calendar's events count.
+export function CountsAsPicker({ id, name, countsAs }: { id: string; name: string; countsAs: string }) {
   const [pending, start] = useTransition();
   return (
-    <span className="flex shrink-0 items-center gap-1">
-      <Select
-        aria-label={`How ${name} counts`}
-        value={countsAs}
-        disabled={pending}
-        onChange={(e) => {
-          const v = e.target.value;
-          start(() => setCalendarCountsAsAction(id, v));
-        }}
-        wrapperClassName="w-auto"
-        className="h-8 text-sm"
-      >
-        <option value="auto">Each event&apos;s setting</option>
-        <option value="busy">Always busy</option>
-        <option value="dnd">Always do not disturb</option>
-        <option value="away">Always away</option>
-      </Select>
-      <Button
-        size="icon-sm"
-        variant="ghost"
-        aria-label={`Move ${name} up`}
-        disabled={pending || first}
-        onClick={() => start(() => moveCalendarAction(id, -1))}
-      >
-        <ChevronUpIcon />
-      </Button>
-      <Button
-        size="icon-sm"
-        variant="ghost"
-        aria-label={`Move ${name} down`}
-        disabled={pending || last}
-        onClick={() => start(() => moveCalendarAction(id, 1))}
-      >
-        <ChevronDownIcon />
-      </Button>
-    </span>
+    <Select
+      aria-label={`How ${name} counts`}
+      value={countsAs}
+      disabled={pending}
+      onChange={(e) => {
+        const v = e.target.value;
+        start(() => setCalendarCountsAsAction(id, v));
+      }}
+      wrapperClassName="w-auto shrink-0"
+      className="h-8 text-sm"
+    >
+      <option value="auto">Each event&apos;s setting</option>
+      <option value="busy">Always busy</option>
+      <option value="dnd">Always do not disturb</option>
+      <option value="away">Always away</option>
+    </Select>
+  );
+}
+
+type DragState = { id: string; from: number; startY: number; dy: number; rects: { top: number; height: number }[] };
+
+// The calendars that set status, in priority order. Drag a row by its handle (mouse or
+// touch), or focus the handle and use the arrow keys. The new order is shown at once and
+// saved in the background.
+export function SortableCalendars({ items }: { items: { id: string; name: string; node: React.ReactNode }[] }) {
+  const key = items.map((i) => i.id).join(",");
+  const [base, setBase] = useState(key);
+  const [order, setOrder] = useState(() => items.map((i) => i.id));
+  if (base !== key) {
+    setBase(key);
+    setOrder(items.map((i) => i.id));
+  }
+  const [drag, setDrag] = useState<DragState | null>(null);
+  const [, start] = useTransition();
+  const rows = useRef(new Map<string, HTMLLIElement>());
+  const handles = useRef(new Map<string, HTMLButtonElement>());
+  const byId = new Map(items.map((i) => [i.id, i]));
+  const ids = order.filter((id) => byId.has(id));
+
+  // Where the dragged row would land: past every other row whose middle it has crossed.
+  let target = -1;
+  if (drag) {
+    const r = drag.rects[drag.from];
+    const middle = r.top + r.height / 2 + drag.dy;
+    target = drag.rects.filter((x, i) => i !== drag.from && middle > x.top + x.height / 2).length;
+  }
+
+  const commit = (from: number, to: number) => {
+    if (from === to) return;
+    const next = [...ids];
+    const [moved] = next.splice(from, 1);
+    next.splice(to, 0, moved);
+    setOrder(next);
+    start(() => reorderCalendarsAction(next));
+    return moved;
+  };
+
+  return (
+    <ol className="mt-4 divide-y divide-line rounded-xl border border-line">
+      {ids.map((id, i) => {
+        let shift = 0;
+        if (drag && i !== drag.from) {
+          const h = drag.rects[drag.from].height;
+          if (drag.from < target && i > drag.from && i <= target) shift = -h;
+          if (target < drag.from && i >= target && i < drag.from) shift = h;
+        }
+        const dragging = drag?.id === id;
+        return (
+          <li
+            key={id}
+            ref={(el) => {
+              if (el) rows.current.set(id, el);
+              else rows.current.delete(id);
+            }}
+            className={`relative flex gap-2 bg-card p-3 pl-1 ${dragging ? "z-10 rounded-xl shadow-lg ring-1 ring-line-strong" : drag ? "transition-transform duration-150" : ""}`}
+            style={{ transform: dragging ? `translateY(${drag.dy}px)` : shift ? `translateY(${shift}px)` : undefined }}
+          >
+            <button
+              type="button"
+              ref={(el) => {
+                if (el) handles.current.set(id, el);
+                else handles.current.delete(id);
+              }}
+              aria-label={`Reorder ${byId.get(id)!.name}. Use the up and down arrow keys.`}
+              className={`flex w-7 shrink-0 touch-none items-start justify-center rounded-md pt-1 text-muted hover:text-foreground ${dragging ? "cursor-grabbing" : "cursor-grab"}`}
+              onPointerDown={(e) => {
+                if (e.button !== 0) return;
+                e.currentTarget.setPointerCapture(e.pointerId);
+                const rects = ids.map((x) => {
+                  const r = rows.current.get(x)!.getBoundingClientRect();
+                  return { top: r.top, height: r.height };
+                });
+                setDrag({ id, from: i, startY: e.clientY, dy: 0, rects });
+              }}
+              onPointerMove={(e) => {
+                if (drag?.id === id) setDrag({ ...drag, dy: e.clientY - drag.startY });
+              }}
+              onPointerUp={() => {
+                if (drag?.id === id) commit(drag.from, target);
+                setDrag(null);
+              }}
+              onPointerCancel={() => setDrag(null)}
+              onKeyDown={(e) => {
+                const to = e.key === "ArrowUp" ? i - 1 : e.key === "ArrowDown" ? i + 1 : null;
+                if (to === null || to < 0 || to >= ids.length) return;
+                e.preventDefault();
+                commit(i, to);
+                requestAnimationFrame(() => handles.current.get(id)?.focus());
+              }}
+            >
+              <GripIcon className="size-5" />
+            </button>
+            {byId.get(id)!.node}
+          </li>
+        );
+      })}
+    </ol>
   );
 }
 
@@ -385,5 +456,87 @@ export function CalendarDot({ color }: { color: string | null }) {
       className="inline-block size-2.5 shrink-0 rounded-full bg-line-strong"
       style={color && /^#[0-9a-f]{6}$/i.test(color) ? { backgroundColor: color } : undefined}
     />
+  );
+}
+
+// Which lights use a calendar: every light that follows you (no list), or exactly the
+// lights ticked here.
+export function ShowsOn({
+  id,
+  lightIds,
+  lights,
+}: {
+  id: string;
+  lightIds: string[] | null;
+  lights: { id: string; name: string; followsOwner: boolean }[];
+}) {
+  const [pending, start] = useTransition();
+  const picked = lightIds ?? lights.filter((l) => l.followsOwner).map((l) => l.id);
+  const save = (next: string[] | null) => start(() => setCalendarLightsAction(id, next));
+  return (
+    <fieldset className="space-y-1.5 text-sm" disabled={pending}>
+      <legend className="text-xs font-medium tracking-wide text-muted uppercase">Shows on</legend>
+      <label className="flex cursor-pointer items-center gap-2 pt-1">
+        <input type="radio" className="size-4 accent-foreground" checked={lightIds === null} onChange={() => save(null)} />
+        Every light that follows me
+      </label>
+      <label className="flex cursor-pointer items-center gap-2">
+        <input type="radio" className="size-4 accent-foreground" checked={lightIds !== null} onChange={() => save(picked)} />
+        Only these lights
+      </label>
+      {lightIds !== null && (
+        <div className="space-y-1 pl-6">
+          {lights.length === 0 && <p className="text-muted">You don&apos;t have any lights yet.</p>}
+          {lights.map((l) => (
+            <label key={l.id} className="flex cursor-pointer items-center gap-2">
+              <input
+                type="checkbox"
+                className="size-4 accent-foreground"
+                checked={lightIds.includes(l.id)}
+                onChange={(e) => {
+                  const on = e.target.checked;
+                  save(on ? [...lightIds, l.id] : lightIds.filter((x) => x !== l.id));
+                }}
+              />
+              <span className="truncate">{l.name}</span>
+              {!l.followsOwner && <span className="text-muted">own status</span>}
+            </label>
+          ))}
+        </div>
+      )}
+    </fieldset>
+  );
+}
+
+// On a light's page: tick the calendars this light uses.
+export function LightCalendarToggle({
+  calendarId,
+  deviceId,
+  name,
+  color,
+  on,
+}: {
+  calendarId: string;
+  deviceId: string;
+  name: string;
+  color: string | null;
+  on: boolean;
+}) {
+  const [pending, start] = useTransition();
+  return (
+    <label className="flex cursor-pointer items-center gap-2 py-1 text-sm">
+      <input
+        type="checkbox"
+        className="size-4 accent-foreground"
+        checked={on}
+        disabled={pending}
+        onChange={(e) => {
+          const v = e.target.checked;
+          start(() => setLightCalendarAction(calendarId, deviceId, v));
+        }}
+      />
+      <CalendarDot color={color} />
+      <span className="truncate">{name}</span>
+    </label>
   );
 }

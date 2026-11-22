@@ -6,7 +6,16 @@ import { db, schema } from "@/db";
 
 import { type ApiShow, apiStatus, type ApiStatus, iso } from "./api-rules";
 import { cachedRead, tag } from "./cache";
-import { calendarsForUser, type CalendarRow, refreshCalendar, scheduleFromCalendars, staleCalendars, userClock } from "./calendar";
+import {
+  calendarsForLight,
+  calendarsForUser,
+  type CalendarRow,
+  personCalendars,
+  refreshCalendar,
+  scheduleFromCalendars,
+  staleCalendars,
+  userClock,
+} from "./calendar";
 import type { ResolvedGif } from "./gifs";
 import { getLightShow, getLightStatus } from "./light-state";
 import { getLook } from "./look";
@@ -130,6 +139,13 @@ export async function refreshDueCalendars(snap: ApiSnapshot) {
 const offHours = (snap: ApiSnapshot, now: number) =>
   !!snap.workHours && !inWorkHours(workWindows(snap.workHours, snap.timeZone, now), now);
 
+// The calendars that make the person busy (not ones picked only for own-status lights).
+const personSchedule = (snap: ApiSnapshot) =>
+  personCalendars(
+    snap.calendars,
+    snap.lights.filter((l) => l.followsOwner).map((l) => l.id),
+  );
+
 // ---- GET /v1/status ----
 
 export function statusFrom(snap: ApiSnapshot, now: number): ApiStatus {
@@ -138,7 +154,7 @@ export function statusFrom(snap: ApiSnapshot, now: number): ApiStatus {
     defaultStatus: snap.defaultStatus,
     presence: snap.presence,
     presenceSource: snap.presenceSource,
-    schedule: scheduleFromCalendars(snap.calendars, now),
+    schedule: scheduleFromCalendars(personSchedule(snap), now),
     offHours: offHours(snap, now),
   });
 }
@@ -182,13 +198,14 @@ export type ApiLight = {
 };
 
 export async function lightsFrom(snap: ApiSnapshot, now: number): Promise<ApiLight[]> {
-  const schedule = scheduleFromCalendars(snap.calendars, now);
   const dark = offHours(snap, now);
   const seen = await liveSeen(snap.lights);
   return seen.map((l) => {
-    // A light with its own status ignores its owner's status, Show now and calendar.
+    // A light with its own status ignores its owner's status and Show now. Each light
+    // uses the calendars picked for it (calendarsForLight).
     const { presence, show } = l.own ?? snap;
-    const resolved = resolveScreen({ now, defaultStatus: l.defaultStatus, presence, schedule: l.own ? [] : schedule });
+    const schedule = scheduleFromCalendars(calendarsForLight(snap.calendars, l), now);
+    const resolved = resolveScreen({ now, defaultStatus: l.defaultStatus, presence, schedule });
     const push = pushForLight(snap, l, now);
     const ownShow = !push && show && showVisible(show, presence, now) ? show : null;
     const onScreen = push
