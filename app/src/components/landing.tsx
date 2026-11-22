@@ -130,7 +130,8 @@ export function Landing() {
         <section className="lp-hero" aria-labelledby="hero-h">
           <div className="lp-wrap lp-grid lp-hero__grid">
             <div className="lp-c1-6">
-              <h1 id="hero-h">Desk status light for heads-down work</h1>
+              {/* A non-breaking hyphen, so "heads-down" never splits across lines. */}
+              <h1 id="hero-h">Desk status light for heads‑down work</h1>
               <p className="lead">It clips to your monitor and shows your status in light.</p>
               <div className="lp-hero__actions flex flex-wrap items-center gap-3">
                 <a className={buttonClass("primary", "md", "h-12 px-5 text-[15px]")} href="#build">
