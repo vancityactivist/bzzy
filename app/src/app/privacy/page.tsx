@@ -89,6 +89,14 @@ export default function PrivacyPage() {
           .
         </p>
 
+        <p>
+          See also the{" "}
+          <Link className="underline underline-offset-2" href="/terms">
+            terms
+          </Link>
+          .
+        </p>
+
         <H>Questions</H>
         <p>
           Email{" "}
