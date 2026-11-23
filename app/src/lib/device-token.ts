@@ -1,15 +1,15 @@
 // Device ids and tokens. The token is shown to the person once, typed into the
 // device's setup page, and only its SHA-256 is stored.
 
-import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
+import { createHash, randomInt, timingSafeEqual } from "node:crypto";
 
 // No 0/O/1/l/I so it's easy to type on a phone.
 const ALPHABET = "23456789abcdefghjkmnpqrstuvwxyz";
 
+// randomInt is uniform: a byte % 31 would favour the first 8 symbols.
 function randomString(len: number): string {
-  const bytes = randomBytes(len);
   let out = "";
-  for (let i = 0; i < len; i++) out += ALPHABET[bytes[i] % ALPHABET.length];
+  for (let i = 0; i < len; i++) out += ALPHABET[randomInt(ALPHABET.length)];
   return out;
 }
 

@@ -107,7 +107,7 @@ export function apiRoute(opts: { scope: Scope | Scope[] | null; kind: "read" | "
       return apiJson(data, status, limitHeaders(limit), requestId);
     } catch (err) {
       if (err instanceof ApiError) return errorResponse(err, requestId);
-      console.error(`[api] ${req.method} ${req.nextUrl.pathname} failed (${requestId})`, err);
+      console.error("[api] %s %s failed (%s)", req.method, req.nextUrl.pathname, requestId, err);
       return errorResponse(new ApiError(500, "server_error", `Something went wrong on our side. Quote ${requestId} if you report it.`), requestId);
     }
   };

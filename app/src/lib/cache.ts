@@ -33,7 +33,7 @@ export async function cacheGet<T>(key: string): Promise<T | null> {
   try {
     return decode<T>(await cache().get(key));
   } catch (err) {
-    console.warn(`[cache] get ${key} failed`, err);
+    console.warn("[cache] get %s failed", key, err);
     return null;
   }
 }
@@ -43,7 +43,7 @@ export async function cacheSet(key: string, value: unknown, ttlSeconds: number, 
   try {
     await cache().set(key, encode(value), { ttl: ttlSeconds, tags });
   } catch (err) {
-    console.warn(`[cache] set ${key} failed`, err);
+    console.warn("[cache] set %s failed", key, err);
   }
 }
 

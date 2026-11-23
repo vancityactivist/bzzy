@@ -60,12 +60,12 @@ describe("discoverCalDav", () => {
 
   it("doesn't send the login to a different site on redirect", async () => {
     const calls = fakeServer((c) =>
-      c.url.startsWith("https://dav.example.com")
+      new URL(c.url).host === "dav.example.com"
         ? new Response(null, { status: 302, headers: { location: "https://evil.example.org/" } })
         : new Response("", { status: 401 }),
     );
     await expect(discoverCalDav(new URL("https://dav.example.com/"), AUTH)).rejects.toBeInstanceOf(CalDavAuthFailed);
-    expect(calls.find((c) => c.url.startsWith("https://evil"))?.auth).toBeNull();
+    expect(calls.find((c) => new URL(c.url).host === "evil.example.org")?.auth).toBeNull();
   });
 
   it("says when the password is refused", async () => {
