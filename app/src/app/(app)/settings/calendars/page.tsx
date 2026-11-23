@@ -324,9 +324,14 @@ function lightCount(ids: string[], lights: { id: string; name: string }[]) {
 function providerName(a: { provider: string; serverUrl: string | null }) {
   if (a.provider === "google") return "Google Calendar";
   const host = a.serverUrl ? new URL(a.serverUrl).hostname : "";
-  if (host.endsWith("icloud.com")) return "iCloud";
-  if (host.endsWith("fastmail.com")) return "Fastmail";
+  if (onDomain(host, "icloud.com")) return "iCloud";
+  if (onDomain(host, "fastmail.com")) return "Fastmail";
   return host || "Calendar server";
+}
+
+// "icloud.com" or one of its subdomains, not "evilicloud.com".
+function onDomain(host: string, domain: string) {
+  return host === domain || host.endsWith(`.${domain}`);
 }
 
 function OutlookHelp() {

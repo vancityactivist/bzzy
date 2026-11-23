@@ -7,6 +7,9 @@ on:
   pull_request:
     paths: ["app/**", ".github/workflows/app.yml"]
 
+permissions:
+  contents: read
+
 jobs:
   check:
     runs-on: ubuntu-latest
