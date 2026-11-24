@@ -156,7 +156,7 @@ export default function PrivacyPage() {
           </li>
           <li>
             Access: only you can see your calendars in the app. Every request checks you are signed in and that the data is
-            yours. Access to the hosting and database is limited to Adam Glover.
+            yours. Access to the hosting and database is limited to Adam Glover, through a single Vercel login protected by two-factor authentication and a passkey.
           </li>
           <li>
             Minimum data: read-only permissions, only the next eight days of events, and nothing kept once you disconnect.
