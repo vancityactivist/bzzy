@@ -35,7 +35,7 @@ import { pushForDevice } from "@/lib/pushes";
 import { getShow } from "@/lib/show";
 import { REPO_URL, SITE_NAME, SITE_URL } from "@/lib/site";
 import { sharedTeamsForUser } from "@/lib/teams";
-import { workWindows } from "@/lib/work-hours";
+import { lightWorkHours, workWindows } from "@/lib/work-hours";
 
 import { relativeTime } from "./(app)/lights/relative-time";
 import { clearShowAction, clearStatus } from "./actions";
@@ -187,10 +187,13 @@ async function HomeContent({ searchParams }: { searchParams: PageProps<"/">["sea
   const next = schedule.find((b) => b.start > now);
   // "3:30 PM", the way the screen writes it (screen.ts untilLabel: fixed UTC-7).
   const at = (sec: number) => new Date(sec * 1000).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone: "Etc/GMT+7" });
-  // Outside working hours a light with firmware that knows about them is dark.
-  const windows = workWindows(clock.workHours, clock.timeZone, now);
-  const nextOn = windows.find((w) => w.start > now);
-  const darkLabel = isDark(windows, now) ? `Off hours${nextOn ? `, on at ${at(nextOn.start)}` : ""}` : null;
+  // Outside its working hours (yours, or its own) a light with firmware that knows about
+  // them is dark.
+  const darkLabel = (d: (typeof devices)[number]) => {
+    const windows = workWindows(lightWorkHours(d.hoursMode, d.ownHours, clock.workHours), clock.timeZone, now);
+    const nextOn = windows.find((w) => w.start > now);
+    return isDark(windows, now) ? `Off hours${nextOn ? `, on at ${at(nextOn.start)}` : ""}` : null;
+  };
   const statusGifs = Object.fromEntries(STATUSES.map((s) => [s, previewSrc(gifs[s])])) as PreviewDevice["gifs"];
   const previews: PreviewDevice[] =
     shown.length > 0
@@ -208,7 +211,7 @@ async function HomeContent({ searchParams }: { searchParams: PageProps<"/">["sea
             ring: ringFor({ ...d.ring, status: resolved.status, schedule, now, push: ringPush, show: ringShow }),
             // Without their show now's: what a new show with no ring of its own gets.
             baseRing: ringFor({ ...d.ring, status: resolved.status, schedule, now, push: ringPush }),
-            dark: hasFeature(d.features, "hours") ? darkLabel : null,
+            dark: hasFeature(d.features, "hours") ? darkLabel(d) : null,
             allowFlash: d.ring.allowFlash,
             styles: Object.fromEntries(
               STATUSES.map((s) => [s, ringFor({ ...d.ring, meetingWarn: null, status: s, schedule: [], now })]),

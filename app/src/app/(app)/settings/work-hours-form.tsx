@@ -33,27 +33,7 @@ export function WorkHoursForm({ hours, timeZone, zones }: { hours: WorkHours | n
         Turn my lights off outside working hours
       </label>
 
-      <fieldset disabled={!enabled} className="space-y-4 disabled:opacity-50">
-        <div className="flex flex-wrap gap-2" role="group" aria-label="Working days">
-          {ORDER.map((d) => (
-            <label
-              key={d}
-              className="flex cursor-pointer items-center gap-1.5 rounded-lg border border-line px-2.5 py-1.5 text-sm has-checked:border-foreground has-checked:bg-subtle"
-            >
-              <input type="checkbox" name="day" value={d} defaultChecked={shown.days.includes(d)} className="size-3.5 accent-foreground" />
-              {DAYS[d]}
-            </label>
-          ))}
-        </div>
-        <div className="flex gap-3">
-          <Field label="Start" htmlFor={`${id}-start`} className="w-32">
-            <Input id={`${id}-start`} name="start" type="time" required defaultValue={formatClock(shown.start)} />
-          </Field>
-          <Field label="End" htmlFor={`${id}-end`} className="w-32">
-            <Input id={`${id}-end`} name="end" type="time" required defaultValue={formatClock(shown.end)} />
-          </Field>
-        </div>
-      </fieldset>
+      <HoursFields hours={shown} disabled={!enabled} />
 
       <Field label="Time zone" htmlFor={`${id}-tz`} hint="Also used for all-day events in your calendars.">
         <Select id={`${id}-tz`} name="timeZone" defaultValue={timeZone}>
@@ -77,5 +57,34 @@ export function WorkHoursForm({ hours, timeZone, zones }: { hours: WorkHours | n
         )}
       </div>
     </form>
+  );
+}
+
+// The days and the start and end of a working day, sent as day/start/end
+// (actions.ts hoursFromForm). Shared with a light's own hours.
+export function HoursFields({ hours, disabled }: { hours: WorkHours; disabled?: boolean }) {
+  const id = useId();
+  return (
+    <fieldset disabled={disabled} className="space-y-4 disabled:opacity-50">
+      <div className="flex flex-wrap gap-2" role="group" aria-label="Working days">
+        {ORDER.map((d) => (
+          <label
+            key={d}
+            className="flex cursor-pointer items-center gap-1.5 rounded-lg border border-line px-2.5 py-1.5 text-sm has-checked:border-foreground has-checked:bg-subtle"
+          >
+            <input type="checkbox" name="day" value={d} defaultChecked={hours.days.includes(d)} className="size-3.5 accent-foreground" />
+            {DAYS[d]}
+          </label>
+        ))}
+      </div>
+      <div className="flex gap-3">
+        <Field label="Start" htmlFor={`${id}-start`} className="w-32">
+          <Input id={`${id}-start`} name="start" type="time" required defaultValue={formatClock(hours.start)} />
+        </Field>
+        <Field label="End" htmlFor={`${id}-end`} className="w-32">
+          <Input id={`${id}-end`} name="end" type="time" required defaultValue={formatClock(hours.end)} />
+        </Field>
+      </div>
+    </fieldset>
   );
 }

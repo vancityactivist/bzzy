@@ -29,7 +29,7 @@ import { ringFor, type LedStyles, type MeetingWarn } from "./ring";
 import { resolveScreen, type ScreenLayout, viewFor, withShow } from "./screen";
 import { liveSeen } from "./seen";
 import { type CurrentShow, getShow } from "./show";
-import { inWorkHours, type WorkHours, workWindows } from "./work-hours";
+import { inWorkHours, lightWorkHours, type WorkHours, workWindows } from "./work-hours";
 
 // What the API's read endpoints need about one person, kept in the runtime cache like a
 // light's poll bundle (lib/poll-bundle.ts), so an integration polling GET /v1/status
@@ -47,6 +47,9 @@ type Light = {
   // What it calls the statuses: its owner's, or its own when it doesn't follow them.
   statusLabels: StatusLabels | null;
   pushTeamId: string | null;
+  // Its working hours: "owner" (the person's), "own" (workHours) or "always".
+  hoursMode: string;
+  workHours: WorkHours | null;
   allowFlash: boolean;
   ledStyles: LedStyles | null;
   meetingWarn: MeetingWarn | null;
@@ -72,7 +75,7 @@ export type ApiSnapshot = {
   pushes: Push[];
 };
 
-const key = (userId: string) => `api:v3:${userId}`;
+const key = (userId: string) => `api:v4:${userId}`;
 const SNAPSHOT_TTL_SEC = 3 * 3600;
 
 async function load(userId: string) {
@@ -85,6 +88,8 @@ async function load(userId: string) {
         defaultStatus: schema.devices.defaultStatus,
         statusLabels: schema.devices.statusLabels,
         pushTeamId: schema.devices.pushTeamId,
+        hoursMode: schema.devices.hoursMode,
+        workHours: schema.devices.workHours,
         allowFlash: schema.devices.allowFlash,
         ledStyles: schema.devices.ledStyles,
         meetingWarn: schema.devices.meetingWarn,
@@ -143,8 +148,12 @@ export async function refreshDueCalendars(snap: ApiSnapshot) {
   await Promise.all(stale.map((c) => refreshCalendar(c, snap.timeZone)));
 }
 
-const offHours = (snap: ApiSnapshot, now: number) =>
-  !!snap.workHours && !inWorkHours(workWindows(snap.workHours, snap.timeZone, now), now);
+// Outside these hours (the person's, or a light's own); never when there are none.
+const outside = (hours: WorkHours | null, timeZone: string, now: number) =>
+  !!hours && !inWorkHours(workWindows(hours, timeZone, now), now);
+
+// The person's own off hours (GET /v1/status). Each light can keep its own (lightsFrom).
+const offHours = (snap: ApiSnapshot, now: number) => outside(snap.workHours, snap.timeZone, now);
 
 // The calendars that make the person busy (not ones picked only for own-status lights).
 const personSchedule = (snap: ApiSnapshot) =>
@@ -207,7 +216,6 @@ export type ApiLight = {
 };
 
 export async function lightsFrom(snap: ApiSnapshot, now: number): Promise<ApiLight[]> {
-  const dark = offHours(snap, now);
   const seen = await liveSeen(snap.lights);
   return seen.map((l) => {
     // A light with its own status ignores its owner's status and Show now. Each light
@@ -230,7 +238,7 @@ export async function lightsFrom(snap: ApiSnapshot, now: number): Promise<ApiLig
       online: isOnline(l.lastSeenAt, now * 1000, l.pollSec),
       lastSeenAt: l.lastSeenAt?.toISOString() ?? null,
       firmwareVersion: l.firmwareVersion,
-      dark,
+      dark: outside(lightWorkHours(l.hoursMode, l.workHours, snap.workHours), snap.timeZone, now),
       screen: { layout: view.layout, status: resolved.status, label: statusLabel(resolved.status, l.statusLabels), text: view.text, until: iso(view.until) },
       ring: ringFor({ ...l, status: resolved.status, schedule: l.own ? [] : schedule, now, push, show: ownShow }),
       push: push ? { id: push.id, text: push.text, gif: gifOut(push.gif) } : null,

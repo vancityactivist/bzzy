@@ -30,6 +30,7 @@ import {
 import { EXPIRY_WARNING_DAYS, SCOPE_INFO } from "@/lib/api-rules";
 import { tokensForUser } from "@/lib/api-tokens";
 import { accountsForUser } from "@/lib/calendar-accounts";
+import { devicesForUser } from "@/lib/devices";
 import { passkeysForUser } from "@/lib/passkeys";
 import { nowSeconds } from "@/lib/protocol";
 import { getCurrentUser } from "@/lib/session";
@@ -65,7 +66,7 @@ async function SettingsContent() {
   const user = await getCurrentUser();
   if (!user) return <SignIn />;
   await refreshStaleCalendars(user.id);
-  const [look, calendars, passkeys, clock, tokens, webhooks, accounts] =
+  const [look, calendars, passkeys, clock, tokens, webhooks, accounts, devices] =
     await Promise.all([
       getLook(user.id),
       calendarsForUser(user.id),
@@ -74,7 +75,10 @@ async function SettingsContent() {
       tokensForUser(user.id),
       webhooksForUser(user.id),
       accountsForUser(user.id),
+      devicesForUser(user.id),
     ]);
+  // Your lights with hours of their own, which this card doesn't change.
+  const ownHours = devices.filter((d) => d.ownerUserId === user.id && d.hoursMode !== "owner");
   const active = calendars.filter((c) => c.setsStatus);
   const problems =
     accounts.filter((a) => a.state !== "ok").length +
@@ -174,6 +178,24 @@ async function SettingsContent() {
             zones={timeZones(clock.timeZone)}
           />
         </div>
+        <p className="mt-4 text-sm text-muted">
+          {ownHours.length === 0 ? (
+            <>A light can have its own hours instead: open it under <Link href="/lights" className="underline underline-offset-2">Lights</Link>.</>
+          ) : (
+            <>
+              Not used by{" "}
+              {ownHours.map((d, i) => (
+                <span key={d.id}>
+                  {i > 0 && (i === ownHours.length - 1 ? " and " : ", ")}
+                  <Link href={`/lights/${d.id}`} className="underline underline-offset-2">
+                    {d.name}
+                  </Link>
+                </span>
+              ))}
+              , which {ownHours.length === 1 ? "has" : "have"} {ownHours.length === 1 ? "its" : "their"} own.
+            </>
+          )}
+        </p>
       </Card>
 
       <div className="pt-4">
