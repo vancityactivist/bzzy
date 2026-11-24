@@ -13,7 +13,7 @@ export const metadata: Metadata = {
   alternates: { canonical: "/privacy" },
 };
 
-const UPDATED = "November 22, 2026";
+const UPDATED = "November 23, 2026";
 
 function H({ children }: { children: ReactNode }) {
   return <h2 className="mt-10 text-lg font-semibold tracking-tight">{children}</h2>;
@@ -61,27 +61,108 @@ export default function PrivacyPage() {
           those changes. Anything you send to a webhook goes to the address you gave.
         </p>
 
-        <H>Google Calendar</H>
+        <H>Google user data</H>
         <p>
-          If you connect a Google account, bzzy asks for read-only access to your list of calendars and their events.
-          It uses that only to decide your status (busy, away, do not disturb) and, if you choose, to show the
-          meeting title on your light. bzzy never changes your calendar, never reads your Gmail, contacts or files,
-          and never shows your calendar to anyone else. Teammates see your status, never your calendar.
+          This section covers data bzzy gets from Google when you connect a Google account to use your Google Calendar.
+          Connecting is optional. Signing in to bzzy never uses Google.
         </p>
         <p>
-          bzzy&apos;s use and transfer of information received from Google APIs adheres to the{" "}
+          <strong>What bzzy accesses.</strong> bzzy asks Google for these permissions, all read-only:
+        </p>
+        <ul>
+          <li>
+            Your Google account&apos;s email address and account id (<code>openid</code>,{" "}
+            <code>userinfo.email</code>), so you can see which account is connected and reconnecting updates it.
+          </li>
+          <li>
+            The list of your calendars: each calendar&apos;s name, id and colour (<code>calendar.calendarlist.readonly</code>).
+          </li>
+          <li>
+            Events on the calendars you turn on, for the next eight days: start and end time, whether the event shows you
+            as free or busy, its type (such as focus time or out of office), its title and id, and your own reply to the
+            invitation (bzzy looks through the guest list only to find your reply, and doesn&apos;t keep it) (
+            <code>calendar.events.readonly</code>).
+          </li>
+        </ul>
+        <p>
+          bzzy can&apos;t change your calendar, and never reads your Gmail, contacts, Drive files or anything else in your
+          Google account.
+        </p>
+        <p>
+          <strong>How bzzy uses it.</strong> Only to work out your status (busy, away, do not disturb) and when it ends, and,
+          only if you turn it on for a calendar, to show the meeting title on your own lights. Nothing else.
+        </p>
+        <p>
+          <strong>What bzzy stores.</strong> The account&apos;s email address and id, an encrypted refresh token, your
+          calendars&apos; names, ids and colours, and for each event in the next eight days only its start, end, title, id
+          and the status bzzy worked out from it. Older events are dropped every time the calendar refreshes. Guest lists,
+          descriptions, locations and attachments are never stored.
+        </p>
+        <p>
+          <strong>Sharing, transfer and disclosure.</strong> bzzy does not sell Google user data, and does not share,
+          transfer or disclose it to anyone, except:
+        </p>
+        <ul>
+          <li>
+            The service providers that run bzzy and process it on bzzy&apos;s behalf, only to provide the service: Vercel
+            (hosting, where the app runs and keeps a short-lived server cache) and Neon (the database). Both store data in
+            the United States. bzzy&apos;s email and bot-check providers (Resend, Cloudflare) never receive Google data.
+          </li>
+          <li>
+            Where you ask for it: your own lights, and, if you turn titles on, your own API tokens and webhooks, which
+            can read your current status and meeting title. Teammates see your status and when it ends, never your
+            calendars, event titles or event details.
+          </li>
+          <li>
+            Where the law requires it, or where it&apos;s needed to protect the security of bzzy and its users.
+          </li>
+        </ul>
+        <p>
+          Google user data is never used for advertising, never used to build profiles of you, never used to train AI or
+          machine-learning models, and never sold to data brokers or anyone else. Nobody reads it unless you ask for help
+          and agree, it&apos;s needed for security or abuse, or the law requires it.
+        </p>
+        <p>
+          <strong>Limited Use.</strong> bzzy&apos;s use and transfer to any other app of information received from Google
+          APIs will adhere to the{" "}
           <a
             className="underline underline-offset-2"
             href="https://developers.google.com/terms/api-services-user-data-policy"
           >
             Google API Services User Data Policy
           </a>
-          , including the Limited Use requirements. Google data is not sold, not transferred to anyone except as
-          needed to run bzzy, not used for advertising, and not used to train AI models. Nobody reads it unless you ask
-          for help and agree, it&apos;s needed for security, or the law requires it. You can disconnect in Settings at any time, which deletes the token and the saved events
-          and tells Google to revoke bzzy&apos;s access. You can also remove access from your Google Account&apos;s
-          security settings.
+          , including the Limited Use requirements.
         </p>
+        <p>
+          <strong>Removing it.</strong> Disconnect the account in Settings at any time: bzzy tells Google to revoke its
+          access and deletes the token, the account&apos;s calendars and their saved events straight away. Deleting your bzzy
+          account does the same. You can also remove bzzy from your Google Account at{" "}
+          <a className="underline underline-offset-2" href="https://myaccount.google.com/permissions">
+            myaccount.google.com/permissions
+          </a>
+          ; bzzy then stops reading and asks you to reconnect.
+        </p>
+
+        <H>How your data is protected</H>
+        <ul>
+          <li>
+            In transit: bzzy.ca only accepts HTTPS, and bzzy only talks to Google, Neon and calendar servers over encrypted
+            (TLS) connections.
+          </li>
+          <li>
+            At rest: Vercel and Neon encrypt stored data on disk. On top of that, bzzy encrypts Google refresh tokens,
+            access tokens and calendar passwords itself (AES-256-GCM) before storing them, with a key kept only in the
+            hosting environment, so a copy of the database alone can&apos;t open them. Tokens are never sent to your browser.
+          </li>
+          <li>
+            Access: only you can see your calendars in the app. Every request checks you are signed in and that the data is
+            yours. Access to the hosting and database is limited to Adam Glover.
+          </li>
+          <li>
+            Minimum data: read-only permissions, only the next eight days of events, and nothing kept once you disconnect.
+          </li>
+          <li>API tokens and light tokens are stored only as one-way hashes.</li>
+        </ul>
 
         <H>iCloud and other calendar servers</H>
         <p>
@@ -105,7 +186,7 @@ export default function PrivacyPage() {
 
         <H>Who else handles it</H>
         <ul>
-          <li>Vercel hosts the app and its file storage.</li>
+          <li>Vercel hosts the app, its server cache and its file storage.</li>
           <li>Neon hosts the database.</li>
           <li>Resend sends bzzy&apos;s emails.</li>
           <li>Cloudflare checks the contact form isn&apos;t a bot (Turnstile). It sees your browser and IP address, not your message.</li>
