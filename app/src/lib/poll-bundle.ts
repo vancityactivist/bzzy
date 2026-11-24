@@ -18,7 +18,7 @@ import { nowSeconds, type Presence, type Status } from "./protocol";
 import { followedPushes, type Push } from "./pushes";
 import { type CurrentShow, getShow } from "./show";
 import { hasLiveWebhooks } from "./webhooks";
-import type { WorkHours } from "./work-hours";
+import { lightWorkHours, type WorkHours } from "./work-hours";
 
 // Everything a light's poll reads from the database, kept in the runtime cache so that a
 // poll while nothing has changed doesn't touch Postgres. Each write that changes any of
@@ -30,7 +30,7 @@ export type PollBundle = {
   // "between meetings" fields.
   device: AuthedDevice;
   timeZone: string;
-  // The owner's working hours; null = always on.
+  // The hours this light follows (its owner's, its own, or none); null = always on.
   workHours: WorkHours | null;
   // The owner's status, or the light's own when it doesn't follow them.
   presence: Presence | null;
@@ -50,7 +50,7 @@ export type PollBundle = {
 export const POLL_BUNDLE_TTL_SEC = 3 * 3600;
 
 // Bump the version when PollBundle changes shape: cache entries outlive deployments.
-const key = (deviceId: string) => `poll:v6:${deviceId}`;
+const key = (deviceId: string) => `poll:v7:${deviceId}`;
 
 const assetTags = (...gifs: (ResolvedGif | undefined)[]) =>
   gifs.flatMap((g) => (g?.kind === "asset" ? [tag.asset(g.id)] : []));
@@ -61,7 +61,7 @@ async function loadBundle(deviceId: string) {
   if (!row) return null;
   const owner = row.ownerUserId;
   const own = !row.followsOwner;
-  const [{ timeZone, workHours }, look, presence, calendars, gifs, show, release, pushes, webhooks] = await Promise.all([
+  const [{ timeZone, workHours: ownerHours }, look, presence, calendars, gifs, show, release, pushes, webhooks] = await Promise.all([
     userClock(owner),
     getLook(owner),
     own ? getLightStatus(row.id).then((r) => r.presence) : getPresence(owner),
@@ -73,6 +73,7 @@ async function loadBundle(deviceId: string) {
     hasLiveWebhooks(owner),
   ]);
   const device = withLook(row, look);
+  const workHours = lightWorkHours(row.hoursMode, row.workHours, ownerHours);
   const value: PollBundle = { device, timeZone, workHours, presence, calendars, gifs, show, release, pushes, webhooks };
   const tags = [
     tag.device(device.id),

@@ -15,6 +15,7 @@ import type { Status } from "./protocol";
 import type { LedStyles, MeetingWarn } from "./ring";
 import type { StatusLabels } from "./status-labels";
 import { ensurePersonalTeam, roleInTeam, teamsForUser } from "./teams";
+import { type HoursMode, isHoursMode, parseWorkHours, type WorkHours } from "./work-hours";
 
 export type DeviceSummary = {
   id: string;
@@ -41,6 +42,9 @@ export type DeviceSummary = {
   // What its firmware says it understands ("hours,leds,push"); null before it has said.
   features: string | null;
   ring: DeviceRing;
+  // Its working hours: its owner's, its own (ownHours), or always on.
+  hoursMode: HoursMode;
+  ownHours: WorkHours | null;
 };
 
 // allowFlash is the light's own; the styles and meeting warning are its owner's look.
@@ -85,6 +89,8 @@ export async function devicesForUser(userId: string): Promise<DeviceSummary[]> {
       },
       features: d.features,
       ring: { allowFlash: d.allowFlash, ledStyles: d.ledStyles, meetingWarn: d.meetingWarn },
+      hoursMode: isHoursMode(d.hoursMode) ? d.hoursMode : "owner",
+      ownHours: parseWorkHours(d.workHours),
     };
   });
 }
@@ -118,6 +124,16 @@ export async function createDevice(userId: string, displayName: string, name: st
 
 export async function setAllowFlash(deviceId: string, allowFlash: boolean) {
   await db().update(schema.devices).set({ allowFlash }).where(eq(schema.devices.id, deviceId));
+  await expire(tag.device(deviceId));
+}
+
+// Its working hours. `hours` is saved only with "own"; the other modes keep what was
+// there, so picking "own" again brings back the last hours it had.
+export async function setLightHours(deviceId: string, mode: HoursMode, hours: WorkHours | null) {
+  await db()
+    .update(schema.devices)
+    .set(mode === "own" ? { hoursMode: mode, workHours: hours } : { hoursMode: mode })
+    .where(eq(schema.devices.id, deviceId));
   await expire(tag.device(deviceId));
 }
 

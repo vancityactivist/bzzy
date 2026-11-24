@@ -32,6 +32,7 @@ import {
   setAllowFlash,
   setAutoUpdate,
   setFollowsOwner,
+  setLightHours,
   setLightLabels,
   setLightDefault,
 } from "@/lib/devices";
@@ -61,7 +62,7 @@ import { clearShow, setShow } from "@/lib/show";
 import { parseShowColors } from "@/lib/show-colors";
 import { webhookInput } from "@/lib/webhook-rules";
 import { createWebhook, deleteWebhook, noticeChanges, sendTest, updateWebhook, WebhookError } from "@/lib/webhooks";
-import { parseClock, parseWorkHours } from "@/lib/work-hours";
+import { isHoursMode, parseClock, parseWorkHours, type WorkHours } from "@/lib/work-hours";
 
 export async function signInWithGitHub() {
   await signIn("github", { redirectTo: "/" });
@@ -442,22 +443,48 @@ export async function removeCalendarAction(id: string) {
 
 export type WorkHoursResult = { ok: true } | { ok: false; error: string } | null;
 
+// The days, start and end from a working-hours form.
+function hoursFromForm(formData: FormData): { hours: WorkHours } | { error: string } {
+  const days = formData.getAll("day").map(Number);
+  const start = parseClock(String(formData.get("start") ?? ""));
+  const end = parseClock(String(formData.get("end") ?? ""));
+  if (days.length === 0) return { error: "Pick at least one day." };
+  if (start === null || end === null) return { error: "Enter a start and end time." };
+  if (start >= end) return { error: "The day has to end after it starts (overnight hours aren't supported yet)." };
+  const hours = parseWorkHours({ days, start, end });
+  return hours ? { hours } : { error: "Those hours don't look right." };
+}
+
 export async function saveWorkHoursAction(_prev: WorkHoursResult, formData: FormData): Promise<WorkHoursResult> {
   const user = await requireUser();
   const timeZone = String(formData.get("timeZone") ?? "");
   if (!validTimeZone(timeZone)) return { ok: false, error: "Pick a time zone." };
   let hours = null;
   if (formData.get("enabled") === "on") {
-    const days = formData.getAll("day").map(Number);
-    const start = parseClock(String(formData.get("start") ?? ""));
-    const end = parseClock(String(formData.get("end") ?? ""));
-    if (days.length === 0) return { ok: false, error: "Pick at least one day." };
-    if (start === null || end === null) return { ok: false, error: "Enter a start and end time." };
-    if (start >= end) return { ok: false, error: "The day has to end after it starts (overnight hours aren't supported yet)." };
-    hours = parseWorkHours({ days, start, end });
-    if (!hours) return { ok: false, error: "Those hours don't look right." };
+    const r = hoursFromForm(formData);
+    if ("error" in r) return { ok: false, error: r.error };
+    hours = r.hours;
   }
   await saveUserClock(user.id, timeZone, hours);
+  refresh();
+  return { ok: true };
+}
+
+// A light's working hours (its page): its owner's, its own, or always on. Anyone who
+// can manage the light, since they're about where it sits rather than whose status it shows.
+export async function saveLightHoursAction(_prev: WorkHoursResult, formData: FormData): Promise<WorkHoursResult> {
+  const user = await requireUser();
+  const deviceId = String(formData.get("deviceId") ?? "");
+  const mode = formData.get("mode");
+  if (!isHoursMode(mode)) return { ok: false, error: "Pick one of the options." };
+  if (!(await canManageDevice(user.id, deviceId))) return { ok: false, error: "You can't change this light." };
+  let hours = null;
+  if (mode === "own") {
+    const r = hoursFromForm(formData);
+    if ("error" in r) return { ok: false, error: r.error };
+    hours = r.hours;
+  }
+  await setLightHours(deviceId, mode, hours);
   refresh();
   return { ok: true };
 }

@@ -6,19 +6,21 @@ import { Suspense } from "react";
 import { CheckIcon, ChevronRightIcon } from "@/components/icons";
 import { SignIn } from "@/components/sign-in";
 import { Badge, Card, CardHeader, Container } from "@/components/ui";
-import { calendarsForLight, calendarsForUser } from "@/lib/calendar";
+import { calendarsForLight, calendarsForUser, userClock } from "@/lib/calendar";
 import { devicesForUser } from "@/lib/devices";
 import { firmwareState } from "@/lib/firmware";
 import { releaseForPage } from "@/lib/firmware-release";
 import { isOnline } from "@/lib/poll-writes";
-import { nowSeconds } from "@/lib/protocol";
+import { hasFeature, nowSeconds } from "@/lib/protocol";
 import { getCurrentUser } from "@/lib/session";
 import { sharedTeamsForUser } from "@/lib/teams";
+import { describeHours } from "@/lib/work-hours";
 
 import { DeviceFirmware } from "../device-firmware";
 import { DeviceActions } from "../device-forms";
 import { absoluteTime, relativeTime } from "../relative-time";
 import { LightCalendarToggle } from "../../settings/calendar-forms";
+import { LightHoursForm } from "./light-hours-form";
 import { LightSettings } from "./light-settings";
 
 export const metadata: Metadata = { title: "Light" };
@@ -46,6 +48,8 @@ async function LightContent({ params, searchParams }: Pick<PageProps<"/lights/[i
   const d = devices.find((x) => x.id === id);
   if (!d || !d.canManage) notFound();
   const isOwner = d.ownerUserId === user.id;
+  // Its owner's clock: their hours are the default, and their time zone counts for all.
+  const clock = await userClock(d.ownerUserId);
   const now = nowSeconds() * 1000;
   const online = isOnline(d.lastSeenAt, now, d.pollSec);
   // Its team, which is also whose announcements it shows ("" = just its owner). A light
@@ -110,6 +114,39 @@ async function LightContent({ params, searchParams }: Pick<PageProps<"/lights/[i
           teams={shared.map((t) => ({ id: t.id, name: t.name }))}
           allowFlash={d.ring.allowFlash}
         />
+      </Card>
+
+      <Card id="hours" className="scroll-mt-20">
+        <CardHeader
+          title="Working hours"
+          description={
+            <>
+              Outside them this light goes dark and checks in every 5 minutes. Times are in{" "}
+              {isOwner ? "your" : "its owner's"} time zone ({clock.timeZone.replaceAll("_", " ")})
+              {isOwner && (
+                <>
+                  , set in{" "}
+                  <Link href="/settings#hours" className="underline underline-offset-2">
+                    Settings
+                  </Link>
+                </>
+              )}
+              .
+            </>
+          }
+        />
+        {d.features !== null && !hasFeature(d.features, "hours") && (
+          <p className="mt-3 text-sm text-muted">Its firmware is too old to go dark yet. It will once it updates.</p>
+        )}
+        <div className="mt-4">
+          <LightHoursForm
+            deviceId={d.id}
+            mode={d.hoursMode}
+            ownHours={d.ownHours}
+            ownerHours={describeHours(clock.workHours)}
+            ownerLabel={isOwner ? "yours" : "its owner's"}
+          />
+        </div>
       </Card>
 
       {isOwner && (

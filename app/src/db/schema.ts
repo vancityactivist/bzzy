@@ -32,7 +32,7 @@ import type { ShowColors } from "../lib/show-colors";
 import type { StatusLabels } from "../lib/status-labels";
 import type { CachedEvent } from "../lib/ics";
 import type { Delivery } from "../lib/webhook-rules";
-import type { WorkHours } from "../lib/work-hours";
+import type { HoursMode, WorkHours } from "../lib/work-hours";
 
 const id = () =>
   text("id")
@@ -278,6 +278,12 @@ export const devices = pgTable(
     }),
     // X-Bzzy-Features from the last poll ("leds,push"). Null = firmware from before it.
     features: text("features"),
+    // Working hours (lib/work-hours.ts lightWorkHours): "owner" uses its owner's
+    // (user.work_hours), "own" uses workHours below, "always" is never dark.
+    hoursMode: text("hours_mode").$type<HoursMode>().notNull().default("owner"),
+    // Its own hours, for hoursMode "own". Kept when the mode changes, so switching back
+    // brings them back.
+    workHours: jsonb("work_hours").$type<WorkHours>(),
     // allowFlash off: the ring is always steady, pushes too.
     allowFlash: boolean("allow_flash").notNull().default(true),
     // No longer read: the ring styles moved to the owner (user.led_styles). Kept until a

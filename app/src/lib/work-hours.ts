@@ -15,6 +15,20 @@ export const OFF_HOURS_POLL_SEC = 5 * 60;
 export const WINDOW_DAYS = 8;
 export const MAX_WINDOWS = 14;
 
+// A light's choice (device.hours_mode): its owner's hours, its own, or always on.
+export const HOURS_MODES = ["owner", "own", "always"] as const;
+export type HoursMode = (typeof HOURS_MODES)[number];
+
+export const isHoursMode = (v: unknown): v is HoursMode => HOURS_MODES.includes(v as HoursMode);
+
+// The hours a light follows; null = always on. "own" with no hours saved (shouldn't
+// happen) falls back to the owner's rather than leaving the light on all night.
+export function lightWorkHours(mode: string, own: unknown, ownerHours: WorkHours | null): WorkHours | null {
+  if (mode === "always") return null;
+  if (mode === "own") return parseWorkHours(own) ?? ownerHours;
+  return ownerHours;
+}
+
 export const DEFAULT_WORK_HOURS: WorkHours = { days: [1, 2, 3, 4, 5], start: 9 * 60, end: 17 * 60 };
 
 export function parseWorkHours(raw: unknown): WorkHours | null {
@@ -41,6 +55,26 @@ export function parseClock(v: string): number | null {
 
 export const formatClock = (minutes: number) =>
   `${String(Math.floor(minutes / 60)).padStart(2, "0")}:${String(minutes % 60).padStart(2, "0")}`;
+
+const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+// "Mon–Fri, 09:00–17:00", "Mon, Wed, Sat, 08:00–12:30"; "Always on" with none.
+export function describeHours(hours: WorkHours | null): string {
+  if (!hours) return "Always on";
+  // Monday first; a run of 3+ days in a row reads as a range.
+  const order = [1, 2, 3, 4, 5, 6, 0].filter((d) => hours.days.includes(d));
+  const pos = (d: number) => (d + 6) % 7;
+  const runs: number[][] = [];
+  for (const d of order) {
+    const last = runs.at(-1);
+    if (last && pos(d) === pos(last.at(-1)!) + 1) last.push(d);
+    else runs.push([d]);
+  }
+  const days = runs
+    .flatMap((r) => (r.length >= 3 ? [`${DAY_NAMES[r[0]]}–${DAY_NAMES[r.at(-1)!]}`] : r.map((d) => DAY_NAMES[d])))
+    .join(", ");
+  return `${days}, ${formatClock(hours.start)}–${formatClock(hours.end)}`;
+}
 
 // The calendar date `nowSec` falls on in `timeZone`.
 function localDate(nowSec: number, timeZone: string) {

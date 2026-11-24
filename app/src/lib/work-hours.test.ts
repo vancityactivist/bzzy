@@ -2,8 +2,10 @@ import { describe, expect, it } from "vitest";
 
 import {
   DEFAULT_WORK_HOURS,
+  describeHours,
   formatClock,
   inWorkHours,
+  lightWorkHours,
   OFF_HOURS_POLL_SEC,
   parseClock,
   parseWorkHours,
@@ -89,5 +91,43 @@ describe("parsing", () => {
     expect(parseClock("25:00")).toBeNull();
     expect(parseClock("noon")).toBeNull();
     expect(formatClock(570)).toBe("09:30");
+  });
+});
+
+describe("lightWorkHours", () => {
+  const owner = { days: [1, 2, 3, 4, 5], start: 540, end: 1020 };
+  const own = { days: [6], start: 600, end: 840 };
+
+  it("uses the owner's hours by default", () => {
+    expect(lightWorkHours("owner", own, owner)).toEqual(owner);
+    expect(lightWorkHours("owner", null, null)).toBeNull();
+  });
+
+  it("uses the light's own hours", () => {
+    expect(lightWorkHours("own", own, owner)).toEqual(own);
+    expect(lightWorkHours("own", own, null)).toEqual(own);
+  });
+
+  it("falls back to the owner's when the light's own hours are missing", () => {
+    expect(lightWorkHours("own", null, owner)).toEqual(owner);
+  });
+
+  it("is always on when asked, whatever the owner has", () => {
+    expect(lightWorkHours("always", own, owner)).toBeNull();
+  });
+});
+
+describe("describeHours", () => {
+  it("reads a working week as a range", () => {
+    expect(describeHours(DEFAULT_WORK_HOURS)).toBe("Mon–Fri, 09:00–17:00");
+  });
+
+  it("lists odd days and puts Sunday last", () => {
+    expect(describeHours({ days: [0, 1, 3, 6], start: 480, end: 750 })).toBe("Mon, Wed, Sat, Sun, 08:00–12:30");
+    expect(describeHours({ days: [0, 5, 6], start: 480, end: 750 })).toBe("Fri–Sun, 08:00–12:30");
+  });
+
+  it("says when there are none", () => {
+    expect(describeHours(null)).toBe("Always on");
   });
 });
