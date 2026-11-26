@@ -510,7 +510,7 @@ export function Landing({ batch }: { batch: ShopBatch }) {
               <li><a className="text-muted hover:text-foreground" href="/terms">Terms</a></li>
             </ul>
             <div className="mt-8 flex flex-col gap-1 text-[13px] text-muted sm:flex-row sm:justify-between">
-              <span>&copy; 2026 Adam Glover</span>
+              <span>&copy; 2026 BZZY</span>
               <span>
                 <a className="hover:text-foreground" href="https://giphy.com">
                   GIFs via GIPHY

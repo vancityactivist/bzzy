@@ -12,7 +12,7 @@ export const metadata: Metadata = {
   alternates: { canonical: "/terms" },
 };
 
-const UPDATED = "November 22, 2026";
+const UPDATED = "November 26, 2026";
 
 function H({ children }: { children: ReactNode }) {
   return <h2 className="mt-10 text-lg font-semibold tracking-tight">{children}</h2>;
@@ -30,7 +30,7 @@ export default function TermsPage() {
 
       <div className="mt-6 space-y-4 leading-relaxed [&_li]:mt-1 [&_ul]:list-disc [&_ul]:pl-5">
         <p>
-          These terms cover using the bzzy app at bzzy.ca, which is run by Adam Glover in British Columbia, Canada. By
+          These terms cover using the bzzy app at bzzy.ca, which is run by BZZY, a sole proprietorship in British Columbia, Canada. By
           signing in you agree to them. You need to be at least 13, and old enough to agree to them where you live. Buying
           a bzzy light has its own{" "}
           <a className="underline underline-offset-2" href="https://shop.bzzy.ca/terms">
@@ -67,7 +67,7 @@ export default function TermsPage() {
         <H>Open source</H>
         <p>
           bzzy&apos;s firmware, app code and design files are published under the licences in the GitHub repository. These
-          terms don&apos;t change those licences. The bzzy name and logo belong to Adam Glover.
+          terms don&apos;t change those licences. The bzzy name and logo belong to BZZY.
         </p>
 
         <H>Your data</H>
@@ -81,7 +81,7 @@ export default function TermsPage() {
 
         <H>Liability</H>
         <p>
-          To the extent the law allows, bzzy and Adam Glover aren&apos;t liable for indirect or consequential losses
+          To the extent the law allows, BZZY isn&apos;t liable for indirect or consequential losses
           from using the app, and total liability is limited to what you paid for the app in the previous twelve
           months (the app itself is free).
         </p>
