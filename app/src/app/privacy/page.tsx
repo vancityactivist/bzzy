@@ -13,7 +13,7 @@ export const metadata: Metadata = {
   alternates: { canonical: "/privacy" },
 };
 
-const UPDATED = "November 23, 2026";
+const UPDATED = "November 26, 2026";
 
 function H({ children }: { children: ReactNode }) {
   return <h2 className="mt-10 text-lg font-semibold tracking-tight">{children}</h2>;
@@ -32,7 +32,7 @@ export default function PrivacyPage() {
       <div className="mt-6 space-y-4 leading-relaxed [&_li]:mt-1 [&_ul]:list-disc [&_ul]:pl-5">
         <p>
           bzzy is a desk light that shows whether you can be interrupted, and the app at bzzy.ca that runs it. It&apos;s
-          made by Adam Glover in British Columbia, Canada. This page says what bzzy keeps about you and why.
+          made by BZZY, a sole proprietorship in British Columbia, Canada. This page says what bzzy keeps about you and why.
         </p>
 
         <H>What bzzy stores</H>
@@ -156,7 +156,7 @@ export default function PrivacyPage() {
           </li>
           <li>
             Access: only you can see your calendars in the app. Every request checks you are signed in and that the data is
-            yours. Access to the hosting and database is limited to Adam Glover, through a single Vercel login protected by two-factor authentication and a passkey.
+            yours. Access to the hosting and database is limited to BZZY&apos;s owner, through a single Vercel login protected by two-factor authentication and a passkey.
           </li>
           <li>
             Minimum data: read-only permissions, only the next eight days of events, and nothing kept once you disconnect.
@@ -218,7 +218,7 @@ export default function PrivacyPage() {
             hello@bzzy.ca
           </a>{" "}
           and you&apos;ll get an answer within 30 days. If your information is ever exposed in a way that could harm you,
-          you&apos;ll be told. The person responsible for privacy is Adam Glover. If you&apos;re not happy with the answer, you
+          you&apos;ll be told. Privacy questions go to BZZY&apos;s privacy officer at hello@bzzy.ca. If you&apos;re not happy with the answer, you
           can complain to the{" "}
           <a className="underline underline-offset-2" href="https://www.oipc.bc.ca">
             Office of the Information and Privacy Commissioner for British Columbia
